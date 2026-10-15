@@ -5,6 +5,7 @@ import {
   HemisphereLight,
   PerspectiveCamera,
   Scene,
+  Vector3,
   type WebGPURenderer,
 } from 'three/webgpu';
 import { Input } from '../engine/input';
@@ -36,6 +37,10 @@ export interface Game {
   scene: Scene;
   camera: PerspectiveCamera;
   sun: DirectionalLight;
+  /** Direction from the ground toward the sun (normalized). Time-of-day changes this; shadows follow the camera. */
+  sunDir: Vector3;
+  /** Draws one frame. Default: renderer.render(scene, camera). engine-builder replaces it for post-processing. */
+  renderFrame: () => void;
   phys: Physics;
   input: Input;
   perf: Perf;
@@ -103,6 +108,8 @@ export async function createGame(): Promise<Game> {
   const interactables: Interactable[] = [];
   const game: Game = {
     renderer, backend, scene, camera, sun, phys, input, perf, events, ui,
+    sunDir: new Vector3(30, 60, 20).normalize(),
+    renderFrame: () => renderer.render(scene, camera),
     rng: createRng(1),
     places: { containers: [], targets: [] },
     tick: 0,
@@ -143,9 +150,9 @@ export async function createGame(): Promise<Game> {
           for (const s of systems) s.render?.(alpha, frameDt);
           // Shadow camera follows the view so the 80 m shadow box covers what we see.
           sun.target.position.set(camera.position.x, 0, camera.position.z);
-          sun.position.set(camera.position.x + 30, 60, camera.position.z + 20);
+          sun.position.copy(sun.target.position).addScaledVector(game.sunDir, 70);
           perf.begin('render');
-          renderer.render(scene, camera);
+          game.renderFrame();
           perf.end('render');
           perf.frame(frameDt);
         },
