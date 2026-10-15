@@ -60,5 +60,8 @@ for (const { id, script } of sources) {
   built[id] = { url: '/' + report.glb.replace(/^public\//, ''), category: report.category, tris: report.tris, bytes: size };
   console.log(`${over ? 'OVER BUDGET' : 'ok'}  ${id}  LOD0 ${lod0} tris${budget ? ` / ${budget}` : ''}  ${(raw / 1024).toFixed(0)} KB -> ${(size / 1024).toFixed(0)} KB`);
 }
+// Re-read right before writing: several asset builders may run in parallel (merge, don't clobber).
+const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : {};
+Object.assign(manifest, built);
 writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');
 if (failed) process.exit(1);
