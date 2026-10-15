@@ -6,3 +6,4 @@ artifacts/
 assets/previews/*.tmp.png
 .claude/settings.local.json
 __pycache__/
+assets/refs/

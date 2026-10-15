@@ -35,7 +35,7 @@ const io = new NodeIO()
   .registerExtensions(ALL_EXTENSIONS)
   .registerDependencies({ 'meshopt.encoder': MeshoptEncoder, 'meshopt.decoder': MeshoptDecoder });
 
-const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : {};
+const built = {};
 let failed = 0;
 for (const { id, script } of sources) {
   const out = execFileSync(BLENDER, ['--background', '--python', script], { encoding: 'utf8', maxBuffer: 64 << 20 });
@@ -57,7 +57,7 @@ for (const { id, script } of sources) {
   const budget = BUDGET[id.split('_')[0]];
   const over = budget && lod0 > budget;
   if (over) failed++;
-  manifest[id] = { url: '/' + report.glb.replace(/^public\//, ''), category: report.category, tris: report.tris, bytes: size };
+  built[id] = { url: '/' + report.glb.replace(/^public\//, ''), category: report.category, tris: report.tris, bytes: size };
   console.log(`${over ? 'OVER BUDGET' : 'ok'}  ${id}  LOD0 ${lod0} tris${budget ? ` / ${budget}` : ''}  ${(raw / 1024).toFixed(0)} KB -> ${(size / 1024).toFixed(0)} KB`);
 }
 writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n');

@@ -25,6 +25,10 @@ Asset requests go through `docs/pipeline/asset-requests.md`. Credits and licence
 - `blender-image-to-3d`
 
 ## Rules
+- **Zero-cost assets (user decision, 2026-10-16):** no paid APIs (no Tripo, Gemini, ElevenLabs) for now.
+  - 3D models are built in Blender from reference photos found online (prefer Wikimedia Commons, public domain, CC0).
+  - Reference images are for looking at only. They live in `assets/refs/` (git-ignored) and never ship.
+  - Audio: CC0 stock only (Kenney, Freesound CC0, OpenGameArt CC0, Sonniss GDC bundles). Log every file in `docs/pipeline/asset-credits.md`.
 - Work milestone by milestone. Each one ends playable in the browser, with a perf report.
 - All tunable numbers live in `src/content/data/`. All player-facing text lives in `src/content/text/`.
 - Keep the simulation (plain data) separate from rendering, so saves and future co-op stay possible.
