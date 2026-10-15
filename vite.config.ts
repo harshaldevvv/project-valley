@@ -8,6 +8,9 @@ const isolation = {
 };
 
 export default defineConfig({
+  // One three.js build: bare 'three' (incl. imports inside three/examples addons) resolves to three/webgpu,
+  // so WebGLRenderer is never bundled next to WebGPURenderer (principles §13).
+  resolve: { alias: [{ find: /^three$/, replacement: 'three/webgpu' }] },
   server: { headers: isolation, port: 5188, strictPort: true },
   preview: { headers: isolation, port: 5189, strictPort: true },
   build: { target: 'es2022', sourcemap: true },

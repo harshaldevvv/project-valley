@@ -33,7 +33,8 @@ export class Input {
       // Raw, unaccelerated mouse (avoids the Chrome pointer-lock skip, three.js #27040).
       await this.el.requestPointerLock({ unadjustedMovement: true });
     } catch {
-      await this.el.requestPointerLock();
+      // Older browsers reject the option; some contexts (automation, iframes) reject lock entirely.
+      await this.el.requestPointerLock()?.catch?.(() => {});
     }
   }
 

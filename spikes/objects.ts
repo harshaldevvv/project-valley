@@ -15,8 +15,10 @@ import {
   PerspectiveCamera,
   Scene,
   WebGLRenderer,
-} from 'three';
-import { WebGPURenderer } from 'three/webgpu';
+} from 'three/src/Three.js';
+// Spike compares WebGLRenderer vs WebGPURenderer, so it imports three's sources directly (one shared copy)
+// instead of 'three', which vite aliases to three/webgpu (no WebGLRenderer) for the game.
+import { WebGPURenderer } from 'three/src/Three.WebGPU.js';
 
 const q = new URLSearchParams(location.search);
 const mode = q.get('mode') ?? 'webgpu';

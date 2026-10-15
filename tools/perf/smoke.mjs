@@ -10,7 +10,7 @@ const errors = [];
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 page.on('pageerror', (e) => errors.push(String(e)));
 
-await page.goto(BASE + '/' + (process.argv[2] ?? ''));
+await page.goto(BASE + '/' + (process.argv[2] ?? '?play')); // ?play skips the title menu
 await page.waitForFunction(() => typeof window.__perf === 'function', null, { timeout: 60_000 });
 await page.waitForTimeout(3000); // warm-up: WASM tier-up, first pipelines
 await page.evaluate(() => window.__perfReset());

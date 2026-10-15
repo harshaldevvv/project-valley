@@ -8,5 +8,344 @@
       "prop_crate_wood_a_LOD2": 72
     },
     "bytes": 28252
+  },
+  "env_wall_concrete_a": {
+    "url": "/assets/models/env/env_wall_concrete_a.glb",
+    "category": "env",
+    "tris": {
+      "env_wall_concrete_a_LOD0": 380,
+      "env_wall_concrete_a_LOD1": 60,
+      "env_wall_concrete_a_LOD2": 24
+    },
+    "bytes": 14596
+  },
+  "env_barrier_jersey_a": {
+    "url": "/assets/models/env/env_barrier_jersey_a.glb",
+    "category": "env",
+    "tris": {
+      "env_barrier_jersey_a_LOD0": 378,
+      "env_barrier_jersey_a_LOD1": 76,
+      "env_barrier_jersey_a_LOD2": 40
+    },
+    "bytes": 14672
+  },
+  "env_bench_shooting_a": {
+    "url": "/assets/models/env/env_bench_shooting_a.glb",
+    "category": "env",
+    "tris": {
+      "env_bench_shooting_a_LOD0": 972,
+      "env_bench_shooting_a_LOD1": 108,
+      "env_bench_shooting_a_LOD2": 72
+    },
+    "bytes": 26812
+  },
+  "env_cone_a": {
+    "url": "/assets/models/env/env_cone_a.glb",
+    "category": "env",
+    "tris": {
+      "env_cone_a_LOD0": 226,
+      "env_cone_a_LOD1": 186,
+      "env_cone_a_LOD2": 34
+    },
+    "bytes": 13844
+  },
+  "env_fence_chainlink_a": {
+    "url": "/assets/models/env/env_fence_chainlink_a.glb",
+    "category": "env",
+    "tris": {
+      "env_fence_chainlink_a_LOD0": 804,
+      "env_fence_chainlink_a_LOD1": 328,
+      "env_fence_chainlink_a_LOD2": 180
+    },
+    "bytes": 28360
+  },
+  "env_gate_chainlink_a": {
+    "url": "/assets/models/env/env_gate_chainlink_a.glb",
+    "category": "env",
+    "tris": {
+      "env_gate_chainlink_a_LOD0": 896,
+      "env_gate_chainlink_a_LOD1": 376,
+      "env_gate_chainlink_a_LOD2": 192
+    },
+    "bytes": 30708
+  },
+  "env_light_pole_a": {
+    "url": "/assets/models/env/env_light_pole_a.glb",
+    "category": "env",
+    "tris": {
+      "env_light_pole_a_LOD0": 472,
+      "env_light_pole_a_LOD1": 154,
+      "env_light_pole_a_LOD2": 60
+    },
+    "bytes": 16776
+  },
+  "env_pedestal_a": {
+    "url": "/assets/models/env/env_pedestal_a.glb",
+    "category": "env",
+    "tris": {
+      "env_pedestal_a_LOD0": 762,
+      "env_pedestal_a_LOD1": 188,
+      "env_pedestal_a_LOD2": 116
+    },
+    "bytes": 19640
+  },
+  "env_sign_board_a": {
+    "url": "/assets/models/env/env_sign_board_a.glb",
+    "category": "env",
+    "tris": {
+      "env_sign_board_a_LOD0": 560,
+      "env_sign_board_a_LOD1": 60,
+      "env_sign_board_a_LOD2": 48
+    },
+    "bytes": 18396
+  },
+  "env_tire_stack_a": {
+    "url": "/assets/models/env/env_tire_stack_a.glb",
+    "category": "env",
+    "tris": {
+      "env_tire_stack_a_LOD0": 876,
+      "env_tire_stack_a_LOD1": 540,
+      "env_tire_stack_a_LOD2": 68
+    },
+    "bytes": 35976
+  },
+  "prop_cabinet_metal_a": {
+    "url": "/assets/models/prop/prop_cabinet_metal_a.glb",
+    "category": "prop",
+    "tris": {
+      "prop_cabinet_metal_a_LOD0": 456,
+      "prop_cabinet_metal_a_LOD1": 72,
+      "prop_cabinet_metal_a_LOD2": 24
+    },
+    "bytes": 15808
+  },
+  "prop_duffel_bag_a": {
+    "url": "/assets/models/prop/prop_duffel_bag_a.glb",
+    "category": "prop",
+    "tris": {
+      "prop_duffel_bag_a_LOD0": 524,
+      "prop_duffel_bag_a_LOD1": 252,
+      "prop_duffel_bag_a_LOD2": 96
+    },
+    "bytes": 24560
+  },
+  "prop_target_dummy_a": {
+    "url": "/assets/models/prop/prop_target_dummy_a.glb",
+    "category": "prop",
+    "tris": {
+      "prop_target_dummy_a_LOD0": 500,
+      "prop_target_dummy_a_LOD1": 128,
+      "prop_target_dummy_a_LOD2": 48
+    },
+    "bytes": 18744
+  },
+  "prop_target_plate_a": {
+    "url": "/assets/models/prop/prop_target_plate_a.glb",
+    "category": "prop",
+    "tris": {
+      "prop_target_plate_a_LOD0": 412,
+      "prop_target_plate_a_LOD1": 96,
+      "prop_target_plate_a_LOD2": 60
+    },
+    "bytes": 15688
+  },
+  "prop_weapon_rack_a": {
+    "url": "/assets/models/prop/prop_weapon_rack_a.glb",
+    "category": "prop",
+    "tris": {
+      "prop_weapon_rack_a_LOD0": 932,
+      "prop_weapon_rack_a_LOD1": 120,
+      "prop_weapon_rack_a_LOD2": 72
+    },
+    "bytes": 25720
+  },
+  "kit_wood_door": {
+    "url": "/assets/models/kit/kit_wood_door.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_door_LOD0": 476,
+      "kit_wood_door_LOD1": 60,
+      "kit_wood_door_LOD2": 12
+    },
+    "bytes": 14960
+  },
+  "kit_wood_doorway": {
+    "url": "/assets/models/kit/kit_wood_doorway.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_doorway_LOD0": 916,
+      "kit_wood_doorway_LOD1": 204,
+      "kit_wood_doorway_LOD2": 132
+    },
+    "bytes": 25576
+  },
+  "kit_wood_floor": {
+    "url": "/assets/models/kit/kit_wood_floor.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_floor_LOD0": 440,
+      "kit_wood_floor_LOD1": 120,
+      "kit_wood_floor_LOD2": 84
+    },
+    "bytes": 17244
+  },
+  "kit_wood_foundation": {
+    "url": "/assets/models/kit/kit_wood_foundation.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_foundation_LOD0": 660,
+      "kit_wood_foundation_LOD1": 132,
+      "kit_wood_foundation_LOD2": 132
+    },
+    "bytes": 19216
+  },
+  "kit_wood_roof": {
+    "url": "/assets/models/kit/kit_wood_roof.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_roof_LOD0": 228,
+      "kit_wood_roof_LOD1": 48,
+      "kit_wood_roof_LOD2": 24
+    },
+    "bytes": 13124
+  },
+  "kit_wood_roof_flat": {
+    "url": "/assets/models/kit/kit_wood_roof_flat.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_roof_flat_LOD0": 412,
+      "kit_wood_roof_flat_LOD1": 108,
+      "kit_wood_roof_flat_LOD2": 72
+    },
+    "bytes": 16436
+  },
+  "kit_wood_stairs": {
+    "url": "/assets/models/kit/kit_wood_stairs.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_stairs_LOD0": 764,
+      "kit_wood_stairs_LOD1": 184,
+      "kit_wood_stairs_LOD2": 60
+    },
+    "bytes": 31452
+  },
+  "kit_wood_wall": {
+    "url": "/assets/models/kit/kit_wood_wall.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_wall_LOD0": 428,
+      "kit_wood_wall_LOD1": 84,
+      "kit_wood_wall_LOD2": 60
+    },
+    "bytes": 15192
+  },
+  "kit_wood_wall_half": {
+    "url": "/assets/models/kit/kit_wood_wall_half.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_wall_half_LOD0": 308,
+      "kit_wood_wall_half_LOD1": 84,
+      "kit_wood_wall_half_LOD2": 60
+    },
+    "bytes": 13796
+  },
+  "kit_wood_window": {
+    "url": "/assets/models/kit/kit_wood_window.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_window_LOD0": 1020,
+      "kit_wood_window_LOD1": 252,
+      "kit_wood_window_LOD2": 156
+    },
+    "bytes": 28032
+  },
+  "kit_wood_wall_gable": {
+    "url": "/assets/models/kit/kit_wood_wall_gable.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_wall_gable_LOD0": 236,
+      "kit_wood_wall_gable_LOD1": 60,
+      "kit_wood_wall_gable_LOD2": 44
+    },
+    "bytes": 15048
+  },
+  "wpn_pistol_a": {
+    "url": "/assets/models/wpn/wpn_pistol_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_pistol_a_LOD0": 684,
+      "wpn_pistol_a_LOD1": 168,
+      "MAG": 108
+    },
+    "bytes": 23992
+  },
+  "wpn_mag_pistol_a": {
+    "url": "/assets/models/wpn/wpn_mag_pistol_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_mag_pistol_a_LOD0": 108
+    },
+    "bytes": 5944
+  },
+  "wpn_mag_rifle_a": {
+    "url": "/assets/models/wpn/wpn_mag_rifle_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_mag_rifle_a_LOD0": 156
+    },
+    "bytes": 6500
+  },
+  "wpn_rifle_a": {
+    "url": "/assets/models/wpn/wpn_rifle_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_rifle_a_LOD0": 804,
+      "wpn_rifle_a_LOD1": 268,
+      "MAG": 156
+    },
+    "bytes": 27752
+  },
+  "chr_survivor_a": {
+    "url": "/assets/models/chr/chr_survivor_a.glb",
+    "category": "chr",
+    "tris": {
+      "chr_survivor_a_LOD0": 1882,
+      "chr_survivor_a_LOD1": 934,
+      "chr_survivor_a_LOD2": 353
+    },
+    "bytes": 518072
+  },
+  "wpn_knife_a": {
+    "url": "/assets/models/wpn/wpn_knife_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_knife_a_LOD0": 484,
+      "wpn_knife_a_LOD1": 242
+    },
+    "bytes": 19304
+  },
+  "kit_wood_gable": {
+    "url": "/assets/models/kit/kit_wood_gable.glb",
+    "category": "kit",
+    "tris": {
+      "kit_wood_gable_LOD0": 236,
+      "kit_wood_gable_LOD1": 60,
+      "kit_wood_gable_LOD2": 44
+    },
+    "bytes": 14976
+  },
+  "veh_pickup_a": {
+    "url": "/assets/models/veh/veh_pickup_a.glb",
+    "category": "veh",
+    "tris": {
+      "veh_pickup_a_LOD0": 1400,
+      "veh_pickup_a_LOD1": 496,
+      "veh_pickup_a_LOD2": 164,
+      "WHEEL_FL": 356,
+      "WHEEL_FR": 356,
+      "WHEEL_RL": 356,
+      "WHEEL_RR": 356
+    },
+    "bytes": 63116
   }
 }

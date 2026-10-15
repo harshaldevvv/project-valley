@@ -5,13 +5,14 @@ export type Backend = 'webgpu' | 'webgl2';
 
 /**
  * WebGPURenderer with automatic WebGL2 fallback. `?webgl` in the URL forces the fallback
- * (to test the Low tier). Pixel ratio is capped at 1.5: fill rate is the 4 GB GPU's weak spot.
+ * (to test the Low tier); `?gputime` turns on GPU timestamp queries (perf overlay shows GPU ms). Pixel ratio is capped at 1.5: fill rate is the 4 GB GPU's weak spot.
  */
 export async function createRenderer(canvasParent: HTMLElement) {
-  const forceWebGL = new URLSearchParams(location.search).has('webgl');
+  const q = new URLSearchParams(location.search);
+  const forceWebGL = q.has('webgl');
   // No MSAA: measured in M0, antialias:true on WebGPU (+ shadows) reset the GPU device on this RTX 3050 Ti laptop
   // and costs fill rate anyway. Anti-aliasing comes from an FXAA/SMAA pass instead (principles §13).
-  const renderer = new WebGPURenderer({ antialias: false, forceWebGL, powerPreference: 'high-performance' });
+  const renderer = new WebGPURenderer({ antialias: false, forceWebGL, powerPreference: 'high-performance', trackTimestamp: q.has('gputime') });
   await renderer.init();
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setSize(Math.max(1, innerWidth), Math.max(1, innerHeight)); // a 0-size canvas invalidates the WebGPU swap texture

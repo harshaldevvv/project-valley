@@ -12,7 +12,8 @@ import { paletteMaterial } from './palette';
  * Callers clone `lod` per placement (or feed geometry to instancing later).
  *
  * Ids not built yet (not in the manifest) return a magenta placeholder box of `fallbackSize`,
- * so teams never block on each other. engine-builder extends this (skinned/animated, sockets, wheels).
+ * so teams never block on each other. Skinned/animated models, sockets and wheels: see models.ts (loadModel).
+ * Many copies of one static asset: see instancing.ts (placeStatic).
  */
 export type AssetId = string;
 export interface AssetProto {
@@ -21,9 +22,9 @@ export interface AssetProto {
   placeholder: boolean;
 }
 
-const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+export const gltfLoader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const cache = new Map<string, Promise<AssetProto>>();
-const entries = manifest as Record<string, { url: string }>;
+export const entries = manifest as Record<string, { url: string }>;
 
 export function hasAsset(id: AssetId) {
   return id in entries;
@@ -46,7 +47,7 @@ async function placeholder(id: string, [w, h, d]: [number, number, number]): Pro
 }
 
 async function build(id: AssetId): Promise<AssetProto> {
-  const [gltf, mat] = await Promise.all([loader.loadAsync(entries[id].url), paletteMaterial()]);
+  const [gltf, mat] = await Promise.all([gltfLoader.loadAsync(entries[id].url), paletteMaterial()]);
   const lods: Mesh[] = [];
   const colliders: Box3[] = [];
   gltf.scene.updateMatrixWorld(true);
@@ -63,8 +64,10 @@ async function build(id: AssetId): Promise<AssetProto> {
     m.material = mat;
     m.castShadow = i === 0;
     m.receiveShadow = true;
+    // Keep the node TRS relative to the GLB root: meshopt-quantized geometry lives in [-1,1] and the node's
+    // position/scale carry the dequantization. (Instancing multiplies by this matrix too.)
+    m.matrixWorld.decompose(m.position, m.quaternion, m.scale);
     m.removeFromParent();
-    m.position.set(0, 0, 0);
     lod.addLevel(m, i === 0 ? 0 : size * (i === 1 ? 12 : 35));
   });
   return { lod, colliders, placeholder: false };

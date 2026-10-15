@@ -1,0 +1,40 @@
+/* Build mode bar (systems-builder). Bottom centre, above the HUD hotbar row. */
+.build-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 86px;
+  transform: translateX(-50%);
+  z-index: 8;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font: 12px/1.2 system-ui, 'Segoe UI', sans-serif;
+  color: #e4e8ea;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+.build-bar[hidden] { display: none; }
+.build-bar .bt { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #d9b25a; }
+.build-bar .bt em { font-style: normal; color: #5ec478; margin-left: 8px; letter-spacing: 0.08em; }
+.build-bar .bps { display: flex; gap: 6px; }
+.build-bar .bp {
+  position: relative;
+  width: 92px;
+  padding: 18px 6px 6px;
+  border-radius: 5px;
+  background: rgba(14, 17, 19, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+.build-bar .bp.sel { border-color: #d9b25a; background: rgba(40, 34, 20, 0.9); box-shadow: 0 0 0 1px #d9b25a inset; }
+.build-bar .bp.poor small { color: #ff9b8c; }
+.build-bar .bp .k { position: absolute; left: 6px; top: 4px; font-size: 10px; font-weight: 700; color: #d9b25a; }
+.build-bar .bp b { display: block; font-size: 12px; }
+.build-bar .bp small { display: block; margin-top: 3px; font-size: 10px; color: #8d979c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.build-bar .bh { color: #aab3b7; font-size: 12px; background: rgba(14, 17, 19, 0.7); padding: 4px 10px; border-radius: 4px; }
+.build-bar .bh kbd {
+  font: 600 11px system-ui; color: #e4e8ea; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 3px; padding: 0 5px; margin: 0 2px 0 8px;
+}
+.build-bar .bh .msg { color: #ffcf7a; font-weight: 600; }

@@ -51,6 +51,8 @@ export interface Game {
   places: Places;
   /** Sim tick counter. */
   tick: number;
+  /** While true the fixed-step sim (systems, physics, events) is frozen; rendering continues. Set by the pause/title menu. */
+  paused: boolean;
   addSystem(s: GameSystem): void;
   // API slots, filled by their owners during install (see contracts.ts).
   debug: DebugApi;
@@ -113,6 +115,7 @@ export async function createGame(): Promise<Game> {
     rng: createRng(1),
     places: { containers: [], targets: [] },
     tick: 0,
+    paused: false,
     addSystem: (s) => systems.push(s),
     debug: missing('debug') as DebugApi,
     audio: missing('audio') as AudioApi,
@@ -133,6 +136,7 @@ export async function createGame(): Promise<Game> {
     async start() {
       const loop = new FixedLoop({
         step(dt, tick) {
+          if (game.paused) return; // pause menu: freeze sim, physics and events (rendering continues)
           game.tick = tick;
           for (const s of systems) {
             if (!s.step) continue;

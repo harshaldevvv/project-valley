@@ -83,6 +83,9 @@ export interface BuildApi {
   /** Enter/leave build mode (B). Mechanics hides the weapon while building. */
   toggle(): void;
   readonly active: boolean;
+  /** Programmatic placement (no cost, no validity check) — used by the world to spawn the prebuilt
+   *  demo house, whose pieces the player can then remove (X) and rebuild like any built piece. */
+  place(pieceDefId: string, position: Vector3, rotY: number): void;
 }
 
 /** Placed by environment-builder from `data/yard.ts`; consumed by the other teams at install time. */

@@ -49,7 +49,8 @@ for (const { id, script } of sources) {
 
   const doc = await io.read(report.glb);
   // keepAttributes: UVs look unused (no texture in the GLB) but the runtime palette material needs them.
-  await doc.transform(dedup(), prune({ keepAttributes: true }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
+  // keepLeaves: SOCKET_* / WHEEL_* empties are leaf nodes; prune would delete them.
+  await doc.transform(dedup(), prune({ keepAttributes: true, keepLeaves: true }), meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
   await io.write(report.glb, doc);
   const size = statSync(report.glb).size;
 

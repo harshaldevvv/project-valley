@@ -17,6 +17,8 @@ export interface GameEvents {
   inventoryChanged: Record<string, never>;
   /** A UI screen opened/closed (gameplay input pauses while any is open). */
   uiScreen: { name: string; open: boolean };
+  /** A consumable was used (M2 survival stats hook in here). `use` mirrors ItemDef.use. */
+  itemUsed: { defId: string; use: { seconds: number; heal?: number; food?: number; water?: number; sound?: string } | undefined };
   /** Free-form toast message for the HUD. */
   toast: { text: string };
 }

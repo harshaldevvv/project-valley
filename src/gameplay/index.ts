@@ -1,7 +1,253 @@
+import { Box3, Vector3 } from 'three';
 import type { Game } from '../core/game';
+import { cameraFeel, health, movement, stamina } from '../content/data/player';
+import { ballistics, meleeDefs, shove, weaponDefs } from '../content/data/weapons';
+import { horde, senses, zombieDefs } from '../content/data/zombies';
+import { vehicles as vehicleDefs } from '../content/data/vehicles';
+import { yard } from '../content/data/yard';
+import { Hud } from '../ui/hud/hud';
+import { AnimationController, applyPose, makeCharacter } from './animstand/character';
+import { AnimStand } from './animstand/stand';
+import { CameraRig } from './camera/rig';
+import { createCtx, type Ctx } from './ctx';
+import { Fx } from './fx/fx';
+import { Interact } from './interact/interact';
+import { Melee } from './melee/melee';
+import { Player } from './player/player';
+import { Vehicles } from './vehicles/vehicles';
+import { Targets } from './weapons/targets';
+import { sandboxLoadout, Weapons } from './weapons/weapons';
+import { Zombies } from './zombies/zombies';
 
 /** mechanics-builder: player controller + camera, weapons, melee, zombies, vehicles, interactions, HUD. Fills game.player. */
 export async function installGameplay(game: Game): Promise<void> {
-  // M1 stub — mechanics-builder replaces this.
-  void game;
+  const ctx = createCtx(game) as Ctx;
+  ctx.fx = new Fx(game.scene);
+  ctx.player = new Player(ctx);
+  game.player = ctx.player;
+  ctx.rig = new CameraRig(ctx);
+  ctx.weapons = new Weapons(ctx);
+  ctx.melee = new Melee(ctx);
+  ctx.interact = new Interact(ctx);
+  ctx.zombies = new Zombies(ctx);
+  ctx.vehicles = new Vehicles(ctx);
+  ctx.targets = new Targets(ctx);
+  ctx.animStand = new AnimStand(ctx);
+  ctx.hud = new Hud(ctx);
+
+  // Player body (third person)
+  const body = await makeCharacter('survivor', 'chr_survivor_a');
+  ctx.playerChar = body;
+  game.scene.add(body.root);
+  const bodyAnim = body.skinned ? new AnimationController(body) : null;
+  ctx.playerAnim = bodyAnim;
+  const chest = body.root.getObjectByName('chest') ?? null;
+  await ctx.weapons.init(body.hand);
+  await Promise.all([ctx.targets.init(), ctx.vehicles.init(), ctx.animStand.init()]);
+
+  const perf = game.perf;
+  let wasDead = false;
+  game.addSystem({
+    name: 'sim',
+    step(dt) {
+      if (game.input.justPressed('F1') || game.input.justPressed('Escape')) ctx.hud.helpOpen = false;
+      ctx.player.step(dt);
+      ctx.rig.step(dt);
+      ctx.melee.step(dt);
+      ctx.weapons.step(dt);
+      ctx.interact.step(dt);
+      ctx.vehicles.step(dt);
+      ctx.targets.step(dt);
+      ctx.hud.step();
+    },
+  });
+  game.addSystem({
+    name: 'ai',
+    step(dt) {
+      ctx.zombies.step(dt);
+      ctx.controls.endTick();
+    },
+    render(alpha, dt) {
+      ctx.player.render(alpha);
+      ctx.vehicles.render(alpha);
+      ctx.rig.render(alpha, dt);
+      ctx.weapons.render(alpha, dt);
+      ctx.zombies.render(alpha, dt);
+      ctx.targets.render();
+      ctx.animStand.render(alpha, dt);
+      ctx.fx.update(dt);
+      // Player body
+      const p = ctx.player;
+      body.root.visible = !p.inVehicle && ctx.rig.mode === 'tp';
+      body.root.position.copy(p.position);
+      body.root.rotation.set(0, p.yaw, 0);
+      const pose = body.pose;
+      pose.walkPhase = p.stepPhase;
+      pose.speed01 = p.speed01;
+      pose.crouch = p.crouchT;
+      pose.lean = p.sprinting ? 0.2 : 0;
+      pose.swing = ctx.melee.swingVis * (ctx.melee.phase === 'idle' ? 0 : 1);
+      pose.armRaise = ctx.melee.phase === 'shove' ? Math.max(0, ctx.melee.swingVis) : 0;
+      if (p.dead && !wasDead) bodyAnim?.oneshot('death');
+      if (!p.dead && wasDead) bodyAnim?.base('idle', 0.1);
+      wasDead = p.dead;
+      if (p.dead && !bodyAnim) {
+        body.root.rotateX(-1.4);
+        pose.hold = 'none';
+      }
+      if (bodyAnim) {
+        bodyAnim.base(p.crouched ? (p.gait === 'idle' ? 'crouch_idle' : 'crouch_walk') : p.gait === 'sprint' ? 'sprint' : p.gait === 'jog' ? 'run' : p.gait === 'walk' ? 'walk' : 'idle');
+        const w = ctx.weapons;
+        const cls = w.def?.class === 'pistol' ? 'pistol' : 'rifle';
+        bodyAnim.overlay(`aim_${cls}`, w.item && !w.isMelee ? 1 - pose.holster : 0);
+        bodyAnim.update(dt);
+        // Upper body follows the aim pitch (clips are authored level)
+        if (chest && w.item) chest.rotation.x -= p.pitch * 0.7 * (1 - pose.holster);
+      } else applyPose(body);
+      perf.begin('ui');
+      ctx.hud.render(dt);
+      perf.end('ui');
+    },
+  });
+
+  installDebug(ctx);
+  // Playwright / console hooks (pointer lock may not engage under automation)
+  (window as unknown as { __gp: unknown }).__gp = {
+    ctx,
+    setLook: (yaw: number, pitch: number) => ctx.player.setLook(yaw, pitch),
+    look: (dx: number, dy: number) => ((ctx.controls.lookDx += dx), (ctx.controls.lookDy += dy)),
+    mouse: (button: 0 | 2, held: boolean) => ctx.controls.press('Mouse' + button, held),
+    spawn: (n: number) => ctx.zombies.spawnInPen(n),
+    sandbox: () => {
+      ctx.weapons.loadout = sandboxLoadout();
+      ctx.weapons.sandbox = true;
+      ctx.weapons.select(0);
+    },
+    /** Aim the camera ray at a world point (yaw/pitch from the camera position). */
+    aimAt: (x: number, y: number, z: number) => {
+      const o = new Vector3();
+      const d = new Vector3();
+      for (let i = 0; i < 4; i++) {
+        ctx.rig.aimRay(o, d);
+        const dx = x - o.x, dy = y - o.y, dz = z - o.z;
+        ctx.player.setLook(Math.atan2(-dx, -dz), Math.atan2(dy, Math.hypot(dx, dz)));
+      }
+    },
+    /** Look at the nearest living zombie (head height `h`). Returns its distance. */
+    faceZombie: (h = 1.2) => {
+      const pc = ctx.player.curr;
+      let best: (typeof ctx.zombies.list)[number] | null = null;
+      for (const z of ctx.zombies.list) if (z.alive && (!best || z.curr.distanceTo(pc) < best.curr.distanceTo(pc))) best = z;
+      if (!best) return -1;
+      (window as unknown as { __gp: { aimAt(x: number, y: number, z: number): void } }).__gp.aimAt(best.curr.x, best.curr.y + h, best.curr.z);
+      return best.curr.distanceTo(pc);
+    },
+    targets: () => ctx.targets.list.map((t) => ({ id: t.id, d: t.distance, kind: t.kind, pos: new Box3().setFromObject(t.object).getCenter(new Vector3()).toArray() })),
+    teleport: (x: number, z: number, yaw = 0) => ctx.player.teleport(new Vector3(x, 0.1, z), yaw),
+    state: () => ({
+      pos: ctx.player.curr.toArray(),
+      hp: ctx.player.hp,
+      stamina: ctx.player.stamina.value,
+      weapon: ctx.weapons.item?.defId,
+      ammo: ctx.weapons.ammo(),
+      last: ctx.weapons.lastShot,
+      zombies: ctx.zombies.list.map((z) => ({ id: z.id, alive: z.alive, hp: z.hp, aw: z.sense.awareness, mode: z.mode, pos: z.curr.toArray() })),
+      car: ctx.vehicles.list[0] ? { pos: ctx.vehicles.list[0].currPos.toArray(), speed: ctx.vehicles.list[0].speed } : null,
+      inVehicle: ctx.player.inVehicle,
+      cam: ctx.rig.mode,
+    }),
+  };
+}
+
+function installDebug(ctx: Ctx) {
+  const d = ctx.debug;
+  const p = ctx.player;
+  d.toggle('Player', p as unknown as Record<string, unknown>, 'godMode');
+  d.action('Player', 'Heal', () => (p.hp = health.max));
+  d.action('Player', 'Respawn', () => p.respawn());
+  for (const k of ['jog', 'sprint', 'crouch', 'accelTime', 'stopTime', 'sprintRamp', 'airControl', 'jumpVelocity', 'gravity', 'vaultTime'] as const)
+    d.tune('Player', movement, k, 0, k === 'gravity' ? 40 : k.endsWith('Time') || k === 'sprintRamp' || k === 'airControl' ? 1 : 12, 0.01);
+  for (const k of ['sprintPerSec', 'regenPerSec', 'regenDelay', 'exhaustedUntil'] as const) d.tune('Player', stamina, k, 0, 60, 0.5);
+  d.watch('Player', 'state', () => `${p.gait} ${p.grounded ? 'ground' : 'air'} ${p.speed01.toFixed(2)}×jog st ${p.stamina.value.toFixed(0)}${p.stamina.exhausted ? ' EXH' : ''}`);
+
+  d.action('Camera', 'Toggle first / third person', () => (ctx.rig.mode = ctx.rig.mode === 'tp' ? 'fp' : 'tp'));
+  d.tune('Camera', cameraFeel, 'fovFp', 70, 100, 1);
+  d.tune('Camera', cameraFeel, 'fovHip', 55, 90, 1);
+  d.tune('Camera', cameraFeel, 'armHip', 1, 5, 0.05);
+  d.tune('Camera', cameraFeel, 'armAds', 0.5, 3, 0.05);
+  d.tune('Camera', cameraFeel, 'shoulderX', 0, 1, 0.01);
+  d.tune('Camera', cameraFeel, 'shake', 0, 1, 0.05);
+  d.toggle('Camera', cameraFeel, 'headBob');
+  d.tune('Camera', cameraFeel, 'swayLag', 0.01, 0.2, 0.005);
+
+  const w = ctx.weapons;
+  d.action('Weapons', 'Sandbox loadout (infinite mags)', () => {
+    w.loadout = sandboxLoadout();
+    w.sandbox = true;
+    w.select(0);
+  });
+  d.watch('Weapons', 'held', () => `${w.item?.defId ?? 'empty'} ${w.fireMode()} spread ${w.spread.toFixed(2)}° ${w.sandbox ? '(sandbox)' : ''}`);
+  for (const id of Object.keys(weaponDefs)) {
+    const def = weaponDefs[id] as unknown as Record<string, unknown>;
+    const g = `Weapon ${id}`;
+    d.tune(g, def, 'rpm', 60, 1000, 10);
+    d.tune(g, def, 'damage', 5, 150, 1);
+    d.tune(g, def, 'headMul', 1, 6, 0.1);
+    d.tune(g, def, 'muzzleVelocity', 100, 1000, 5);
+    d.tune(g, def.recoilPitch as unknown as Record<string, unknown>, '0', 0, 3, 0.05);
+    d.tune(g, def.recoilPitch as unknown as Record<string, unknown>, '1', 0, 3, 0.05);
+    d.tune(g, def, 'recoilYaw', 0, 1, 0.01);
+    d.tune(g, def, 'recoverPerSec', 1, 30, 0.2);
+    d.tune(g, def, 'hipSpread', 0, 8, 0.1);
+    d.tune(g, def, 'adsSpread', 0, 2, 0.05);
+    d.tune(g, def, 'bloomPerShot', 0, 2, 0.05);
+    d.tune(g, def, 'adsMs', 50, 600, 10);
+    d.tune(g, def, 'reloadTacticalS', 0.5, 4, 0.05);
+    d.tune(g, def, 'reloadEmptyS', 0.5, 4, 0.05);
+  }
+  d.tune('Weapons', ballistics, 'drag', 0, 0.5, 0.01);
+  d.tune('Weapons', ballistics, 'bloomRecoverPerSec', 1, 30, 0.5);
+  for (const k of ['damage', 'reach', 'windup', 'active', 'recovery', 'hitstopLight', 'hitstopHeavy'] as const) d.tune('Melee', meleeDefs.knife_a as unknown as Record<string, unknown>, k, 0, k === 'damage' ? 150 : 2.5, 0.01);
+  d.tune('Melee', shove, 'range', 0.5, 4, 0.1);
+  d.tune('Melee', shove, 'coneDeg', 30, 180, 5);
+
+  const z = ctx.zombies;
+  d.action('Zombies', 'Spawn 1', () => void z.spawnInPen(1));
+  d.action('Zombies', 'Spawn 5', () => void z.spawnInPen(5));
+  d.action('Zombies', 'Spawn 20', () => void z.spawnInPen(20));
+  d.action('Zombies', 'Kill all', () => z.killAll());
+  d.action('Zombies', 'Clear (incl. corpses)', () => z.clear());
+  d.toggle('Zombies', horde, 'passive');
+  d.toggle('Zombies', horde, 'showSenses');
+  d.tune('Zombies', horde, 'attackTokens', 1, 6, 1);
+  const zd = zombieDefs.shambler as unknown as Record<string, unknown>;
+  d.tune('Zombies', zd, 'chase', 0.5, 5, 0.1);
+  d.tune('Zombies', zd, 'hp', 20, 400, 5);
+  d.tune('Zombies', zd, 'attackWindup', 0.2, 1.5, 0.05);
+  d.tune('Zombies', zd, 'attackDamage', 0, 60, 1);
+  d.tune('Zombies', senses, 'coneDeg', 30, 180, 5);
+  d.tune('Zombies', senses, 'rangeDay', 5, 60, 1);
+  d.watch('Zombies', 'alive', () => `${z.alive} alive, ${z.kills} killed`);
+
+  const v = ctx.vehicles;
+  d.action('Vehicle', 'Go to car', () => {
+    const car = v.list[0];
+    if (car) p.teleport(car.doorPos.clone().setY(car.currPos.y + 0.1), 0);
+  });
+  d.action('Vehicle', 'Flip / reset car', () => v.list[0] && v.flipReset(v.list[0]));
+  for (const def of Object.values(vehicleDefs)) {
+    const r = def as unknown as Record<string, unknown>;
+    for (const k of ['engineForce', 'brakeForce', 'frictionSlip', 'suspensionStiffness', 'suspensionDamping', 'maxSteerDeg', 'steerAtSpeed', 'topSpeedKmh', 'camDist', 'camHeight'] as const)
+      d.tune(`Vehicle ${def.id}`, r, k, 0, k === 'engineForce' ? 20000 : k === 'brakeForce' ? 400 : k === 'topSpeedKmh' ? 200 : k === 'steerAtSpeed' ? 1 : 60, 0.05);
+  }
+  d.action('Teleport', 'Range firing line', () => p.teleport(new Vector3(yard.stations.range.x, 0.1, yard.stations.range.z + 2), 0));
+  d.action('Teleport', 'Zombie pen (outside)', () => p.teleport(new Vector3(yard.stations.pen.x - 16, 0.1, yard.stations.pen.z), -Math.PI / 2));
+  d.action('Teleport', 'Animation stand', () => p.teleport(new Vector3(yard.stations.anim.x, 0.1, yard.stations.anim.z + 5), 0));
+}
+
+declare module './ctx' {
+  interface Ctx {
+    playerChar: import('./animstand/character').Character;
+    playerAnim: AnimationController | null;
+  }
 }

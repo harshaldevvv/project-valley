@@ -1,0 +1,712 @@
+import { INVENTORY } from '../../content/data/items';
+import type { GridItem, ItemInstance, SlotName } from '../../content/data/types';
+import { weaponDefs } from '../../content/data/weapons';
+import { containerText } from '../../content/text/containers';
+import { itemText } from '../../content/text/items';
+import {
+  autoPlace, canPlace, canStack, containsItem, defOf, findFree, footprint, gridOf, mergeInto, place, removeItem, splitStack, type Grid,
+} from '../../systems/inventory';
+import { EQUIP_SLOTS, WEAPON_SLOTS, type Loadout } from '../../systems/loadout';
+import './inventory.css';
+
+/**
+ * Inventory screen (Tab): equipment + hotbar | worn grids | opened container, nested bags and the ground.
+ * Plain DOM over the canvas. All rules live in systems/; this file only maps pointer gestures onto them.
+ */
+
+// UI chrome strings (move to src/content/text/ui.ts when the narrative team adds one).
+const T = {
+  equipment: 'Equipment', weapons: 'Weapons', hotbar: 'Hotbar', inventory: 'Inventory', vicinity: 'Ground',
+  noStorage: 'No storage. Equip a jacket or a backpack.',
+  hint: '<kbd>Tab</kbd> close <kbd>R</kbd> rotate <kbd>Ctrl</kbd>+click quick move <kbd>Shift</kbd>+click split <kbd>RMB</kbd> actions · drag outside to drop',
+  slot: { head: 'Head', face: 'Face', eyes: 'Eyes', ears: 'Ears', torso: 'Torso', armor: 'Armor', legs: 'Legs', gloves: 'Gloves', feet: 'Feet', backpack: 'Backpack', primary: 'Primary', secondary: 'Secondary', sidearm: 'Sidearm', melee: 'Melee' } as Record<SlotName, string>,
+  kind: { weapon: 'Weapon', magazine: 'Magazine', ammo: 'Ammo', medical: 'Medical', food: 'Food', drink: 'Drink', material: 'Material', tool: 'Tool', clothing: 'Clothing', backpack: 'Backpack', misc: 'Misc' } as Record<string, string>,
+  act: { use: 'Use', equip: 'Equip', unequip: 'Unequip', open: 'Open', load: 'Load ammo', unload: 'Unload magazine', unmag: 'Remove magazine', bind: 'Bind to hotbar', split: 'Split stack', drop: 'Drop', take: 'Take' },
+  used: 'Used', full: 'No room', dropped: 'Dropped',
+};
+
+export const itemName = (id: string) => itemText[id]?.name ?? id;
+export const itemShort = (id: string) => itemText[id]?.short ?? id;
+export const containerName = (defId: string) => containerText[defId]?.name ?? defId;
+
+type Src = { kind: 'grid'; gid: string; gi: GridItem } | { kind: 'slot'; slot: SlotName } | { kind: 'new'; from: ItemInstance };
+type Target =
+  | { kind: 'merge' | 'load' | 'insert' | 'into'; item: ItemInstance; el: HTMLElement }
+  | { kind: 'grid'; gid: string; x: number; y: number; ok: boolean }
+  | { kind: 'slot'; slot: SlotName; ok: boolean; el: HTMLElement }
+  | { kind: 'hot'; index: number; ok: boolean; el: HTMLElement }
+  | { kind: 'ground' }
+  | { kind: 'none' };
+
+interface Press { item: ItemInstance; src: Src; el: HTMLElement; x: number; y: number; ctrl: boolean; shift: boolean }
+interface Drag { item: ItemInstance; src: Src; rotated: boolean; ghost: HTMLElement; gx: number; gy: number; px: number; py: number; target: Target }
+
+const h = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text = '') => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text) e.textContent = text;
+  return e;
+};
+
+export interface ScreenHooks {
+  sfx(id: string): void;
+  /** Screen opened/closed (uiScreen event). */
+  onOpenChange(open: boolean): void;
+  /** Feet position for the ground panel. */
+  feet(): { x: number; y: number; z: number };
+  /** False while another full screen (title/pause menu) is up. */
+  canOpen(): boolean;
+  /** Toast outside the screen (HUD). */
+  toast(text: string): void;
+}
+
+export class InventoryScreen {
+  readonly root = h('div', 'inv-root');
+  private wrap = h('div', 'inv-wrap');
+  private tip = h('div', 'inv-tip');
+  private menu = h('div', 'inv-menu');
+  private toastEl = h('div', 'inv-toast');
+  private grids = new Map<string, Grid>();
+  private refs = new WeakMap<HTMLElement, { item: ItemInstance; src: Src }>();
+  private press: Press | null = null;
+  private drag: Drag | null = null;
+  private fp = h('div', 'inv-fp');
+  private highlighted: HTMLElement | null = null;
+  private toastTimer = 0;
+  /** Open world container id (right panel), if any. */
+  container: string | null = null;
+  /** Bags opened from a grid (shown in the right column). */
+  private bags: ItemInstance[] = [];
+  /** Ground panel: nearby pickups laid out on a grid while the screen is open. */
+  private vicinity: Grid = { w: INVENTORY.vicinityW, h: 3, contents: [] };
+  private shown = new Set<ItemInstance>();
+
+  constructor(private lo: Loadout, private hooks: ScreenHooks, parent: HTMLElement) {
+    this.root.hidden = true;
+    this.tip.hidden = this.menu.hidden = true;
+    this.toastEl.style.opacity = '0';
+    const hint = h('div', 'inv-hint');
+    hint.innerHTML = T.hint;
+    this.root.append(this.wrap, hint, this.tip, this.menu, this.toastEl);
+    parent.appendChild(this.root);
+    this.bindPointer();
+    addEventListener('keydown', (e) => this.onKey(e), true);
+  }
+
+  get isOpen() {
+    return !this.root.hidden;
+  }
+
+  open(container: string | null = null) {
+    this.container = container;
+    if (!this.isOpen) {
+      this.vicinity = { w: INVENTORY.vicinityW, h: 3, contents: [] };
+      this.shown.clear();
+      this.bags = [];
+      this.root.hidden = false;
+      this.hooks.onOpenChange(true);
+      this.hooks.sfx('ui_open');
+    }
+    this.refresh();
+  }
+
+  close() {
+    if (!this.isOpen) return;
+    this.cancelDrag();
+    this.hideMenu();
+    this.tip.hidden = true;
+    this.root.hidden = true;
+    this.container = null;
+    this.bags = [];
+    this.hooks.onOpenChange(false);
+    this.hooks.sfx('ui_close');
+  }
+
+  toggle() {
+    if (this.isOpen) this.close();
+    else this.open();
+  }
+
+  /** Re-read state and redraw (cheap: a few dozen nodes). Skipped mid-drag. */
+  refresh() {
+    if (!this.isOpen || this.drag) return;
+    this.syncVicinity();
+    this.render();
+  }
+
+  // ---------------- ground panel ----------------
+  private syncVicinity() {
+    const v = this.vicinity;
+    for (const gi of v.contents) if (!this.shown.has(gi.item)) (this.lo.drop(gi.item, this.hooks.feet()), this.shown.add(gi.item)); // moved in = dropped
+    for (const it of [...this.shown]) if (!v.contents.some((gi) => gi.item === it)) (this.lo.takePickup(it), this.shown.delete(it)); // moved out = picked up
+    const onGround = new Set(this.lo.pickups.map((p) => p.item));
+    for (const gi of [...v.contents]) if (!onGround.has(gi.item) || gi.item.count <= 0) (removeItem(v, gi.item), this.shown.delete(gi.item));
+    for (const p of this.lo.pickupsNear(this.hooks.feet(), INVENTORY.vicinityRadius)) {
+      if (this.shown.has(p.item)) continue;
+      while (!findFree(v, p.item)) v.h += 1;
+      const s = findFree(v, p.item)!;
+      place(v, p.item, s.x, s.y, s.rotated);
+      this.shown.add(p.item);
+    }
+    let rows = 3;
+    for (const gi of v.contents) rows = Math.max(rows, gi.y + footprint(gi.item, gi.rotated)[1]);
+    v.h = rows + 1; // always one free row to drop into
+  }
+
+  // ---------------- rendering ----------------
+  private render() {
+    this.grids.clear();
+    this.wrap.replaceChildren(this.renderEquipment(), this.renderPlayer(), this.renderRight());
+  }
+
+  private renderEquipment() {
+    const col = h('section', 'inv-col inv-equip');
+    col.append(h('h2', '', T.equipment));
+    const slots = h('div', 'inv-slots');
+    for (const s of EQUIP_SLOTS) slots.append(this.slotEl(s, false));
+    col.append(slots, h('h3', '', T.weapons));
+    const ws = h('div', 'inv-wslots');
+    for (const s of WEAPON_SLOTS) ws.append(this.slotEl(s, true));
+    col.append(ws, h('h3', '', T.hotbar));
+    const hb = h('div', 'inv-hotbar');
+    this.lo.hotbar.forEach((defId, i) => {
+      const el = h('div', 'inv-hot');
+      el.dataset.hot = String(i);
+      el.append(h('span', 'k', String(i + 5)));
+      if (defId) {
+        const n = this.lo.count(defId);
+        const t = this.tileFor(defId, n > 0 ? String(n) : '0');
+        if (!n) t.classList.add('none');
+        t.title = itemName(defId);
+        el.append(t);
+      }
+      hb.append(el);
+    });
+    col.append(hb);
+    return col;
+  }
+
+  private slotEl(slot: SlotName, wide: boolean) {
+    const el = h('div', 'inv-slot' + (wide ? ' wide' : ''));
+    el.dataset.slot = slot;
+    const item = this.lo.equipment[slot];
+    if (item) {
+      el.classList.add('filled');
+      const t = this.itemTile(item);
+      this.refs.set(t, { item, src: { kind: 'slot', slot } });
+      el.append(t);
+    } else el.append(h('span', 'lbl', T.slot[slot]));
+    return el;
+  }
+
+  private renderPlayer() {
+    const col = h('section', 'inv-col inv-player');
+    col.append(h('h2', '', T.inventory));
+    const worn = this.lo.playerGrids();
+    if (!worn.length) col.append(h('div', 'inv-empty', T.noStorage));
+    for (const { slot, grid } of worn) {
+      const head = h('h3');
+      head.append(h('span', '', itemName(grid.owner!.defId)), h('span', '', `${grid.w}×${grid.h}`));
+      col.append(head, this.gridEl(`eq:${slot}`, grid));
+    }
+    return col;
+  }
+
+  private renderRight() {
+    const col = h('section', 'inv-col inv-loot');
+    const c = this.container ? this.lo.containers.get(this.container) : null;
+    if (c) {
+      col.append(h('h2', '', containerName(c.defId)), this.gridEl(`c:${c.id}`, c.grid));
+    }
+    for (const bag of this.bags) {
+      const g = gridOf(bag)!;
+      const head = h('h3');
+      const x = h('span', 'x', '✕');
+      x.onclick = () => ((this.bags = this.bags.filter((b) => b !== bag)), this.render());
+      head.append(h('span', '', itemName(bag.defId)), x);
+      col.append(head, this.gridEl(`bag:${bag.uid}`, g));
+    }
+    col.append(c || this.bags.length ? h('h3', '', T.vicinity) : h('h2', '', T.vicinity), this.gridEl('vicinity', this.vicinity));
+    return col;
+  }
+
+  private gridEl(gid: string, grid: Grid) {
+    this.grids.set(gid, grid);
+    const el = h('div', 'inv-grid');
+    el.dataset.gid = gid;
+    el.style.width = `calc(var(--cell) * ${grid.w})`;
+    el.style.height = `calc(var(--cell) * ${grid.h})`;
+    for (const gi of grid.contents) {
+      const [w, hh] = footprint(gi.item, gi.rotated);
+      const t = this.itemTile(gi.item);
+      t.style.left = `calc(var(--cell) * ${gi.x})`;
+      t.style.top = `calc(var(--cell) * ${gi.y})`;
+      t.style.width = `calc(var(--cell) * ${w})`;
+      t.style.height = `calc(var(--cell) * ${hh})`;
+      this.refs.set(t, { item: gi.item, src: { kind: 'grid', gid, gi } });
+      el.append(t);
+    }
+    return el;
+  }
+
+  private badge(item: ItemInstance): string {
+    const d = defOf(item);
+    if (d.kind === 'magazine') return `${item.rounds ?? 0}/${d.capacity}`;
+    if (d.kind === 'weapon' && d.capacity !== undefined) return `${item.rounds ?? 0}/${d.capacity}`;
+    if (d.kind === 'weapon' && item.mag !== undefined) {
+      // Mag + chamber (mechanics keeps the chambered round in weapon.rounds).
+      const n = (item.mag?.rounds ?? 0) + (item.rounds ?? 0);
+      return item.mag || n ? String(n) : '—';
+    }
+    if (d.stack > 1) return String(item.count);
+    return '';
+  }
+
+  private tileFor(defId: string, badge: string) {
+    const d = defOf(defId);
+    const t = h('div', 'inv-item');
+    t.style.setProperty('--sw', d.iconSwatch ?? '#555');
+    t.append(h('span', 'n', itemShort(defId)));
+    if (badge) t.append(h('span', 'c' + (badge === '0' || badge === '—' || badge.startsWith('0/') ? ' empty' : ''), badge));
+    return t;
+  }
+
+  private itemTile(item: ItemInstance) {
+    const t = this.tileFor(item.defId, this.badge(item));
+    if (item.contents?.length) t.append(h('span', 'bag', `▤ ${item.contents.length}`));
+    return t;
+  }
+
+  // ---------------- pointer ----------------
+  private bindPointer() {
+    const r = this.root;
+    r.addEventListener('pointerdown', (e) => {
+      if (!(e.target as HTMLElement).closest('.inv-menu')) this.hideMenu();
+      if (e.button !== 0) return;
+      const el = (e.target as HTMLElement).closest<HTMLElement>('.inv-item');
+      const ref = el && this.refs.get(el);
+      if (!ref) return;
+      e.preventDefault();
+      this.press = { ...ref, el: el!, x: e.clientX, y: e.clientY, ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey };
+    });
+    addEventListener('pointermove', (e) => {
+      if (!this.isOpen) return;
+      if (this.press && !this.drag && Math.hypot(e.clientX - this.press.x, e.clientY - this.press.y) > 4) this.startDrag(e);
+      if (this.drag) this.moveDrag(e.clientX, e.clientY);
+      else this.hoverTip(e);
+    });
+    addEventListener('pointerup', (e) => {
+      if (!this.isOpen) return;
+      if (this.drag) this.endDrag();
+      else if (this.press && e.button === 0) {
+        const p = this.press;
+        if (p.ctrl) this.act(() => this.quickMove(p.item, p.src));
+        else if (p.shift) this.act(() => this.splitInPlace(p.item, p.src));
+      }
+      this.press = null;
+    });
+    r.addEventListener('dblclick', (e) => {
+      const ref = this.refAt(e.target);
+      if (ref) this.act(() => this.primary(ref.item, ref.src));
+    });
+    r.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const hot = (e.target as HTMLElement).closest<HTMLElement>('.inv-hot');
+      if (hot) return this.act(() => ((this.lo.hotbar[+hot.dataset.hot!] = null), true));
+      const ref = this.refAt(e.target);
+      if (ref) this.showMenu(ref.item, ref.src, e.clientX, e.clientY);
+    });
+  }
+
+  private refAt(t: EventTarget | null) {
+    const el = (t as HTMLElement | null)?.closest<HTMLElement>('.inv-item');
+    return el ? this.refs.get(el) : undefined;
+  }
+
+  private startDrag(e: PointerEvent) {
+    const p = this.press!;
+    this.tip.hidden = true;
+    let item = p.item;
+    let src = p.src;
+    if (p.shift && item.count > 1) {
+      // Shift+drag: carry half the stack.
+      item = splitStack(p.item, Math.floor(p.item.count / 2))!;
+      src = { kind: 'new', from: p.item };
+      this.render();
+    } else p.el.classList.add('dragging');
+    const rect = p.el.getBoundingClientRect();
+    const rotated = src.kind === 'grid' ? src.gi.rotated : false;
+    const ghost = this.itemTile(item);
+    ghost.classList.add('inv-ghost');
+    this.root.append(ghost);
+    this.drag = { item, src, rotated, ghost, gx: 0, gy: 0, px: e.clientX, py: e.clientY, target: { kind: 'none' } };
+    // Grab point: keep the cursor over the same cell it grabbed (slot tiles are scaled, so grab the first cell).
+    const cell = this.cellPx();
+    const inGrid = src.kind === 'grid' || (src.kind === 'new' && !!p.el.closest('.inv-grid'));
+    this.drag.gx = inGrid ? Math.min(e.clientX - rect.left, footprint(item, rotated)[0] * cell - 4) : cell / 2;
+    this.drag.gy = inGrid ? Math.min(e.clientY - rect.top, footprint(item, rotated)[1] * cell - 4) : cell / 2;
+    this.sizeGhost();
+  }
+
+  private cellPx() {
+    return parseFloat(getComputedStyle(this.root).getPropertyValue('--cell')) || 46;
+  }
+
+  private sizeGhost() {
+    const d = this.drag!;
+    const [w, hh] = footprint(d.item, d.rotated);
+    const c = this.cellPx();
+    d.ghost.style.width = `${w * c}px`;
+    d.ghost.style.height = `${hh * c}px`;
+    d.gx = Math.min(d.gx, w * c - 6);
+    d.gy = Math.min(d.gy, hh * c - 6);
+  }
+
+  private moveDrag(x: number, y: number) {
+    const d = this.drag!;
+    d.px = x;
+    d.py = y;
+    d.ghost.style.left = `${x - d.gx}px`;
+    d.ghost.style.top = `${y - d.gy}px`;
+    d.target = this.resolve(x, y);
+    this.showTarget(d.target);
+  }
+
+  private resolve(x: number, y: number): Target {
+    const d = this.drag!;
+    const under = document.elementFromPoint(x, y) as HTMLElement | null;
+    if (!under || !this.root.contains(under)) return { kind: 'none' };
+    const dd = defOf(d.item);
+    const itemEl = under.closest<HTMLElement>('.inv-item');
+    const ref = itemEl && this.refs.get(itemEl);
+    if (ref && ref.item !== d.item && !itemEl!.classList.contains('dragging')) {
+      const t = ref.item;
+      const td = defOf(t);
+      if (canStack(t, d.item) && t.count < td.stack) return { kind: 'merge', item: t, el: itemEl! };
+      if (dd.kind === 'ammo' && td.kind === 'magazine' && td.ammo === d.item.defId && (t.rounds ?? 0) < (td.capacity ?? 0)) return { kind: 'load', item: t, el: itemEl! };
+      if (dd.kind === 'magazine' && dd.fits?.includes(t.defId)) return { kind: 'insert', item: t, el: itemEl! };
+      const inner = gridOf(t);
+      if (inner && !containsItem(d.item, t) && findFree(inner, d.item)) return { kind: 'into', item: t, el: itemEl! };
+    }
+    const slotEl = under.closest<HTMLElement>('.inv-slot');
+    if (slotEl) {
+      const slot = slotEl.dataset.slot as SlotName;
+      return { kind: 'slot', slot, ok: this.lo.canEquip(d.item, slot), el: slotEl };
+    }
+    const hot = under.closest<HTMLElement>('.inv-hot');
+    if (hot) return { kind: 'hot', index: +hot.dataset.hot!, ok: !!dd.use, el: hot };
+    const gridEl = under.closest<HTMLElement>('.inv-grid') ?? (itemEl?.closest<HTMLElement>('.inv-grid') || null);
+    if (gridEl) {
+      const grid = this.grids.get(gridEl.dataset.gid!)!;
+      const r = gridEl.getBoundingClientRect();
+      const c = this.cellPx();
+      const gx = Math.round((x - d.gx - r.left) / c);
+      const gy = Math.round((y - d.gy - r.top) / c);
+      return { kind: 'grid', gid: gridEl.dataset.gid!, x: gx, y: gy, ok: canPlace(grid, d.item, gx, gy, d.rotated) };
+    }
+    return under.closest('.inv-col') ? { kind: 'none' } : { kind: 'ground' };
+  }
+
+  private showTarget(t: Target) {
+    this.highlighted?.classList.remove('target', 'ok', 'bad');
+    this.highlighted = null;
+    this.fp.remove();
+    if (t.kind === 'merge' || t.kind === 'load' || t.kind === 'insert' || t.kind === 'into') {
+      (this.highlighted = t.el).classList.add('target');
+    } else if (t.kind === 'slot' || t.kind === 'hot') {
+      (this.highlighted = t.el).classList.add(t.ok ? 'ok' : 'bad');
+    } else if (t.kind === 'grid') {
+      const el = this.wrap.querySelector<HTMLElement>(`.inv-grid[data-gid="${t.gid}"]`)!;
+      const [w, hh] = footprint(this.drag!.item, this.drag!.rotated);
+      const g = this.grids.get(t.gid)!;
+      // Clip the footprint to the grid so it never spills over the panel.
+      const x0 = Math.max(0, t.x), y0 = Math.max(0, t.y);
+      const x1 = Math.min(g.w, t.x + w), y1 = Math.min(g.h, t.y + hh);
+      if (x1 <= x0 || y1 <= y0) return;
+      this.fp.className = 'inv-fp ' + (t.ok ? 'ok' : 'bad');
+      Object.assign(this.fp.style, {
+        left: `calc(var(--cell) * ${x0})`, top: `calc(var(--cell) * ${y0})`,
+        width: `calc(var(--cell) * ${x1 - x0})`, height: `calc(var(--cell) * ${y1 - y0})`,
+      });
+      el.append(this.fp);
+    }
+  }
+
+  private endDrag() {
+    const d = this.drag!;
+    d.target = this.resolve(d.px, d.py);
+    this.drag = null;
+    d.ghost.remove();
+    this.showTarget({ kind: 'none' });
+    this.act(() => this.dropOn(d.item, d.src, d.rotated, d.target));
+  }
+
+  private cancelDrag() {
+    if (!this.drag) return;
+    const d = this.drag;
+    this.drag = null;
+    d.ghost.remove();
+    this.showTarget({ kind: 'none' });
+    if (d.src.kind === 'new') d.src.from.count += d.item.count;
+    this.press = null;
+  }
+
+  // ---------------- actions ----------------
+  /** Run an action; true = state changed (sound + redraw). */
+  private act(fn: () => boolean | void) {
+    const ok = fn();
+    if (ok) {
+      this.lo.changed();
+      this.hooks.sfx('inventory_move');
+    }
+    this.syncVicinity();
+    this.render();
+  }
+
+  private take(src: Src, item: ItemInstance) {
+    if (src.kind === 'grid') removeItem(this.grids.get(src.gid)!, item);
+    else if (src.kind === 'slot') delete this.lo.equipment[src.slot];
+    this.bags = this.bags.filter((b) => b !== item);
+  }
+
+  private restore(src: Src, item: ItemInstance) {
+    if (item.count <= 0) return;
+    if (src.kind === 'grid') {
+      const g = this.grids.get(src.gid)!;
+      if (!g.contents.includes(src.gi)) g.contents.push(src.gi);
+    } else if (src.kind === 'slot') this.lo.equipment[src.slot] = item;
+    else if (src.kind === 'new') src.from.count += item.count;
+  }
+
+  private dropOn(item: ItemInstance, src: Src, rotated: boolean, t: Target): boolean {
+    const back = () => (this.restore(src, item), false);
+    switch (t.kind) {
+      case 'merge': {
+        const n = mergeInto(t.item, item);
+        if (item.count <= 0) this.take(src, item);
+        else if (src.kind === 'new') this.restore(src, item);
+        return n > 0;
+      }
+      case 'load': {
+        const n = this.lo.loadMagazine(t.item, item);
+        if (src.kind === 'new') this.restore(src, item);
+        else if (item.count <= 0) this.take(src, item);
+        return n > 0;
+      }
+      case 'insert':
+        if (src.kind === 'new') return back();
+        this.take(src, item);
+        return this.lo.insertMagazine(t.item, item) || back();
+      case 'into':
+        this.take(src, item);
+        return autoPlace(gridOf(t.item)!, item) === 0 || back();
+      case 'grid': {
+        if (!t.ok) return back();
+        const grid = this.grids.get(t.gid)!;
+        this.take(src, item);
+        return !!place(grid, item, t.x, t.y, rotated) || back();
+      }
+      case 'slot': {
+        if (!t.ok) return back();
+        const old = this.lo.equipment[t.slot];
+        if (old === item) return back();
+        this.take(src, item);
+        this.lo.equipment[t.slot] = item;
+        if (old) {
+          // Swap: the old item goes where the new one came from, else anywhere.
+          if (src.kind === 'grid' && place(this.grids.get(src.gid)!, old, src.gi.x, src.gi.y, src.gi.rotated)) return true;
+          if (src.kind === 'slot' && this.lo.canEquip(old, src.slot)) return ((this.lo.equipment[src.slot] = old), true);
+          this.toPlayer(old) || this.lo.drop(old);
+        }
+        if (src.kind === 'new') this.restore(src, item);
+        return true;
+      }
+      case 'hot':
+        this.restore(src, item); // binding never moves the item
+        if (!t.ok) return false;
+        this.lo.hotbar[t.index] = item.defId;
+        return true;
+      case 'ground':
+        this.take(src, item);
+        this.lo.drop(item);
+        this.hooks.sfx('item_pickup');
+        return true;
+      default:
+        return back();
+    }
+  }
+
+  /** Into the worn grids (or an empty weapon slot). Returns true if all of it fit. */
+  private toPlayer(item: ItemInstance): boolean {
+    const d = defOf(item);
+    const slot = d.slots?.find((s) => !this.lo.equipment[s] && (d.kind === 'weapon'));
+    if (slot) return ((this.lo.equipment[slot] = item), true);
+    for (const { grid } of this.lo.playerGrids()) if (autoPlace(grid, item) === 0) return true;
+    return false;
+  }
+
+  private isPlayerSide(src: Src) {
+    return src.kind === 'slot' || (src.kind === 'grid' && src.gid.startsWith('eq:'));
+  }
+
+  /** Ctrl+click: player side <-> open container (or the ground). */
+  private quickMove(item: ItemInstance, src: Src): boolean {
+    this.take(src, item);
+    if (this.isPlayerSide(src)) {
+      const c = this.container ? this.lo.containers.get(this.container) : null;
+      if (c && autoPlace(c.grid, item) === 0) return true;
+      if (!c) return (this.lo.drop(item), true);
+    } else if (this.toPlayer(item)) return true;
+    this.restore(src, item);
+    this.flash(T.full);
+    return false;
+  }
+
+  private splitInPlace(item: ItemInstance, src: Src): boolean {
+    if (src.kind !== 'grid' || item.count < 2) return false;
+    const grid = this.grids.get(src.gid)!;
+    const part = splitStack(item, Math.floor(item.count / 2))!;
+    const spot = findFree(grid, part);
+    if (spot) return !!place(grid, part, spot.x, spot.y, spot.rotated);
+    item.count += part.count;
+    this.flash(T.full);
+    return false;
+  }
+
+  private equip(item: ItemInstance, src: Src): boolean {
+    const slots = defOf(item).slots ?? [];
+    const slot = slots.find((s) => !this.lo.equipment[s]) ?? slots[0];
+    if (!slot) return false;
+    const el = this.wrap.querySelector<HTMLElement>(`.inv-slot[data-slot="${slot}"]`)!;
+    return this.dropOn(item, src, false, { kind: 'slot', slot, ok: true, el });
+  }
+
+  private use(item: ItemInstance): boolean {
+    const u = this.lo.use(item);
+    if (!u) return false;
+    this.hooks.sfx(u.sound ?? 'item_pickup');
+    this.flash(`${T.used} ${itemName(item.defId)}`);
+    return true;
+  }
+
+  /** Double-click: use > equip > open > quick move. */
+  private primary(item: ItemInstance, src: Src): boolean {
+    const d = defOf(item);
+    if (d.use) return this.use(item);
+    if (d.slots && src.kind !== 'slot') return this.equip(item, src);
+    if (d.grid && src.kind !== 'slot') return this.openBag(item);
+    return this.quickMove(item, src);
+  }
+
+  private openBag(item: ItemInstance) {
+    if (!this.bags.includes(item)) this.bags.push(item);
+    return false;
+  }
+
+  private loadFromInventory(mag: ItemInstance): boolean {
+    const md = defOf(mag);
+    let n = 0;
+    for (const { grid } of this.lo.playerGrids())
+      for (const gi of [...grid.contents]) if (gi.item.defId === md.ammo && (mag.rounds ?? 0) < (md.capacity ?? 0)) n += this.lo.loadMagazine(mag, gi.item);
+    return n > 0;
+  }
+
+  // ---------------- context menu ----------------
+  private showMenu(item: ItemInstance, src: Src, x: number, y: number) {
+    const d = defOf(item);
+    const opts: [string, () => boolean | void][] = [];
+    if (d.use) opts.push([T.act.use, () => this.use(item)]);
+    if (d.slots && src.kind !== 'slot') opts.push([T.act.equip, () => this.equip(item, src)]);
+    if (src.kind === 'slot') opts.push([T.act.unequip, () => (this.take(src, item), this.toPlayer(item) || this.lo.drop(item), true)]);
+    if (d.grid && src.kind !== 'slot') opts.push([T.act.open, () => this.openBag(item)]);
+    if (d.kind === 'magazine' && (item.rounds ?? 0) < (d.capacity ?? 0) && this.lo.count(d.ammo!) > 0) opts.push([T.act.load, () => this.loadFromInventory(item)]);
+    if (d.kind === 'magazine' && (item.rounds ?? 0) > 0) opts.push([T.act.unload, () => this.lo.unloadMagazine(item) > 0]);
+    if (item.mag) opts.push([T.act.unmag, () => (this.lo.removeMagazine(item), true)]);
+    if (d.use) opts.push([T.act.bind, () => {
+      const i = this.lo.hotbar.indexOf(item.defId);
+      if (i < 0) this.lo.hotbar[Math.max(0, this.lo.hotbar.indexOf(null))] = item.defId;
+      return true;
+    }]);
+    if (d.stack > 1 && item.count > 1 && src.kind === 'grid') opts.push([T.act.split, () => this.splitInPlace(item, src)]);
+    if (!this.isPlayerSide(src)) opts.push([T.act.take, () => this.quickMove(item, src)]);
+    if (!(src.kind === 'grid' && src.gid === 'vicinity')) opts.push([T.act.drop, () => (this.take(src, item), this.lo.drop(item), true)]);
+    this.menu.replaceChildren(
+      ...opts.map(([label, fn]) => {
+        const b = h('button', '', label);
+        b.onclick = () => (this.hideMenu(), this.act(fn));
+        return b;
+      }),
+    );
+    this.menu.hidden = false;
+    this.tip.hidden = true;
+    const r = this.menu.getBoundingClientRect();
+    this.menu.style.left = `${Math.min(x, innerWidth - r.width - 8)}px`;
+    this.menu.style.top = `${Math.min(y, innerHeight - r.height - 8)}px`;
+  }
+
+  private hideMenu() {
+    this.menu.hidden = true;
+  }
+
+  // ---------------- tooltip ----------------
+  private hoverTip(e: PointerEvent) {
+    const ref = this.refAt(e.target);
+    if (!ref || !this.menu.hidden) return void (this.tip.hidden = true);
+    const it = ref.item;
+    const d = defOf(it);
+    const rows: [string, string][] = [];
+    if (d.stack > 1) rows.push(['Stack', `${it.count} / ${d.stack}`]);
+    if (d.kind === 'magazine') rows.push(['Rounds', `${it.rounds ?? 0} / ${d.capacity}`], ['Ammo', itemName(d.ammo!)]);
+    const wd = weaponDefs[it.defId];
+    if (wd) rows.push(['Caliber', wd.caliber], ['Damage', String(wd.damage)], ['Fire rate', `${wd.rpm} rpm`]);
+    if (it.mag !== undefined) rows.push(['Magazine', it.mag ? `${it.mag.rounds ?? 0} / ${defOf(it.mag).capacity}` : 'none']);
+    if (d.grid) rows.push(['Storage', `${d.grid.w}×${d.grid.h}${it.contents?.length ? ` · ${it.contents.length} items` : ''}`]);
+    if (d.use?.heal) rows.push(['Heals', `+${d.use.heal}`]);
+    if (d.use?.food) rows.push(['Food', `+${d.use.food}`]);
+    if (d.use?.water) rows.push(['Water', `+${d.use.water}`]);
+    rows.push(['Size', `${d.w}×${d.h}`], ['Value', `$${d.value * it.count}`]);
+    this.tip.replaceChildren();
+    const desc = itemText[it.defId]?.description;
+    this.tip.append(h('span', 'k', T.kind[d.kind] ?? d.kind), h('b', '', itemName(it.defId)));
+    if (desc) this.tip.append(h('p', '', desc));
+    for (const [k, v] of rows) {
+      const r = h('div', 's');
+      r.append(h('span', '', k), h('span', '', v));
+      this.tip.append(r);
+    }
+    this.tip.hidden = false;
+    const tr = this.tip.getBoundingClientRect();
+    this.tip.style.left = `${Math.min(e.clientX + 16, innerWidth - tr.width - 8)}px`;
+    this.tip.style.top = `${Math.min(e.clientY + 16, innerHeight - tr.height - 8)}px`;
+  }
+
+  // ---------------- keys + toast ----------------
+  private onKey(e: KeyboardEvent) {
+    if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select')) return;
+    if (e.code === 'Tab') {
+      e.preventDefault();
+      if (!e.repeat && (this.isOpen || this.hooks.canOpen())) this.toggle();
+      return;
+    }
+    if (!this.isOpen) return;
+    if (e.code === 'Escape') {
+      e.preventDefault();
+      if (!this.menu.hidden) this.hideMenu();
+      else if (this.drag) this.cancelDrag(), this.render();
+      else this.close();
+    } else if (e.code === 'KeyR' && this.drag && !e.repeat) {
+      const d = this.drag;
+      d.rotated = !d.rotated;
+      this.sizeGhost();
+      this.moveDrag(d.px, d.py);
+    }
+  }
+
+  flash(text: string) {
+    if (!this.isOpen) return this.hooks.toast(text);
+    this.toastEl.textContent = text;
+    this.toastEl.style.opacity = '1';
+    clearTimeout(this.toastTimer);
+    this.toastTimer = window.setTimeout(() => (this.toastEl.style.opacity = '0'), 1600);
+  }
+}

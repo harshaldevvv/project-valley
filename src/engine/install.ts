@@ -1,7 +1,207 @@
+import { BufferAttribute, BufferGeometry, LineSegments, Vector3 } from 'three';
+import { LineBasicNodeMaterial } from 'three/webgpu';
 import type { Game } from '../core/game';
+import { look } from '../content/data/input';
+import { cameraFeel } from '../content/data/player';
+import { sounds } from '../content/data/sounds';
+import { yard, type StationId } from '../content/data/yard';
+import { createDebugPanel } from '../ui/debug/panel';
+import { installMenu } from '../ui/menu/menu';
+import { createAudio } from './audio';
+import { installPost } from './post';
+import { createTimeOfDay, TIME_PRESETS } from './timeofday';
 
-/** engine-builder: installs game.debug (F1 menu), game.audio, post-processing (FXAA), and other engine extras. */
-export async function installEngine(game: Game): Promise<void> {
-  // M1 stub — engine-builder replaces this.
-  void game;
+/**
+ * engine-builder: installs game.debug (F1 panel), game.audio (Web Audio), post-processing (FXAA, render scale),
+ * time of day, the physics collider view and the title/pause menu. Call before the world and gameplay installs.
+ * Extra engine handles are returned (and exposed as window.engine for console use).
+ */
+const BASE_SENSITIVITY = look.sensitivity;
+
+/** Where "teleport to station" puts the player: just outside the station's south edge, facing north into it. */
+export function stationSpot(id: StationId | 'spawn'): { p: Vector3; yaw: number } {
+  if (id === 'spawn') return { p: new Vector3(yard.spawn.x, 0.1, yard.spawn.z), yaw: yard.spawn.yaw };
+  const s = yard.stations[id];
+  const z = 'targetDistances' in s ? s.z + 2 : s.z + s.d / 2 + 1.5;
+  return { p: new Vector3(s.x, 0.1, z), yaw: 0 };
+}
+
+export async function installEngine(game: Game) {
+  // --- debug panel -------------------------------------------------------------------------
+  const panel = createDebugPanel(game.events);
+  game.debug = panel;
+
+  // --- audio -------------------------------------------------------------------------------
+  const audio = createAudio();
+  game.audio = audio.api;
+  void audio.preload();
+  game.addSystem({
+    name: 'audio',
+    render() {
+      game.perf.begin('audio');
+      audio.update(game.camera);
+      game.perf.end('audio');
+    },
+  });
+
+  // --- post + time of day ------------------------------------------------------------------
+  const post = installPost(game);
+  const tod = createTimeOfDay(game);
+
+  // --- teleport ----------------------------------------------------------------------------
+  const teleport = (id: StationId | 'spawn') => {
+    const { p, yaw } = stationSpot(id);
+    try {
+      game.player.teleport(p, yaw);
+    } catch (e) {
+      console.warn('teleport: player not installed', e);
+    }
+  };
+  game.debug.action('Teleport', 'Spawn', () => teleport('spawn'));
+  for (const id of Object.keys(yard.stations) as StationId[]) game.debug.action('Teleport', yard.stations[id].label, () => teleport(id));
+
+  // --- time ----------------------------------------------------------------------------------
+  const timeBind = {
+    get hours() {
+      return tod.hours;
+    },
+    set hours(h: number) {
+      tod.set(h);
+    },
+  };
+  game.debug.tune('Time', timeBind, 'hours', 0, 24, 0.1);
+  for (const [name, h] of Object.entries(TIME_PRESETS)) game.debug.action('Time', name, () => tod.set(h));
+
+  // --- render --------------------------------------------------------------------------------
+  const colliders = physicsLines(game);
+  const renderBind = {
+    get shadows() {
+      return post.settings.shadows;
+    },
+    set shadows(v: boolean) {
+      post.settings.shadows = v;
+      post.apply();
+    },
+    get fxaa() {
+      return post.settings.fxaa;
+    },
+    set fxaa(v: boolean) {
+      post.settings.fxaa = v;
+      post.apply();
+    },
+    get renderScale() {
+      return post.settings.renderScale;
+    },
+    set renderScale(v: number) {
+      post.settings.renderScale = v;
+      post.apply();
+    },
+    get colliders() {
+      return colliders.enabled;
+    },
+    set colliders(v: boolean) {
+      colliders.enabled = v;
+    },
+  };
+  game.debug.toggle('Render', renderBind, 'shadows');
+  game.debug.toggle('Render', renderBind, 'fxaa');
+  game.debug.tune('Render', renderBind, 'renderScale', 0.5, 1, 0.05);
+  game.debug.toggle('Render', renderBind, 'colliders');
+  game.debug.watch('Render', 'draws / tris', () => {
+    const r = game.renderer.info.render;
+    return `${r.drawCalls} / ${(r.triangles / 1000).toFixed(1)}k`;
+  });
+
+  // --- perf ----------------------------------------------------------------------------------
+  game.debug.action('Perf', 'Toggle overlay (F3)', () => game.perf.toggleOverlay());
+  game.debug.action('Perf', 'Reset stats', () => game.perf.reset());
+  game.debug.watch('Perf', 'frame', () => {
+    const s = game.perf.snapshot();
+    return `p50 ${s.p50.toFixed(1)}  p95 ${s.p95.toFixed(1)}  p99 ${s.p99.toFixed(1)} ms`;
+  });
+
+  // --- audio debug ---------------------------------------------------------------------------
+  const volBind = {
+    get master() {
+      return audio.settings.master;
+    },
+    set master(v: number) {
+      audio.settings.master = v;
+      audio.applyVolumes();
+    },
+  };
+  game.debug.tune('Audio', volBind, 'master', 0, 1, 0.05);
+  const ids = Object.keys(sounds);
+  let next = 0;
+  let last = '';
+  game.debug.action('Audio', 'Play next sound', () => {
+    last = ids[next++ % ids.length];
+    game.audio.play(last);
+  });
+  game.debug.action('Audio', 'Play 3D at 10 m', () => {
+    const p = game.camera.getWorldDirection(new Vector3()).multiplyScalar(10).add(game.camera.position);
+    game.audio.play(last || 'zombie_groan', p);
+  });
+  game.debug.watch('Audio', 'last / voices', () => `${last || '-'} / ${audio.voices} (${audio.ctx.state})`);
+
+  // --- menu ----------------------------------------------------------------------------------
+  const menu = installMenu(game, {
+    applySettings(s) {
+      cameraFeel.fovHip = s.fov;
+      look.sensitivity = BASE_SENSITIVITY * s.sensitivity;
+      cameraFeel.shake = s.shake;
+      Object.assign(post.settings, { fxaa: s.fxaa, renderScale: s.renderScale, shadows: s.shadows });
+      post.apply();
+      audio.settings.master = s.volume;
+      audio.applyVolumes();
+    },
+    stations: [
+      { id: 'spawn', label: 'Spawn', go: () => teleport('spawn') },
+      ...(Object.keys(yard.stations) as StationId[]).map((id) => ({ id, label: yard.stations[id].label, go: () => teleport(id) })),
+    ],
+  });
+
+  const engine = { audio, post, tod, menu, panel, setTimeOfDay: tod.set };
+  (window as unknown as { engine: typeof engine }).engine = engine;
+  return engine;
+}
+
+/** Rapier debugRender as line segments, refreshed every 30 frames while enabled (debug only: ~180k verts in the Yard). */
+function physicsLines(game: Game) {
+  const mat = new LineBasicNodeMaterial({ vertexColors: true, transparent: true, opacity: 0.8 });
+  const geo = new BufferGeometry(); // never empty: WebGPU warns about a missing position attribute
+  geo.setAttribute('position', new BufferAttribute(new Float32Array(6), 3));
+  geo.setAttribute('color', new BufferAttribute(new Float32Array(8), 4));
+  const lines = new LineSegments(geo, mat);
+  lines.name = 'physics_debug';
+  lines.frustumCulled = false;
+  lines.visible = false;
+  game.scene.add(lines);
+  let cap = 0;
+  let frame = 0;
+  const state = { enabled: false };
+  game.addSystem({
+    name: 'physDebug',
+    render() {
+      lines.visible &&= state.enabled;
+      if (!state.enabled || ++frame % 30) return;
+      const { vertices, colors } = game.phys.world.debugRender();
+      const n = vertices.length / 3;
+      if (n > cap) {
+        cap = Math.ceil(n * 1.5);
+        lines.geometry.dispose();
+        lines.geometry = new BufferGeometry();
+        lines.geometry.setAttribute('position', new BufferAttribute(new Float32Array(cap * 3), 3));
+        lines.geometry.setAttribute('color', new BufferAttribute(new Float32Array(cap * 4), 4));
+      }
+      const pos = lines.geometry.getAttribute('position') as BufferAttribute;
+      const col = lines.geometry.getAttribute('color') as BufferAttribute;
+      (pos.array as Float32Array).set(vertices);
+      (col.array as Float32Array).set(colors);
+      pos.needsUpdate = col.needsUpdate = true;
+      lines.geometry.setDrawRange(0, n);
+      lines.visible = n > 0;
+    },
+  });
+  return state;
 }

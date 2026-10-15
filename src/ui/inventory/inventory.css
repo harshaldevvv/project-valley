@@ -1,0 +1,164 @@
+/* Inventory screen (systems-builder). Dark translucent panels over the live game; 46 px cells. */
+.inv-root {
+  --cell: 46px;
+  --line: rgba(255, 255, 255, 0.07);
+  --panel: rgba(14, 17, 19, 0.86);
+  --edge: rgba(255, 255, 255, 0.1);
+  --text: #e4e8ea;
+  --dim: #8d979c;
+  --accent: #d9b25a;
+  --ok: rgba(94, 196, 120, 0.42);
+  --bad: rgba(214, 74, 64, 0.45);
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: radial-gradient(ellipse at center, rgba(6, 8, 9, 0.62), rgba(6, 8, 9, 0.86));
+  /* no backdrop-filter: with a 3 px blur the render pass went 5.8 -> 9.7 ms on the target laptop */
+  font: 13px/1.25 system-ui, 'Segoe UI', sans-serif;
+  color: var(--text);
+  user-select: none;
+}
+.inv-root[hidden] { display: none; }
+.inv-wrap { display: flex; gap: 14px; align-items: flex-start; max-height: calc(100vh - 70px); }
+.inv-col {
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  padding: 10px 12px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  max-height: calc(100vh - 70px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+.inv-col h2 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.inv-col h3 {
+  margin: 10px 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--dim);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.inv-col h3:first-of-type { margin-top: 0; }
+.inv-col h3 .x { cursor: pointer; color: var(--dim); }
+.inv-col h3 .x:hover { color: var(--text); }
+.inv-empty { color: var(--dim); font-size: 12px; padding: 6px 0; max-width: 220px; }
+
+/* Grids */
+.inv-grid {
+  position: relative;
+  background-color: rgba(0, 0, 0, 0.32);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: var(--cell) var(--cell);
+  border: 1px solid var(--edge);
+  box-sizing: content-box;
+}
+.inv-fp { position: absolute; pointer-events: none; z-index: 3; border-radius: 2px; }
+.inv-fp.ok { background: var(--ok); outline: 1px solid rgba(120, 230, 150, 0.8); }
+.inv-fp.bad { background: var(--bad); outline: 1px solid rgba(240, 110, 100, 0.85); }
+
+/* Item tiles */
+.inv-item {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: grab;
+  background: var(--sw, #555);
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.38));
+  transition: filter 80ms;
+}
+.inv-item:hover { filter: brightness(1.22); border-color: rgba(255, 255, 255, 0.45); }
+.inv-item.target { outline: 2px solid var(--accent); z-index: 2; }
+.inv-item.dragging { opacity: 0.25; }
+.inv-item .n {
+  position: absolute; left: 3px; top: 3px; right: 2px;
+  font-size: 10px; font-weight: 600; line-height: 1.1; letter-spacing: -0.04em;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  text-shadow: 0 1px 2px #000, 0 0 3px #000;
+}
+.inv-item .c {
+  position: absolute; right: 4px; bottom: 2px;
+  font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px #000, 0 0 3px #000;
+}
+.inv-item .c.empty { color: #ff9b8c; }
+.inv-item .bag { position: absolute; left: 4px; bottom: 2px; font-size: 10px; color: rgba(255,255,255,0.75); text-shadow: 0 1px 2px #000; }
+.inv-ghost { position: fixed; z-index: 40; pointer-events: none; opacity: 0.92; cursor: grabbing; box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
+
+/* Equipment */
+.inv-equip { width: 266px; }
+.inv-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.inv-wslots { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.inv-slot {
+  position: relative;
+  height: 62px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+}
+.inv-slot.wide { height: 58px; }
+.inv-slot .lbl {
+  position: absolute; left: 0; right: 0; bottom: 3px; text-align: center;
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); pointer-events: none;
+}
+.inv-slot.filled { border-style: solid; border-color: rgba(255,255,255,0.2); }
+.inv-slot .inv-item { inset: 3px; }
+.inv-slot.ok { background: var(--ok); }
+.inv-slot.bad { background: var(--bad); }
+.inv-hotbar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.inv-hot {
+  position: relative; height: 46px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.3);
+}
+.inv-hot .k { position: absolute; left: 4px; top: 2px; font-size: 10px; color: var(--accent); font-weight: 700; z-index: 1; text-shadow: 0 1px 2px #000; }
+.inv-hot .inv-item { inset: 2px; cursor: default; }
+.inv-hot .k { top: auto; bottom: 3px; left: 5px; }
+.inv-hot.ok { background: var(--ok); }
+.inv-hot .inv-item.none { filter: grayscale(1) brightness(0.55); }
+
+/* Tooltip + context menu */
+.inv-tip {
+  position: fixed; z-index: 50; pointer-events: none; max-width: 260px;
+  background: rgba(10, 12, 13, 0.96); border: 1px solid var(--edge); border-radius: 5px; padding: 8px 10px;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.55);
+}
+.inv-tip b { display: block; font-size: 13px; margin-bottom: 2px; }
+.inv-tip .k { color: var(--accent); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+.inv-tip p { margin: 6px 0 4px; color: #c3cacd; font-size: 12px; }
+.inv-tip .s { color: var(--dim); font-size: 11px; display: flex; justify-content: space-between; gap: 12px; }
+.inv-menu {
+  position: fixed; z-index: 55; min-width: 150px; padding: 4px;
+  background: rgba(16, 19, 21, 0.98); border: 1px solid var(--edge); border-radius: 5px; box-shadow: 0 8px 22px rgba(0,0,0,0.55);
+}
+.inv-menu button {
+  display: block; width: 100%; text-align: left; padding: 6px 10px; border: 0; border-radius: 3px;
+  background: transparent; color: var(--text); font: inherit; cursor: pointer;
+}
+.inv-menu button:hover, .inv-menu button:focus-visible { background: rgba(217, 178, 90, 0.18); outline: none; }
+.inv-hint { color: var(--dim); font-size: 12px; letter-spacing: 0.02em; }
+.inv-hint kbd {
+  font: 600 11px system-ui; color: var(--text); background: rgba(255,255,255,0.08); border: 1px solid var(--edge);
+  border-radius: 3px; padding: 1px 5px; margin: 0 2px;
+}
+.inv-toast {
+  position: fixed; left: 50%; top: 18px; transform: translateX(-50%); z-index: 60; pointer-events: none;
+  background: rgba(14, 17, 19, 0.92); border: 1px solid var(--edge); border-radius: 4px; padding: 6px 14px; font-size: 13px;
+  transition: opacity 200ms;
+}

@@ -25,6 +25,7 @@ export class Perf {
 
   constructor(private renderer: WebGPURenderer, private backend: string) {
     this.el = document.createElement('pre');
+    this.el.id = 'perf';
     this.el.style.cssText =
       'position:fixed;top:8px;left:8px;margin:0;padding:8px 10px;font:12px/1.35 ui-monospace,Consolas,monospace;' +
       'color:#d8e0d0;background:rgba(10,12,11,.78);border-radius:6px;pointer-events:none;z-index:10;white-space:pre';
@@ -32,12 +33,17 @@ export class Perf {
     addEventListener('keydown', (e) => {
       if (e.code === 'F3') {
         e.preventDefault();
-        this.el.hidden = !this.el.hidden;
+        this.toggleOverlay();
       }
     });
     const w = window as unknown as { __perf: () => unknown; __perfReset: () => void };
     w.__perf = () => this.snapshot();
     w.__perfReset = () => this.reset();
+  }
+
+  /** Show/hide the overlay (F3). */
+  toggleOverlay() {
+    this.el.hidden = !this.el.hidden;
   }
 
   /** Forget history (call after loading/warm-up so one-time compile costs don't skew the stats). */

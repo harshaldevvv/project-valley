@@ -26,6 +26,13 @@ export interface ItemDef {
   /** Icon colour swatch for the placeholder icon until real icons exist. */
   iconSwatch?: string;
   value: number; // trader value, $
+  /** Magazines and internal-mag weapons: the ammo item they load, and how many rounds fit. */
+  ammo?: string;
+  capacity?: number;
+  /** Magazines: weapon item ids this magazine fits. */
+  fits?: string[];
+  /** Consumables: what using one does (survival stats arrive in M2; M1 only consumes it). */
+  use?: { seconds: number; heal?: number; food?: number; water?: number; sound?: string };
 }
 
 export interface WeaponDef {
@@ -87,12 +94,16 @@ export interface ContainerDef {
   lootTable: string;
   /** Lock difficulty 0 = unlocked. */
   lock: number;
+  /** Sandbox only: contents are re-rolled every time it is opened (M1 weapon rack). */
+  refillOnOpen?: boolean;
 }
 
 export interface LootTable {
   id: string;
   rolls: [number, number];
   entries: { item: string; weight: number; count: [number, number] }[];
+  /** Always added, before the weighted rolls. `rounds` = -1 fills magazines to capacity. */
+  guaranteed?: { item: string; count: number; rounds?: number }[];
 }
 
 export interface VehicleDef {
@@ -121,7 +132,7 @@ export interface BuildPieceDef {
   kind: 'foundation' | 'floor' | 'wall' | 'doorway' | 'door' | 'window' | 'stairs' | 'roof';
   tier: 'wood' | 'reinforced' | 'scrap' | 'concrete' | 'steel';
   hp: number;
-  /** Footprint on the 1.5 m build grid. */
+  /** Model size in metres (w, h, d), also the placeholder box size. Pieces snap on the build grid (data/build.ts). */
   size: [number, number, number];
   cost: { item: string; count: number }[];
 }
