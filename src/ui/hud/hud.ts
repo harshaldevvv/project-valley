@@ -18,7 +18,7 @@ const CSS = `
 .hud .xh .d{width:2px;height:2px;left:-1px;top:-1px;border-radius:1px}
 .hud .xh.blocked i{background:#ff5040}
 .hud .xh .ring{position:absolute;left:-9px;top:-9px;width:14px;height:14px;border:2px solid #ff5040;border-radius:50%;display:none;background:none;box-shadow:none}
-.hud .xh.blocked .ring{display:block}
+.hud .xh.blocked .ring{display:block;background:none}
 .hud .hm{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0}
 .hud .hm i{position:absolute;width:2px;height:9px;background:#fff;left:-1px;top:-4.5px;box-shadow:0 0 2px #000}
 .hud .hm.head i{background:#ff4a2a;height:11px}

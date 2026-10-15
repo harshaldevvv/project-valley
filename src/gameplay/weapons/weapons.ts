@@ -1,4 +1,5 @@
-import { MathUtils, Object3D, Vector3 } from 'three';
+import { BoxGeometry, Group as TGroup, MathUtils, Mesh, Object3D, Vector3 } from 'three';
+import { paintGeometry, paletteMaterial } from '../../engine/palette';
 import type { Collider } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
 import type { ItemInstance, SlotName, WeaponDef } from '../../content/data/types';
@@ -28,6 +29,30 @@ interface Bullet {
 }
 
 /** Sandbox loadout when systems hasn't installed one: pistol + rifle + knife, infinite full mags. */
+/**
+ * Placeholder first-person arms: sleeve + hand boxes on the grip (and support point), reaching back toward the
+ * camera. ponytail: swap for the survivor rig's arms (FP arm clips) once asset-builder ships them.
+ */
+async function fpArms(kind: 'pistol' | 'rifle' | 'knife', support: Object3D | null) {
+  const mat = await paletteMaterial();
+  const g = new TGroup();
+  const arm = (x: number, y: number, z: number, yaw: number) => {
+    const hand = new Mesh(paintGeometry(new BoxGeometry(0.042, 0.07, 0.065), 'cloth_black'), mat); // gloved
+    hand.position.set(x, y, z);
+    const sleeve = new Mesh(paintGeometry(new BoxGeometry(0.075, 0.075, 0.42).translate(0, 0, 0.23), 'cloth_olive'), mat);
+    sleeve.position.set(x, y - 0.02, z + 0.03);
+    sleeve.rotation.set(0.35, yaw, 0); // back and down toward the shoulders
+    g.add(hand, sleeve);
+  };
+  arm(0, -0.03, 0.02, 0.25); // trigger hand on the grip
+  if (kind === 'rifle') {
+    const s = support?.position;
+    arm(s ? s.x : 0, s ? s.y - 0.02 : 0.0, s ? s.z : -0.3, -0.55);
+  } else if (kind === 'pistol') arm(-0.035, -0.04, 0.03, -0.35); // cupping hand
+  g.traverse((o) => (o.castShadow = false));
+  return g;
+}
+
 export function sandboxLoadout(): LoadoutApi {
   let uid = 1e6;
   const mag = (defId: string, n: number): ItemInstance => ({ uid: uid++, defId, count: 1, rounds: n });
@@ -124,6 +149,7 @@ export class Weapons {
       const [tp, fp] = await Promise.all([makeWeaponModel(id, model, kinds[id]), makeWeaponModel(id, model, kinds[id])]);
       tp.root.visible = fp.root.visible = false;
       fp.root.traverse((o) => (o.castShadow = false));
+      fp.root.add(await fpArms(kinds[id], fp.support));
       handSocket.add(tp.root);
       this.fpHolder.add(fp.root);
       this.models.set(id, { tp, fp });
@@ -571,8 +597,11 @@ export class Weapons {
       if (m.fp.mag) m.fp.mag.visible = m.tp.mag!.visible = !(r && rk > 0.2 && rk < B.magCommitAt);
       // FP viewmodel: hip/ADS lerp, sway lag (60–80 ms), walk bob, kick, holster dip, reload tilt
       const a = this.adsEased;
-      const [hx, hy, hz] = H.fpHip;
-      const [ax, ay, az] = H.fpAds;
+      const fpd = H.fp[this.isMelee ? 'knife' : this.def?.class === 'pistol' ? 'pistol' : 'rifle'];
+      const [hx, hy, hz] = fpd.hip;
+      const ax = 0;
+      const ay = -m.fp.sightY;
+      const az = fpd.adsZ;
       const v = m.fp.root;
       const dy = p.yaw - this.lastYaw;
       const dp = p.pitch - this.lastPitch;
@@ -587,7 +616,13 @@ export class Weapons {
         hy + (ay - hy) * a - this.swayLag.y * 0.5 + Math.abs(Math.sin(p.stepPhase)) * 0.012 * bob - lower * 0.28 - reloadTilt * 0.06,
         hz + (az - hz) * a + this.kickT * (weaponFeel[this.item!.defId]?.kickBack ?? 0.03),
       );
-      v.rotation.set(this.kickT * 0.08 - lower * 0.9 + reloadTilt * 0.35, this.swayLag.x * 2, reloadTilt * 0.6 + (p.sprinting ? 0.5 : 0));
+      // Reload: cant the gun to show the mag well; sprint: tuck it across the chest
+      const sprintT = p.sprinting && !this.isMelee ? 1 : 0;
+      v.rotation.set(
+        this.kickT * 0.08 - lower * 0.9 - reloadTilt * 0.2 - sprintT * 0.25,
+        this.swayLag.x * 2 + reloadTilt * 0.45 + sprintT * 0.6,
+        -reloadTilt * 0.5 + sprintT * 0.3,
+      );
       if (melee && this.isMelee) melee.poseViewmodel(v);
       // TP model sits in the hand; kick slides it back along the barrel
       if (ctx.playerChar.skinned) {
@@ -614,11 +649,13 @@ export class Weapons {
       const muz = (fp ? m.fp : m.tp).muzzle;
       muz.getWorldPosition(_muz);
       ctx.fx.muzzle(_muz, this.flashDir, H.muzzleFlashSize * (this.def?.class === 'pistol' ? 0.8 : 1.2));
-      ctx.fx.smoke(_muz, this.flashDir);
+      // Smoke starts a little ahead of the barrel and never right in the lens
+      _p.copy(_muz).addScaledVector(this.flashDir, 0.25);
+      if (_p.distanceTo(ctx.game.camera.position) > 1.0) ctx.fx.smoke(_p, this.flashDir, this.def?.class === 'pistol' ? 2 : 1);
       _r.crossVectors(this.flashDir, UP).normalize();
       _u.crossVectors(_r, this.flashDir);
       (fp ? m.fp : m.tp).root.getWorldPosition(_p);
-      ctx.fx.shell(_p.addScaledVector(UP, 0.06), _r, _u, this.def?.class !== 'pistol');
+      ctx.fx.shell(_p.addScaledVector(UP, 0.06).addScaledVector(this.flashDir, 0.12).addScaledVector(_r, 0.03), _r, _u, this.def?.class !== 'pistol');
       if (this.pendingTracer) ctx.fx.tracer(_muz, _n.subVectors(this.aimHit, _muz).normalize(), _muz.distanceTo(this.aimHit));
     }
   }

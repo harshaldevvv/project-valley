@@ -166,7 +166,7 @@ export class Fx {
   shell(p: Vector3, right: Vector3, up: Vector3, rifle: boolean) {
     _c.set(rifle ? '#c9a03a' : '#d2b04c');
     const s = 2 + Math.random();
-    this.spawn(p, right.x * s + up.x * 1.5, right.y * s + up.y * 1.5 + 1.2, right.z * s + up.z * 1.5, 0.7, rifle ? 0.035 : 0.025, 9.8, _c);
+    this.spawn(p, right.x * s + up.x * 1.5, right.y * s + up.y * 1.5 + 1.2, right.z * s + up.z * 1.5, 0.7, rifle ? 0.016 : 0.012, 9.8, _c);
   }
 
   /** Muzzle smoke wisp: a few translucent puffs drifting up and forward. */

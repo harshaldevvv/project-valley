@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, LineBasicMaterial, LineSegments, Vector3 } from 'three';
+import { BufferAttribute, BufferGeometry, Frustum, LineBasicMaterial, LineSegments, Matrix4, Sphere, Vector3, type Object3D } from 'three';
 import type { Collider, KinematicCharacterController, RigidBody } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
 import { horde as HD, senses as SN, zombieDefs, type ZombieDef } from '../../content/data/zombies';
@@ -24,6 +24,10 @@ type Mode = 'move' | 'windup' | 'recover' | 'stagger' | 'climb' | 'dead';
 const _v = new Vector3();
 const _w = new Vector3();
 const _to = new Vector3();
+const _o = new Vector3();
+const _proj = new Matrix4();
+const _frustum = new Frustum();
+const _sphere = new Sphere(new Vector3(), 1.2);
 
 export class Zombie {
   readonly prev = new Vector3();
@@ -60,6 +64,10 @@ export class Zombie {
   climb: { from: Vector3; to: Vector3; t: number } | null = null;
   anim: AnimationController | null = null;
   lastClip = '';
+  grounded = false;
+  animAcc = 0;
+  shadow = true;
+  bones: { head: Object3D | null; spine: Object3D | null } | null = null;
 
   constructor(
     readonly id: number,
@@ -93,9 +101,11 @@ export class Zombies {
   private linePos = new Float32Array(30 * 8 * 3);
   private lineCol = new Float32Array(30 * 8 * 3);
   kills = 0;
+  private ray;
 
   constructor(private ctx: Ctx) {
     const { world } = ctx.game.phys;
+    this.ray = new ctx.game.phys.R.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
     this.kcc = world.createCharacterController(0.02);
     this.kcc.enableAutostep(0.3, 0.2, false);
     this.kcc.enableSnapToGround(0.3);
@@ -200,7 +210,7 @@ export class Zombies {
     }
     if (info.melee) z.hitstop = Math.max(z.hitstop, z.hp <= 0 ? info.melee.hitstop * 2.5 : info.melee.hitstop);
     // Being shot from afar: turn toward the shooter and go looking (anti-sniping cheese), never instant detection.
-    if (z.sense.awareness !== 'detected') {
+    if (z.sense.awareness !== 'detected' && !HD.passive) {
       z.lastKnown.copy(this.ctx.player.curr);
       z.sense.awareness = 'searching';
       z.sense.searchLeft = SN.searchS;
@@ -248,7 +258,7 @@ export class Zombies {
     this.ctx.hits.delete(z.capsule.handle);
     this.ctx.hits.delete(z.head.handle);
     this.ctx.sfx('zombie_death', z.curr, { pitchJitter: 0.1 });
-    z.anim?.oneshot('z_death');
+    z.anim?.oneshot('z_death', 0.1, true);
     if (melee) this.ctx.game.events.emit('noise', { position: z.curr.clone(), radius: 5, source: 'melee_kill' });
   }
 
@@ -274,6 +284,7 @@ export class Zombies {
       z.prev.copy(z.curr);
       z.prevYaw = z.yaw;
       if (!z.alive) {
+        z.hitstop = Math.max(0, z.hitstop - dt); // a killing blow's hitstop still has to run out
         if ((z.deadT -= dt) <= 0) {
           this.remove(z);
           this.list.splice(i--, 1);
@@ -300,7 +311,7 @@ export class Zombies {
           const fwdZ = -Math.cos(z.yaw);
           const cos = (fwdX * _to.x + fwdZ * _to.z) / Math.max(1e-3, dist);
           const ang = (Math.acos(Math.max(-1, Math.min(1, cos))) * 180) / Math.PI;
-          const rate = dist < 1.2 ? 4 : sightRate(dist, ang, stance, p.speed01);
+          const rate = dist < 1.2 ? 4 : Math.max(sightRate(dist, ang, stance, p.speed01), dist < SN.nearRange ? SN.nearRate : 0);
           z.seen = rate > 0 && this.los(z, p.curr, p.eyeHeight - 0.2);
           z.sight = z.seen ? rate : 0;
         } else z.seen = false;
@@ -345,7 +356,9 @@ export class Zombies {
     _w.set(target.x - ox, target.y + h - oy, target.z - oz);
     const d = _w.length();
     _w.divideScalar(d);
-    const hit = world.castRay(new R.Ray({ x: ox, y: oy, z: oz }, _w), d - 0.3, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, LOS_FILTER));
+    this.ray.origin = _o.set(ox, oy, oz);
+    this.ray.dir = _w;
+    const hit = world.castRay(this.ray, d - 0.3, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, LOS_FILTER));
     return !hit;
   }
 
@@ -477,15 +490,21 @@ export class Zombies {
     z.vel.z = _v.z;
     z.vel.y = Math.max(-20, z.vel.y - 18 * dt);
     _w.set(z.vel.x * dt, z.vel.y * dt, z.vel.z * dt);
+    const want = Math.hypot(_w.x, _w.z);
+    // Standing still on the ground: skip the character-controller query (most idle zombies)
+    if (want < 1e-5 && z.grounded) {
+      z.vel.y = 0;
+      return;
+    }
     const { R } = this.ctx.game.phys;
     this.kcc.computeColliderMovement(z.capsule, _w, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, MOVE_FILTER));
     const m = this.kcc.computedMovement();
     z.curr.x += m.x;
     z.curr.y += m.y;
     z.curr.z += m.z;
-    if (this.kcc.computedGrounded()) z.vel.y = 0;
+    z.grounded = this.kcc.computedGrounded();
+    if (z.grounded) z.vel.y = 0;
     z.body.setNextKinematicTranslation({ x: z.curr.x, y: z.curr.y + CAPSULE_Y, z: z.curr.z });
-    const want = Math.hypot(_w.x, _w.z);
     z.walkPhase += (Math.hypot(m.x, m.z) / 0.7) * Math.PI;
 
     // Blocked while chasing/searching: climb onto vehicles and low walls (anti-cheese), 1.5–2 s
@@ -530,9 +549,23 @@ export class Zombies {
   render(alpha: number, dt: number) {
     let li = 0;
     const show = HD.showSenses;
+    const cam = this.ctx.game.camera;
+    _proj.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
+    _frustum.setFromProjectionMatrix(_proj);
     for (const z of this.list) {
       const ch = z.ch;
       ch.root.position.lerpVectors(z.prev, z.curr, alpha);
+      // Skinned meshes aren't frustum-culled by the engine (bind-pose bounds), so cull per zombie here;
+      // shadows only up close, animation rate by distance (principles §13: full < 20 m, 15 fps < 60 m, 7.5 fps beyond)
+      _sphere.center.copy(ch.root.position).setY(ch.root.position.y + 0.9);
+      const onScreen = _frustum.intersectsSphere(_sphere);
+      const camDist = cam.position.distanceTo(_sphere.center);
+      ch.root.visible = onScreen || camDist < 4; // near ones still cast shadows into view
+      if (z.shadow !== camDist < HD.shadowDist) {
+        z.shadow = camDist < HD.shadowDist;
+        ch.root.traverse((o) => (o.castShadow = z.shadow));
+      }
+      const animStep = !onScreen ? 0 : camDist < 20 ? 0 : camDist < 60 ? 1 / 15 : 1 / 7.5;
       let dy = z.yaw - z.prevYaw;
       dy = Math.atan2(Math.sin(dy), Math.cos(dy));
       ch.root.rotation.set(0, z.prevYaw + dy * alpha, 0, 'YXZ');
@@ -553,13 +586,24 @@ export class Zombies {
       if (!z.alive) {
         pose.fall = Math.min(1, pose.fall + rdt * 2.5);
         ch.root.rotation.set(0, z.fallDir, 0, 'YXZ');
-        ch.root.rotateX(-pose.fall * 1.5);
+        if (!z.anim) ch.root.rotateX(-pose.fall * 1.5); // placeholder topple; skinned plays z_death
       } else pose.fall = 0;
       if (z.anim) {
-        const clip = !z.alive ? '' : z.crawler ? 'z_crawl' : sp > 0.9 ? 'z_run' : sp > 0.1 ? 'z_walk' : 'z_idle';
-        if (clip && clip !== z.lastClip) z.anim.base(clip);
+        const clip = !z.alive ? '' : z.crawler ? 'z_crawl' : sp > 2.6 ? 'z_run' : sp > 0.1 ? 'z_walk' : 'z_idle';
+        if (clip) z.anim.base(clip, 0.25, clip === 'z_walk' ? Math.min(1.6, Math.max(0.6, sp / 1.0)) : 1);
         z.lastClip = clip;
-        z.anim.update(rdt);
+        z.animAcc += rdt;
+        if (onScreen && z.animAcc >= animStep) {
+          z.anim.update(z.animAcc);
+          z.animAcc = 0;
+        } else z.anim.restoreBones();
+        // Procedural reactions on top of the clips: headshot snap, flinch twist, telegraph lean
+        z.bones ??= { head: z.anim.bone('head'), spine: z.anim.bone('spine') };
+        if (z.bones.head && z.headSnap > 0) z.bones.head.rotation.x -= z.headSnap * 3;
+        if (z.bones.spine) {
+          z.bones.spine.rotation.y += pose.flinch;
+          if (z.mode === 'stagger') z.bones.spine.rotation.x -= 0.35;
+        }
       } else applyPose(ch);
       // Senses debug: vision cone edges + LOS line, coloured by state
       if (show && z.alive && li < 30) {

@@ -56,6 +56,7 @@ export class Vehicles {
   private camPitch = 0;
   private lookIdle = 0;
   private camPos = new Vector3();
+  private ray: InstanceType<Ctx['game']['phys']['R']['Ray']> | null = null;
 
   constructor(private ctx: Ctx) {}
 
@@ -332,7 +333,10 @@ export class Vehicles {
     _v.subVectors(this.camPos, _look);
     const len = _v.length();
     _v.divideScalar(len);
-    const hit = world.castRay(new R.Ray(_look, _v), len, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.PLAYER, Group.STATIC | Group.TERRAIN | Group.BUILD), car.collider);
+    this.ray ??= new R.Ray(_look, _v);
+    this.ray.origin = _look;
+    this.ray.dir = _v;
+    const hit = world.castRay(this.ray, len, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.PLAYER, Group.STATIC | Group.TERRAIN | Group.BUILD), car.collider);
     cam.position.copy(hit ? _w.copy(_look).addScaledVector(_v, Math.max(0.5, hit.timeOfImpact - 0.2)) : this.camPos);
     cam.lookAt(_look);
     const fov = 70 + Math.min(12, Math.abs(car.speed) * 0.35);

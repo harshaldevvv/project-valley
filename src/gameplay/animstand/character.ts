@@ -10,6 +10,7 @@ import {
   LoopRepeat,
   Mesh,
   Object3D,
+  Quaternion,
   SphereGeometry,
   type BufferGeometry,
 } from 'three';
@@ -182,6 +183,7 @@ export class AnimationController {
   private current: AnimationAction | null = null;
   private overlays = new Map<string, AnimationAction>();
   private oneShot: AnimationAction | null = null;
+  private hold = false;
 
   constructor(private ch: Character) {
     const mixer = ch.mixer;
@@ -191,7 +193,9 @@ export class AnimationController {
       const a = ch.actions.get(name);
       if (!a || !idle) continue;
       const clip = upperOnly(a.getClip());
-      AnimationUtils.makeClipAdditive(clip, 0, upperOnly(idle));
+      // aim_* is relative to idle; fire/reload/draw/holster are relative to their aim pose so they stack on it
+      const ref = name.startsWith('aim_') ? idle : (ch.actions.get(name.includes('pistol') || name === 'holster' ? 'aim_pistol' : 'aim_rifle')?.getClip() ?? idle);
+      AnimationUtils.makeClipAdditive(clip, 0, upperOnly(ref));
       const act = mixer.clipAction(clip);
       act.blendMode = 2501; // AdditiveAnimationBlendMode
       act.setEffectiveWeight(0);
@@ -201,9 +205,17 @@ export class AnimationController {
   }
 
   /** Base locomotion/state clip with crossfade. */
-  base(name: string, fade = 0.2, timeScale = 1) {
+  base(name: string, fade = 0.2, timeScale = 1, force = false) {
     const a = this.ch.actions.get(name);
     if (!a) return;
+    if (this.hold && !force) return;
+    if (this.hold && this.oneShot) {
+      // leaving a held pose (respawn): fade it out
+      this.oneShot.fadeOut(fade);
+      this.oneShot = null;
+      this.hold = false;
+      this.current = null;
+    }
     a.timeScale = timeScale;
     if (a === this.current) return;
     a.reset().setLoop(LoopRepeat, Infinity).play();
@@ -219,19 +231,42 @@ export class AnimationController {
     if (restart) a.reset().setLoop(LoopOnce, 1).play();
   }
 
-  /** Full-body one-shot (death, shove, melee); returns to base afterwards. */
-  oneshot(name: string, fade = 0.1) {
+  /** Full-body one-shot (death, shove, melee); returns to base afterwards unless `hold` (death). */
+  oneshot(name: string, fade = 0.1, hold = false) {
     const a = this.ch.actions.get(name);
     if (!a) return;
+    if (this.oneShot && this.oneShot !== a) this.oneShot.fadeOut(fade);
     a.reset().setLoop(LoopOnce, 1);
     a.clampWhenFinished = true;
     a.play();
     if (this.current) a.crossFadeFrom(this.current, fade, false);
     this.oneShot = a;
+    this.hold = hold;
+  }
+
+  /**
+   * A bone gameplay rotates on top of the clips (aim pitch, flinch). Its clip pose is restored before each mixer
+   * update, so offsets never accumulate on bones a clip doesn't key.
+   */
+  bone(name: string): Object3D | null {
+    const b = this.ch.root.getObjectByName(name) ?? null;
+    if (b) this.procedural.push({ bone: b, q: b.quaternion.clone() });
+    return b;
+  }
+  private procedural: { bone: Object3D; q: Quaternion }[] = [];
+  /** Put procedural bones back to their clip pose (frames where the mixer isn't stepped). */
+  restoreBones() {
+    for (const p of this.procedural) p.bone.quaternion.copy(p.q);
   }
 
   update(dt: number) {
-    if (this.oneShot && !this.oneShot.isRunning() && this.current) {
+    for (const p of this.procedural) p.bone.quaternion.copy(p.q);
+    this.updateMixer(dt);
+    for (const p of this.procedural) p.q.copy(p.bone.quaternion);
+  }
+
+  private updateMixer(dt: number) {
+    if (this.oneShot && !this.hold && !this.oneShot.isRunning() && this.current) {
       this.current.reset().play().crossFadeFrom(this.oneShot, 0.15, false);
       this.oneShot = null;
     }

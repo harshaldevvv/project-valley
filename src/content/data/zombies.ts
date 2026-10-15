@@ -64,6 +64,8 @@ export const senses = {
   searchS: 25,
   hearingBump: 0.45, // suspicion from a heard noise (never straight to detected)
   losHz: 10,
+  nearRange: 3.5, // inside this, a zombie senses the player at any angle (peripheral / smell)
+  nearRate: 0.8, // suspicion/s from that
 };
 
 export const horde = {
@@ -72,5 +74,6 @@ export const horde = {
   groanMin: 4,
   groanMax: 10,
   passive: false,
+  shadowDist: 15, // m from the camera; skinned shadows are expensive (principles §13)
   showSenses: false,
 };

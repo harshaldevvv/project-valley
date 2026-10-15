@@ -12,7 +12,7 @@ export const movement = {
   sprintRamp: 0.25, // s, jog -> sprint
   airControl: 0.25,
   gravity: 18, // m/s² (snappier than 9.81 for a character; bullets use 9.81)
-  jumpVelocity: 6.2,
+  jumpVelocity: 4.6, // ≈0.6 m hop: obstacles over that need a vault
   coyote: 0.1,
   jumpBuffer: 0.12,
   // Capsule: radius + half-height; crouch lowers it.

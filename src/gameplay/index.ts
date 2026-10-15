@@ -41,7 +41,7 @@ export async function installGameplay(game: Game): Promise<void> {
   game.scene.add(body.root);
   const bodyAnim = body.skinned ? new AnimationController(body) : null;
   ctx.playerAnim = bodyAnim;
-  const chest = body.root.getObjectByName('chest') ?? null;
+  const chest = bodyAnim?.bone('chest') ?? null;
   await ctx.weapons.init(body.hand);
   await Promise.all([ctx.targets.init(), ctx.vehicles.init(), ctx.animStand.init()]);
 
@@ -68,6 +68,7 @@ export async function installGameplay(game: Game): Promise<void> {
       ctx.controls.endTick();
     },
     render(alpha, dt) {
+      perf.begin('anim');
       ctx.player.render(alpha);
       ctx.vehicles.render(alpha);
       ctx.rig.render(alpha, dt);
@@ -88,15 +89,18 @@ export async function installGameplay(game: Game): Promise<void> {
       pose.lean = p.sprinting ? 0.2 : 0;
       pose.swing = ctx.melee.swingVis * (ctx.melee.phase === 'idle' ? 0 : 1);
       pose.armRaise = ctx.melee.phase === 'shove' ? Math.max(0, ctx.melee.swingVis) : 0;
-      if (p.dead && !wasDead) bodyAnim?.oneshot('death');
-      if (!p.dead && wasDead) bodyAnim?.base('idle', 0.1);
+      if (p.dead && !wasDead) bodyAnim?.oneshot('death', 0.1, true);
+      if (!p.dead && wasDead) bodyAnim?.base('idle', 0.1, 1, true);
       wasDead = p.dead;
       if (p.dead && !bodyAnim) {
         body.root.rotateX(-1.4);
         pose.hold = 'none';
       }
       if (bodyAnim) {
-        bodyAnim.base(p.crouched ? (p.gait === 'idle' ? 'crouch_idle' : 'crouch_walk') : p.gait === 'sprint' ? 'sprint' : p.gait === 'jog' ? 'run' : p.gait === 'walk' ? 'walk' : 'idle');
+        // Locomotion clip by gait, playback rate matched to ground speed (no foot sliding)
+        const sp = p.speed01 * movement.jog;
+        const [clip, ref] = p.crouched ? (p.gait === 'idle' ? ['crouch_idle', 0] : ['crouch_walk', movement.crouch]) : p.gait === 'sprint' ? ['sprint', movement.sprint] : p.gait === 'jog' ? ['run', movement.jog] : p.gait === 'walk' ? ['walk', movement.walk] : ['idle', 0];
+        bodyAnim.base(clip as string, 0.2, ref ? Math.max(0.5, Math.min(1.5, sp / (ref as number))) : 1);
         const w = ctx.weapons;
         const cls = w.def?.class === 'pistol' ? 'pistol' : 'rifle';
         bodyAnim.overlay(`aim_${cls}`, w.item && !w.isMelee ? 1 - pose.holster : 0);
@@ -104,6 +108,7 @@ export async function installGameplay(game: Game): Promise<void> {
         // Upper body follows the aim pitch (clips are authored level)
         if (chest && w.item) chest.rotation.x -= p.pitch * 0.7 * (1 - pose.holster);
       } else applyPose(body);
+      perf.end('anim');
       perf.begin('ui');
       ctx.hud.render(dt);
       perf.end('ui');

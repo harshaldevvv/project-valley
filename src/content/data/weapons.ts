@@ -152,7 +152,8 @@ export const shove = {
 
 export const finisher = {
   duration: 0.8,
-  range: 1.8,
+  range: 3.2, // reaches a zombie a shove just pushed back; the player lunges in
+  lungeTo: 0.9, // m from the target
 };
 
 /** Slots the number keys select, in order 1..4. */
@@ -164,8 +165,12 @@ export const handling = {
   adsSwayDeg: 0.15, // Lissajous sway amplitude while aiming
   adsSwayHz: 0.4,
   exhaustedSwayMul: 3,
-  fpHip: [0.17, -0.16, -0.36] as [number, number, number], // viewmodel offset from the eye (m)
-  fpAds: [0, -0.075, -0.26] as [number, number, number],
+  /** First-person viewmodel grip offset from the eye (m) per class; ADS centres the sight (x=0, y=-sight height). */
+  fp: {
+    rifle: { hip: [0.14, -0.18, -0.52], adsZ: -0.4 },
+    pistol: { hip: [0.12, -0.14, -0.38], adsZ: -0.36 },
+    knife: { hip: [0.16, -0.17, -0.34], adsZ: -0.34 },
+  } as Record<string, { hip: [number, number, number]; adsZ: number }>,
   muzzleFlashSize: 0.32,
   /** Weapon rotation in the skinned SOCKET_hand_R (radians XYZ); tune live if the rig's socket axes change. */
   gripRot: [0, 0, 0] as [number, number, number],

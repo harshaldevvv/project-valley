@@ -54,7 +54,7 @@ export class Melee {
       const want = c.pressed('fire') ? 'light' : c.pressed('aim') ? 'heavy' : null;
       if (want) {
         if (this.phase === 'idle') this.start(want, def);
-        else if (this.phase === 'recovery' && this.t <= def.bufferWindow) this.buffered = want;
+        else if ((this.phase === 'recovery' && this.t <= def.bufferWindow) || this.phase === 'shove') this.buffered = want;
         else if (this.phase === 'recovery') this.buffered = null;
       }
     }
@@ -99,7 +99,12 @@ export class Melee {
           this.raysDone = 1;
           this.doShove();
         }
-        if (this.t <= 0) this.phase = 'idle';
+        if (this.t <= 0) {
+          this.phase = 'idle';
+          const b = this.buffered;
+          this.buffered = null;
+          if (b && def) this.start(b, def); // shove -> stab flows straight into a finisher
+        }
         break;
       case 'finisher': {
         const z = this.target;
@@ -107,6 +112,14 @@ export class Melee {
         if (z && z.alive) {
           z.mode = 'stagger';
           z.modeT = 0.2;
+          // Lunge to the target in the first 0.2 s, facing it
+          _d.subVectors(z.curr, p.curr).setY(0);
+          const gap = _d.length() - FIN.lungeTo;
+          if (gap > 0.01) {
+            p.curr.addScaledVector(_d.normalize(), Math.min(gap, gap * dt * 12 + 0.02));
+            p.syncBody();
+          }
+          p.yaw = Math.atan2(-_d.x, -_d.z);
         }
         if (this.t <= 0) {
           p.locked = false;
@@ -138,6 +151,7 @@ export class Melee {
       this.target = z;
       this.ctx.player.locked = true;
       this.ctx.player.invulnT = FIN.duration;
+      this.ctx.playerAnim?.oneshot('melee_heavy', 0.08);
       this.ctx.sfx('melee_swing', this.ctx.player.curr);
       return;
     }

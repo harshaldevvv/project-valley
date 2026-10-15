@@ -11,8 +11,12 @@ import { paintGeometry, paletteMaterial } from '../../engine/palette';
 export interface WeaponModel {
   root: Object3D;
   muzzle: Object3D;
-  /** Magazine part (dropped/hidden during reload) — placeholder only. */
+  /** Magazine part (hidden between mag-out and mag-in). */
   mag: Object3D | null;
+  /** Height of the sight line above the grip origin (FP ADS centres this). */
+  sightY: number;
+  /** Support-hand point (handguard), grip-local; null for one-handed. */
+  support: Object3D | null;
 }
 
 type Kind = 'pistol' | 'rifle' | 'knife';
@@ -50,14 +54,17 @@ export async function makeWeaponModel(id: string, modelId: string, kind: Kind): 
     const m = (await loadModel(modelId)).create();
     root.add(m.root);
     mag = m.root.getObjectByName('MAG') ?? null;
-    const sock = m.sockets.get('muzzle') ?? m.sockets.get('tip');
-    if (sock) {
-      root.traverse((o) => { if ((o as Mesh).isMesh) o.castShadow = true; });
-      return { root, muzzle: sock, mag };
-    }
     const b = new Box3().setFromObject(m.root);
-    tipZ = b.min.z;
-    tipY = (b.max.y + b.min.y) / 2;
+    const sight = m.sockets.get('sight');
+    const sightY = sight ? sight.position.y : b.max.y - 0.01;
+    const sock = m.sockets.get('muzzle') ?? m.sockets.get('tip');
+    root.traverse((o) => { if ((o as Mesh).isMesh) o.castShadow = true; });
+    const support = m.sockets.get('support') ?? null;
+    if (sock) return { root, muzzle: sock, mag, sightY, support };
+    const muzzle = new Object3D();
+    muzzle.position.set(0, (b.max.y + b.min.y) / 2 + 0.02, b.min.z);
+    root.add(muzzle);
+    return { root, muzzle, mag, sightY, support };
   } else {
     const m = new Mesh(placeholder(kind), mat);
     root.add(m);
@@ -74,5 +81,5 @@ export async function makeWeaponModel(id: string, modelId: string, kind: Kind): 
   const muzzle = new Object3D();
   muzzle.position.set(0, tipY, tipZ);
   root.add(muzzle);
-  return { root, muzzle, mag };
+  return { root, muzzle, mag, sightY: tipY + 0.03, support: null };
 }

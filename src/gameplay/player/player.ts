@@ -117,6 +117,7 @@ export class Player implements PlayerView {
   damage(amount: number, from: Vector3 | null) {
     if (this.dead || this.godMode || this.invulnT > 0 || this.inVehicle) return false;
     this.hp = Math.max(0, this.hp - amount);
+    if (this.hp > 0) this.ctx.playerAnim?.oneshot('hit_react', 0.05);
     this.ctx.game.events.emit('playerDamaged', { amount, from: from ? from.clone() : null });
     if (this.hp <= 0) {
       this.dead = true;
@@ -126,7 +127,7 @@ export class Player implements PlayerView {
     return true;
   }
 
-  private syncBody() {
+  syncBody() {
     const hh = this.halfHeight;
     this.body.setNextKinematicTranslation({ x: this.curr.x, y: this.curr.y + hh + M.radius, z: this.curr.z });
   }
@@ -201,6 +202,7 @@ export class Player implements PlayerView {
       if (!this.tryVault() && this.stamina.spend(SD.jump)) {
         if (this.crouched && this.headroom()) this.setCrouch(false);
         this.vy = M.jumpVelocity;
+        this.ctx.playerAnim?.oneshot('jump', 0.08);
         this.sinceGround = 9;
         this.grounded = false;
         this.ctx.sfx('footstep_concrete', this.curr, { volume: 0.6 });
@@ -262,6 +264,7 @@ export class Player implements PlayerView {
   private land(speed: number) {
     this.lastFall = speed;
     this.landed = Math.min(1, speed / 12);
+    if (speed > 4) this.ctx.playerAnim?.oneshot('land', 0.05);
     this.ctx.sfx('jump_land', this.curr, { volume: Math.min(1, 0.3 + speed / 12) });
     if (speed > M.hardLandSpeed) this.ctx.game.events.emit('noise', { position: this.curr.clone(), radius: M.landNoise, source: 'land' });
   }
@@ -306,10 +309,13 @@ export class Player implements PlayerView {
     const fz = -Math.cos(this.yaw);
     const sp = Math.hypot(this.vel.x, this.vel.z);
     if (sp < 0.5) return false;
-    const ray = new R.Ray({ x: this.curr.x, y: this.curr.y + M.vaultMin * 0.6, z: this.curr.z }, { x: fx, y: 0, z: fz });
-    const hit = world.castRay(ray, M.vaultReach + M.radius, true, undefined, filt, this.collider);
-    if (!hit) return false;
-    const d = hit.timeOfImpact;
+    // Several heights: tables and fences are open underneath
+    let d = Infinity;
+    for (const hy of [0.3, 0.6, 0.9, 1.2]) {
+      const hit = world.castRay(new R.Ray({ x: this.curr.x, y: this.curr.y + hy, z: this.curr.z }, { x: fx, y: 0, z: fz }), M.vaultReach + M.radius, true, undefined, filt, this.collider);
+      if (hit && hit.timeOfImpact < d) d = hit.timeOfImpact;
+    }
+    if (d === Infinity) return false;
     // Top of the obstacle just past the hit face
     const px = this.curr.x + fx * (d + 0.12);
     const pz = this.curr.z + fz * (d + 0.12);
@@ -331,6 +337,7 @@ export class Player implements PlayerView {
     if (!this.stamina.spend(SD.vault)) return false;
     const to = thin ? new Vector3(fxp, farY + 0.02, fzp) : new Vector3(px + fx * 0.3, topY + 0.02, pz + fz * 0.3);
     this.vault = { t: 0, from: this.curr.clone(), to, peak: topY + 0.15 };
+    this.ctx.playerAnim?.oneshot('jump', 0.05);
     this.collider.setEnabled(false);
     this.vy = 0;
     this.ctx.sfx('jump_land', this.curr, { volume: 0.5, pitchJitter: 0.1 });
