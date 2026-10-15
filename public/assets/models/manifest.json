@@ -143,21 +143,23 @@
     "url": "/assets/models/prop/prop_target_plate_a.glb",
     "category": "prop",
     "tris": {
-      "prop_target_plate_a_LOD0": 412,
-      "prop_target_plate_a_LOD1": 96,
-      "prop_target_plate_a_LOD2": 60
+      "prop_target_plate_a_LOD0": 312,
+      "prop_target_plate_a_LOD1": 72,
+      "prop_target_plate_a_LOD2": 60,
+      "prop_target_plate_a_PLATE": 316
     },
-    "bytes": 15688
+    "bytes": 20592
   },
   "prop_weapon_rack_a": {
     "url": "/assets/models/prop/prop_weapon_rack_a.glb",
     "category": "prop",
     "tris": {
-      "prop_weapon_rack_a_LOD0": 932,
-      "prop_weapon_rack_a_LOD1": 120,
-      "prop_weapon_rack_a_LOD2": 72
+      "prop_weapon_rack_a_LOD0": 1120,
+      "prop_weapon_rack_a_LOD1": 132,
+      "prop_weapon_rack_a_LOD2": 72,
+      "prop_weapon_rack_a_GUNS": 508
     },
-    "bytes": 25720
+    "bytes": 38068
   },
   "kit_wood_door": {
     "url": "/assets/models/kit/kit_wood_door.glb",
@@ -265,9 +267,9 @@
     "tris": {
       "wpn_pistol_a_LOD0": 684,
       "wpn_pistol_a_LOD1": 168,
-      "MAG": 108
+      "wpn_pistol_a_MAG": 108
     },
-    "bytes": 23992
+    "bytes": 24108
   },
   "wpn_mag_pistol_a": {
     "url": "/assets/models/wpn/wpn_mag_pistol_a.glb",
@@ -291,9 +293,9 @@
     "tris": {
       "wpn_rifle_a_LOD0": 804,
       "wpn_rifle_a_LOD1": 268,
-      "MAG": 156
+      "wpn_rifle_a_MAG": 156
     },
-    "bytes": 27752
+    "bytes": 27864
   },
   "chr_survivor_a": {
     "url": "/assets/models/chr/chr_survivor_a.glb",
@@ -331,12 +333,12 @@
       "veh_pickup_a_LOD0": 1400,
       "veh_pickup_a_LOD1": 496,
       "veh_pickup_a_LOD2": 164,
-      "WHEEL_FL": 356,
-      "WHEEL_FR": 356,
-      "WHEEL_RL": 356,
-      "WHEEL_RR": 356
+      "veh_pickup_a_WHEEL_FL": 356,
+      "veh_pickup_a_WHEEL_FR": 356,
+      "veh_pickup_a_WHEEL_RL": 356,
+      "veh_pickup_a_WHEEL_RR": 356
     },
-    "bytes": 63116
+    "bytes": 63528
   },
   "zmb_shambler_a": {
     "url": "/assets/models/zmb/zmb_shambler_a.glb",

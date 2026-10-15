@@ -14,6 +14,7 @@ material delimit -> palette UVs (swatch column, vertical gradient by height) -> 
 material -> collider -> GLB export (no images; the runtime swaps in the shared palette material)
 -> Workbench preview PNG.
 """
+import contextlib
 import json
 import math
 import os
@@ -70,6 +71,7 @@ class Builder:
         self.parts = {}  # name -> {"pivot": gl xyz, "bm": bmesh}: separate child nodes (wheels, doors, mags)
         self.col_boxes = []  # explicit compound collider boxes (center, size, rot)
         self._target = None
+        self._xf = None  # extra placement matrix from xform()
 
     # ---------- primitives ----------
     def _slot(self, swatch):
@@ -162,14 +164,28 @@ class Builder:
         self._merge(tmp, swatch)
 
     def part(self, name, pivot=(0, 0, 0)):
-        """Following primitives go into a separate child node `name` (own mesh, origin at glTF `pivot`) under the
-        root: wheels, doors, magazines. Model it in asset space as usual. part(None) returns to the main mesh.
+        """Following primitives go into a separate child node `name` (an empty at glTF `pivot`, holding the mesh
+        "<id>_<name>") under the root: wheels, doors, magazines. Rotate/hide the `name` node in the game. Model it in asset space as usual. part(None) returns to the main mesh.
         Parts have no LODs and are not counted in LOD0 tris/budget."""
         if name is None:
             self._target = None
         else:
             self._target = self.parts.setdefault(name, {"pivot": pivot, "bm": bmesh.new()})["bm"]
         return self
+
+    @contextlib.contextmanager
+    def xform(self, center=(0, 0, 0), rot=(0, 0, 0)):
+        """`with m.xform(center, rot):` - primitives built inside are additionally rotated (degrees, glTF axes,
+        same order as box rot) then moved to `center`. Nests (inner applied first). Use it to place a reused
+        sub-model, e.g. a gun from wpnlib standing in a rack."""
+        rx, ry, rz = (math.radians(a) for a in rot)
+        mat = Matrix.Translation(gl(center)) @ Matrix.Rotation(rx, 4, "X") @ Matrix.Rotation(-rz, 4, "Y") @ Matrix.Rotation(ry, 4, "Z")
+        prev = self._xf
+        self._xf = mat if prev is None else prev @ mat
+        try:
+            yield self
+        finally:
+            self._xf = prev
 
     def collider_box(self, center, size, rot=(0, 0, 0)):
         """Add one box to a compound collider (exported as <id>_COL_box_N; put the largest first). If any are
@@ -222,6 +238,8 @@ class Builder:
         return self
 
     def _merge(self, tmp, swatch):
+        if self._xf is not None:
+            bmesh.ops.transform(tmp, matrix=self._xf, verts=tmp.verts)
         slot = self._slot(swatch)
         for f in tmp.faces:
             f.material_index = slot
@@ -278,13 +296,18 @@ class Builder:
         self.part_objs = []
         for name, p in self.parts.items():
             bmesh.ops.remove_doubles(p["bm"], verts=p["bm"].verts, dist=1e-5)
-            ob = self._object(name, p["bm"])
-            ob.data.name = name
+            # Pivot = an empty named `name` (what the game rotates); the mesh is its child "<id>_<name>" at
+            # identity. meshopt quantization rewrites MESH node TRS, so a mesh node can't hold the pivot itself.
+            ob = self._object(f"{self.id}_{name}", p["bm"])
+            ob.data.name = ob.name
             self._palette_uv(ob, lo.z, hi.z)  # in asset space, then move the origin to the pivot
             piv = gl(p["pivot"])
             ob.data.transform(Matrix.Translation(-piv))
-            ob.location = piv
-            ob.parent = root
+            pivot = bpy.data.objects.new(name, None)
+            bpy.context.scene.collection.objects.link(pivot)
+            pivot.location = piv
+            pivot.parent = root
+            ob.parent = pivot
             self.part_objs.append(ob)
             objs.append(ob)
         self.stats = {ob.name: sum(len(p.vertices) - 2 for p in ob.data.polygons) for ob in objs}
