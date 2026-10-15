@@ -12,6 +12,8 @@ const list: BuildPieceDef[] = [
   { id: 'wood_window', model: 'kit_wood_window', kind: 'window', tier: 'wood', hp: 350, size: [3, 3, 0.2], cost: [{ item: 'wood_planks', count: 5 }, { item: 'nails', count: 8 }] },
   { id: 'wood_floor', model: 'kit_wood_floor', kind: 'floor', tier: 'wood', hp: 500, size: [3, 0.2, 3], cost: [{ item: 'wood_planks', count: 6 }, { item: 'nails', count: 8 }] },
   { id: 'wood_stairs', model: 'kit_wood_stairs', kind: 'stairs', tier: 'wood', hp: 500, size: [3, 3, 3], cost: [{ item: 'wood_planks', count: 8 }, { item: 'nails', count: 10 }] },
+  // Half gable: one cell of a 2-row ridge gable end; tall end at local -X (pair two per gable end, rotY ±90°).
+  { id: 'wood_gable', model: 'kit_wood_gable', kind: 'gable', tier: 'wood', hp: 350, size: [3, 1.5, 0.2], cost: [{ item: 'wood_planks', count: 3 }, { item: 'nails', count: 4 }] },
   { id: 'wood_roof', model: 'kit_wood_roof', kind: 'roof', tier: 'wood', hp: 500, size: [3, 1.5, 3], cost: [{ item: 'wood_planks', count: 6 }, { item: 'nails', count: 8 }] },
 ];
 

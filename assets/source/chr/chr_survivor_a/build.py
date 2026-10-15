@@ -115,9 +115,9 @@ IK0 = {**ch.arm_ik(IDLE0, "R"), **ch.arm_ik(IDLE0, "L")}
 
 WALK = dict(v=1.6, T=0.8, duty=0.6, w=0.085, lift=0.08, reach=0.03, hs=14, to=24, hip_z=-0.005, lean=3,
             arms=(2, 16, 14, 18, 8), yaw=7, roll=3, sway=0.02)
-RUN = dict(v=3.5, T=0.66, duty=0.33, w=0.075, lift=0.34, lpk=0.35, reach=0.0, hs=6, to=26, hip_z=-0.035, comp=0.035,
+RUN = dict(v=3.5, T=20 / 30, duty=0.33, w=0.075, lift=0.34, lpk=0.35, reach=0.0, hs=6, to=26, hip_z=-0.035, comp=0.035,
            fly=0.015, lean=9, arms=(10, 30, 78, 18, 12), ain=10, yaw=9, roll=3, sway=0.012, k0=0.12, nod=1)
-SPRINT = dict(v=5.75, T=0.56, duty=0.26, w=0.07, lift=0.45, lpk=0.35, reach=0.02, hs=4, to=30, hip_z=-0.04, comp=0.04,
+SPRINT = dict(v=5.75, T=17 / 30, duty=0.26, w=0.07, lift=0.45, lpk=0.35, reach=0.02, hs=4, to=30, hip_z=-0.04, comp=0.04,
               fly=0.02, lean=16, arms=(14, 46, 82, 22, 10), ain=12, yaw=11, roll=3, sway=0.01, k0=0.08, nod=1)
 CWALK = dict(v=1.2, T=0.9, duty=0.62, w=0.12, lift=0.06, reach=0.04, hs=8, to=16, hip_z=-0.34, lean=24,
              arms=(26, 10, 52, 10, 14), yaw=5, roll=2, sway=0.02, nod=0.5)

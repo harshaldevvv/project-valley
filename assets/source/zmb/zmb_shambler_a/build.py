@@ -112,7 +112,7 @@ def z_idle(t):
 ZWALK = dict(v=1.2, T=1.0, duty=0.6, duty_R=0.66, duty_L=0.58, off_L=0.55, w=0.11, lift=0.09, lift_R=0.025, drag_R=1.0,
              reach=0.03, hs=10, hs_R=0.0, to=18, to_R=8, hip_z=-0.07, lean=30, roll=7, yaw=8, sway=0.045, nod=3,
              arms=(30, 8, 30, 10, 12))
-ZRUN = dict(v=4.5, T=0.62, duty=0.32, w=0.1, lift=0.28, lpk=0.4, k0=0.15, reach=0.02, hs=4, to=22, hip_z=-0.07, comp=0.03,
+ZRUN = dict(v=4.5, T=19 / 30, duty=0.32, w=0.1, lift=0.28, lpk=0.4, k0=0.15, reach=0.02, hs=4, to=22, hip_z=-0.07, comp=0.03,
             lean=30, roll=6, yaw=12, sway=0.02, nod=2, arms=(55, 25, 30, 20, 20))
 
 

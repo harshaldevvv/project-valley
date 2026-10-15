@@ -38,7 +38,7 @@ export interface Slot {
 }
 
 const QUARTER = Math.PI / 2;
-const EDGE_KINDS = new Set(['wall', 'doorway', 'window']);
+const EDGE_KINDS = new Set(['wall', 'doorway', 'window', 'gable']);
 
 export const pieceDef = (id: string): BuildPieceDef => {
   const d = BUILD_BY_ID[id];
@@ -68,14 +68,16 @@ export function slotOf(defId: string, x: number, y: number, z: number, rot: numb
   // Edge pieces (and doors, which live in a doorway's edge).
   const k = level(0);
   const prefix = d.kind === 'door' ? 'D' : 'E';
+  // Gables are asymmetric (tall end at local -X), so they keep their full facing; other edge pieces are symmetric.
+  const keep = d.kind === 'gable';
   if (steps % 2 === 0) {
     const i = cell(x);
     const jl = line(z);
-    return { key: `${prefix}:h:${i}:${jl}:${k}`, x: (i + 0.5) * G, y: ft + k * S, z: jl * G, rot: 0 };
+    return { key: `${prefix}:h:${i}:${jl}:${k}`, x: (i + 0.5) * G, y: ft + k * S, z: jl * G, rot: keep ? steps * QUARTER : 0 };
   }
   const il = line(x);
   const j = cell(z);
-  return { key: `${prefix}:v:${il}:${j}:${k}`, x: il * G, y: ft + k * S, z: (j + 0.5) * G, rot: QUARTER };
+  return { key: `${prefix}:v:${il}:${j}:${k}`, x: il * G, y: ft + k * S, z: (j + 0.5) * G, rot: keep ? steps * QUARTER : QUARTER };
 }
 
 export const slotOfPiece = (p: Piece) => slotOf(p.defId, p.x, p.y, p.z, p.rot);

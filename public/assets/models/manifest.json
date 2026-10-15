@@ -259,16 +259,6 @@
     },
     "bytes": 28032
   },
-  "kit_wood_wall_gable": {
-    "url": "/assets/models/kit/kit_wood_wall_gable.glb",
-    "category": "kit",
-    "tris": {
-      "kit_wood_wall_gable_LOD0": 236,
-      "kit_wood_wall_gable_LOD1": 60,
-      "kit_wood_wall_gable_LOD2": 44
-    },
-    "bytes": 15048
-  },
   "wpn_pistol_a": {
     "url": "/assets/models/wpn/wpn_pistol_a.glb",
     "category": "wpn",
@@ -313,7 +303,7 @@
       "chr_survivor_a_LOD1": 934,
       "chr_survivor_a_LOD2": 353
     },
-    "bytes": 518072
+    "bytes": 518580
   },
   "wpn_knife_a": {
     "url": "/assets/models/wpn/wpn_knife_a.glb",
@@ -347,5 +337,15 @@
       "WHEEL_RR": 356
     },
     "bytes": 63116
+  },
+  "zmb_shambler_a": {
+    "url": "/assets/models/zmb/zmb_shambler_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_shambler_a_LOD0": 1454,
+      "zmb_shambler_a_LOD1": 717,
+      "zmb_shambler_a_LOD2": 282
+    },
+    "bytes": 246640
   }
 }

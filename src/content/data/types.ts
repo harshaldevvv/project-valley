@@ -129,7 +129,7 @@ export interface VehicleDef {
 export interface BuildPieceDef {
   id: string;
   model: string;
-  kind: 'foundation' | 'floor' | 'wall' | 'doorway' | 'door' | 'window' | 'stairs' | 'roof';
+  kind: 'foundation' | 'floor' | 'wall' | 'doorway' | 'door' | 'window' | 'stairs' | 'roof' | 'gable';
   tier: 'wood' | 'reinforced' | 'scrap' | 'concrete' | 'steel';
   hp: number;
   /** Model size in metres (w, h, d), also the placeholder box size. Pieces snap on the build grid (data/build.ts). */

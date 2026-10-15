@@ -33,6 +33,11 @@ export const yardHouse: Piece[] = [
   ['wood_door', X0 + 2 * G, WALL_Y, Z0 + c(1), Q],
   // roof: north row turned 180 deg so the two rows meet in a gable ridge
   ...[0, 1].flatMap((i) => [0, 1].map((j): Piece => ['wood_roof', X0 + c(i), ROOF_Y, Z0 + c(j), j === 0 ? Math.PI : 0])),
+  // gable ends (west + east): two half gables each, tall ends meeting under the ridge at z = Z0 + G
+  ...[X0, X0 + 2 * G].flatMap((x): Piece[] => [
+    ['wood_gable', x, ROOF_Y, Z0 + c(0), Q],
+    ['wood_gable', x, ROOF_Y, Z0 + c(1), -Q],
+  ]),
 ];
 
 /** Places the house once systems has installed game.build (deferred to the first sim tick). */
