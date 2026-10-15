@@ -11,6 +11,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { Game } from '../../core/game';
 import { loadAsset } from '../../engine/assets';
 import { placeStatic } from '../../engine/instancing';
+import { loadModel } from '../../engine/models';
 import { paletteMaterial, swatchUV } from '../../engine/palette';
 import { Group, groups } from '../../engine/physics';
 import { addGroundRegion, assetSurface, surfaceOfSwatch, tagCollider, type Surface } from '../surfaces';
@@ -125,6 +126,18 @@ export class Kit {
     this.game.scene.add(o);
     this.colliders(proto.colliders, p);
     return o;
+  }
+
+  /** A model with part/socket nodes kept (engine loadModel), e.g. PLATE hinge, rack GUNS. LOD0 only. */
+  async model(p: Placement): Promise<Object3D> {
+    const proto = await loadModel(p.id, p.size);
+    const root = proto.create().root;
+    root.position.set(p.x, p.y ?? 0, p.z);
+    root.rotation.y = p.yaw ?? 0;
+    root.updateMatrixWorld(true);
+    this.game.scene.add(root);
+    this.colliders(proto.colliders, p);
+    return root;
   }
 
   private colliders(boxes: { min: Vector3; max: Vector3 }[], p: Placement) {
