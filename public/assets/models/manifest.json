@@ -1,0 +1,12 @@
+{
+  "prop_crate_wood_a": {
+    "url": "/assets/models/prop/prop_crate_wood_a.glb",
+    "category": "prop",
+    "tris": {
+      "prop_crate_wood_a_LOD0": 1096,
+      "prop_crate_wood_a_LOD1": 168,
+      "prop_crate_wood_a_LOD2": 72
+    },
+    "bytes": 28252
+  }
+}

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.blend1
+.vite/
+artifacts/
+assets/previews/*.tmp.png
+.claude/settings.local.json
+__pycache__/
