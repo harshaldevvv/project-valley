@@ -347,5 +347,13 @@
       "zmb_shambler_a_LOD2": 282
     },
     "bytes": 246640
+  },
+  "chr_arms_fp": {
+    "url": "/assets/models/chr/chr_arms_fp.glb",
+    "category": "chr",
+    "tris": {
+      "chr_arms_fp_LOD0": 768
+    },
+    "bytes": 419536
   }
 }
