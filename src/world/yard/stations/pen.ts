@@ -21,12 +21,12 @@ export function buildPen(kit: Kit) {
     kit.place({ id: gate ? 'env_gate_chainlink_a' : 'env_fence_chainlink_a', size: [3, 2.2, 0.08], x: x - hw, z: z + o, yaw: Math.PI / 2 }); // west (front faces spawn)
   }
   // Corner posts.
-  for (const [cx, cz] of [[-hw, -hd], [hw, -hd], [-hw, hd], [hw, hd]]) kit.box(0.14, 2.5, 0.14, 'metal_dark', x + cx, 0, z + cz);
+  for (const [cx, cz] of [[-hw, -hd], [hw, -hd], [-hw, hd], [hw, hd]]) kit.box(0.14, 2.5, 0.14, 'metal_bare', x + cx, 0, z + cz);
 
   // A little cover inside: barrels and a concrete block, so pathing isn't a featureless square.
   for (const [bx, bz, sw] of [[4, -6, 'rust'], [4.7, -5.5, 'rust_dark'], [-5, 5, 'paint_red_faded']] as const) {
     kit.paint(new CylinderGeometry(0.3, 0.3, 0.9, 10).translate(x + bx, 0.45, z + bz), sw);
-    kit.cuboid(0.3, 0.45, 0.3, x + bx, 0.45, z + bz);
+    kit.cuboid(0.3, 0.45, 0.3, x + bx, 0.45, z + bz, 0, 'metal');
   }
   kit.box(2, 0.8, 0.8, 'concrete', x + 5, 0, z + 4, 0.4, true);
 

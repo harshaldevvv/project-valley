@@ -38,7 +38,7 @@ The contract every asset and scene follows. Budgets are first estimates, refined
 - Window sill: 0.9 m.
 - Road lane: 3.5 m.
 - Vehicles follow real dimensions. For example, a pickup is about 5.3 × 2.0 × 1.9 m.
-- Modular building grid: 1.0 m. Base-building grid: 1.5 m. Pieces snap.
+- Modular building grid: 1.0 m. Base-building grid: 3 m cells, 3 m storeys, foundation top at 0.5 m (src/content/data/build.ts). Pieces snap.
 
 ## Triangle budgets (LOD0, then LOD1 / LOD2 targets)
 

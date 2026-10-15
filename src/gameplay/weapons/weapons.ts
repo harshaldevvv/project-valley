@@ -420,7 +420,7 @@ export class Weapons {
     _r.crossVectors(_d, UP).normalize();
     _u.crossVectors(_r, _d);
     out.set(p.curr.x, p.curr.y + p.eyeHeight, p.curr.z);
-    if (this.ctx.rig.mode === 'fp') return out.addScaledVector(_r, 0.12 * (1 - this.adsEased)).addScaledVector(_u, -0.08).addScaledVector(_d, 0.5);
+    if (this.ctx.rig.firstPerson) return out.addScaledVector(_r, 0.12 * (1 - this.adsEased)).addScaledVector(_u, -0.08).addScaledVector(_d, 0.5);
     return out.addScaledVector(_r, 0.28 * this.ctx.rig.sideT).addScaledVector(_u, -0.22).addScaledVector(_d, 0.65);
   }
 
@@ -574,7 +574,7 @@ export class Weapons {
   // --------------------------------------------------------------- rendering
   render(_alpha: number, dt: number) {
     const ctx = this.ctx;
-    const fp = ctx.rig.mode === 'fp' && !ctx.player.inVehicle;
+    const fp = ctx.rig.firstPerson && !ctx.player.inVehicle;
     const m = this.item ? this.models.get(this.item.defId) : undefined;
     const p = ctx.player;
     const hidden = p.inVehicle || p.dead || this.isBuilding();

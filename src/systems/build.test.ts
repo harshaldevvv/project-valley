@@ -45,6 +45,16 @@ describe('build rules', () => {
     expect(refundOf(door)).toEqual([{ item: 'wood_planks', count: 1 }, { item: 'nails', count: 2 }]);
   });
 
+  it('gables sit on walls and R flips their tall end', () => {
+    const p: Piece[] = [];
+    put(p, 'wood_foundation', { x: 1.5, y: 0, z: 1.5 });
+    expect(put(p, 'wood_gable', { x: 1.5, y: 0.5, z: 0.4 }).valid).toBe(false); // no wall below at level 1
+    put(p, 'wood_wall', { x: 1.5, y: 0.5, z: 0.4 });
+    const top = { x: 1.5, y: 3.5, z: 0.4 };
+    expect(snapToHit('wood_gable', top, 0, p, area)).toMatchObject({ valid: true, z: 0, rot: 0, y: BUILD.foundationTop + BUILD.storey });
+    expect(snapToHit('wood_gable', top, 2, p, area)).toMatchObject({ valid: true, z: 0, rot: Math.PI });
+  });
+
   it('slotOf normalizes arbitrary positions (programmatic place)', () => {
     expect(slotOf('wood_wall', 1.4, 0.55, 3.1, Math.PI / 2 + 0.01)).toMatchObject({ x: 0, z: 4.5, rot: Math.PI / 2, key: 'E:v:0:1:0' });
     expect(slotOf('wood_wall', 1.5, 0.5, 3, Math.PI).key).toBe('E:h:0:1:0');

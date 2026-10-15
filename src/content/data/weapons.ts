@@ -75,8 +75,8 @@ export interface WeaponFeel {
   fallbackSize: [number, number, number]; // placeholder model box
 }
 export const weaponFeel: Record<string, WeaponFeel> = {
-  pistol_a: { model: 'wpn_pistol_a', sound: 'pistol_shot', drawMs: 350, trauma: 0.1, fovKick: 1, viewPunch: 1.2, kickBack: 0.03, recoverFrac: 0.85, magSize: 15, fallbackSize: [0.04, 0.13, 0.2] },
-  rifle_a: { model: 'wpn_rifle_a', sound: 'rifle_shot', drawMs: 600, trauma: 0.13, fovKick: 1.5, viewPunch: 0.9, kickBack: 0.035, recoverFrac: 0.8, magSize: 30, fallbackSize: [0.06, 0.2, 0.9] },
+  pistol_a: { model: 'wpn_pistol_a', sound: 'pistol_shot', drawMs: 350, trauma: 0.1, fovKick: 1, viewPunch: 1.2, kickBack: 0.03, recoverFrac: 0.92, magSize: 15, fallbackSize: [0.04, 0.13, 0.2] },
+  rifle_a: { model: 'wpn_rifle_a', sound: 'rifle_shot', drawMs: 600, trauma: 0.13, fovKick: 1.5, viewPunch: 0.9, kickBack: 0.035, recoverFrac: 0.92, magSize: 30, fallbackSize: [0.06, 0.2, 0.9] },
 };
 
 /** Shared ballistics (principles §3). */
@@ -143,7 +143,8 @@ export const meleeDefs: Record<string, MeleeDef> = {
 
 export const shove = {
   duration: 0.4,
-  coneDeg: 100,
+  coneDeg: 120, // principles say 100°; widened after QA-007 (shoves at a zombie beside you whiffed)
+  anyAngle: 1.1, // m: closer than this, a shove connects regardless of facing
   range: 1.8,
   maxTargets: 3,
   stagger: 1.0,
@@ -174,4 +175,25 @@ export const handling = {
   muzzleFlashSize: 0.32,
   /** Weapon rotation in the skinned SOCKET_hand_R (radians XYZ); tune live if the rig's socket axes change. */
   gripRot: [0, 0, 0] as [number, number, number],
+};
+
+/**
+ * First-person arms rig `chr_arms_fp` (asset-builder contract): parented to the camera with identity, weapons in
+ * SOCKET_weapon / SOCKET_knife with identity. Clip event times (seconds in the authored clip) drive the held magazine
+ * and the reload sounds; clips are time-scaled to the gameplay durations above.
+ */
+export const fpArms = {
+  model: 'chr_arms_fp',
+  reloadEvents: {
+    rifle: { dur: 2.4, magOut: 0.5, magDrop: 0.78, magGrab: 1.02, magIn: 1.42, bolt: 1.72 },
+    pistol: { dur: 1.9, magOut: 0.3, magDrop: 0.3, magGrab: 0.62, magIn: 1.08, bolt: 1.42 },
+  } as Record<string, { dur: number; magOut: number; magDrop: number; magGrab: number; magIn: number; bolt: number }>,
+  knifeHit: { light: 0.2, heavy: 0.55 }, // s into fp_knife_light / fp_knife_heavy
+  shoveHit: 0.2,
+  fade: 0.08, // s crossfade between clips
+  kickBack: 0.03, // m code recoil on the rig (ADS fire has no clip)
+  kickPitch: 0.04, // rad
+  swayMax: 0.05, // rad lag
+  bob: 0.012, // m
+  sprintTuck: 0.35, // rad
 };

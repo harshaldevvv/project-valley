@@ -2,6 +2,7 @@ import type RAPIER from '@dimforge/rapier3d-compat';
 import { BoxGeometry, Group as ThreeGroup, Mesh, MeshBasicMaterial, Object3D, Quaternion, Vector3 } from 'three';
 import { BUILD, BUILD_PIECES } from '../../content/data/build';
 import type { BuildPieceDef } from '../../content/data/types';
+import { buildText } from '../../content/text/build';
 import { yard } from '../../content/data/yard';
 import type { BuildApi } from '../../core/contracts';
 import type { Game } from '../../core/game';
@@ -18,23 +19,7 @@ import './build.css';
  * Build mode (B): ghost preview, snapping (rules in systems/build.ts), place/remove, doors.
  * Pieces are plain data (`pieces`); this file owns their meshes, Rapier colliders and door interactables.
  */
-const T = {
-  title: 'Build mode',
-  hint: '<kbd>LMB</kbd> place <kbd>R</kbd> rotate <kbd>X</kbd> remove <kbd>Wheel</kbd>/<kbd>1–8</kbd> piece <kbd>B</kbd> exit',
-  free: 'Free building',
-  area: 'Build here only (build pad)',
-  occupied: 'Something is already there',
-  support: 'Needs support',
-  need: 'Need',
-  holds: 'Remove what rests on it first',
-  refund: 'Salvaged',
-  open: 'Open door',
-  close: 'Close door',
-  names: {
-    wood_foundation: 'Foundation', wood_wall: 'Wall', wood_doorway: 'Doorway', wood_door: 'Door', wood_window: 'Window',
-    wood_floor: 'Floor', wood_stairs: 'Stairs', wood_roof: 'Roof',
-  } as Record<string, string>,
-};
+const T = buildText;
 
 /** Box parts (local, origin at base centre, walls run along X) for procedural placeholders until the Blender kit lands. */
 type Part = { size: [number, number, number]; at: [number, number, number]; swatch: string };
@@ -248,8 +233,7 @@ export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?:
   function say(text: string, sound?: string) {
     message = text;
     messageUntil = performance.now() + 1800;
-    if (sound) sfx(sound);
-    game.events.emit('toast', { text });
+    if (sound) sfx(sound); // the build bar shows the message; no HUD toast on top (QA-020)
   }
 
   const affordable = (d: BuildPieceDef) => BUILD.freeBuilding || d.cost.every((c) => lo.count(c.item) >= c.count);
@@ -290,7 +274,7 @@ export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?:
     barKey = key;
     const cards = BUILD_PIECES.map((d, i) => {
       const cost = BUILD.freeBuilding ? T.free : d.cost.map((c) => `${c.count} ${itemShort(c.item)}`).join(' · ');
-      return `<div class="bp${i === sel ? ' sel' : ''}${affordable(d) ? '' : ' poor'}"><span class="k">${i + 1}</span><b>${T.names[d.id] ?? d.id}</b><small>${cost}</small></div>`;
+      return `<div class="bp${i === sel ? ' sel' : ''}${affordable(d) ? '' : ' poor'}"><span class="k">${i + 1}</span><b>${T.pieces[d.id] ?? d.id}</b><small>${cost}</small></div>`;
     }).join('');
     bar.innerHTML = `<div class="bt">${T.title}${BUILD.freeBuilding ? ` <em>${T.free}</em>` : ''}</div><div class="bps">${cards}</div><div class="bh">${msg ? `<span class="msg">${msg}</span>` : T.hint}</div>`;
   }

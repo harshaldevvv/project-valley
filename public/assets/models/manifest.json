@@ -355,5 +355,35 @@
       "chr_arms_fp_LOD0": 768
     },
     "bytes": 419536
+  },
+  "zmb_civilian_f_a": {
+    "url": "/assets/models/zmb/zmb_civilian_f_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_civilian_f_a_LOD0": 1648,
+      "zmb_civilian_f_a_LOD1": 818,
+      "zmb_civilian_f_a_LOD2": 320
+    },
+    "bytes": 82056
+  },
+  "zmb_soldier_a": {
+    "url": "/assets/models/zmb/zmb_soldier_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_soldier_a_LOD0": 1912,
+      "zmb_soldier_a_LOD1": 950,
+      "zmb_soldier_a_LOD2": 360
+    },
+    "bytes": 90336
+  },
+  "zmb_worker_a": {
+    "url": "/assets/models/zmb/zmb_worker_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_worker_a_LOD0": 1700,
+      "zmb_worker_a_LOD1": 841,
+      "zmb_worker_a_LOD2": 336
+    },
+    "bytes": 84560
   }
 }

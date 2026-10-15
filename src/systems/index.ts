@@ -3,6 +3,7 @@ import { BUILD } from '../content/data/build';
 import { CONTAINERS } from '../content/data/containers';
 import { INVENTORY, ITEMS } from '../content/data/items';
 import { containerText } from '../content/text/containers';
+import { inventoryText as T } from '../content/text/ui';
 import type { Game } from '../core/game';
 import { installBuildMode } from '../ui/build/buildMode';
 import { createPickupView } from '../ui/inventory/pickups';
@@ -32,7 +33,17 @@ export async function installSystems(game: Game): Promise<void> {
   };
 
   const lo = new Loadout(game.rng, () => game.events.emit('inventoryChanged', {}));
-  lo.dropPosition = feet;
+  // Drops land a little ahead of the player, where the interact picker (and the eye) can see them.
+  lo.dropPosition = () => {
+    const f = feet();
+    try {
+      const fw = game.player.forward;
+      const len = Math.hypot(fw.x, fw.z) || 1;
+      return { x: f.x + (fw.x / len) * INVENTORY.dropAhead, y: f.y, z: f.z + (fw.z / len) * INVENTORY.dropAhead };
+    } catch {
+      return f;
+    }
+  };
   lo.giveStartingKit();
 
   const otherScreens = new Set<string>();
@@ -47,7 +58,7 @@ export async function installSystems(game: Game): Promise<void> {
 
   const pickups = createPickupView(game, lo, (item, ok) => {
     sfx(ok ? 'item_pickup' : 'build_invalid');
-    toast(ok ? `${itemName(item.defId)}` : 'No room');
+    toast(ok ? itemName(item.defId) : T.full);
   });
   game.events.on('inventoryChanged', () => {
     pickups.sync();
@@ -81,7 +92,7 @@ export async function installSystems(game: Game): Promise<void> {
     game.interact.register({
       position: pl.position,
       radius: 2.2,
-      prompt: () => (c.searched || def.searchSeconds === 0 ? `Open ${name}` : `${verb} ${name}`),
+      prompt: () => (c.searched || def.searchSeconds === 0 ? `${T.act.open} ${name}` : `${verb} ${name}`),
       holdSeconds: () => (c.searched ? 0 : def.searchSeconds),
       onInteract: () => {
         if (!c.searched) sfx('search_rustle', pl.position);
@@ -100,8 +111,8 @@ export async function installSystems(game: Game): Promise<void> {
         const r = lo.useHotbar(i);
         if (r?.use) {
           sfx(r.use.sound ?? 'item_pickup');
-          toast(`Used ${itemName(r.defId)}`);
-        } else if (lo.hotbar[i]) toast(`No ${itemName(lo.hotbar[i]!)}`);
+          toast(`${T.used} ${itemName(r.defId)}`);
+        } else if (lo.hotbar[i]) toast(`${T.no} ${itemName(lo.hotbar[i]!)}`);
       }
     },
   });

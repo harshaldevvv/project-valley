@@ -48,8 +48,8 @@ const list: LootTable[] = [
     rolls: [0, 0],
     entries: [],
     guaranteed: [
-      { item: 'rifle_a', count: 1 },
-      { item: 'pistol_a', count: 1 },
+      { item: 'rifle_a', count: 1, rounds: -1 }, // loaded
+      { item: 'pistol_a', count: 1, rounds: -1 },
       { item: 'mag_rifle_a', count: 3, rounds: -1 },
       { item: 'mag_pistol_a', count: 3, rounds: -1 },
       { item: 'ammo_762', count: 60 },

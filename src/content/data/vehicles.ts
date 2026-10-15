@@ -10,6 +10,8 @@ export interface VehicleFeel {
   idleRate: number; // engine loop playback rate at idle
   maxRate: number; // ... at top speed
   hornNoise: number; // m
+  /** Damage dealt to a zombie per m/s of impact speed (150 HP shambler dies at ≈ 30 km/h). */
+  rammingDamage: number;
   engineNoise: number;
   /** Chase camera */
   camDist: number;
@@ -45,6 +47,7 @@ export const vehicles: Record<string, VehicleDef & VehicleFeel> = {
     idleRate: 0.7,
     maxRate: 1.9,
     hornNoise: 60,
+    rammingDamage: 18,
     engineNoise: 30,
     camDist: 7.5,
     camHeight: 2.8,

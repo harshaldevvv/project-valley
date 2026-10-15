@@ -1,5 +1,5 @@
 /**
- * Raw input state. Sim reads a snapshot each tick (keys held, mouse delta accumulated since
+ * Raw input state (keys by KeyboardEvent.code, mouse buttons as 'Mouse0'/'Mouse1'/'Mouse2'). Sim reads a snapshot each tick (keys held, mouse delta accumulated since
  * the last read), so input is applied on sim ticks, not render frames.
  */
 export class Input {
@@ -18,6 +18,16 @@ export class Input {
     });
     addEventListener('keyup', (e) => this.held.delete(e.code));
     addEventListener('blur', () => this.held.clear());
+    // Mouse buttons use the pseudo-codes Mouse0 (LMB), Mouse1 (MMB), Mouse2 (RMB), same API as keys.
+    // Only presses on the canvas (or while pointer-locked) count, so clicks on DOM UI never fire weapons.
+    addEventListener('mousedown', (e) => {
+      if (this._blocked || (e.target !== el && !this.locked)) return;
+      const c = `Mouse${e.button}`;
+      this.pressed.add(c);
+      this.held.add(c);
+    });
+    addEventListener('mouseup', (e) => this.held.delete(`Mouse${e.button}`));
+    el.addEventListener('contextmenu', (e) => e.preventDefault());
     el.addEventListener('click', () => !this._blocked && this.lock());
     document.addEventListener('pointerlockchange', () => (this.locked = document.pointerLockElement === el));
     addEventListener('mousemove', (e) => {

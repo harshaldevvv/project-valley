@@ -102,7 +102,7 @@ export interface LootTable {
   id: string;
   rolls: [number, number];
   entries: { item: string; weight: number; count: [number, number] }[];
-  /** Always added, before the weighted rolls. `rounds` = -1 fills magazines to capacity. */
+  /** Always added, before the weighted rolls. `rounds` = -1: magazines full, weapons loaded with a full magazine. */
   guaranteed?: { item: string; count: number; rounds?: number }[];
 }
 

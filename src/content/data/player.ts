@@ -22,7 +22,7 @@ export const movement = {
   eyeStand: 1.62,
   eyeCrouch: 1.05,
   maxSlopeDeg: 50,
-  stepHeight: 0.4,
+  stepHeight: 0.55, // QA-003: the house foundation lip is 0.5 m
   // Vault: obstacles 0.5–1.3 m tall, ≤ 0.6 m thick, 0.4–0.6 s.
   vaultMin: 0.5,
   vaultMax: 1.3,
@@ -54,6 +54,7 @@ export const stamina = {
 export const health = {
   max: 100,
   respawnDelay: 3,
+  hitIframes: 0.35, // s of invulnerability after taking a hit
 };
 
 export const cameraFeel = {
@@ -68,6 +69,9 @@ export const cameraFeel = {
   collisionRadius: 0.2,
   easeOut: 0.3, // s to ease back out after a collision snap-in
   shoulderSwap: 0.2, // s
+  collapseIn: 0.6, // m camera-to-eye: below this the TP camera switches to the eye (QA-001)
+  collapseOut: 0.8, // hysteresis
+  deathCamHeight: 4.5,
   // First person
   fovFp: 85,
   headBob: true,

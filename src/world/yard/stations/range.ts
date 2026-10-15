@@ -1,4 +1,4 @@
-import { BufferGeometry, Shape, ExtrudeGeometry, Vector3 } from 'three';
+import { BufferGeometry, ExtrudeGeometry, Group, Object3D, Shape, Vector3 } from 'three';
 import { yard } from '../../../content/data/yard';
 import type { Kit } from '../kit';
 import { plateSign, stationSign, text } from '../signs';
@@ -14,6 +14,33 @@ export function wedge(x0: number, x1: number, profile: [z: number, y: number][])
     .translate(x1, 0, 0);
 }
 
+/** Plate hinge height (top edge of prop_target_plate_a). */
+export const HINGE_Y = 1.8;
+
+/**
+ * Wraps a plate in root (at its base, what places.targets gets) -> `hinge` Group at the top edge -> model.
+ * Mechanics swings `object.userData.hinge.rotation.x` (local X = across the plate; NEGATIVE tips the bottom away
+ * from the shooter). ponytail: the GLB has stand + plate in one mesh, so the stand swings too; split
+ * requested in asset-requests (prop_target_plate_a plate-only node).
+ */
+function hinged(kit: Kit, model: Object3D): Object3D {
+  const root = new Group();
+  root.name = `${model.name}_root`;
+  root.position.copy(model.position);
+  root.rotation.copy(model.rotation);
+  const hinge = new Group();
+  hinge.name = 'hinge';
+  hinge.position.y = HINGE_Y;
+  model.position.set(0, -HINGE_Y, 0);
+  model.rotation.set(0, 0, 0);
+  hinge.add(model);
+  root.add(hinge);
+  root.userData.hinge = hinge;
+  kit.game.scene.add(root);
+  root.updateMatrixWorld(true);
+  return root;
+}
+
 export async function buildRange(kit: Kit) {
   const half = S.w / 2;
   const far = -yard.half + 0.4; // inner face of the north wall
@@ -27,7 +54,7 @@ export async function buildRange(kit: Kit) {
   // Side walls (stop strays into the loot/pen stations) and the earth berm behind the 80 m targets.
   for (const sx of [-1, 1]) kit.box(0.3, 2.4, front - 2 - far, 'concrete', S.x + sx * (half + 0.15), 0, (front - 2 + far) / 2, 0, true);
   const berm = kit.paint(wedge(S.x - half, S.x + half, [[far, 0], [far + 6, 0], [far + 1.6, 4.5], [far, 4.5]]), 'dirt');
-  kit.hull(berm);
+  kit.hull(berm, 'dirt');
 
   // Bench at the firing line, weapon rack beside it.
   kit.place({ id: 'env_bench_shooting_a', size: [2, 0.9, 0.8], x: S.x, z: front + 0.6 });
@@ -40,8 +67,12 @@ export async function buildRange(kit: Kit) {
     const tz = front - d;
     for (const [kind, id, dx, depth] of [['plate', 'prop_target_plate_a', -1.5, 0.3], ['dummy', 'prop_target_dummy_a', 1.5, 0.4]] as const) {
       const object = await kit.one({ id, size: [0.6, 1.8, depth], x: S.x + dx, z: tz, yaw: Math.PI });
-      kit.game.places.targets.push({ id: `range_${kind}_${d}`, object, distance: d, kind });
+      kit.game.places.targets.push({ id: `range_${kind}_${d}`, object: kind === 'plate' ? hinged(kit, object) : object, distance: d, kind });
     }
+    // Gallows frame the plate hangs from (its top bar is the hinge line).
+    const gx = S.x - 1.5;
+    for (const sx of [-1, 1]) kit.box(0.07, HINGE_Y + 0.08, 0.07, 'metal_dark', gx + sx * 0.42, 0, tz, 0, false, 0.5);
+    kit.box(0.92, 0.07, 0.07, 'metal_dark', gx, HINGE_Y + 0.01, tz, 0, false, 0.7);
     kit.strip(S.x - half, tz + 1, S.x + half, tz + 1, 0.15, 0.04, 'paint_white_faded', 0.7);
     plateSign(kit, { title: `${d} m` }, S.x - half + 1.2, tz + 1.4, Math.PI);
     plateSign(kit, { title: `${d} m` }, S.x + half - 1.2, tz + 1.4, Math.PI);

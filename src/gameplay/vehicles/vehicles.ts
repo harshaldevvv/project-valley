@@ -20,6 +20,7 @@ const _w = new Vector3();
 const _f = new Vector3();
 const _cam = new Vector3();
 const _look = new Vector3();
+const _p = new Vector3();
 
 export class Car {
   readonly prevPos = new Vector3();
@@ -284,26 +285,43 @@ export class Vehicles {
       }
       car.vc.updateVehicle(dt, undefined, groups(Group.VEHICLE, Group.STATIC | Group.TERRAIN | Group.BUILD));
       this.syncState(car);
-      if (Math.abs(car.speed) > 4) this.runOver(car);
+      if (Math.abs(car.speed) > 2.5) this.contacts(car, dt);
     }
   }
 
-  /** Cars hurt and knock zombies they hit at speed. */
-  private runOver(car: Car) {
+  /**
+   * Zombie contacts (QA-004): zombie capsules don't block cars, so this decides what happens.
+   * - In the car's path at speed: damage by speed (lethal from ~30 km/h) and throw them forward/up.
+   * - Standing on a moving car (they climb on parked ones): thrown off sideways.
+   */
+  private contacts(car: Car, dt: number) {
     const [hx, hy, hz] = car.def.halfExtents;
+    const d = car.def;
+    const sp = Math.abs(car.speed);
     _q.copy(car.currQuat).invert();
     _f.set(0, 0, Math.sign(car.speed) * -1).applyQuaternion(car.currQuat);
+    const reach = hz + 0.5 + sp * dt * 2; // look ahead so fast cars never tunnel past
     for (const z of this.ctx.zombies.list) {
       if (!z.alive) continue;
-      _v.subVectors(z.curr, car.currPos).setY(z.curr.y + 1 - car.currPos.y - car.cy).applyQuaternion(_q);
-      if (Math.abs(_v.x) < hx + 0.4 && Math.abs(_v.z) < hz + 0.5 && Math.abs(_v.y) < hy + 1) {
-        const dmg = Math.abs(car.speed) * 12;
-        _w.copy(z.curr).setY(z.curr.y + 1);
-        this.ctx.zombies.damage(z, { point: _w, dir: _f, zone: 'body', damage: dmg / z.def.zoneMul.body, headMul: 1, weaponId: car.def.id, distance: 0, melee: { stagger: 1, push: 3, hitstop: 0 } });
-        this.ctx.sfx('melee_hit', _w);
-        this.ctx.fx.impact(_w, _f, 'flesh', 1.5);
-        this.ctx.rig.addTrauma(0.25);
+      _v.subVectors(z.curr, car.currPos).applyQuaternion(_q); // car space, y from the car's base
+      if (Math.abs(_v.x) > hx + 0.45 || Math.abs(_v.z) > reach) continue;
+      if (_v.y > 0.6 && _v.y < car.cy + hy + 1.2) {
+        // Riding on top: off you go, to the side the zombie is on
+        _w.set(Math.sign(_v.x || 1) * (2 + sp * 0.4), 2.5, 0).applyQuaternion(car.currQuat).addScaledVector(_f, sp * 0.5);
+        this.ctx.zombies.fling(z, _w, sp * d.rammingDamage * 0.3, d.id);
+        continue;
       }
+      if (_v.y > 0.6 || sp < 4) continue;
+      // Hit by the front/rear: throw along the travel direction and up
+      _w.copy(_f).multiplyScalar(sp * 0.8).setY(1.5 + sp * 0.25);
+      this.ctx.zombies.fling(z, _w, sp * d.rammingDamage, d.id);
+      _p.copy(z.curr).setY(z.curr.y + 1);
+      this.ctx.sfx('melee_hit', _p, { volume: 1 });
+      this.ctx.fx.impact(_p, _f, 'flesh', 2);
+      if (car === this.driving) this.ctx.rig.addTrauma(0.25);
+      // The bump costs the car a little speed
+      const lv = car.body.linvel();
+      car.body.setLinvel({ x: lv.x * 0.92, y: lv.y, z: lv.z * 0.92 }, true);
     }
   }
 

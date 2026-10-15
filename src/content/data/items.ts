@@ -38,6 +38,8 @@ export const INVENTORY = {
   /** Vicinity panel: shows ground items within this radius (m), laid out on a grid this wide. */
   vicinityRadius: 3,
   vicinityW: 8,
+  /** Dropped items land this far in front of the player, m. */
+  dropAhead: 0.7,
   /** Hotbar keys 5..9 bind consumables by item id (the reference game binds by type, not by instance). */
   hotbar: ['bandage', 'canned_beans', 'water_bottle', null, null] as (string | null)[],
   /** Order in which worn grids receive picked-up items. */

@@ -162,3 +162,35 @@ export function forEachItem(grid: Grid, fn: (gi: GridItem, grid: Grid) => void, 
     }
   }
 }
+
+const KIND_ORDER = ['weapon', 'magazine', 'ammo', 'medical', 'food', 'drink', 'tool', 'material', 'clothing', 'backpack', 'misc'];
+
+/**
+ * Auto-sort: merge partial stacks, then re-pack big items first, grouped by kind.
+ * If the new packing doesn't fit (rare: first-fit can be worse than a hand layout) the old layout is kept.
+ */
+export function sortGrid(grid: Grid): boolean {
+  for (let i = 0; i < grid.contents.length; i++)
+    for (let j = i + 1; j < grid.contents.length; j++) mergeInto(grid.contents[i].item, grid.contents[j].item);
+  const before = grid.contents.filter((gi) => gi.item.count > 0);
+  const key = (it: ItemInstance) => {
+    const d = defOf(it);
+    return [-(d.w * d.h), KIND_ORDER.indexOf(d.kind), d.id, -it.count] as const;
+  };
+  const items = before.map((gi) => gi.item).sort((a, b) => {
+    const ka = key(a), kb = key(b);
+    for (let k = 0; k < ka.length; k++) if (ka[k] !== kb[k]) return ka[k] < kb[k] ? -1 : 1;
+    return 0;
+  });
+  grid.contents.length = 0; // in place: the array may be a bag's own `contents`
+  for (const it of items) {
+    const spot = findFree(grid, it);
+    if (!spot) {
+      grid.contents.length = 0;
+      grid.contents.push(...before);
+      return false;
+    }
+    place(grid, it, spot.x, spot.y, spot.rotated);
+  }
+  return true;
+}

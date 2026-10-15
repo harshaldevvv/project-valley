@@ -16,6 +16,9 @@ const Q = Math.PI / 2;
 type Piece = [def: string, x: number, y: number, z: number, rotY: number];
 const c = (i: number) => i * G + G / 2; // cell centre offset
 
+/** Outside centre of the door (east wall), where the entry steps go. */
+export const houseDoor = { x: X0 + 2 * G, z: Z0 + c(1), sill: BUILD.foundationTop };
+
 export const yardHouse: Piece[] = [
   // foundations
   ...[0, 1].flatMap((i) => [0, 1].map((j): Piece => ['wood_foundation', X0 + c(i), 0, Z0 + c(j), 0])),

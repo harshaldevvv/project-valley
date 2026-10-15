@@ -58,7 +58,12 @@ export class Melee {
         else if (this.phase === 'recovery') this.buffered = null;
       }
     }
-    if (c.pressed('shove') && (this.phase === 'idle' || (this.phase === 'recovery' && this.hitThisSwing.size > 0)) && w.switchPhase === 'none') this.startShove();
+    if (c.pressed('shove') && (this.phase === 'idle' || (this.phase === 'recovery' && this.hitThisSwing.size > 0)) && w.switchPhase === 'none') {
+      // V on a staggered zombie = finisher with any weapon in hand (QA-007); otherwise a shove
+      const fin = this.finisherTarget();
+      if (fin) this.startFinisher(fin);
+      else this.startShove();
+    }
 
     this.t -= dt;
     switch (this.phase) {
@@ -145,16 +150,7 @@ export class Melee {
   private start(kind: 'light' | 'heavy', def: MeleeDef) {
     // Finisher: a knife attack on a staggered zombie right in front
     const z = this.finisherTarget();
-    if (z) {
-      this.phase = 'finisher';
-      this.t = FIN.duration;
-      this.target = z;
-      this.ctx.player.locked = true;
-      this.ctx.player.invulnT = FIN.duration;
-      this.ctx.playerAnim?.oneshot('melee_heavy', 0.08);
-      this.ctx.sfx('melee_swing', this.ctx.player.curr);
-      return;
-    }
+    if (z) return this.startFinisher(z);
     if (!this.ctx.player.stamina.spend(kind === 'heavy' ? SD.melee * 1.5 : SD.melee)) {
       this.ctx.game.events.emit('toast', { text: 'Too tired' });
       return;
@@ -163,6 +159,20 @@ export class Melee {
     this.ctx.playerAnim?.oneshot(this.heavy ? 'melee_heavy' : 'melee_swing', 0.08);
     this.phase = 'windup';
     this.t = this.heavy ? def.heavyWindup : def.windup;
+  }
+
+  private startFinisher(z: Zombie) {
+    this.phase = 'finisher';
+    this.t = FIN.duration;
+    this.target = z;
+    this.ctx.player.locked = true;
+    this.ctx.player.invulnT = FIN.duration;
+    this.ctx.weapons.cancelReload();
+    this.ctx.playerAnim?.oneshot('melee_heavy', 0.08);
+    this.ctx.sfx('melee_swing', this.ctx.player.curr);
+    // Keep it staggered for the whole finisher
+    z.mode = 'stagger';
+    z.modeT = FIN.duration + 0.2;
   }
 
   private finisherTarget(): Zombie | null {
@@ -253,7 +263,7 @@ export class Melee {
       if (n >= SH.maxTargets) break;
       const dx = (z.curr.x - p.curr.x) / Math.max(d, 1e-3);
       const dz = (z.curr.z - p.curr.z) / Math.max(d, 1e-3);
-      if (dx * fx + dz * fz < cosHalf) continue;
+      if (d > SH.anyAngle && dx * fx + dz * fz < cosHalf) continue; // point blank: any angle
       n++;
       _d.set(dx, 0, dz);
       this.ctx.zombies.stagger(z, SH.stagger);

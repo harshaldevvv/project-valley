@@ -3,8 +3,9 @@ import type { GridItem, ItemInstance, SlotName } from '../../content/data/types'
 import { weaponDefs } from '../../content/data/weapons';
 import { containerText } from '../../content/text/containers';
 import { itemText } from '../../content/text/items';
+import { inventoryText } from '../../content/text/ui';
 import {
-  autoPlace, canPlace, canStack, containsItem, defOf, findFree, footprint, gridOf, mergeInto, place, removeItem, splitStack, type Grid,
+  autoPlace, canPlace, sortGrid, canStack, containsItem, defOf, findFree, footprint, gridOf, mergeInto, place, removeItem, splitStack, type Grid,
 } from '../../systems/inventory';
 import { EQUIP_SLOTS, WEAPON_SLOTS, type Loadout } from '../../systems/loadout';
 import './inventory.css';
@@ -14,16 +15,7 @@ import './inventory.css';
  * Plain DOM over the canvas. All rules live in systems/; this file only maps pointer gestures onto them.
  */
 
-// UI chrome strings (move to src/content/text/ui.ts when the narrative team adds one).
-const T = {
-  equipment: 'Equipment', weapons: 'Weapons', hotbar: 'Hotbar', inventory: 'Inventory', vicinity: 'Ground',
-  noStorage: 'No storage. Equip a jacket or a backpack.',
-  hint: '<kbd>Tab</kbd> close <kbd>R</kbd> rotate <kbd>Ctrl</kbd>+click quick move <kbd>Shift</kbd>+click split <kbd>RMB</kbd> actions · drag outside to drop',
-  slot: { head: 'Head', face: 'Face', eyes: 'Eyes', ears: 'Ears', torso: 'Torso', armor: 'Armor', legs: 'Legs', gloves: 'Gloves', feet: 'Feet', backpack: 'Backpack', primary: 'Primary', secondary: 'Secondary', sidearm: 'Sidearm', melee: 'Melee' } as Record<SlotName, string>,
-  kind: { weapon: 'Weapon', magazine: 'Magazine', ammo: 'Ammo', medical: 'Medical', food: 'Food', drink: 'Drink', material: 'Material', tool: 'Tool', clothing: 'Clothing', backpack: 'Backpack', misc: 'Misc' } as Record<string, string>,
-  act: { use: 'Use', equip: 'Equip', unequip: 'Unequip', open: 'Open', load: 'Load ammo', unload: 'Unload magazine', unmag: 'Remove magazine', bind: 'Bind to hotbar', split: 'Split stack', drop: 'Drop', take: 'Take' },
-  used: 'Used', full: 'No room', dropped: 'Dropped',
-};
+const T = inventoryText;
 
 export const itemName = (id: string) => itemText[id]?.name ?? id;
 export const itemShort = (id: string) => itemText[id]?.short ?? id;
@@ -71,6 +63,7 @@ export class InventoryScreen {
   private press: Press | null = null;
   private drag: Drag | null = null;
   private fp = h('div', 'inv-fp');
+  private probe = h('div');
   private highlighted: HTMLElement | null = null;
   private toastTimer = 0;
   /** Open world container id (right panel), if any. */
@@ -87,7 +80,8 @@ export class InventoryScreen {
     this.toastEl.style.opacity = '0';
     const hint = h('div', 'inv-hint');
     hint.innerHTML = T.hint;
-    this.root.append(this.wrap, hint, this.tip, this.menu, this.toastEl);
+    this.probe.style.cssText = 'position:absolute;visibility:hidden;width:var(--cell);height:0';
+    this.root.append(this.wrap, hint, this.tip, this.menu, this.toastEl, this.probe);
     parent.appendChild(this.root);
     this.bindPointer();
     addEventListener('keydown', (e) => this.onKey(e), true);
@@ -206,7 +200,7 @@ export class InventoryScreen {
     if (!worn.length) col.append(h('div', 'inv-empty', T.noStorage));
     for (const { slot, grid } of worn) {
       const head = h('h3');
-      head.append(h('span', '', itemName(grid.owner!.defId)), h('span', '', `${grid.w}×${grid.h}`));
+      head.append(h('span', 't', itemName(grid.owner!.defId)), this.btn(T.sort, () => sortGrid(grid)));
       col.append(head, this.gridEl(`eq:${slot}`, grid));
     }
     return col;
@@ -216,7 +210,9 @@ export class InventoryScreen {
     const col = h('section', 'inv-col inv-loot');
     const c = this.container ? this.lo.containers.get(this.container) : null;
     if (c) {
-      col.append(h('h2', '', containerName(c.defId)), this.gridEl(`c:${c.id}`, c.grid));
+      const head = h('h2');
+      head.append(h('span', 't', containerName(c.defId)), this.btn(T.sort, () => sortGrid(c.grid)), this.btn(T.takeAll, () => this.takeAll(c.grid)));
+      col.append(head, this.gridEl(`c:${c.id}`, c.grid));
     }
     for (const bag of this.bags) {
       const g = gridOf(bag)!;
@@ -226,8 +222,35 @@ export class InventoryScreen {
       head.append(h('span', '', itemName(bag.defId)), x);
       col.append(head, this.gridEl(`bag:${bag.uid}`, g));
     }
-    col.append(c || this.bags.length ? h('h3', '', T.vicinity) : h('h2', '', T.vicinity), this.gridEl('vicinity', this.vicinity));
+    const gh = h(c || this.bags.length ? 'h3' : 'h2');
+    gh.append(h('span', 't', T.vicinity));
+    if (this.vicinity.contents.length) gh.append(this.btn(T.takeAll, () => this.takeAll(this.vicinity)));
+    col.append(gh, this.gridEl('vicinity', this.vicinity));
     return col;
+  }
+
+  private btn(label: string, fn: () => boolean) {
+    const b = h('button', 'hb', label);
+    b.onclick = () => this.act(fn);
+    return b;
+  }
+
+  /** Move everything that fits from a grid into the worn grids. */
+  private takeAll(grid: Grid): boolean {
+    let moved = false;
+    let full = false;
+    for (const gi of [...grid.contents]) {
+      const n = gi.item.count;
+      removeItem(grid, gi.item);
+      if (this.toPlayer(gi.item)) moved = true;
+      else {
+        if (gi.item.count < n) moved = true;
+        grid.contents.push(gi); // what didn't fit stays where it was
+        full = true;
+      }
+    }
+    if (full) this.flash(T.full);
+    return moved;
   }
 
   private gridEl(gid: string, grid: Grid) {
@@ -264,7 +287,7 @@ export class InventoryScreen {
 
   private tileFor(defId: string, badge: string) {
     const d = defOf(defId);
-    const t = h('div', 'inv-item');
+    const t = h('div', d.w === 1 ? 'inv-item narrow' : 'inv-item');
     t.style.setProperty('--sw', d.iconSwatch ?? '#555');
     t.append(h('span', 'n', itemShort(defId)));
     if (badge) t.append(h('span', 'c' + (badge === '0' || badge === '—' || badge.startsWith('0/') ? ' empty' : ''), badge));
@@ -348,8 +371,9 @@ export class InventoryScreen {
     this.sizeGhost();
   }
 
+  /** --cell is a clamp() expression, so measure it rather than parse it. */
   private cellPx() {
-    return parseFloat(getComputedStyle(this.root).getPropertyValue('--cell')) || 46;
+    return this.probe.getBoundingClientRect().width || 52;
   }
 
   private sizeGhost() {
@@ -566,8 +590,12 @@ export class InventoryScreen {
     if (src.kind !== 'grid' || item.count < 2) return false;
     const grid = this.grids.get(src.gid)!;
     const part = splitStack(item, Math.floor(item.count / 2))!;
-    const spot = findFree(grid, part);
-    if (spot) return !!place(grid, part, spot.x, spot.y, spot.rotated);
+    // Same grid first, then (player side) the other worn grids (QA-021).
+    const grids = [grid, ...(this.isPlayerSide(src) ? this.lo.playerGrids().map((p) => p.grid) : [])];
+    for (const g of grids) {
+      const spot = findFree(g, part);
+      if (spot) return !!place(g, part, spot.x, spot.y, spot.rotated);
+    }
     item.count += part.count;
     this.flash(T.full);
     return false;
@@ -654,26 +682,38 @@ export class InventoryScreen {
     if (!ref || !this.menu.hidden) return void (this.tip.hidden = true);
     const it = ref.item;
     const d = defOf(it);
-    const rows: [string, string][] = [];
-    if (d.stack > 1) rows.push(['Stack', `${it.count} / ${d.stack}`]);
-    if (d.kind === 'magazine') rows.push(['Rounds', `${it.rounds ?? 0} / ${d.capacity}`], ['Ammo', itemName(d.ammo!)]);
+    const S = T.stat;
+    const rows: [string, string, number?][] = []; // [label, value, delta vs equipped]
+    // Hover-compare: against what's in the item's slot now (if it isn't that item).
+    const slot = d.slots?.find((sl) => this.lo.equipment[sl]);
+    const eq = slot && ref.src.kind !== 'slot' ? this.lo.equipment[slot] : undefined;
+    const eqD = eq && eq !== it ? defOf(eq) : null;
+    if (d.stack > 1) rows.push([S.stack, `${it.count} / ${d.stack}`]);
+    if (d.kind === 'magazine') rows.push([S.rounds, `${it.rounds ?? 0} / ${d.capacity}`], [S.ammo, itemName(d.ammo!)]);
     const wd = weaponDefs[it.defId];
-    if (wd) rows.push(['Caliber', wd.caliber], ['Damage', String(wd.damage)], ['Fire rate', `${wd.rpm} rpm`]);
-    if (it.mag !== undefined) rows.push(['Magazine', it.mag ? `${it.mag.rounds ?? 0} / ${defOf(it.mag).capacity}` : 'none']);
-    if (d.grid) rows.push(['Storage', `${d.grid.w}×${d.grid.h}${it.contents?.length ? ` · ${it.contents.length} items` : ''}`]);
-    if (d.use?.heal) rows.push(['Heals', `+${d.use.heal}`]);
-    if (d.use?.food) rows.push(['Food', `+${d.use.food}`]);
-    if (d.use?.water) rows.push(['Water', `+${d.use.water}`]);
-    rows.push(['Size', `${d.w}×${d.h}`], ['Value', `$${d.value * it.count}`]);
+    const ewd = eqD ? weaponDefs[eqD.id] : undefined;
+    if (wd) rows.push([S.caliber, wd.caliber], [S.damage, String(wd.damage), ewd && wd.damage - ewd.damage], [S.rpm, `${wd.rpm} rpm`, ewd && wd.rpm - ewd.rpm]);
+    if (it.mag !== undefined) rows.push([S.magazine, it.mag ? `${it.mag.rounds ?? 0} / ${defOf(it.mag).capacity}` : S.none]);
+    if (d.grid) {
+      const cells = d.grid.w * d.grid.h;
+      rows.push([S.storage, `${d.grid.w}×${d.grid.h}${it.contents?.length ? ` · ${it.contents.length} ${S.items}` : ''}`, eqD?.grid && cells - eqD.grid.w * eqD.grid.h]);
+    }
+    if (d.use?.heal) rows.push([S.heals, `+${d.use.heal}`]);
+    if (d.use?.food) rows.push([S.food, `+${d.use.food}`]);
+    if (d.use?.water) rows.push([S.water, `+${d.use.water}`]);
+    rows.push([S.size, `${d.w}×${d.h}`], [S.value, `$${d.value * it.count}`]);
     this.tip.replaceChildren();
     const desc = itemText[it.defId]?.description;
     this.tip.append(h('span', 'k', T.kind[d.kind] ?? d.kind), h('b', '', itemName(it.defId)));
     if (desc) this.tip.append(h('p', '', desc));
-    for (const [k, v] of rows) {
+    for (const [k, v, delta] of rows) {
       const r = h('div', 's');
-      r.append(h('span', '', k), h('span', '', v));
+      const val = h('span', '', v);
+      if (delta) val.append(h('em', delta > 0 ? 'up' : 'down', ` ${delta > 0 ? '+' : ''}${delta}`));
+      r.append(h('span', '', k), val);
       this.tip.append(r);
     }
+    if (eqD) this.tip.append(h('div', 'cmp', `${S.vsEquipped}: ${itemName(eqD.id)}`));
     this.tip.hidden = false;
     const tr = this.tip.getBoundingClientRect();
     this.tip.style.left = `${Math.min(e.clientX + 16, innerWidth - tr.width - 8)}px`;

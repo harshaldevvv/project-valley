@@ -66,7 +66,7 @@ export function slotOf(defId: string, x: number, y: number, z: number, rot: numb
     return { key: `${d.kind === 'stairs' ? 'S' : 'T'}:${i}:${j}:${k}`, x: cx, y: ft + k * S, z: cz, rot: steps * QUARTER };
   }
   // Edge pieces (and doors, which live in a doorway's edge).
-  const k = level(0);
+  const k = level(d.kind === 'gable' ? 1 : 0); // gables only go on top of a wall
   const prefix = d.kind === 'door' ? 'D' : 'E';
   // Gables are asymmetric (tall end at local -X), so they keep their full facing; other edge pieces are symmetric.
   const keep = d.kind === 'gable';
@@ -171,7 +171,10 @@ export function snapToHit(defId: string, hit: { x: number; y: number; z: number 
   const dx = hit.x - ((i + 0.5) * G);
   const dz = hit.z - ((j + 0.5) * G);
   const near = Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? 1 : 3) : dz > 0 ? 2 : 0; // 0 N, 1 E, 2 S, 3 W
-  const side = (near + turns) % 4;
+  // Gables are asymmetric: R alternates side, then (after two presses) flips the tall end.
+  const gable = d.kind === 'gable';
+  const side = (near + (gable ? turns % 2 : turns)) % 4;
+  const flip = gable && turns % 4 >= 2 ? Math.PI : 0;
   const k = Math.max(0, Math.floor((hit.y - ft + 0.3) / S));
   const y = ft + k * S;
   const cx = (i + 0.5) * G;
@@ -182,7 +185,7 @@ export function snapToHit(defId: string, hit: { x: number; y: number; z: number 
     [cx, cz + G / 2, 0],
     [cx - G / 2, cz, QUARTER],
   ][side];
-  return checkSlot(defId, slotOf(defId, x, y, z, rot), pieces, area);
+  return checkSlot(defId, slotOf(defId, x, y, z, rot + flip), pieces, area);
 }
 
 /** Removing `p` must not leave anything floating. */

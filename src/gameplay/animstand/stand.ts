@@ -24,9 +24,7 @@ export class AnimStand {
 
   async init() {
     const a = yard.stations.anim;
-    const { R, world } = this.ctx.game.phys;
-    const hit = world.castRay(new R.Ray({ x: a.x, y: 6, z: a.z }, { x: 0, y: -1, z: 0 }), 10, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, Group.STATIC | Group.TERRAIN | Group.BUILD));
-    this.base.set(a.x, hit ? 6 - hit.timeOfImpact : 0, a.z);
+    this.base.set(a.x, 0.4, a.z); // pedestal height until the first physics step lets us measure it
     await this.load('survivor');
     const d = this.ctx.debug;
     d.tune('Animation', animStand, 'speed', 0.1, 2, 0.05);
@@ -78,9 +76,21 @@ export class AnimStand {
     }
   }
 
+  /** QA-010: colliders only answer queries after the first physics step, so measure the pedestal top lazily. */
+  private measureBase() {
+    const { R, world } = this.ctx.game.phys;
+    const hit = world.castRay(new R.Ray({ x: this.base.x, y: 6, z: this.base.z }, { x: 0, y: -1, z: 0 }), 10, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, Group.STATIC | Group.TERRAIN | Group.BUILD));
+    if (!hit) return;
+    this.base.y = 6 - hit.timeOfImpact;
+    this.measured = true;
+  }
+  private measured = false;
+
   render(_alpha: number, dt: number) {
     const ch = this.ch;
     if (!ch) return;
+    if (!this.measured) this.measureBase();
+    ch.root.position.copy(this.base);
     const sdt = dt * animStand.speed;
     this.t += sdt;
     if (ch.mixer) {

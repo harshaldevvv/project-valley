@@ -1,6 +1,7 @@
 import { yard } from '../../../content/data/yard';
 import { BUILD } from '../../../content/data/build';
 import type { Kit } from '../kit';
+import { houseDoor } from '../house';
 import { stationSign } from '../signs';
 
 const S = yard.stations.build; // 24 x 24 slab at (-40, 35)
@@ -20,7 +21,11 @@ export function buildBuildPad(kit: Kit) {
   kit.strip(x1, z0, x1, z1, 0.25, 0.06, 'hazard_yellow', 0.7);
   // Lumber pile by the slab (the "material yard" read).
   for (let i = 0; i < 4; i++) kit.box(3.2, 0.12, 0.9, 'wood_raw', x1 + 1.4, i * 0.13, z1 - 4, Math.PI / 2 + (i % 2) * 0.05, false, 0.4 + i * 0.15);
-  kit.cuboid(0.45, 0.26, 1.6, x1 + 1.4, 0.26, z1 - 4);
+  kit.cuboid(0.45, 0.26, 1.6, x1 + 1.4, 0.26, z1 - 4, 0, 'wood');
+
+  // Entry steps up to the house door (QA-003): 3 rises of foundationTop/3, 0.3 m runs, outside the build pieces.
+  const rise = houseDoor.sill / 3;
+  for (let k = 1; k <= 2; k++) kit.box(0.3 * (3 - k), rise * k, 1.6, 'wood_weathered', houseDoor.x + 0.3 * (3 - k) / 2 + 0.1, 0, houseDoor.z, 0, true, 0.6);
 
   stationSign(kit, 'build', x1 + 1.5, z0 - 1.2);
 }

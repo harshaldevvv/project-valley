@@ -42,14 +42,14 @@ const CSS = `
 .hud .toasts div{background:#000a;padding:5px 12px;border-radius:5px;transition:opacity .4s}
 .hud .rl{position:absolute;left:50%;top:calc(50% + 22px);transform:translateX(-50%);width:70px;height:3px;background:#0008;opacity:0}
 .hud .rl b{display:block;height:100%;background:#fff;transform-origin:left}
-.hud .range{position:absolute;right:24px;top:24px;background:#000a;padding:8px 12px;border-radius:6px;font:12px/1.5 ui-monospace,Consolas,monospace;display:none;white-space:pre}
-.hud .help{position:absolute;inset:0;display:none;place-items:center;background:#000a;pointer-events:none}
-.hud .help>div{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:18px 34px;background:#111c;padding:22px 28px;border-radius:10px;max-width:min(860px,94vw)}
-.hud .help h3{margin:0 0 6px;font-size:13px;letter-spacing:1px;text-transform:uppercase;opacity:.8}
-.hud .help p{margin:2px 0;font-weight:400}
-.hud .help kbd{display:inline-block;min-width:62px;font:700 12px system-ui;opacity:.95}
+.hud .range{position:absolute;right:24px;top:24px;background:#000c;color:#f4f6f2;padding:8px 12px;border-radius:6px;font:600 13px/1.5 ui-monospace,Consolas,monospace;display:none;white-space:pre}
+.hud-help{position:fixed;inset:0;font:600 13px/1.3 system-ui,sans-serif;color:#e8ecef;text-shadow:0 1px 2px #000a;display:none;place-items:center;background:#000a;pointer-events:none}
+.hud-help>div{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:18px 34px;background:#111c;padding:22px 28px;border-radius:10px;max-width:min(860px,94vw)}
+.hud-help h3{margin:0 0 6px;font-size:13px;letter-spacing:1px;text-transform:uppercase;opacity:.8}
+.hud-help p{margin:2px 0;font-weight:400}
+.hud-help kbd{display:inline-block;min-width:96px;white-space:nowrap;font:700 12px system-ui;opacity:.95}
 .hud .dead{position:absolute;inset:0;display:none;place-items:center;font:700 28px system-ui;background:#3008;letter-spacing:2px}
-@media (max-width:600px){.hud .help>div{grid-template-columns:1fr 1fr}}
+@media (max-width:600px){.hud-help>div{grid-template-columns:1fr 1fr}}
 `;
 
 type HelpGroup = { group: string; rows: [string, string][] };
@@ -128,7 +128,9 @@ export class Hud {
     this.rl = el('rl', this.root);
     this.rlB = el('', this.rl, 'b');
     this.range = el('range', this.root);
-    this.help = el('help', this.root);
+    // Help overlay lives above the perf overlay (z 10), outside the HUD layer
+    this.help = el('hud-help', document.body);
+    this.help.style.cssText = 'position:fixed;z-index:12';
     this.dead = el('dead', this.root);
     this.dead.textContent = 'YOU DIED';
     const help = Object.values(textMods)[0]?.controlsHelp ?? FALLBACK_HELP;
@@ -144,6 +146,10 @@ export class Hud {
     }
 
     ctx.game.events.on('toast', ({ text }) => this.toast(text));
+    // Hidden behind the title/pause menu (QA-017)
+    ctx.game.events.on('uiScreen', ({ name, open }) => {
+      if (name === 'menu') this.root.style.display = open ? 'none' : '';
+    });
     ctx.game.events.on('playerDamaged', ({ from }) => {
       this.wedgeT = 1;
       this.wedgeFrom = from ? { x: from.x, z: from.z } : null;
@@ -167,11 +173,19 @@ export class Hud {
   }
 
   toast(text: string) {
-    const d = el('', this.toasts);
+    // Same text already showing: restart it instead of stacking duplicates
+    for (const c of this.toasts.children) {
+      const t = c as HTMLElement & { _t?: number[] };
+      if (t.textContent === text && t.style.opacity !== '0') {
+        t._t?.forEach(clearTimeout);
+        t._t = [setTimeout(() => (t.style.opacity = '0'), 1800), setTimeout(() => t.remove(), 2300)] as unknown as number[];
+        return;
+      }
+    }
+    const d = el('', this.toasts) as HTMLElement & { _t?: number[] };
     d.textContent = text;
     while (this.toasts.children.length > 4) this.toasts.firstElementChild!.remove();
-    setTimeout(() => (d.style.opacity = '0'), 1800);
-    setTimeout(() => d.remove(), 2300);
+    d._t = [setTimeout(() => (d.style.opacity = '0'), 1800), setTimeout(() => d.remove(), 2300)] as unknown as number[];
   }
 
   /** Show the slot name briefly when switching. */
@@ -199,7 +213,7 @@ export class Hud {
     const hide = blocked || p.inVehicle || p.dead;
 
     // Crosshair: gap = projected spread cone
-    const showXh = !hide && !!w.item && !(w.adsEased > 0.85 && ctx.rig.mode === 'fp');
+    const showXh = !hide && !!w.item && !(w.adsEased > 0.85 && ctx.rig.firstPerson);
     this.set('xhd', this.xh, 'display', showXh ? 'block' : 'none');
     if (showXh) {
       const halfH = innerHeight / 2;
@@ -267,7 +281,8 @@ export class Hud {
 
     // Range readout near the firing line
     const rs = yard.stations.range;
-    const near = Math.abs(p.position.x - rs.x) < rs.w / 2 + 4 && p.position.z < rs.z + 5 && p.position.z > rs.z - rs.d;
+    // Only on the firing line (QA-026)
+    const near = Math.abs(p.position.x - rs.x) < rs.w / 2 && p.position.z < rs.z + 5 && p.position.z > rs.z - 4;
     this.set('rd', this.range, 'display', near && !hide ? 'block' : 'none');
     if (near && w.lastShot) {
       const s = w.lastShot;
@@ -284,6 +299,7 @@ export class Hud {
   step() {
     const c = this.ctx.controls;
     if (!this.ctx.player.inVehicle && c.pressed('help')) this.helpOpen = !this.helpOpen;
+    if (this.uiBlocked()) return; // build mode owns the digits (QA-002)
     for (let i = 0; i < 4; i++) if (c.pressed(['primary', 'secondary', 'sidearm', 'melee'][i] as 'primary')) this.slot(`${i + 1} · ${weaponSlots[i]}`);
   }
 }

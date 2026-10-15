@@ -1,7 +1,8 @@
 import { BufferAttribute, BufferGeometry, Frustum, LineBasicMaterial, LineSegments, Matrix4, Sphere, Vector3, type Object3D } from 'three';
 import type { Collider, KinematicCharacterController, RigidBody } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
-import { horde as HD, senses as SN, zombieDefs, type ZombieDef } from '../../content/data/zombies';
+import { horde as HD, senses as SN, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
+import { hasAsset } from '../../engine/assets';
 import { yard } from '../../content/data/yard';
 import { yardSpawns } from '../../world/yard/spawns';
 import type { Ctx, HitInfo, HitResult, Hittable, Zone } from '../ctx';
@@ -16,7 +17,6 @@ const MOVE_FILTER = Group.STATIC | Group.TERRAIN | Group.VEHICLE | Group.BUILD |
 const LOS_FILTER = Group.STATIC | Group.TERRAIN | Group.BUILD | Group.VEHICLE;
 const CAPSULE_HH = 0.45;
 const CAPSULE_R = 0.3;
-const CAPSULE_Y = CAPSULE_HH + CAPSULE_R; // body centre above feet
 const HEAD_Y = 1.62;
 
 type Mode = 'move' | 'windup' | 'recover' | 'stagger' | 'climb' | 'dead';
@@ -64,6 +64,14 @@ export class Zombie {
   climb: { from: Vector3; to: Vector3; t: number } | null = null;
   anim: AnimationController | null = null;
   lastClip = '';
+  /** Capsule centre above the feet (scaled per variant). */
+  get capY() {
+    return CAPSULE_HH * (this.def.scale ?? 1) + CAPSULE_R;
+  }
+  readonly fling = new Vector3();
+  groundY = 0;
+  lastCarHit = -9;
+  pushDecay = 0.25;
   grounded = false;
   animAcc = 0;
   shadow = true;
@@ -101,6 +109,7 @@ export class Zombies {
   private linePos = new Float32Array(30 * 8 * 3);
   private lineCol = new Float32Array(30 * 8 * 3);
   kills = 0;
+  private lastWindup = -9;
   private ray;
 
   constructor(private ctx: Ctx) {
@@ -137,8 +146,20 @@ export class Zombies {
       }
       const a = this.ctx.rand() * Math.PI * 2;
       const r = Math.sqrt(this.ctx.rand()) * c.radius;
-      await this.spawn(new Vector3(c.x + Math.cos(a) * r, 0.05, c.z + Math.sin(a) * r), this.ctx.rand() * Math.PI * 2);
+      await this.spawn(new Vector3(c.x + Math.cos(a) * r, 0.05, c.z + Math.sin(a) * r), this.ctx.rand() * Math.PI * 2, this.pickVariant());
     }
+  }
+
+  /** Weighted variant from data/zombies zombieMix (seeded RNG); variants whose model isn't built fall back to the shambler. */
+  pickVariant() {
+    let total = 0;
+    for (const k in zombieMix) total += zombieMix[k];
+    let r = this.ctx.rand() * total;
+    for (const k in zombieMix) {
+      r -= zombieMix[k];
+      if (r <= 0) return hasAsset(zombieDefs[k]?.model ?? '') ? k : 'shambler';
+    }
+    return 'shambler';
   }
 
   async spawn(at: Vector3, yaw = 0, defId = 'shambler') {
@@ -147,12 +168,14 @@ export class Zombies {
     // Ground height under the spawn point
     const down = world.castRay(new R.Ray({ x: at.x, y: at.y + 3, z: at.z }, { x: 0, y: -1, z: 0 }), 10, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, Group.STATIC | Group.TERRAIN | Group.BUILD));
     if (down) at.y = at.y + 3 - down.timeOfImpact + 0.02;
-    const ch = await makeCharacter('zombie', def.model);
+    const ch = await makeCharacter('zombie', def.model, def.clipsFrom);
+    const s = def.scale ?? 1;
+    const capY = CAPSULE_HH * s + CAPSULE_R;
     this.ctx.game.scene.add(ch.root);
-    const body = world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(at.x, at.y + CAPSULE_Y, at.z));
-    const capsule = world.createCollider(R.ColliderDesc.capsule(CAPSULE_HH, CAPSULE_R).setCollisionGroups(groups(Group.ZOMBIE, 0xffff)), body);
+    const body = world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(at.x, at.y + capY, at.z));
+    const capsule = world.createCollider(R.ColliderDesc.capsule(CAPSULE_HH * s, CAPSULE_R).setCollisionGroups(groups(Group.ZOMBIE, 0xffff & ~Group.VEHICLE)), body); // cars plough through; Vehicles.contacts() deals the damage
     const head = world.createCollider(
-      R.ColliderDesc.ball(0.15).setTranslation(0, HEAD_Y - CAPSULE_Y, 0).setSensor(true).setCollisionGroups(groups(Group.ZOMBIE, 0xffff)),
+      R.ColliderDesc.ball(0.15 * s).setTranslation(0, HEAD_Y * s - capY, 0).setSensor(true).setCollisionGroups(groups(Group.ZOMBIE, 0xffff)),
       body,
     );
     const z = new Zombie(this.nextId++, def, ch, body, capsule, head, HD.groanMin + this.ctx.rand() * (HD.groanMax - HD.groanMin));
@@ -165,7 +188,7 @@ export class Zombies {
     const hittable: Hittable = {
       kind: 'zombie',
       surface: 'flesh',
-      zone: (c: Collider, p: Vector3): Zone => (c === z.head ? 'head' : p.y - z.curr.y < (z.crawler ? 0.3 : 0.85) ? 'limb' : 'body'),
+      zone: (c: Collider, p: Vector3): Zone => (c === z.head ? 'head' : p.y - z.curr.y < (z.crawler ? 0.3 : 0.85 * s) ? 'limb' : 'body'),
       hit: (info) => this.damage(z, info),
     };
     this.ctx.hits.set(capsule.handle, hittable);
@@ -236,6 +259,23 @@ export class Zombies {
     return { damage: dmg, kill: false, zone: info.zone };
   }
 
+  /** Hit by a car (or thrown): damage by speed, then thrown along `vel` (m/s); dead ones fly as a ragdoll-lite. */
+  fling(z: Zombie, vel: Vector3, damage: number, from: string) {
+    if (!z.alive || this.time - z.lastCarHit < 0.5) return;
+    z.lastCarHit = this.time;
+    _w.copy(z.curr).setY(z.curr.y + 1);
+    _o.copy(vel).normalize();
+    this.damage(z, { point: _w, dir: _o, zone: 'body', damage: damage / z.def.zoneMul.body, headMul: 1, weaponId: from, distance: 0, melee: { stagger: 1.2, push: 0, hitstop: 0 } });
+    z.groundY = z.curr.y;
+    if (!z.alive) z.fling.copy(vel);
+    else {
+      z.push.set(vel.x, 0, vel.z);
+      z.pushDecay = 0.6;
+      z.vel.y = Math.max(z.vel.y, vel.y);
+      z.grounded = false;
+    }
+  }
+
   stagger(z: Zombie, t: number) {
     if (!z.alive || z.mode === 'climb') return;
     this.releaseToken(z);
@@ -285,11 +325,26 @@ export class Zombies {
       z.prevYaw = z.yaw;
       if (!z.alive) {
         z.hitstop = Math.max(0, z.hitstop - dt); // a killing blow's hitstop still has to run out
+        if (z.fling.lengthSq() > 0) {
+          // Ragdoll-lite: thrown bodies fly on a ballistic arc until they hit the ground
+          z.fling.y -= 18 * dt;
+          z.curr.addScaledVector(z.fling, dt);
+          if (z.curr.y <= z.groundY) {
+            z.curr.y = z.groundY;
+            z.fling.set(0, 0, 0);
+          }
+        }
         if ((z.deadT -= dt) <= 0) {
           this.remove(z);
           this.list.splice(i--, 1);
         }
         continue;
+      }
+      if (HD.passive && (z.sense.awareness !== 'unaware' || z.token)) {
+        z.sense.awareness = 'unaware';
+        z.sense.suspicion = 0;
+        this.releaseToken(z);
+        if (z.mode === 'windup') z.mode = 'move';
       }
       // Hitstop: only the target slows down (to 0.05×)
       let zdt = dt;
@@ -351,7 +406,7 @@ export class Zombies {
   private los(z: Zombie, target: Vector3, h: number) {
     const { R, world } = this.ctx.game.phys;
     const ox = z.curr.x;
-    const oy = z.curr.y + (z.crawler ? 0.4 : HEAD_Y);
+    const oy = z.curr.y + (z.crawler ? 0.4 : HEAD_Y * (z.def.scale ?? 1));
     const oz = z.curr.z;
     _w.set(target.x - ox, target.y + h - oy, target.z - oz);
     const d = _w.length();
@@ -404,7 +459,7 @@ export class Zombies {
         const up = Math.min(1, t / 0.7);
         const over = Math.max(0, (t - 0.7) / 0.3);
         z.curr.set(c.from.x + (c.to.x - c.from.x) * over, c.from.y + (c.to.y - c.from.y) * up, c.from.z + (c.to.z - c.from.z) * over);
-        z.body.setNextKinematicTranslation({ x: z.curr.x, y: z.curr.y + CAPSULE_Y, z: z.curr.z });
+        z.body.setNextKinematicTranslation({ x: z.curr.x, y: z.curr.y + z.capY, z: z.curr.z });
         if (t >= 1) {
           z.climb = null;
           z.mode = 'move';
@@ -421,7 +476,8 @@ export class Zombies {
           if (!z.token && dist < d.circleRadius + 1 && this.tokensInUse() < HD.attackTokens) z.token = true;
           if (z.token && dist > d.circleRadius + 3) z.token = false;
           if (dist <= d.attackRange && Math.abs(p.curr.y - z.curr.y) < 1.4) {
-            if (z.token) {
+            if (z.token && this.time - this.lastWindup >= HD.attackSpacing && !HD.passive) {
+              this.lastWindup = this.time;
               // Telegraph: windup with an audio cue ≥ 0.3 s before the hit lands
               z.mode = 'windup';
               z.modeT = d.attackWindup;
@@ -472,7 +528,8 @@ export class Zombies {
     }
     // Shove push-back decays over ~0.25 s
     _v.add(z.push);
-    z.push.multiplyScalar(Math.max(0, 1 - dt / 0.25));
+    z.push.multiplyScalar(Math.max(0, 1 - dt / z.pushDecay));
+    if (z.push.lengthSq() < 0.01) z.pushDecay = 0.25;
 
     // Turn toward travel or the target
     const fx = face ? face.x - z.curr.x : _v.x;
@@ -504,7 +561,7 @@ export class Zombies {
     z.curr.z += m.z;
     z.grounded = this.kcc.computedGrounded();
     if (z.grounded) z.vel.y = 0;
-    z.body.setNextKinematicTranslation({ x: z.curr.x, y: z.curr.y + CAPSULE_Y, z: z.curr.z });
+    z.body.setNextKinematicTranslation({ x: z.curr.x, y: z.curr.y + z.capY, z: z.curr.z });
     z.walkPhase += (Math.hypot(m.x, m.z) / 0.7) * Math.PI;
 
     // Blocked while chasing/searching: climb onto vehicles and low walls (anti-cheese), 1.5–2 s

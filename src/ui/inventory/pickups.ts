@@ -3,6 +3,7 @@ import type { ItemInstance } from '../../content/data/types';
 import type { Game } from '../../core/game';
 import { defOf } from '../../systems/inventory';
 import type { Loadout } from '../../systems/loadout';
+import { inventoryText } from '../../content/text/ui';
 import { itemName } from './screen';
 
 /**
@@ -38,9 +39,11 @@ export function createPickupView(game: Game, lo: Loadout, onPickedUp: (item: Ite
       game.scene.add(mesh);
       const item = p.item;
       const unreg = game.interact.register({
-        position: new Vector3(p.x, p.y + 0.1, p.z),
-        radius: 2,
-        prompt: () => `Pick up ${itemName(item.defId)}${item.count > 1 ? ` (${item.count})` : ''}`,
+        // Raised to hip height: the interact picker measures from the chest and wants things in view,
+        // so a point on the floor loses to any nearby crate (QA-022).
+        position: new Vector3(p.x, p.y + 0.9, p.z),
+        radius: 1.8,
+        prompt: () => `${inventoryText.pickUp} ${itemName(item.defId)}${item.count > 1 ? ` (${item.count})` : ''}`,
         holdSeconds: () => 0,
         onInteract: () => onPickedUp(item, lo.pickUp(item)),
       });

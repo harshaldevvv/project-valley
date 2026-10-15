@@ -117,6 +117,7 @@ export class Player implements PlayerView {
   damage(amount: number, from: Vector3 | null) {
     if (this.dead || this.godMode || this.invulnT > 0 || this.inVehicle) return false;
     this.hp = Math.max(0, this.hp - amount);
+    this.invulnT = HD.hitIframes;
     if (this.hp > 0) this.ctx.playerAnim?.oneshot('hit_react', 0.05);
     this.ctx.game.events.emit('playerDamaged', { amount, from: from ? from.clone() : null });
     if (this.hp <= 0) {

@@ -1,6 +1,7 @@
 import { BufferAttribute, BufferGeometry } from 'three';
 import { yard } from '../../../content/data/yard';
 import type { Kit } from '../kit';
+import { addGroundRegion } from '../../surfaces';
 import { stationSign, textFlat } from '../signs';
 import { trackLoop as L, yardSpawns } from '../spawns';
 import { wedge } from './range';
@@ -22,6 +23,12 @@ function loop(): [number, number][] {
       pts.push([cx + Math.cos(a) * L.r, cz + Math.sin(a) * L.r]);
     }
   return pts;
+}
+
+/** Signed distance from the track centreline (rounded-rectangle SDF). */
+function loopDistance(x: number, z: number) {
+  const qx = Math.abs(x - L.cx) - (L.hx - L.r), qz = Math.abs(z - L.cz) - (L.hz - L.r);
+  return Math.hypot(Math.max(qx, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qz), 0) - L.r;
 }
 
 /** Flat closed ribbon between lateral offsets o0..o1 (outward +) of the loop, top at y. */
@@ -50,6 +57,8 @@ export function buildTrack(kit: Kit) {
   const hw = L.width / 2;
   kit.paint(ribbon(pts, -hw - 0.6, hw + 0.6, 0.02), 'dirt', 0.4); // gravel shoulder
   kit.paint(ribbon(pts, -hw, hw, 0.035), 'asphalt', 0.45);
+  addGroundRegion((x, z) => Math.abs(loopDistance(x, z)) <= hw + 0.6, 'dirt');
+  addGroundRegion((x, z) => Math.abs(loopDistance(x, z)) <= hw, 'concrete');
   for (const o of [-hw + 0.35, hw - 0.35]) kit.paint(ribbon(pts, o - 0.08, o + 0.08, 0.045), 'road_paint_white', 0.8);
 
   // Corner furniture: tyre stacks on the outer apex, cones on the inner apex.
@@ -57,7 +66,7 @@ export function buildTrack(kit: Kit) {
     const cx = L.cx + sx * (L.hx - L.r), cz = L.cz + sz * (L.hz - L.r);
     for (const k of [-1, 0, 1]) {
       const a = Math.atan2(sz, sx) + k * 0.16;
-      const ro = L.r + hw + 2;
+      const ro = L.r + hw + 3.5; // clear of the racing line (QA-036)
       kit.place({ id: 'env_tire_stack_a', size: [0.8, 0.9, 0.8], x: cx + Math.cos(a) * ro, z: cz + Math.sin(a) * ro });
       const ri = L.r - hw - 0.8;
       kit.place({ id: 'env_cone_a', size: [0.35, 0.7, 0.35], x: cx + Math.cos(a) * ri, z: cz + Math.sin(a) * ri });
@@ -74,7 +83,7 @@ export function buildTrack(kit: Kit) {
   const rz = L.cz - L.hz, rx = L.cx + 4;
   const ramp = wedge(-2, 2, [[0, 0], [7, 0], [7, 1.1], [6.4, 1.1]]);
   ramp.rotateY(Math.PI / 2).translate(rx - 3.5, 0, rz); // profile ran along +Z; turn it to run along +X
-  kit.hull(kit.paint(ramp, 'plywood'));
+  kit.hull(kit.paint(ramp, 'plywood'), 'wood');
   kit.strip(rx + 3.2, rz - 2, rx + 3.2, rz + 2, 0.3, 1.12, 'hazard_yellow', 0.8);
 
   // Start box / parking spot under the car spawn: white outline + start line.

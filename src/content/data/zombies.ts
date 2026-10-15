@@ -2,6 +2,10 @@
 export interface ZombieDef {
   id: string;
   model: string;
+  /** Model with the clips when `model` is mesh + skeleton only (variants share the shambler's clips by bone name). */
+  clipsFrom?: string;
+  /** Uniform height scale baked on the model's `<id>_rig` node; capsule and head zone heights scale with it. */
+  scale?: number;
   hp: number;
   legHp: number;
   walk: number; // m/s wander
@@ -24,7 +28,7 @@ export interface ZombieDef {
   corpseTime: number;
 }
 
-export const zombieDefs: Record<string, ZombieDef> = {
+const zombieDefsBase: Record<string, ZombieDef> = {
   shambler: {
     id: 'shambler',
     model: 'zmb_shambler_a',
@@ -37,8 +41,8 @@ export const zombieDefs: Record<string, ZombieDef> = {
     zoneMul: { body: 0.5, limb: 0.35 },
     attackRange: 1.5,
     attackWindup: 0.6,
-    attackRecover: 0.9,
-    attackDamage: 15,
+    attackRecover: 1.0,
+    attackDamage: 10, // QA-008: 5 zombies ≈ 7 s standing still, 20 survivable 10+ s when moving
     sprintMissChance: 0.4,
     circleRadius: 2,
     climbTime: 1.75,
@@ -50,6 +54,17 @@ export const zombieDefs: Record<string, ZombieDef> = {
     corpseTime: 10,
   },
 };
+
+/** Visual/physical variants of the shambler (same AI). Soldiers wear kit: a little more HP. */
+export const zombieDefs: Record<string, ZombieDef> = {
+  ...zombieDefsBase,
+  worker: { ...zombieDefsBase.shambler, id: 'worker', model: 'zmb_worker_a', clipsFrom: 'zmb_shambler_a', scale: 1.02, hp: 160 },
+  soldier: { ...zombieDefsBase.shambler, id: 'soldier', model: 'zmb_soldier_a', clipsFrom: 'zmb_shambler_a', scale: 1.05, hp: 190, legHp: 95 },
+  civilian_f: { ...zombieDefsBase.shambler, id: 'civilian_f', model: 'zmb_civilian_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.93, hp: 135 },
+};
+
+/** Spawn mix (weights, seeded RNG). */
+export const zombieMix: Record<string, number> = { shambler: 0.4, worker: 0.25, civilian_f: 0.2, soldier: 0.15 };
 
 export const senses = {
   coneDeg: 80,
@@ -70,7 +85,8 @@ export const senses = {
 
 export const horde = {
   maxAlive: 30,
-  attackTokens: 3,
+  attackTokens: 2,
+  attackSpacing: 0.45, // s between any two attack windups starting (no stacked hits)
   groanMin: 4,
   groanMax: 10,
   passive: false,

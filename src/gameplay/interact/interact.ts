@@ -42,7 +42,8 @@ export class Interact {
       if (facing < VIEW_COS) continue;
       const text = i.prompt();
       if (!text) continue;
-      const score = d * (2 - facing);
+      // Aim decides first (what you look at), distance breaks ties: a dropped item in front of a crate wins
+      const score = (1 - facing) * 4 + d * 0.3;
       if (score < best) {
         best = score;
         this.current = i;
@@ -51,7 +52,15 @@ export class Interact {
     }
     this.promptText = bestText;
     const cur = this.current;
-    if (!cur || !c.down('interact')) {
+    // A tap shorter than one tick still counts: latch the press for this tick
+    const tap = c.pressed('interact');
+    if (cur && tap && (cur.holdSeconds?.() ?? 0) === 0 && !this.fired) {
+      this.fired = true;
+      this.progress = 1;
+      cur.onInteract();
+      return;
+    }
+    if (!cur || !(c.down('interact') || tap)) {
       this.held = 0;
       this.progress = 0;
       this.fired = false;

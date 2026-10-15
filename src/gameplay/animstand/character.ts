@@ -88,10 +88,12 @@ function placeholderGeos(kind: 'survivor' | 'zombie') {
   return g;
 }
 
-export async function makeCharacter(kind: 'survivor' | 'zombie', modelId: string): Promise<Character> {
+export async function makeCharacter(kind: 'survivor' | 'zombie', modelId: string, clipsFrom?: string): Promise<Character> {
   const m = await tryLoadModel(modelId);
   if (m) {
     const actions = m.actions;
+    // Mesh-only variants play another model's clips (identical skeletons bind by bone name)
+    if (!actions.size && clipsFrom && hasAsset(clipsFrom)) for (const clip of (await loadModel(clipsFrom)).clips) actions.set(clip.name, m.mixer.clipAction(clip));
     let hand: Object3D | undefined = m.sockets.get('hand_R');
     if (!hand) m.root.traverse((o) => { if (!hand && o.name === 'SOCKET_hand_R') hand = o; });
     if (!hand) {

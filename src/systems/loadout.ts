@@ -1,5 +1,5 @@
 import { CONTAINERS } from '../content/data/containers';
-import { INVENTORY, STARTING_KIT } from '../content/data/items';
+import { INVENTORY, ITEMS, STARTING_KIT } from '../content/data/items';
 import { LOOT } from '../content/data/loot';
 import type { ItemInstance, SlotName } from '../content/data/types';
 import type { LoadoutApi } from '../core/contracts';
@@ -317,6 +317,12 @@ export class Loadout implements LoadoutApi {
       const d = defOf(item);
       const extra: Partial<ItemInstance> = {};
       if (d.kind === 'magazine') extra.rounds = rounds === -1 ? d.capacity : rounds ?? this.rng.int(0, d.capacity ?? 0);
+      if (d.kind === 'weapon' && rounds === -1) {
+        // Loaded weapon: insert a full magazine that fits it (or fill an internal magazine).
+        const md = Object.values(ITEMS).find((m) => m.kind === 'magazine' && m.fits?.includes(item));
+        if (md) extra.mag = newItem(md.id, 1, { rounds: md.capacity });
+        else if (d.capacity !== undefined) extra.rounds = d.capacity;
+      }
       if (d.stack > 1) out.push(...newItems(item, count, extra));
       else for (let i = 0; i < count; i++) out.push(newItem(item, 1, { ...extra }));
     };

@@ -281,7 +281,10 @@ class Character:
             me.materials.append(bpy.data.materials.get("pal:" + s) or bpy.data.materials.new("pal:" + s))
         return ob
 
-    def finish(self, lods=(0.5, 0.2)):
+    def finish(self, lods=(0.5, 0.2), scale=1.0):
+        """scale: uniform size of the whole rig node (height variants keep the identical skeleton, so shared
+        clips - including hips translation - stay valid)."""
+        self.arm.scale = (scale, scale, scale)
         bm = self.body.bm
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5)
         lod0 = self._mesh_object(f"{self.id}_LOD0", bm)
@@ -485,7 +488,7 @@ class Character:
         return act
 
     # ---------- output ----------
-    def export(self):
+    def export(self, animations=True):
         out_dir = os.path.join(ROOT, "public", "assets", "models", self.cat)
         os.makedirs(out_dir, exist_ok=True)
         path = os.path.join(out_dir, f"{self.id}.glb")
@@ -497,7 +500,7 @@ class Character:
             ob.select_set(True)
         bpy.ops.export_scene.gltf(
             filepath=path, export_format="GLB", use_selection=True, export_yup=True, export_image_format="NONE",
-            export_extras=False, export_animations=True, export_animation_mode="ACTIONS", export_force_sampling=True,
+            export_extras=False, export_animations=animations, export_animation_mode="ACTIONS", export_force_sampling=True,
             export_frame_step=1, export_def_bones=False, export_skins=True, export_all_influences=False,
             export_anim_slide_to_zero=True, export_optimize_animation_size=True, export_reset_pose_bones=True,
             export_apply=False)

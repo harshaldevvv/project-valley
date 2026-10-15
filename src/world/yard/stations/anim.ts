@@ -1,6 +1,6 @@
 import { RingGeometry, CylinderGeometry, SpotLight } from 'three';
 import { yard } from '../../../content/data/yard';
-import { faceToward, type Kit } from '../kit';
+import type { Kit } from '../kit';
 import { stationSign } from '../signs';
 
 const S = yard.stations.anim; // 12 x 12 at (0, 25)
@@ -11,12 +11,7 @@ export async function buildAnim(kit: Kit) {
   kit.paint(new CylinderGeometry(5.8, 5.8, 0.06, 32).translate(x, 0.01, z), 'concrete', 0.6);
   kit.place({ id: 'env_pedestal_a', size: [3, 0.4, 3], x, z });
 
-  // 6-slot ring of poles; the slot toward spawn (north) is left open for the viewing spot.
-  for (let k = 1; k < 6; k++) {
-    const a = -Math.PI / 2 + (k * Math.PI) / 3;
-    const px = x + Math.cos(a) * 5.2, pz = z + Math.sin(a) * 5.2;
-    kit.place({ id: 'env_light_pole_a', size: [0.3, 6, 0.3], x: px, z: pz, yaw: faceToward(px, pz, x, z) });
-  }
+  // light pole ring: see poles.ts
 
   // Viewing spot: between the spawn and the pedestal, 4.5 m from its centre.
   const vz = z - 4.5;

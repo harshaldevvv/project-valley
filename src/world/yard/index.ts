@@ -4,6 +4,7 @@ import { buildGround } from './ground';
 import { placeYardHouse } from './house';
 import { Kit } from './kit';
 import { setupLighting } from './lighting';
+import { lightPoles } from './poles';
 import { finishSigns } from './signs';
 import { buildAnim } from './stations/anim';
 import { buildBuildPad } from './stations/build';
@@ -26,6 +27,7 @@ export async function buildYard(game: Game): Promise<void> {
   buildBuildPad(kit);
   await buildAnim(kit);
   buildTrack(kit);
+  for (const p of lightPoles) kit.place(p);
   await kit.finish();
   finishSigns(kit);
   placeYardHouse(game);

@@ -13,6 +13,7 @@ import { loadAsset } from '../../engine/assets';
 import { placeStatic } from '../../engine/instancing';
 import { paletteMaterial, swatchUV } from '../../engine/palette';
 import { Group, groups } from '../../engine/physics';
+import { addGroundRegion, assetSurface, surfaceOfSwatch, tagCollider, type Surface } from '../surfaces';
 
 /** One asset placement. Placements are plain data so the lead can swap the instancing backend in one place. */
 export interface Placement {
@@ -71,33 +72,41 @@ export class Kit {
   /** Box sitting on y (its base), centred at x,z, rotated by yaw. */
   box(w: number, h: number, d: number, swatch: string, x: number, y: number, z: number, yaw = 0, collide = false, shade?: number) {
     this.paint(new BoxGeometry(w, h, d).translate(0, h / 2, 0).rotateY(yaw).translate(x, y, z), swatch, shade);
-    if (collide) this.cuboid(w / 2, h / 2, d / 2, x, y + h / 2, z, yaw);
+    if (collide) this.cuboid(w / 2, h / 2, d / 2, x, y + h / 2, z, yaw, surfaceOfSwatch(swatch));
   }
 
   /** Thin flat pad (concrete/dirt) centred at x,z, top at y. Visual only: the ground collider stays at y=0. */
   pad(w: number, d: number, x: number, z: number, swatch = 'concrete', y = 0.04, shade = 0.6) {
     this.box(w, 0.06, d, swatch, x, y - 0.06, z, 0, false, shade);
+    addGroundRegion((px, pz) => Math.abs(px - x) <= w / 2 && Math.abs(pz - z) <= d / 2, surfaceOfSwatch(swatch));
   }
 
   /** Flat painted strip from (ax,az) to (bx,bz), top at y (overlays for paths/lines). */
   strip(ax: number, az: number, bx: number, bz: number, width: number, y: number, swatch: string, shade = 0.5) {
     const len = Math.hypot(bx - ax, bz - az);
     this.box(width, 0.02, len, swatch, (ax + bx) / 2, y - 0.02, (az + bz) / 2, Math.atan2(bx - ax, bz - az), false, shade);
+    if (width < 1) return; // paint lines don't change the footing
+    const ux = (bx - ax) / len, uz = (bz - az) / len;
+    addGroundRegion((px, pz) => {
+      const t = (px - ax) * ux + (pz - az) * uz;
+      return t >= 0 && t <= len && Math.abs((px - ax) * uz - (pz - az) * ux) <= width / 2;
+    }, surfaceOfSwatch(swatch));
   }
 
-  cuboid(hx: number, hy: number, hz: number, x: number, y: number, z: number, yaw = 0) {
+  cuboid(hx: number, hy: number, hz: number, x: number, y: number, z: number, yaw = 0, surface: Surface = 'concrete') {
     const { R, world } = this.game.phys;
     const q = new Quaternion().setFromAxisAngle(UP, yaw);
-    world.createCollider(
+    const c = world.createCollider(
       R.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z).setRotation(q).setCollisionGroups(STATIC_GROUPS),
     );
+    tagCollider(c.handle, surface);
   }
 
   /** Convex-hull collider from already-placed geometry (ramps, berms). */
-  hull(geo: BufferGeometry) {
+  hull(geo: BufferGeometry, surface: Surface) {
     const { R, world } = this.game.phys;
     const desc = R.ColliderDesc.convexHull(geo.getAttribute('position').array as Float32Array);
-    if (desc) world.createCollider(desc.setCollisionGroups(STATIC_GROUPS));
+    if (desc) tagCollider(world.createCollider(desc.setCollisionGroups(STATIC_GROUPS)).handle, surface);
   }
 
   /** Queue a repeated static asset (instanced in finish()). */
@@ -124,7 +133,7 @@ export class Kit {
       c.addVectors(b.min, b.max).multiplyScalar(0.5).applyAxisAngle(UP, p.yaw ?? 0);
       this.cuboid(
         (b.max.x - b.min.x) / 2, (b.max.y - b.min.y) / 2, (b.max.z - b.min.z) / 2,
-        p.x + c.x, (p.y ?? 0) + c.y, p.z + c.z, p.yaw ?? 0,
+        p.x + c.x, (p.y ?? 0) + c.y, p.z + c.z, p.yaw ?? 0, assetSurface[p.id],
       );
     }
   }
@@ -139,6 +148,17 @@ export class Kit {
 
     const byId = new Map<string, Placement[]>();
     for (const p of this.statics) (byId.get(p.id) ?? byId.set(p.id, []).get(p.id)!).push(p);
-    await Promise.all([...byId].map(([id, list]) => placeStatic(this.game, id, list, { fallbackSize: list[0].size })));
+    const { world } = this.game.phys;
+    const handles = () => {
+      const s = new Set<number>();
+      world.forEachCollider((c) => s.add(c.handle));
+      return s;
+    };
+    for (const [id, list] of byId) {
+      const before = handles();
+      await placeStatic(this.game, id, list, { fallbackSize: list[0].size });
+      // Tag the colliders placeStatic just created (sequential, so the diff is exactly this asset's).
+      for (const h of handles()) if (!before.has(h)) tagCollider(h, assetSurface[id] ?? 'concrete');
+    }
   }
 }

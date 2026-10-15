@@ -3,6 +3,7 @@ import { yard } from '../../content/data/yard';
 import { createRng } from '../../engine/rng';
 import { swatchUV } from '../../engine/palette';
 import { Group, groups } from '../../engine/physics';
+import { tagTerrain } from '../surfaces';
 import type { Kit } from './kit';
 
 const EXTENT = 300; // land out to ±300 m so the horizon isn't a void
@@ -72,9 +73,10 @@ export function buildGround(kit: Kit) {
   const { R, world } = kit.game.phys;
   const hf = new Float32Array(row * row);
   for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) hf[i * row + j] = heights[j * row + i];
-  world.createCollider(
+  const terrain = world.createCollider(
     R.ColliderDesc.heightfield(n, n, hf, { x: EXTENT * 2, y: 1, z: EXTENT * 2 }).setCollisionGroups(groups(Group.TERRAIN, 0xffff)),
   );
+  tagTerrain(terrain.handle);
 
   buildTrees(kit);
 }
@@ -82,20 +84,21 @@ export function buildGround(kit: Kit) {
 /** Merged low-poly treeline on the hills outside the walls (no shadows: cheap horizon). */
 function buildTrees(kit: Kit) {
   const rng = createRng(77);
-  const tree = (x: number, z: number) => {
+  /** `lift` raises the canopy (trees players walk under keep foliage above ~3 m). */
+  const tree = (x: number, z: number, lift = 0) => {
     const y = groundHeight(x, z) - 0.3;
     const s = rng.range(0.75, 1.35);
     const a = rng.range(0, Math.PI);
     if (rng.next() < 0.8) {
-      kit.paint(new CylinderGeometry(0.18 * s, 0.28 * s, 2.5 * s, 5).translate(x, y + 1.25 * s, z), 'bark_dark', 0.5);
+      kit.paint(new CylinderGeometry(0.18 * s, 0.28 * s, 2.5 * s + lift, 5).translate(x, y + (2.5 * s + lift) / 2, z), 'bark_dark', 0.5);
       for (let k = 0; k < 3; k++) {
         const r = (2.6 - k * 0.6) * s, h = (4.2 - k * 0.7) * s;
-        kit.paint(new ConeGeometry(r, h, 7).rotateY(a + k).translate(x, y + (2.2 + k * 2.1) * s + h / 2, z), 'leaf_pine');
+        kit.paint(new ConeGeometry(r, h, 7).rotateY(a + k).translate(x, y + lift + (2.2 + k * 2.1) * s + h / 2, z), 'leaf_pine');
       }
     } else {
       const birch = rng.next() < 0.5;
-      kit.paint(new CylinderGeometry(0.14 * s, 0.22 * s, 4 * s, 5).translate(x, y + 2 * s, z), birch ? 'bark_birch' : 'bark_dark', 0.6);
-      kit.paint(new IcosahedronGeometry(2.4 * s, 0).scale(1, 1.25, 1).rotateY(a).translate(x, y + 5.3 * s, z), 'leaf_summer');
+      kit.paint(new CylinderGeometry(0.14 * s, 0.22 * s, 4 * s + lift, 5).translate(x, y + (4 * s + lift) / 2, z), birch ? 'bark_birch' : 'bark_dark', 0.6);
+      kit.paint(new IcosahedronGeometry(2.4 * s, 0).scale(1, 1.25, 1).rotateY(a).translate(x, y + lift + 5.3 * s, z), 'leaf_summer');
     }
   };
 
@@ -118,7 +121,7 @@ function buildTrees(kit: Kit) {
     if (z > 80 && Math.abs(x) < 12) continue; // gate approach
     if (fbm(x * 0.03, z * 0.03 + 5) < 0.45) continue; // clumps, not a hedge
     placed++;
-    tree(x, z);
-    kit.cuboid(0.25, 1.5, 0.25, x, 1.2, z);
+    tree(x, z, 1.5);
+    kit.cuboid(0.25, 1.5, 0.25, x, 1.2, z, 0, 'wood');
   }
 }

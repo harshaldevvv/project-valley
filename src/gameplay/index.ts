@@ -79,7 +79,7 @@ export async function installGameplay(game: Game): Promise<void> {
       ctx.fx.update(dt);
       // Player body
       const p = ctx.player;
-      body.root.visible = !p.inVehicle && ctx.rig.mode === 'tp';
+      body.root.visible = !p.inVehicle && !ctx.rig.firstPerson;
       body.root.position.copy(p.position);
       body.root.rotation.set(0, p.yaw, 0);
       const pose = body.pose;

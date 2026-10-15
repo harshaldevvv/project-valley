@@ -30,6 +30,13 @@ export class CameraRig {
   private time = 0;
   private bobT = 0;
   private landDip = 0;
+  private deathT = 0;
+  /** Third person squeezed into first person by a wall (QA-001). */
+  collapsed = false;
+  /** True when the view is first person (chosen or forced by a wall). */
+  get firstPerson() {
+    return this.mode === 'fp' || this.collapsed;
+  }
   /** Chase camera etc.; returns true if it positioned the camera. */
   override: ((dt: number) => boolean) | null = null;
   private ball: Ball;
@@ -95,6 +102,7 @@ export class CameraRig {
     const w = this.ctx.weapons;
     p.lookDir(dir, w.recoilPitch, w.recoilYaw);
     this.solve(p.curr, p.eyeHeight, dir, w.adsEased, origin, -1);
+    if (this.collapsed) origin.set(p.curr.x, p.curr.y + p.eyeHeight, p.curr.z);
     // Start the ray level with the player, so nothing behind the character can be hit
     if (this.mode === 'tp') {
       _pivot.set(p.curr.x, p.curr.y + p.eyeHeight, p.curr.z);
@@ -112,7 +120,13 @@ export class CameraRig {
     const ads = w.adsEased;
     p.lookDir(_dir, w.recoilPitch, w.recoilYaw);
     this.solve(p.position, p.eyeHeight, _dir, ads, _cam, dt);
-    if (this.mode === 'fp' && C.headBob && p.grounded) {
+    // QA-001: when a wall squeezes the arm under ~0.6 m the camera would sit in the head. Go to the eye
+    // instead (body hidden, first-person viewmodel shown) until there is room again.
+    _pivot.set(p.position.x, p.position.y + p.eyeHeight, p.position.z);
+    const near = this.mode === 'tp' && !p.dead && _cam.distanceTo(_pivot) < (this.collapsed ? C.collapseOut : C.collapseIn);
+    this.collapsed = near;
+    if (near) _cam.copy(_pivot);
+    if ((this.mode === 'fp' || near) && C.headBob && p.grounded) {
       const sp = Math.min(1.6, p.speed01);
       this.bobT = p.stepPhase;
       _cam.y += Math.sin(this.bobT * 2) * C.headBobAmp * sp * (1 - ads * 0.8);
@@ -125,10 +139,19 @@ export class CameraRig {
     }
     this.landDip = Math.max(0, this.landDip - dt * 0.6);
     _cam.y -= Math.sin(Math.min(1, this.landDip / 0.12) * Math.PI * 0.5) * this.landDip;
-    if (p.dead) _cam.y -= 0.8;
+    if (p.dead) {
+      // QA-012: death camera rises over the body and looks down, out of the crowd
+      this.deathT = Math.min(1, this.deathT + dt / 1.2);
+      const k = 1 - (1 - this.deathT) ** 3;
+      _tmp.set(p.position.x + Math.sin(p.yaw) * 2.5, p.position.y + C.deathCamHeight, p.position.z + Math.cos(p.yaw) * 2.5);
+      cam.position.lerpVectors(_cam, _tmp, k);
+      cam.lookAt(p.position.x, p.position.y + 0.3, p.position.z);
+      return this.finish(dt, C.fovHip);
+    }
+    this.deathT = 0;
     cam.position.copy(_cam);
     cam.rotation.set(p.pitch + w.recoilPitch, p.yaw + w.recoilYaw, 0, 'YXZ');
-    const base = this.mode === 'fp' ? C.fovFp : C.fovHip;
+    const base = this.firstPerson ? C.fovFp : C.fovHip;
     this.finish(dt, base + (base * C.fovAdsMul - base) * ads);
   }
 

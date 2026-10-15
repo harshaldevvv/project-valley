@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { INVENTORY } from '../content/data/items';
 import { createRng } from '../engine/rng';
-import { autoPlace, canPlace, findFree, gridOf, newItem, place, splitStack, type Grid } from './inventory';
+import { autoPlace, canPlace, findFree, gridOf, newItem, place, sortGrid, splitStack, type Grid } from './inventory';
 import { Loadout } from './loadout';
 
 const grid = (w: number, h: number): Grid => ({ w, h, contents: [] });
@@ -60,6 +60,19 @@ describe('grid inventory', () => {
   });
 });
 
+describe('auto-sort', () => {
+  it('merges stacks and packs big items first, in place', () => {
+    const g = grid(5, 3);
+    const contents = g.contents;
+    place(g, newItem('bandage', 1), 0, 0, false);
+    place(g, newItem('pistol_a'), 3, 2, false);
+    place(g, newItem('bandage', 2), 4, 0, false);
+    expect(sortGrid(g)).toBe(true);
+    expect(g.contents).toBe(contents);
+    expect(g.contents.map((gi) => [gi.item.defId, gi.x, gi.y, gi.item.count])).toEqual([['pistol_a', 0, 0, 1], ['bandage', 2, 0, 3]]);
+  });
+});
+
 describe('loadout', () => {
   const kit = () => {
     const l = new Loadout(createRng(7));
@@ -111,6 +124,7 @@ describe('loadout', () => {
     const c = l.openContainer('rack');
     const n = c.grid.contents.length;
     expect(n).toBeGreaterThanOrEqual(8);
+    expect(c.grid.contents.find((gi) => gi.item.defId === 'rifle_a')?.item.mag?.rounds).toBe(30);
     c.grid.contents.length = 0;
     expect(l.openContainer('rack').grid.contents.length).toBe(n);
     l.registerContainer('c1', 'crate_wood');

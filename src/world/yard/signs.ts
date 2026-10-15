@@ -80,23 +80,31 @@ export function finishSigns(kit: Kit) {
     ctx.fillStyle = c.fg ?? '#e6e3da';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const big = c.body || c.sub ? 120 : 230;
-    ctx.font = `bold ${big}px "Arial Narrow", Impact, system-ui, sans-serif`;
-    let size = big;
-    while (ctx.measureText(c.title).width > CW - 100 && size > 40) ctx.font = `bold ${(size -= 6)}px "Arial Narrow", Impact, system-ui, sans-serif`;
-    const titleY = c.body || c.sub ? oy + 120 : oy + CH / 2;
+    const fit = (text: string, px: number, weight: string, maxW: number) => {
+      do ctx.font = `${weight} ${px}px "Arial Narrow", system-ui, sans-serif`;
+      while (ctx.measureText(text).width > maxW && (px -= 4) > 24);
+      return px;
+    };
+    const small = !(c.body || c.sub);
+    const size = fit(c.title, small ? 230 : 112, 'bold', CW - 100);
+    const titleY = small ? oy + CH / 2 : oy + 34 + size / 2;
     ctx.fillText(c.title, ox + CW / 2, titleY);
-    let y = titleY + size * 0.75;
+    let y = titleY + size / 2 + 40;
     if (c.sub) {
-      ctx.font = 'bold 44px system-ui, sans-serif';
+      const px = fit(c.sub, 64, 'bold', CW - 110);
       ctx.fillText(c.sub, ox + CW / 2, y);
-      y += 64;
+      y += px / 2 + 44;
     }
     if (c.body) {
-      ctx.font = '38px system-ui, sans-serif';
-      for (const l of wrap(ctx, c.body, CW - 140).slice(0, 5)) {
+      // Largest font (52..36 px) that wraps the hint into the space left; readable from ~3 m.
+      let px = 54, lines: string[];
+      do {
+        ctx.font = `${(px -= 2)}px system-ui, sans-serif`;
+        lines = wrap(ctx, c.body, CW - 120);
+      } while (y + lines.length * px * 1.15 > oy + CH - 40 && px > 36);
+      for (const l of lines) {
         ctx.fillText(l, ox + CW / 2, y);
-        y += 48;
+        y += px * 1.15;
       }
     }
   });
