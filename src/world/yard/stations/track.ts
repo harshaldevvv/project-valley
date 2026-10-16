@@ -66,7 +66,7 @@ export function buildTrack(kit: Kit) {
     const cx = L.cx + sx * (L.hx - L.r), cz = L.cz + sz * (L.hz - L.r);
     for (const k of [-1, 0, 1]) {
       const a = Math.atan2(sz, sx) + k * 0.16;
-      const ro = L.r + hw + 3.5; // clear of the racing line (QA-036)
+      const ro = L.r + hw + 5.5; // well clear of the racing line: closer stacks wedged the pickup on the NE turn (QA-036)
       kit.place({ id: 'env_tire_stack_a', size: [0.8, 0.9, 0.8], x: cx + Math.cos(a) * ro, z: cz + Math.sin(a) * ro });
       const ri = L.r - hw - 0.8;
       kit.place({ id: 'env_cone_a', size: [0.35, 0.7, 0.35], x: cx + Math.cos(a) * ri, z: cz + Math.sin(a) * ri });

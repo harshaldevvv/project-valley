@@ -35,6 +35,8 @@ export const sounds: Record<string, SoundDef> = {
   hit_marker: ui(['kenney/tick_001.ogg'], 0.45),
   kill_confirm: { files: k('impactSoft_heavy'), volume: 0.8, refDistance: 1, maxDistance: 1, jitter: 0.03, synth: 'thud' },
   impact_wood: { files: k('impactWood_medium'), volume: 0.6, refDistance: 2, maxDistance: 40, jitter: 0.08, synth: 'thud' },
+  impact_concrete: { files: k('impactMining'), volume: 0.55, refDistance: 2, maxDistance: 40, jitter: 0.08, synth: 'thud' },
+  casing_tink: { files: k('impactPlate_light'), volume: 0.15, refDistance: 1, maxDistance: 12, jitter: 0.15, synth: 'click' },
   impact_metal: { files: k('impactMetal_light'), volume: 0.6, refDistance: 2, maxDistance: 50, jitter: 0.08, synth: 'click' },
   impact_dirt: { files: k('impactSoft_medium'), volume: 0.5, refDistance: 2, maxDistance: 30, jitter: 0.1, synth: 'thud' },
   target_ping: { files: k('impactBell_heavy'), volume: 0.7, refDistance: 6, maxDistance: 150, jitter: 0.03, synth: 'beep' },

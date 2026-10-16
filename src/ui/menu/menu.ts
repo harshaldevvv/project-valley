@@ -168,7 +168,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       };
       f.append(row);
     };
-    const check = (key: 'shadows' | 'fxaa', label: string) => {
+    const check = (key: 'shadows' | 'fxaa' | 'reduceFlashing', label: string) => {
       const row = document.createElement('label');
       row.className = 'row toggle';
       row.innerHTML = `<span>${label}</span><input type="checkbox"><i></i>`;
@@ -189,6 +189,20 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     slider('renderScale', 'Render scale', 0.5, 1, 0.05, pct);
     check('shadows', 'Shadows');
     check('fxaa', 'Anti-aliasing (FXAA)');
+    check('reduceFlashing', 'Reduce flashing');
+    {
+      const row = document.createElement('label');
+      row.className = 'row';
+      row.innerHTML = `<span>Gore</span><select><option value="full">Full</option><option value="reduced">Reduced</option><option value="off">Off</option></select>`;
+      const sel = row.querySelector('select')!;
+      sel.value = settings.gore;
+      sel.onchange = () => {
+        settings.gore = sel.value as typeof settings.gore;
+        sfx('ui_click');
+        commit();
+      };
+      f.append(row);
+    }
     const reset = button('Reset to defaults', () => {
       Object.assign(settings, DEFAULT_SETTINGS);
       commit();

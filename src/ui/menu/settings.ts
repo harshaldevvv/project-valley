@@ -11,10 +11,12 @@ export interface Settings {
   shadows: boolean;
   fxaa: boolean;
   volume: number; // master 0..1
+  reduceFlashing: boolean; // accessibility: no muzzle light, fewer/dimmer flashes
+  gore: 'full' | 'reduced' | 'off';
 }
 
 const KEY = 'pv.settings.v1';
-export const DEFAULT_SETTINGS: Settings = { fov: 70, sensitivity: 1, shake: 0.7, renderScale: 1, shadows: true, fxaa: true, volume: 0.8 };
+export const DEFAULT_SETTINGS: Settings = { fov: 70, sensitivity: 1, shake: 0.7, renderScale: 1, shadows: true, fxaa: true, volume: 0.8, reduceFlashing: false, gore: 'full' };
 
 export function loadSettings(): Settings {
   try {

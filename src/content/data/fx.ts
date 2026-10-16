@@ -61,7 +61,7 @@ export const impacts: Record<FxSurface, ImpactDef> = {
       { pool: 'smoke', count: [1, 2], color: ['#c9c3b6'], size: [0.12, 0.2], speed: [0.3, 0.6], cone: 30, gravity: -0.3, life: [0.8, 1.0] },
     ],
     decal: { pool: 'bullet', color: '#2b2b2b', size: [0.05, 0.07] },
-    sfx: 'impact_wood', // ponytail: no dedicated concrete crack yet; wood crack reads closest
+    sfx: 'impact_concrete',
   },
   rubber: {
     bursts: [{ pool: 'chips', count: [3, 5], color: ['#222222', '#333333'], size: [0.02, 0.035], speed: [1.5, 2.5], cone: 40, gravity: 9, life: [0.4, 0.6] }],
@@ -105,8 +105,8 @@ export const fxTuning = {
   // Casings
   casingRest: 3,
   casingBounce: 0.3,
-  casingSound: 'impact_metal', // ponytail: no brass "tink" in the sound table yet (asked audio); played quiet + high
-  casingVolume: 0.12,
+  casingSound: 'casing_tink',
+  casingVolume: 1, // level is set in the sound table
   casingCooldown: 0.08,
   // Decals
   decalLife: 30,

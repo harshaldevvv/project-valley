@@ -3,6 +3,7 @@ import { LineBasicNodeMaterial } from 'three/webgpu';
 import type { Game } from '../core/game';
 import { look } from '../content/data/input';
 import { cameraFeel } from '../content/data/player';
+import { fxTuning } from '../content/data/fx';
 import { sounds } from '../content/data/sounds';
 import { yard, type StationId } from '../content/data/yard';
 import { createDebugPanel } from '../ui/debug/panel';
@@ -158,6 +159,8 @@ export async function installEngine(game: Game) {
       post.apply();
       audio.settings.master = s.volume;
       audio.applyVolumes();
+      fxTuning.reduceFlashing = s.reduceFlashing;
+      fxTuning.gore = s.gore;
     },
     stations: [
       { id: 'spawn', label: 'Spawn', go: () => teleport('spawn') },
