@@ -1,5 +1,7 @@
 import { Box3, BoxGeometry, Mesh, Quaternion, Vector3, type Material } from 'three';
 import { BodyFacing } from './player/facing';
+import { installSaves } from './saves';
+import { SurvivalGlue } from './player/survivalGlue';
 import { bodyFacing as BF } from '../content/data/player';
 import type { Game } from '../core/game';
 import { cameraFeel, health, movement, stamina } from '../content/data/player';
@@ -44,6 +46,7 @@ export async function installGameplay(game: Game): Promise<void> {
   ctx.targets = new Targets(ctx);
   ctx.animStand = new AnimStand(ctx);
   ctx.facing = new BodyFacing(ctx);
+  ctx.survival = new SurvivalGlue(ctx);
   ctx.hud = new Hud(ctx);
 
   // Player body (third person)
@@ -88,6 +91,7 @@ export async function installGameplay(game: Game): Promise<void> {
     name: 'sim',
     step(dt) {
       if (game.input.justPressed('F1') || game.input.justPressed('Escape')) ctx.hud.helpOpen = false;
+      ctx.survival.step(dt);
       ctx.player.step(dt);
       ctx.rig.step(dt);
       ctx.melee.step(dt);
@@ -192,6 +196,7 @@ export async function installGameplay(game: Game): Promise<void> {
   } catch {
     /* storage unavailable: defaults */
   }
+  installSaves(ctx);
   installDebug(ctx);
   // Playwright / console hooks (pointer lock may not engage under automation)
   (window as unknown as { __gp: unknown }).__gp = {

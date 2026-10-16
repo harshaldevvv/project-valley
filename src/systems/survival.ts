@@ -13,13 +13,15 @@ export interface SurvivalHost {
   hurt(amount: number, cause: string): void;
   heal(amount: number): void;
   isNight(): boolean;
+  /** In-game days elapsed, fractional (engine clock: (day - 1) + hours / 24). Drives infection stages. */
+  days(): number;
   statusChanged(id: StatusId, active: boolean, stage?: number): void;
 }
 
 interface StatusState {
   stage?: number;
   timeLeft: number | null;
-  /** Seconds to the next damage tick (bleeds) / stage advance (infection). */
+  /** Seconds to the next damage tick (bleeds); in-game DAYS to the next stage (infection). */
   tick: number;
 }
 
@@ -27,7 +29,7 @@ export interface SurvivalSave {
   hunger: number;
   thirst: number;
   fatigue: number;
-  /** Real seconds played (game-day clock for infection and death bags until the engine runs time). */
+  /** Real seconds played (save-slot playtime). */
   clock: number;
   statuses: [StatusId, StatusState][];
 }
@@ -43,6 +45,7 @@ export class Survival implements SurvivalApi {
   private starveT = 0;
   private thirstT = 0;
   private infectT = 0;
+  private lastDays: number | null = null;
 
   constructor(private rng: Rng, private host: SurvivalHost) {}
 
@@ -51,7 +54,7 @@ export class Survival implements SurvivalApi {
   }
 
   get gameDay() {
-    return Math.floor(this.clock / SURVIVAL.gameDaySeconds) + 1;
+    return Math.floor(this.host.days()) + 1;
   }
 
   get mods() {
@@ -90,14 +93,14 @@ export class Survival implements SurvivalApi {
     } else if (id === 'fracture') s = { timeLeft: opts.seconds ?? WOUNDS.fracture.healSeconds, tick: 0 };
     else if (id === 'infection') {
       if (had) return; // a new bite doesn't restart it
-      s = { stage: opts.stage ?? 1, timeLeft: null, tick: this.stageSeconds() };
+      s = { stage: opts.stage ?? 1, timeLeft: null, tick: this.stageDays() };
     } else s = { timeLeft: opts.seconds ?? null, tick: 0, stage: opts.stage };
     this.map.set(id, s);
     if (!had) this.host.statusChanged(id, true, s.stage);
   }
 
-  private stageSeconds() {
-    return (WOUNDS.infection.totalGameDays * SURVIVAL.gameDaySeconds) / WOUNDS.infection.stages.length;
+  private stageDays() {
+    return WOUNDS.infection.totalGameDays / WOUNDS.infection.stages.length;
   }
 
   private drop(id: StatusId) {
@@ -140,6 +143,9 @@ export class Survival implements SurvivalApi {
 
   step(dt: number) {
     this.clock += dt;
+    const days = this.host.days();
+    const dDays = this.lastDays === null ? 0 : Math.max(0, days - this.lastDays); // a load can move time backwards
+    this.lastDays = days;
     const k = SURVIVAL.debugDrainMul;
     this.adjust({
       hunger: (-100 / (SURVIVAL.hungerMinutes * 60)) * dt * difficulty.hungerDrain * k,
@@ -165,9 +171,9 @@ export class Survival implements SurvivalApi {
       } else if (id === 'infection') {
         const st = WOUNDS.infection.stages[(s.stage ?? 1) - 1];
         if (st.hpPerMin > 0 && (this.infectT += dt) >= 60 / st.hpPerMin) (this.infectT = 0), this.host.hurt(1, 'infection');
-        if ((s.tick -= dt) <= 0 && (s.stage ?? 1) < WOUNDS.infection.stages.length) {
+        if ((s.tick -= dDays) <= 0 && (s.stage ?? 1) < WOUNDS.infection.stages.length) {
           s.stage = (s.stage ?? 1) + 1;
-          s.tick = this.stageSeconds();
+          s.tick = this.stageDays();
           this.host.statusChanged(id, true, s.stage);
         }
       }
@@ -199,6 +205,7 @@ export class Survival implements SurvivalApi {
   load(s: SurvivalSave) {
     for (const id of [...this.map.keys()]) this.drop(id);
     Object.assign(this, { hunger: s.hunger, thirst: s.thirst, fatigue: s.fatigue, clock: s.clock });
+    this.lastDays = null;
     for (const [id, st] of s.statuses) {
       this.map.set(id, { ...st });
       this.host.statusChanged(id, true, st.stage);

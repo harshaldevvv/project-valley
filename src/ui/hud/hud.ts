@@ -4,6 +4,8 @@ import { weaponSlots } from '../../content/data/weapons';
 import { health as HD, stamina as SD } from '../../content/data/player';
 import { probe, type Ctx } from '../../gameplay/ctx';
 import { vehicleText } from '../../content/text/vehicles';
+import { hudText } from '../../content/text/hud';
+import { SurvivalHud } from './survivalHud';
 
 /**
  * Gameplay HUD (DOM over the canvas): crosshair (spread + blocked), hit markers, ammo + fire mode, health/stamina,
@@ -97,6 +99,7 @@ export class Hud {
   private help: HTMLElement;
   private dead: HTMLElement;
   private cache = new Map<string, string>();
+  private survival: SurvivalHud;
   private slotName = '';
   private slotT = 0;
 
@@ -117,11 +120,12 @@ export class Hud {
     this.ammoN = el('n', ammo);
     this.ammoW = el('w', ammo);
     const bars = el('bars', this.root);
-    el('lbl', bars).textContent = 'HEALTH';
+    el('lbl', bars).textContent = hudText.health;
     this.hpB = el('', el('bar hp', bars), 'b');
-    el('lbl', bars).textContent = 'STAMINA';
+    el('lbl', bars).textContent = hudText.stamina;
     this.st = el('bar st', bars);
     this.stB = el('', this.st, 'b');
+    this.survival = new SurvivalHud(ctx, bars, this.root);
     this.prompt = el('prompt', this.root);
     this.prompt.innerHTML =
       '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#fff3" stroke-width="3"/><circle cx="12" cy="12" r="9" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg><kbd>E</kbd><span></span>';
@@ -267,6 +271,7 @@ export class Hud {
       this.set('aw', this.ammoW, 'text', `${this.slotName}`);
     }
 
+    this.survival.render(dt);
     // Bars
     this.set('hp', this.hpB, 'transform', `scaleX(${(p.hp / HD.max).toFixed(3)})`);
     this.set('st', this.stB, 'transform', `scaleX(${(p.stamina.value / SD.max).toFixed(3)})`);

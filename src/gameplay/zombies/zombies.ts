@@ -313,7 +313,7 @@ export class Zombies {
     z.anim?.oneshot('z_stagger');
   }
 
-  die(z: Zombie, dir: Vector3, melee: boolean) {
+  die(z: Zombie, dir: Vector3, melee: boolean, quiet = false) {
     if (!z.alive) return;
     this.releaseToken(z);
     z.mode = 'dead';
@@ -335,7 +335,7 @@ export class Zombies {
     z.head.setEnabled(false);
     this.ctx.hits.delete(z.capsule.handle);
     this.ctx.hits.delete(z.head.handle);
-    this.ctx.sfx('zombie_death', z.curr, { pitchJitter: 0.1 });
+    if (!quiet) this.ctx.sfx('zombie_death', z.curr, { pitchJitter: 0.1 });
     if (z.fling.lengthSq() === 0) this.groundPool(this.torso(z, _o)); // under the torso, not the feet
     z.anim?.oneshot('z_death', z.headKill ? 0.04 : 0.1, true, z.def.deathHoldAt, z.headKill ? fxTuning.headKillDeathSpeed : 1);
     if (melee) this.ctx.game.events.emit('noise', { position: z.curr.clone(), radius: 5, source: 'melee_kill' });
@@ -519,13 +519,16 @@ export class Zombies {
               if (car.dead) {
                 this.ctx.vehicles.exit();
                 this.ctx.game.events.emit('toast', { text: vehicleText.draggedOut });
-                p.damage(d.attackDamage, z.curr);
+                if (p.damage(d.attackDamage, z.curr)) this.ctx.survival?.zombieHit(d.attackDamage, 'body');
               } else this.ctx.vehicles.damageCar(car, d.attackDamage * car.def.zombieDamageMul);
             } else this.ctx.sfx('melee_swing', z.curr, { volume: 0.6 });
           } else {
             const miss = p.sprinting && this.ctx.rand() < d.sprintMissChance;
             if (reach && inFront && !miss && this.los(z, p.curr, 1.0) && !this.ctx.melee?.invulnerable) {
-              if (p.damage(d.attackDamage, z.curr)) this.ctx.sfx('melee_hit', p.curr, { volume: 0.8 });
+              if (p.damage(d.attackDamage, z.curr)) {
+                this.ctx.sfx('melee_hit', p.curr, { volume: 0.8 });
+                this.ctx.survival?.zombieHit(d.attackDamage, z.crawler ? 'limb' : 'body'); // M2: wounds / infection rolls
+              }
             } else this.ctx.sfx('melee_swing', z.curr, { volume: 0.6 });
           }
           z.mode = 'recover';

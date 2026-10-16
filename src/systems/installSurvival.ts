@@ -20,8 +20,8 @@ export interface DeathBag {
   x: number;
   y: number;
   z: number;
-  /** survival.clock time when it disappears. */
-  expiresAt: number;
+  /** In-game day (fractional, engine clock) when it disappears. */
+  expiresAtDay: number;
 }
 
 export function installSurvival(
@@ -36,10 +36,12 @@ export function installSurvival(
       return null;
     }
   };
-  const isNight = () => {
-    // Engine time-of-day isn't on `game` yet; read it if/when it is (0 day .. 1 night).
-    const t = (game as unknown as { time?: { night?: number } }).time;
-    return (t?.night ?? 0) > 0.5;
+  // Engine world clock (src/engine/clock.ts): day from 1, hours 0..24, night 0..1.
+  const time = () => (game as unknown as { time?: { day?: number; hours?: number; night?: number } }).time;
+  const isNight = () => (time()?.night ?? 0) > 0.5;
+  const days = () => {
+    const t = time();
+    return t?.day !== undefined ? t.day - 1 + (t.hours ?? 0) / 24 : 0;
   };
 
   const survival = new Survival(game.rng, {
@@ -47,6 +49,7 @@ export function installSurvival(
     hurt: (n, cause) => player()?.hurt(n, cause),
     heal: (n) => player()?.heal(n),
     isNight,
+    days,
     statusChanged: (id, active, stage) => {
       game.events.emit('statusChanged', { id, active, stage });
       // Wounds announce themselves; derived needs states are for the HUD icons only.
@@ -128,7 +131,7 @@ export function installSurvival(
     for (const it of items) if (autoPlace(c.grid, it) > 0) lo.drop(it, at); // never lose an item
     c.searched = true;
     lo.changed();
-    spawnBag({ id, x: at.x, y: at.y, z: at.z, expiresAt: survival.clock + DEATH.bagDays[mode] * SURVIVAL.gameDaySeconds });
+    spawnBag({ id, x: at.x, y: at.y, z: at.z, expiresAtDay: days() + DEATH.bagDays[mode] });
     deps.toast(ST.bagDropped);
   });
 
@@ -155,7 +158,7 @@ export function installSurvival(
         deps.sfx(done.use.sound ?? 'item_pickup');
         deps.toast(`${itemName(done.defId)} ✓`);
       }
-      for (const [id, b] of bags) if (survival.clock >= b.rec.expiresAt) removeBag(id);
+      for (const [id, b] of bags) if (days() >= b.rec.expiresAtDay) removeBag(id);
       const u = lo.using;
       bar.hidden = !u;
       if (u) {

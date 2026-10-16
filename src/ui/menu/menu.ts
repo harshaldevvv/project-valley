@@ -6,6 +6,7 @@ import { loadingTips } from '../../content/text/tips';
 import { applyPreset, difficulty, DIFFICULTY_PRESETS, type DeathPenalty } from '../../content/data/difficulty';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from './settings';
 import { MENU_CSS } from './style';
+import { menuText as T } from '../../content/text/ui';
 
 /**
  * Title + pause menu living in the demo world (no level load).
@@ -43,15 +44,15 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     <div class="mn-vignette"></div>
     <div class="mn-left">
       <div class="mn-brand">
-        <div class="mn-kicker"><span></span>M1 &middot; The Yard</div>
-        <h1>Project<br>Valley</h1>
-        <div class="mn-sub">Survival sandbox &mdash; every mechanic, one walled yard.</div>
-        <div class="mn-paused">Paused</div>
+        <div class="mn-kicker"><span></span>${T.kicker}</div>
+        <h1>${T.title.join('<br>')}</h1>
+        <div class="mn-sub">${T.subtitle}</div>
+        <div class="mn-paused">${T.paused}</div>
       </div>
       <nav class="mn-nav"></nav>
     </div>
-    <section class="mn-panel" hidden><header><h2></h2><button class="mn-x" aria-label="Back">&times;</button></header><div class="mn-body"></div></section>
-    <footer class="mn-tip"><b>Tip</b><span></span></footer>
+    <section class="mn-panel" hidden><header><h2></h2><button class="mn-x" aria-label="${T.back}">&times;</button></header><div class="mn-body"></div></section>
+    <footer class="mn-tip"><b>${T.tip}</b><span></span></footer>
     <div class="mn-ver">v0.0.1 &middot; ${game.backend.toUpperCase()}</div>`;
   document.body.appendChild(root);
   const nav = root.querySelector('.mn-nav') as HTMLElement;
@@ -84,11 +85,12 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
   let mode: Mode = 'title';
   let page: Page = 'main';
 
-  const button = (label: string, fn: () => void, cls = '') => {
+  /** `act` is a stable id for tests/automation (defaults to the label slug). */
+  const button = (label: string, fn: () => void, cls = '', act?: string) => {
     const b = document.createElement('button');
     b.className = `mn-btn ${cls}`;
     b.innerHTML = `<span>${label}</span>`;
-    b.dataset.act = label.toLowerCase().replace(/\s+/g, '-');
+    b.dataset.act = act ?? label.toLowerCase().replace(/\s+/g, '-');
     b.onclick = () => {
       sfx('ui_click');
       fn();
@@ -98,10 +100,16 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
 
   const renderNav = () => {
     nav.replaceChildren();
-    if (mode === 'title') nav.append(button('Play', () => play(), 'primary'));
-    else nav.append(button('Resume', () => resume(), 'primary'));
-    nav.append(button('Jump to station', () => showPage('stations')), button('Controls', () => showPage('controls')), button('Settings', () => showPage('settings')), button('Difficulty', () => showPage('difficulty')));
-    if (mode === 'paused') nav.append(button('Quit to title', () => quitToTitle(), 'quiet'));
+    const N = T.nav;
+    if (mode === 'title') nav.append(button(N.play, () => play(), 'primary', 'play'));
+    else nav.append(button(N.resume, () => resume(), 'primary', 'resume'));
+    nav.append(
+      button(N.stations, () => showPage('stations'), '', 'jump-to-station'),
+      button(N.controls, () => showPage('controls'), '', 'controls'),
+      button(N.settings, () => showPage('settings'), '', 'settings'),
+      button(N.difficulty, () => showPage('difficulty'), '', 'difficulty'),
+    );
+    if (mode === 'paused') nav.append(button(N.quit, () => quitToTitle(), 'quiet', 'quit-to-title'));
     root.classList.toggle('is-paused', mode === 'paused');
   };
 
@@ -118,7 +126,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     panel.classList.add('in');
     body.replaceChildren();
     if (p === 'stations') {
-      panelTitle.textContent = 'Jump to station';
+      panelTitle.textContent = T.nav.stations;
       const grid = document.createElement('div');
       grid.className = 'mn-stations';
       for (const s of opts.stations) {
@@ -127,7 +135,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       }
       body.append(grid);
     } else if (p === 'controls') {
-      panelTitle.textContent = 'Controls';
+      panelTitle.textContent = T.nav.controls;
       const wrap = document.createElement('div');
       wrap.className = 'mn-controls';
       for (const g of controlsHelp) {
@@ -137,10 +145,10 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       }
       body.append(wrap);
     } else if (p === 'settings') {
-      panelTitle.textContent = 'Settings';
+      panelTitle.textContent = T.nav.settings;
       body.append(settingsForm());
     } else if (p === 'difficulty') {
-      panelTitle.textContent = 'Difficulty';
+      panelTitle.textContent = T.nav.difficulty;
       body.append(difficultyForm());
     }
   };
@@ -186,21 +194,22 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       f.append(row);
     };
     const pct = (v: number) => `${Math.round(v * 100)}%`;
-    slider('fov', 'Field of view', 55, 95, 1, (v) => `${v}°`);
-    slider('sensitivity', 'Mouse sensitivity', 0.25, 3, 0.05, (v) => `${v.toFixed(2)}×`);
-    slider('shake', 'Camera shake', 0, 1, 0.05, pct);
-    slider('volume', 'Master volume', 0, 1, 0.05, pct);
-    slider('renderScale', 'Render scale', 0.5, 1, 0.05, pct);
-    check('shadows', 'Shadows');
-    check('fxaa', 'Anti-aliasing (FXAA)');
-    check('reduceFlashing', 'Reduce flashing');
+    const S = T.settings;
+    slider('fov', S.fov, 55, 95, 1, (v) => `${v}°`);
+    slider('sensitivity', S.sensitivity, 0.25, 3, 0.05, (v) => `${v.toFixed(2)}×`);
+    slider('shake', S.shake, 0, 1, 0.05, pct);
+    slider('volume', S.volume, 0, 1, 0.05, pct);
+    slider('renderScale', S.renderScale, 0.5, 1, 0.05, pct);
+    check('shadows', S.shadows);
+    check('fxaa', S.fxaa);
+    check('reduceFlashing', S.reduceFlashing);
     {
       // segmented control (QA-048): native radios, styled; arrow keys work as usual
       const row = document.createElement('div');
       row.className = 'row';
-      row.innerHTML = `<span>Gore</span><div class="mn-seg" role="radiogroup" aria-label="Gore"></div>`;
+      row.innerHTML = `<span>${S.gore}</span><div class="mn-seg" role="radiogroup" aria-label="${S.gore}"></div>`;
       const seg = row.querySelector('.mn-seg')!;
-      for (const [v, label] of [['full', 'Full'], ['reduced', 'Reduced'], ['off', 'Off']] as const) {
+      for (const [v, label] of [['full', S.goreFull], ['reduced', S.goreReduced], ['off', S.goreOff]] as const) {
         const l = document.createElement('label');
         l.innerHTML = `<input type="radio" name="mn-gore" value="${v}"><span>${label}</span>`;
         const r = l.querySelector('input')!;
@@ -214,7 +223,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       }
       f.append(row);
     }
-    const reset = button('Reset to defaults', () => {
+    const reset = button(S.reset, () => {
       Object.assign(settings, DEFAULT_SETTINGS);
       commit();
       showPage('settings');
@@ -246,11 +255,12 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       f.append(row);
     };
     const custom = () => (difficulty.preset = 'custom');
-    seg('Preset', [['story', 'Story'], ['survivor', 'Survivor'], ['hardcore', 'Hardcore']], () => difficulty.preset, (v) => {
+    const D = T.difficulty;
+    seg(D.preset, [['story', D.story], ['survivor', D.survivor], ['hardcore', D.hardcore]], () => difficulty.preset, (v) => {
       applyPreset(v as keyof typeof DIFFICULTY_PRESETS);
       showPage('difficulty'); // re-read every control
     });
-    for (const [key, label] of [['hungerDrain', 'Hunger drain'], ['thirstDrain', 'Thirst drain'], ['fatigueDrain', 'Fatigue drain']] as const) {
+    for (const [key, label] of [['hungerDrain', D.hungerDrain], ['thirstDrain', D.thirstDrain], ['fatigueDrain', D.fatigueDrain]] as const) {
       const row = document.createElement('label');
       row.className = 'row';
       row.innerHTML = `<span>${label}</span><input type="range" min="0" max="2" step="0.05"><output></output>`;
@@ -265,7 +275,23 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       };
       f.append(row);
     }
-    for (const [key, label] of [['infection', 'Infection'], ['starvationDamage', 'Starvation damage']] as const) {
+    {
+      // day length is pacing, not difficulty: changing it doesn't turn the preset into 'custom'
+      const row = document.createElement('label');
+      row.className = 'row';
+      row.innerHTML = `<span>${D.dayLength}</span><input type="range" min="20" max="120" step="5"><output></output>`;
+      const input = row.querySelector('input')!;
+      const out = row.querySelector('output')!;
+      const show = () => (out.textContent = `${difficulty.dayLengthMin} ${D.minutes}`);
+      input.value = String(difficulty.dayLengthMin);
+      show();
+      input.oninput = () => {
+        difficulty.dayLengthMin = Number(input.value);
+        show();
+      };
+      f.append(row);
+    }
+    for (const [key, label] of [['infection', D.infection], ['starvationDamage', D.starvationDamage]] as const) {
       const row = document.createElement('label');
       row.className = 'row toggle';
       row.innerHTML = `<span>${label}</span><input type="checkbox"><i></i>`;
@@ -278,14 +304,14 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       };
       f.append(row);
     }
-    seg('On death', [['story', 'Keep all'], ['survivor', 'Drop bag'], ['hardcore', 'Hardcore']], () => difficulty.deathPenalty, (v) => {
+    seg(D.onDeath, [['story', D.keepAll], ['survivor', D.dropBag], ['hardcore', D.hardcore]], () => difficulty.deathPenalty, (v) => {
       difficulty.deathPenalty = v as DeathPenalty;
       custom();
     });
     if (difficulty.preset === 'custom') {
       const note = document.createElement('div');
       note.className = 'mn-note';
-      note.textContent = 'Custom — saved with your game.';
+      note.textContent = D.custom;
       f.append(note);
     }
     return f;
@@ -435,7 +461,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
   // activation), say so; the next click on the canvas locks (Input does that) (QA-038, QA-054).
   const hint = document.createElement('div');
   hint.id = 'mn-lockhint';
-  hint.textContent = 'Click to capture mouse';
+  hint.textContent = T.captureMouse;
   hint.hidden = true;
   document.body.appendChild(hint);
   setInterval(() => {

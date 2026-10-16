@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { difficulty } from '../content/data/difficulty';
 import { ITEMS } from '../content/data/items';
-import { SURVIVAL, WOUNDS } from '../content/data/survival';
+import { WOUNDS } from '../content/data/survival';
 import { createRng } from '../engine/rng';
 import { Survival, type SurvivalHost } from './survival';
 
 const host = (night = false) => {
-  const h = { hp: 100, events: [] as string[] };
+  const h = { hp: 100, events: [] as string[], days: 0 };
   const api: SurvivalHost = {
     maxHp: () => 100,
     hurt: (n, cause) => ((h.hp -= n), h.events.push(cause)),
     heal: (n) => (h.hp = Math.min(100, h.hp + n)),
     isNight: () => night,
+    days: () => h.days,
     statusChanged: (id, on) => h.events.push(`${id}:${on}`),
   };
   return { h, api };
@@ -56,10 +57,15 @@ describe('survival', () => {
   });
 
   it('infection advances in stages; antibiotics only cure early stages', () => {
-    const s = new Survival(createRng(4), host().api);
+    const { h, api } = host();
+    const s = new Survival(createRng(4), api);
     s.addStatus('infection');
-    const stage = (WOUNDS.infection.totalGameDays * SURVIVAL.gameDaySeconds) / 4;
-    run(s, stage * 2 + 1, 5);
+    const stageDays = WOUNDS.infection.totalGameDays / 4;
+    s.step(0.1); // first step only records the clock
+    for (let i = 0; i < 2; i++) {
+      h.days += stageDays + 0.01; // the engine clock advances
+      s.step(0.1);
+    }
     expect(s.statuses.get('infection')?.stage).toBe(3);
     s.applyUse(ITEMS.antibiotics.use!);
     expect(s.statuses.has('infection')).toBe(true);

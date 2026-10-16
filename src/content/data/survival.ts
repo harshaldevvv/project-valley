@@ -25,8 +25,6 @@ export const SURVIVAL = {
   dehydrateEvery: 12,
   /** Debug: multiplies every drain (F1 "needs x10"). */
   debugDrainMul: 1,
-  /** Real seconds per in-game day (infection stages, death-bag lifetime). Engine time does not run yet. */
-  gameDaySeconds: 48 * 60,
 };
 
 /** Wounds. Bleeds tick a % of max HP; [min, max] ranges are rolled with the seeded rng. */

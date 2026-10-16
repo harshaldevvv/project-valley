@@ -344,6 +344,13 @@ export class Vehicles {
     } else car.tippedT = 0;
   }
 
+  /** After a teleport (save load): render state = body state, no interpolation jump. */
+  resync(car: Car) {
+    this.syncState(car);
+    car.prevPos.copy(car.currPos);
+    car.prevQuat.copy(car.currQuat);
+  }
+
   /** Car damage (zombie hits, bullets). At 0 the engine dies: no drive, black smoke (QA-050). */
   damageCar(car: Car, amount: number) {
     if (car.dead) return;

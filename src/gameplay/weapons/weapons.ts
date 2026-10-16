@@ -50,6 +50,8 @@ export function sandboxLoadout(): LoadoutApi {
     give: () => {},
     consume: () => 0,
     count: () => 99,
+    using: null,
+    cancelUse: () => false,
   };
 }
 
@@ -113,6 +115,8 @@ export class Weapons {
   private trailOn = false;
   /** 0 = low-ready, 1 = raised to aim (third-person carry pose). */
   raiseT = 0;
+  /** M2: survival.mods.aimSway (fatigue, infection). */
+  swayMul = 1;
   private aimMiss = false;
   private swayLag = new Vector3();
   private lastYaw = 0;
@@ -317,7 +321,7 @@ export class Weapons {
     this.bloom = decayBloom(this.bloom, B.bloomRecoverPerSec, dt);
     this.sinceShot += dt;
     if (this.sinceShot > B.shotResetS) this.shotIdx = 0;
-    const swayAmp = H.adsSwayDeg * DEG * this.adsEased * (p.stamina.exhausted ? H.exhaustedSwayMul : 1);
+    const swayAmp = H.adsSwayDeg * DEG * this.adsEased * (p.stamina.exhausted ? H.exhaustedSwayMul : 1) * this.swayMul;
     const w = this.time * Math.PI * 2 * H.adsSwayHz;
     this.swayY = Math.sin(w) * swayAmp;
     this.swayP = Math.sin(w * 2) * swayAmp * 0.5;

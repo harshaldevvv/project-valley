@@ -51,3 +51,28 @@ export const worldText = {
   gateOpen: 'Open gate',
   gateClose: 'Close gate',
 };
+
+/** Title / pause menu (engine-builder's src/ui/menu; narrative may reword). */
+export const menuText = {
+  kicker: 'M1 · The Yard',
+  title: ['Project', 'Valley'],
+  subtitle: 'Survival sandbox — every mechanic, one walled yard.',
+  paused: 'Paused',
+  tip: 'Tip',
+  back: 'Back',
+  captureMouse: 'Click to capture mouse',
+  nav: { play: 'Play', resume: 'Resume', stations: 'Jump to station', controls: 'Controls', settings: 'Settings', difficulty: 'Difficulty', quit: 'Quit to title' },
+  settings: {
+    fov: 'Field of view', sensitivity: 'Mouse sensitivity', shake: 'Camera shake', volume: 'Master volume', renderScale: 'Render scale',
+    shadows: 'Shadows', fxaa: 'Anti-aliasing (FXAA)', reduceFlashing: 'Reduce flashing',
+    gore: 'Gore', goreFull: 'Full', goreReduced: 'Reduced', goreOff: 'Off', reset: 'Reset to defaults',
+  },
+  difficulty: {
+    preset: 'Preset', story: 'Story', survivor: 'Survivor', hardcore: 'Hardcore',
+    hungerDrain: 'Hunger drain', thirstDrain: 'Thirst drain', fatigueDrain: 'Fatigue drain',
+    infection: 'Infection', starvationDamage: 'Starvation damage',
+    onDeath: 'On death', keepAll: 'Keep all', dropBag: 'Drop bag',
+    dayLength: 'Day length', minutes: 'min',
+    custom: 'Custom — saved with your game.',
+  },
+};

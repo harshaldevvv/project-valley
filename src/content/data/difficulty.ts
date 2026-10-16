@@ -12,12 +12,14 @@ export interface Difficulty {
   infection: boolean;
   starvationDamage: boolean;
   deathPenalty: DeathPenalty;
+  /** Real minutes per in-game day, 20..120 (principles §1: 40 = 28 min day + 12 min night). Engine world clock. */
+  dayLengthMin: number;
 }
 
 export const DIFFICULTY_PRESETS: Record<Exclude<Difficulty['preset'], 'custom'>, Difficulty> = {
-  story: { preset: 'story', hungerDrain: 0.5, thirstDrain: 0.5, fatigueDrain: 0.5, infection: false, starvationDamage: false, deathPenalty: 'story' },
-  survivor: { preset: 'survivor', hungerDrain: 1, thirstDrain: 1, fatigueDrain: 1, infection: true, starvationDamage: true, deathPenalty: 'survivor' },
-  hardcore: { preset: 'hardcore', hungerDrain: 1.5, thirstDrain: 1.5, fatigueDrain: 1.25, infection: true, starvationDamage: true, deathPenalty: 'hardcore' },
+  story: { preset: 'story', hungerDrain: 0.5, thirstDrain: 0.5, fatigueDrain: 0.5, infection: false, starvationDamage: false, deathPenalty: 'story', dayLengthMin: 40 },
+  survivor: { preset: 'survivor', hungerDrain: 1, thirstDrain: 1, fatigueDrain: 1, infection: true, starvationDamage: true, deathPenalty: 'survivor', dayLengthMin: 40 },
+  hardcore: { preset: 'hardcore', hungerDrain: 1.5, thirstDrain: 1.5, fatigueDrain: 1.25, infection: true, starvationDamage: true, deathPenalty: 'hardcore', dayLengthMin: 40 },
 };
 
 export const difficulty: Difficulty = { ...DIFFICULTY_PRESETS.survivor };

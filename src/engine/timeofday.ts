@@ -33,8 +33,8 @@ const KEYS: Key[] = [
   { h: 20.3, sky: '#2c3350', zenith: '#0a1020', night: 0.85, sun: '#8a90c0', sunI: 0.5, hemiSky: '#55618a', hemiGround: '#232128', hemiI: 1.9 },
   { h: 24, ...NIGHT },
 ];
-const SUNRISE = 5.5;
-const SUNSET = 19.5;
+export const SUNRISE = 5.5;
+export const SUNSET = 19.5;
 export const TIME_PRESETS: Record<string, number> = { Dawn: 6.2, Morning: 9, Noon: 12, Dusk: 18.8, Night: 23 };
 
 export function createTimeOfDay(game: Game) {

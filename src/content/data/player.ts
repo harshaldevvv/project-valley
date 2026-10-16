@@ -78,6 +78,16 @@ export const bodyFacing = {
   pistolLowDeg: 0, // pistol: the arm hangs at the side from the locomotion clip (aim overlay off); extra drop here
 };
 
+/** M2 survival presentation + glue (numbers for effects live in systems' data/survival.ts). */
+export const survivalFeel = {
+  sprintFatiguePerSec: 0.05, // exertion: sprinting tires you (game.survival.adjust)
+  limpDip: 0.045, // m camera dip on the injured leg's step (fracture)
+  limpSpeedMul: 0.92, // extra stride unevenness on top of mods.moveSpeed
+  bleedDripEvery: 1.4, // s between blood drips on the ground (heavy: half)
+  needLow: 25, // bars turn amber below this
+  bagMarkerMax: 400, // m: hide the bag marker beyond this
+};
+
 export const cameraFeel = {
   // Third person (principles §2)
   shoulderX: 0.5,

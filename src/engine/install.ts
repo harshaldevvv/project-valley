@@ -12,6 +12,7 @@ import { createAudio } from './audio';
 import { installPost, type Post } from './post';
 import { createTimeOfDay, TIME_PRESETS } from './timeofday';
 import { createSky } from './sky';
+import { createClock, type Clock } from './clock';
 import { createLamps } from './lamps';
 
 /**
@@ -53,18 +54,20 @@ export async function installEngine(game: Game) {
   // --- post + time of day ------------------------------------------------------------------
   const post = installPost(game);
   const tod = createTimeOfDay(game);
-  // Read-only clock for other teams (systems: night fatigue). ponytail: time doesn't advance yet (debug slider /
-  // saves only); add a day counter here when the world clock starts running. Not in the Game contract yet.
-  Object.defineProperty(game, 'time', {
-    value: {
-      get hours() {
-        return tod.hours;
-      },
-      get night() {
-        return tod.night;
-      },
+  // game.time is live from install; the running clock (clock.ts) is created at start, once the world and saves exist.
+  let clock: Clock | null = null;
+  game.time = {
+    get hours() {
+      return clock ? clock.hours : tod.hours;
     },
-  });
+    get night() {
+      return tod.night;
+    },
+    get day() {
+      return clock ? clock.day : 1;
+    },
+  };
+  const setHours = (h: number) => (clock ? clock.set(h) : tod.set(h));
   createSky(game, tod);
 
   // --- teleport ----------------------------------------------------------------------------
@@ -83,14 +86,22 @@ export async function installEngine(game: Game) {
   // --- time ----------------------------------------------------------------------------------
   const timeBind = {
     get hours() {
-      return tod.hours;
+      return game.time.hours;
     },
     set hours(h: number) {
-      tod.set(h);
+      setHours(h);
+    },
+    get x20_speed() {
+      return clock?.fast ?? false;
+    },
+    set x20_speed(v: boolean) {
+      if (clock) clock.fast = v;
     },
   };
   game.debug.tune('Time', timeBind, 'hours', 0, 24, 0.1);
-  for (const [name, h] of Object.entries(TIME_PRESETS)) game.debug.action('Time', name, () => tod.set(h));
+  game.debug.toggle('Time', timeBind, 'x20_speed');
+  game.debug.watch('Time', 'day / time', () => `day ${game.time.day}  ${String(Math.floor(game.time.hours)).padStart(2, '0')}:${String(Math.floor((game.time.hours % 1) * 60)).padStart(2, '0')}  night ${game.time.night.toFixed(2)}`);
+  for (const [name, h] of Object.entries(TIME_PRESETS)) game.debug.action('Time', name, () => setHours(h));
 
   // --- render --------------------------------------------------------------------------------
   const colliders = physicsLines(game);
@@ -189,17 +200,12 @@ export async function installEngine(game: Game) {
     // World data exists now (installed after the engine). Lamps add fixed lights, so create them before warm-up.
     const { lampHeads } = await import('../world/yard/poles');
     createLamps(game, tod, lampHeads);
-    // M2 saves (systems installs game.save after the engine): time of day is its own slice.
-    try {
-      game.save.section('world.time', { version: 1, save: () => ({ hours: tod.hours }), load: (d) => tod.set((d as { hours: number }).hours) });
-    } catch {
-      /* no save system installed */
-    }
+    clock = createClock(game, tod); // also registers the 'world.time' save slice
     await warmup(game, post);
     return start();
   };
 
-  const engine = { audio, post, tod, menu, panel, setTimeOfDay: tod.set };
+  const engine = { audio, post, tod, menu, panel, setTimeOfDay: setHours, get clock() { return clock; } };
   (window as unknown as { engine: typeof engine }).engine = engine;
   return engine;
 }

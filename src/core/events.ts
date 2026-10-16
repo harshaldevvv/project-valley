@@ -32,6 +32,8 @@ export interface GameEvents {
   loaded: { slot: string };
   /** Free-form toast message for the HUD. */
   toast: { text: string };
+  /** The world clock passed midnight (engine clock.ts). `day` = days survived, starting at 1. */
+  newDay: { day: number };
 }
 
 type Handler<K extends keyof GameEvents> = (e: GameEvents[K]) => void;

@@ -1,7 +1,7 @@
 import { MathUtils, Vector3 } from 'three';
 import type { Ball } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
-import { cameraFeel as C } from '../../content/data/player';
+import { cameraFeel as C, survivalFeel } from '../../content/data/player';
 import type { Ctx } from '../ctx';
 
 /**
@@ -131,6 +131,11 @@ export class CameraRig {
       this.bobT = p.stepPhase;
       _cam.y += Math.sin(this.bobT * 2) * C.headBobAmp * sp * (1 - ads * 0.8);
       _cam.addScaledVector(_right.crossVectors(_dir, UP).normalize(), Math.cos(this.bobT) * C.headBobAmp * 0.5 * sp);
+    }
+    // Fracture limp: the camera dips on the injured leg's steps only (asymmetric bob)
+    if (p.grounded && !p.dead && this.ctx.survival?.has('fracture')) {
+      const sp = Math.min(1, p.speed01);
+      _cam.y -= Math.pow(Math.max(0, Math.sin(p.stepPhase)), 2) * survivalFeel.limpDip * sp;
     }
     // Landing dip
     if (p.landed > 0) {

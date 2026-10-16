@@ -7,6 +7,7 @@ import { yard } from '../../content/data/yard';
 import type { PlayerView } from '../../core/contracts';
 import type { Ctx } from '../ctx';
 import { Stamina } from './stamina';
+import { weaponSlots } from '../../content/data/weapons';
 import { surfaceOf } from '../../world/surfaces';
 
 /**
@@ -51,6 +52,15 @@ export class Player implements PlayerView {
   locked = false;
   /** True while sprint input should be ignored (ADS etc. set by weapons). */
   blockSprint = false;
+  /** M2 survival: move-speed multiplier and sprint permission (fracture), set every tick by SurvivalGlue. */
+  survivalSpeed = 1;
+  sprintAllowed = true;
+  /** Using an item (bandage, food): walk speed, no sprint. */
+  usingItem = false;
+  /** Weapon slot in hand (systems' death bag reads this). */
+  get heldSlot() {
+    return this.ctx.weapons ? weaponSlots[this.ctx.weapons.slot] : 'primary';
+  }
   vault: { t: number; from: Vector3; to: Vector3; peak: number } | null = null;
   landed = 0; // landing dip impulse (camera), 0..1
   stepPhase = 0; // walk cycle (rad) for bob/legs
@@ -196,12 +206,13 @@ export class Player implements PlayerView {
     _v.set(-sin * f + cos * s, 0, -cos * f - sin * s);
     const moving = _v.lengthSq() > 0;
     if (moving) _v.normalize();
-    const wantSprint = c.down('sprint') && f > 0 && !this.crouched && !this.blockSprint && this.stamina.canSprint;
+    const wantSprint = c.down('sprint') && f > 0 && !this.crouched && !this.blockSprint && this.sprintAllowed && !this.usingItem && this.stamina.canSprint;
     if (wantSprint && this.crouched) this.setCrouch(false);
     this.sprinting = wantSprint && moving && this.grounded;
     let speed = this.crouched ? M.crouch : this.sprinting ? M.sprint : M.jog;
     if (f < 0 && !this.crouched) speed *= 0.8; // backpedal
-    speed *= this.speedMul;
+    speed *= this.speedMul * this.survivalSpeed;
+    if (this.usingItem) speed = Math.min(speed, M.walk);
     _v.multiplyScalar(moving ? speed : 0);
 
     // Accelerate toward desired (separate up/down rates, sprint ramp, air control)

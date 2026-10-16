@@ -5,9 +5,13 @@ export class Stamina {
   value = S.max;
   exhausted = false;
   private sinceUse = 99;
+  /** Survival multipliers (M2: game.survival.mods), set every tick. */
+  regenMul = 1;
+  costMul = 1;
 
   /** Try to spend `n`; returns false (and spends nothing) if not enough. */
   spend(n: number) {
+    n *= this.costMul;
     if (this.value < n && n > 0) return false;
     this.use(n);
     return true;
@@ -15,7 +19,7 @@ export class Stamina {
 
   /** Continuous drain (sprinting): always applied. */
   drain(perSec: number, dt: number) {
-    this.use(perSec * dt);
+    this.use(perSec * dt * this.costMul);
   }
 
   private use(n: number) {
@@ -26,7 +30,7 @@ export class Stamina {
 
   step(dt: number) {
     this.sinceUse += dt;
-    if (this.sinceUse >= S.regenDelay) this.value = Math.min(S.max, this.value + S.regenPerSec * dt);
+    if (this.sinceUse >= S.regenDelay) this.value = Math.min(S.max, this.value + S.regenPerSec * this.regenMul * dt);
     if (this.exhausted && this.value >= S.exhaustedUntil) this.exhausted = false;
   }
 
