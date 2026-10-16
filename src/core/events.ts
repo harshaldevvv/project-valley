@@ -25,6 +25,11 @@ export interface GameEvents {
   uiScreen: { name: string; open: boolean };
   /** A consumable was used (M2 survival stats hook in here). `use` mirrors ItemDef.use. */
   itemUsed: { defId: string; use: { seconds: number; heal?: number; food?: number; water?: number; sound?: string } | undefined };
+  /** M2: a status effect started / ended (HUD icons, sounds). */
+  statusChanged: { id: string; active: boolean; stage?: number };
+  /** M2: a save finished / a load applied. */
+  saved: { slot: string };
+  loaded: { slot: string };
   /** Free-form toast message for the HUD. */
   toast: { text: string };
 }

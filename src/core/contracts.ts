@@ -53,6 +53,59 @@ export interface PlayerView {
   teleport(p: Vector3, yaw?: number): void;
   /** God mode etc. are toggled through the debug menu. */
   godMode: boolean;
+  /** M2: health lives with the player (mechanics); survival/status effects change it through these. */
+  readonly hp: number;
+  readonly maxHp: number;
+  readonly dead: boolean;
+  heal(amount: number): void;
+  /** Non-directional damage (bleeding, starvation, infection). Respects godMode; can kill. */
+  hurt(amount: number, cause: string): void;
+}
+
+/** M2, systems-builder: survival needs + status effects (principles §7). Pure data; mechanics/HUD read it. */
+export type StatusId = 'bleeding' | 'heavy_bleeding' | 'fracture' | 'infection' | 'well_fed' | 'starving' | 'dehydrated' | 'exhausted';
+export interface SurvivalApi {
+  /** 0..100, 100 = full / rested. */
+  readonly hunger: number;
+  readonly thirst: number;
+  readonly fatigue: number;
+  /** Active statuses with optional stage (infection 1..4) and seconds left (null = until cured). */
+  readonly statuses: ReadonlyMap<StatusId, { stage?: number; timeLeft: number | null }>;
+  /** Multipliers mechanics applies to the player every tick (1 = normal). */
+  readonly mods: { moveSpeed: number; sprintAllowed: boolean; staminaRegen: number; staminaCost: number; aimSway: number };
+  addStatus(id: StatusId, opts?: { stage?: number; seconds?: number }): void;
+  cure(id: StatusId): void;
+  /** Mechanics calls this when a zombie hit lands: rolls bleeding / infection / fracture per data. */
+  onZombieHit(info: { damage: number; zone: 'head' | 'body' | 'limb'; armour: number }): void;
+  /** Debug / item use: change needs directly (clamped). */
+  adjust(delta: { hunger?: number; thirst?: number; fatigue?: number }): void;
+}
+
+/** M2, systems-builder: versioned, atomic saves (principles §12). Every team registers its own state slice. */
+export interface SaveSection {
+  /** Bump when the shape changes; load() receives the stored version so it can migrate. */
+  version: number;
+  save(): unknown; // plain JSON-safe data only
+  load(data: unknown, version: number): void;
+}
+export interface SaveSlotInfo {
+  slot: string; // 'auto' | 'quick' | 'manual-1' | 'manual-2' | 'manual-3' | 'pre-horde'
+  savedAt: number; // epoch ms
+  gameDay: number;
+  playtimeS: number;
+  label: string;
+}
+export interface SaveApi {
+  /** Register a slice by unique name ('player', 'world.time', 'build.pieces', 'containers', 'vehicles', ...). */
+  section(name: string, s: SaveSection): void;
+  save(slot: string): Promise<void>;
+  /** Returns false if the slot is missing or every generation failed validation. */
+  load(slot: string): Promise<boolean>;
+  list(): Promise<SaveSlotInfo[]>;
+  exportSlot(slot: string): Promise<Blob>;
+  importSlot(slot: string, file: Blob): Promise<boolean>;
+  /** True while a load is applying (systems skip side effects such as loot rolls). */
+  readonly loading: boolean;
 }
 
 /** systems-builder: what the player carries. Mechanics reads weapons/ammo through this only. */

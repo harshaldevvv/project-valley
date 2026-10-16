@@ -15,7 +15,7 @@ import { Perf } from '../engine/perf';
 import { createPhysics, type Physics } from '../engine/physics';
 import { createRenderer, type Backend } from '../engine/renderer';
 import { createRng, type Rng } from '../engine/rng';
-import type { AudioApi, BuildApi, DebugApi, Interactable, InteractApi, InventoryUi, LoadoutApi, Places, PlayerView } from './contracts';
+import type { AudioApi, BuildApi, DebugApi, Interactable, InteractApi, InventoryUi, LoadoutApi, Places, PlayerView, SaveApi, SurvivalApi } from './contracts';
 import { EventBus } from './events';
 
 /**
@@ -62,6 +62,9 @@ export interface Game {
   loadout: LoadoutApi;
   inventory: InventoryUi;
   build: BuildApi;
+  /** M2 (systems-builder). */
+  survival: SurvivalApi;
+  save: SaveApi;
   start(): Promise<void>;
 }
 
@@ -133,6 +136,8 @@ export async function createGame(): Promise<Game> {
     loadout: missing('loadout') as LoadoutApi,
     inventory: missing('inventory') as InventoryUi,
     build: missing('build') as BuildApi,
+    survival: missing('survival') as SurvivalApi,
+    save: missing('save') as SaveApi,
     async start() {
       const loop = new FixedLoop({
         step(dt, tick) {

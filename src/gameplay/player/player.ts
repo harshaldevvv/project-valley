@@ -130,6 +130,27 @@ export class Player implements PlayerView {
     return true;
   }
 
+  get maxHp() {
+    return HD.max;
+  }
+
+  heal(amount: number) {
+    if (this.dead) return;
+    this.hp = Math.min(HD.max, this.hp + amount);
+  }
+
+  /** Non-directional damage (bleeding, starvation, infection): no i-frames, no hit flinch. */
+  hurt(amount: number, cause: string) {
+    if (this.dead || this.godMode || amount <= 0) return;
+    this.hp = Math.max(0, this.hp - amount);
+    if (this.hp <= 0) {
+      this.dead = true;
+      this.deadT = HD.respawnDelay;
+      this.ctx.game.events.emit('toast', { text: `You died (${cause}). Respawning…` });
+      this.ctx.game.events.emit('playerDied', {});
+    }
+  }
+
   syncBody() {
     const hh = this.halfHeight;
     this.body.setNextKinematicTranslation({ x: this.curr.x, y: this.curr.y + hh + M.radius, z: this.curr.z });
