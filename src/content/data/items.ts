@@ -24,6 +24,8 @@ const list: ItemDef[] = [
   { id: 'nails', kind: 'material', w: 1, h: 1, stack: 100, iconSwatch: '#9da1a3', value: 1 },
   { id: 'scrap_metal', kind: 'material', w: 1, h: 1, stack: 20, iconSwatch: '#8a5232', value: 5 },
   { id: 'cloth_rag', kind: 'material', w: 1, h: 1, stack: 10, iconSwatch: '#b0a58c', value: 2 },
+  // Tools (only need to be carried; mechanics consumes one to repair the car).
+  { id: 'repair_kit', kind: 'tool', w: 2, h: 1, stack: 1, iconSwatch: '#b5523a', value: 120 },
   // Wearables with storage.
   { id: 'jacket_field', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['torso'], grid: { w: 4, h: 2 }, iconSwatch: '#5d6a48', value: 140 },
   { id: 'backpack_small', kind: 'backpack', w: 3, h: 3, stack: 1, slots: ['backpack'], grid: { w: 4, h: 4 }, iconSwatch: '#6b5a3e', value: 180 },

@@ -20,7 +20,7 @@
 .build-bar .bps { display: flex; gap: 6px; }
 .build-bar .bp {
   position: relative;
-  width: 92px;
+  width: 104px;
   padding: 18px 6px 6px;
   border-radius: 5px;
   background: rgba(14, 17, 19, 0.8);
@@ -29,9 +29,9 @@
 }
 .build-bar .bp.sel { border-color: #d9b25a; background: rgba(40, 34, 20, 0.9); box-shadow: 0 0 0 1px #d9b25a inset; }
 .build-bar .bp.poor small { color: #ff9b8c; }
-.build-bar .bp .k { position: absolute; left: 6px; top: 4px; font-size: 10px; font-weight: 700; color: #d9b25a; }
+.build-bar .bp .k { position: absolute; left: 6px; top: 4px; font-size: 11px; font-weight: 700; color: #d9b25a; }
 .build-bar .bp b { display: block; font-size: 12px; }
-.build-bar .bp small { display: block; margin-top: 3px; font-size: 10px; color: #8d979c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.build-bar .bp small { display: block; margin-top: 3px; font-size: 11px; color: #9aa4a9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .build-bar .bh { color: #aab3b7; font-size: 12px; background: rgba(14, 17, 19, 0.7); padding: 4px 10px; border-radius: 4px; }
 .build-bar .bh kbd {
   font: 600 11px system-ui; color: #e4e8ea; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);

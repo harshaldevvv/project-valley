@@ -4,6 +4,7 @@ import { weaponDefs } from '../../content/data/weapons';
 import { containerText } from '../../content/text/containers';
 import { itemText } from '../../content/text/items';
 import { inventoryText } from '../../content/text/ui';
+import iconIndex from '../../../public/assets/icons/index.json';
 import {
   autoPlace, canPlace, sortGrid, canStack, containsItem, defOf, findFree, footprint, gridOf, mergeInto, place, removeItem, splitStack, type Grid,
 } from '../../systems/inventory';
@@ -16,6 +17,27 @@ import './inventory.css';
  */
 
 const T = inventoryText;
+
+/** Rendered item icons (public/assets/icons, made by the asset pipeline). Ids without one keep the swatch tile. */
+const ICONS = new Set(iconIndex.ids);
+function iconImg(defId: string) {
+  if (!ICONS.has(defId)) return null;
+  const img = document.createElement('img');
+  img.className = 'ic';
+  img.src = `/assets/icons/${defId}.png`;
+  img.alt = '';
+  img.draggable = false;
+  return img;
+}
+/** Size the icon to the item's unrotated box (in cells) and turn it for rotated items, so `contain` keeps its aspect. */
+function fitIcon(tile: HTMLElement, w: number, h: number, rotated?: boolean) {
+  const img = tile.querySelector<HTMLImageElement>('img.ic');
+  if (!img || rotated === undefined) return;
+  img.classList.add('cells');
+  img.style.width = `calc(var(--cell) * ${w} - 8px)`;
+  img.style.height = `calc(var(--cell) * ${h} - 8px)`;
+  img.style.transform = `translate(-50%, -50%)${rotated ? ' rotate(90deg)' : ''}`;
+}
 
 export const itemName = (id: string) => itemText[id]?.name ?? id;
 export const itemShort = (id: string) => itemText[id]?.short ?? id;
@@ -261,7 +283,7 @@ export class InventoryScreen {
     el.style.height = `calc(var(--cell) * ${grid.h})`;
     for (const gi of grid.contents) {
       const [w, hh] = footprint(gi.item, gi.rotated);
-      const t = this.itemTile(gi.item);
+      const t = this.itemTile(gi.item, gi.rotated);
       t.style.left = `calc(var(--cell) * ${gi.x})`;
       t.style.top = `calc(var(--cell) * ${gi.y})`;
       t.style.width = `calc(var(--cell) * ${w})`;
@@ -285,17 +307,24 @@ export class InventoryScreen {
     return '';
   }
 
-  private tileFor(defId: string, badge: string) {
+  /** `rotated` given = grid tile (icon sized in cells, turned 90° when rotated); omitted = fill a fixed slot. */
+  private tileFor(defId: string, badge: string, rotated?: boolean) {
     const d = defOf(defId);
     const t = h('div', d.w === 1 ? 'inv-item narrow' : 'inv-item');
     t.style.setProperty('--sw', d.iconSwatch ?? '#555');
+    const img = iconImg(defId);
+    if (img) {
+      t.classList.add('has-icon');
+      t.append(img);
+      fitIcon(t, d.w, d.h, rotated);
+    }
     t.append(h('span', 'n', itemShort(defId)));
     if (badge) t.append(h('span', 'c' + (badge === '0' || badge === '—' || badge.startsWith('0/') ? ' empty' : ''), badge));
     return t;
   }
 
-  private itemTile(item: ItemInstance) {
-    const t = this.tileFor(item.defId, this.badge(item));
+  private itemTile(item: ItemInstance, rotated?: boolean) {
+    const t = this.tileFor(item.defId, this.badge(item), rotated);
     if (item.contents?.length) t.append(h('span', 'bag', `▤ ${item.contents.length}`));
     return t;
   }
@@ -359,7 +388,7 @@ export class InventoryScreen {
     } else p.el.classList.add('dragging');
     const rect = p.el.getBoundingClientRect();
     const rotated = src.kind === 'grid' ? src.gi.rotated : false;
-    const ghost = this.itemTile(item);
+    const ghost = this.itemTile(item, rotated);
     ghost.classList.add('inv-ghost');
     this.root.append(ghost);
     this.drag = { item, src, rotated, ghost, gx: 0, gy: 0, px: e.clientX, py: e.clientY, target: { kind: 'none' } };
@@ -380,6 +409,8 @@ export class InventoryScreen {
     const d = this.drag!;
     const [w, hh] = footprint(d.item, d.rotated);
     const c = this.cellPx();
+    const dd = defOf(d.item);
+    fitIcon(d.ghost, dd.w, dd.h, d.rotated);
     d.ghost.style.width = `${w * c}px`;
     d.ghost.style.height = `${hh * c}px`;
     d.gx = Math.min(d.gx, w * c - 6);
@@ -704,6 +735,8 @@ export class InventoryScreen {
     rows.push([S.size, `${d.w}×${d.h}`], [S.value, `$${d.value * it.count}`]);
     this.tip.replaceChildren();
     const desc = itemText[it.defId]?.description;
+    const ti = iconImg(it.defId);
+    if (ti) this.tip.append(Object.assign(ti, { className: 'tip-ic' }));
     this.tip.append(h('span', 'k', T.kind[d.kind] ?? d.kind), h('b', '', itemName(it.defId)));
     if (desc) this.tip.append(h('p', '', desc));
     for (const [k, v, delta] of rows) {

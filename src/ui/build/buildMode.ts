@@ -357,7 +357,9 @@ export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?:
         ghostMat.color.set(ok ? '#5ec478' : '#d64a40');
         ghostMat.opacity = s.reason === 'occupied' ? 0.16 : 0.42; // don't shout over a piece you just placed
         const hinge = d.kind === 'door' ? new Vector3(-DOOR_HALF(d), 0, 0).applyQuaternion(yawQ(s.rot)) : new Vector3();
-        g.position.set(s.x + hinge.x, s.y, s.z + hinge.z);
+        // Invalid ghosts never float above the pointer (gables snap to level 1 even with no wall: QA-053).
+        const gy = s.valid ? s.y : Math.min(s.y, Math.max(0, at.point.y));
+        g.position.set(s.x + hinge.x, gy, s.z + hinge.z);
         g.rotation.y = s.rot;
         // Door ghost: leaf offset matches spawn().
         const child = g.children[0];

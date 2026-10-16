@@ -95,6 +95,15 @@
   background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.16), rgba(0, 0, 0, 0.38));
   transition: filter 80ms;
 }
+.inv-item.has-icon {
+  background: color-mix(in srgb, var(--sw, #555) 30%, #1a1f22);
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.3));
+}
+.inv-item .ic {
+  position: absolute; inset: 5px; width: calc(100% - 10px); height: calc(100% - 10px);
+  object-fit: contain; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55));
+}
+.inv-item .ic.cells { inset: auto; left: 50%; top: 50%; }
 .inv-item:hover { filter: brightness(1.22); border-color: rgba(255, 255, 255, 0.45); }
 .inv-item.target { outline: 2px solid var(--accent); z-index: 2; }
 .inv-item.dragging { opacity: 0.25; }
@@ -104,14 +113,14 @@
   overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   text-shadow: 0 1px 2px #000, 0 0 3px #000;
 }
-.inv-item.narrow .n { font-size: 10.5px; letter-spacing: -0.03em; left: 3px; right: 2px; }
+.inv-item.narrow .n { font-size: 11px; font-weight: 600; letter-spacing: -0.03em; left: 3px; right: 2px; }
 .inv-item .c {
   position: absolute; right: 4px; bottom: 2px;
   font-size: 12.5px; color: #fff; font-weight: 700; font-variant-numeric: tabular-nums;
   text-shadow: 0 1px 2px #000, 0 0 3px #000;
 }
 .inv-item .c.empty { color: #ff9b8c; }
-.inv-item .bag { position: absolute; left: 4px; bottom: 2px; font-size: 10px; color: rgba(255,255,255,0.75); text-shadow: 0 1px 2px #000; }
+.inv-item .bag { position: absolute; left: 4px; bottom: 2px; font-size: 11px; color: rgba(255,255,255,0.75); text-shadow: 0 1px 2px #000; }
 .inv-ghost { position: fixed; z-index: 40; pointer-events: none; opacity: 0.92; cursor: grabbing; box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
 
 /* Equipment */
@@ -154,7 +163,8 @@
   box-shadow: 0 8px 22px rgba(0,0,0,0.55);
 }
 .inv-tip b { display: block; font-size: 15px; margin-bottom: 2px; }
-.inv-tip .k { color: var(--accent); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+.inv-tip .tip-ic { float: right; width: 64px; height: 64px; object-fit: contain; margin: 0 0 4px 10px; }
+.inv-tip .k { color: var(--accent); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
 .inv-tip p { margin: 6px 0 6px; color: #c9d0d3; font-size: 13px; }
 .inv-tip .s { color: #a3adb2; font-size: 12.5px; display: flex; justify-content: space-between; gap: 14px; }
 .inv-tip .s span:last-child { color: var(--text); font-variant-numeric: tabular-nums; }

@@ -15,6 +15,7 @@ const list: LootTable[] = [
       { item: 'scrap_metal', weight: 20, count: [1, 4] },
       { item: 'cloth_rag', weight: 15, count: [1, 3] },
       { item: 'canned_beans', weight: 10, count: [1, 2] },
+      { item: 'repair_kit', weight: 3, count: [1, 1] },
     ],
   },
   {
@@ -28,6 +29,7 @@ const list: LootTable[] = [
       { item: 'mag_rifle_a', weight: 6, count: [1, 1] },
       { item: 'water_bottle', weight: 12, count: [1, 1] },
       { item: 'scrap_metal', weight: 10, count: [1, 3] },
+      { item: 'repair_kit', weight: 4, count: [1, 1] },
     ],
   },
   {

@@ -80,4 +80,9 @@ export const itemText: Record<string, { name: string; short: string; description
     short: 'Rag',
     description: 'Half a flannel shirt. Bandage in a pinch, gun rag the rest of the time.',
   },
+  repair_kit: {
+    name: 'Repair Kit',
+    short: 'Repair',
+    description: 'Hose clamps, wire, a roll of tape and a wrench that fits nothing exactly. Enough to keep a truck limping.',
+  },
 };

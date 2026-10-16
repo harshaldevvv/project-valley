@@ -119,6 +119,12 @@ export async function installSystems(game: Game): Promise<void> {
 
   game.build = installBuildMode(game, lo, sfx);
 
+  // Death closes every systems screen (QA-046/047): screen.close() emits uiScreen close, which releases Input.blocked.
+  game.events.on('playerDied', () => {
+    screen.close();
+    if (game.build.active) game.build.toggle();
+  });
+
   // Debug menu (F1). The engine may not have installed it yet.
   try {
     const d = game.debug;
