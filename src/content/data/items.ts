@@ -7,15 +7,15 @@ import type { ItemDef } from './types';
  */
 const list: ItemDef[] = [
   // Weapons (stats live in the weapon table; here only inventory data).
-  { id: 'pistol_a', kind: 'weapon', w: 2, h: 1, stack: 1, slots: ['sidearm'], iconSwatch: '#5b6166', value: 320 },
-  { id: 'rifle_a', kind: 'weapon', w: 5, h: 2, stack: 1, slots: ['primary', 'secondary'], iconSwatch: '#5d5640', value: 950 },
-  { id: 'knife_a', kind: 'weapon', w: 2, h: 1, stack: 1, slots: ['melee'], iconSwatch: '#7d8488', value: 40 },
+  { id: 'pistol_a', kind: 'weapon', w: 2, h: 1, stack: 1, slots: ['sidearm'], model: 'wpn_pistol_a', iconSwatch: '#5b6166', value: 320 },
+  { id: 'rifle_a', kind: 'weapon', w: 5, h: 2, stack: 1, slots: ['primary', 'secondary'], model: 'wpn_rifle_a', iconSwatch: '#5d5640', value: 950 },
+  { id: 'knife_a', kind: 'weapon', w: 2, h: 1, stack: 1, slots: ['melee'], model: 'wpn_knife_a', iconSwatch: '#7d8488', value: 40 },
   // Heavy tools that double as melee (meleeDefs in data/weapons.ts; break-in use later).
-  { id: 'crowbar_a', kind: 'weapon', w: 1, h: 3, stack: 1, slots: ['melee'], iconSwatch: '#8a3a2e', value: 60, rarity: 'uncommon' },
-  { id: 'hammer_a', kind: 'weapon', w: 1, h: 2, stack: 1, slots: ['melee'], iconSwatch: '#6e5a44', value: 35 },
+  { id: 'crowbar_a', kind: 'weapon', w: 1, h: 3, stack: 1, slots: ['melee'], model: 'wpn_crowbar_a', iconSwatch: '#8a3a2e', value: 60, rarity: 'uncommon' },
+  { id: 'hammer_a', kind: 'weapon', w: 1, h: 2, stack: 1, slots: ['melee'], model: 'wpn_hammer_a', iconSwatch: '#6e5a44', value: 35 },
   // Magazines: rounds live on the instance.
-  { id: 'mag_pistol_a', kind: 'magazine', w: 1, h: 1, stack: 1, ammo: 'ammo_9mm', capacity: 15, fits: ['pistol_a'], iconSwatch: '#45494c', value: 25 },
-  { id: 'mag_rifle_a', kind: 'magazine', w: 1, h: 2, stack: 1, ammo: 'ammo_762', capacity: 30, fits: ['rifle_a'], iconSwatch: '#4a4535', value: 45 },
+  { id: 'mag_pistol_a', kind: 'magazine', w: 1, h: 1, stack: 1, ammo: 'ammo_9mm', capacity: 15, fits: ['pistol_a'], model: 'wpn_mag_pistol_a', iconSwatch: '#45494c', value: 25 },
+  { id: 'mag_rifle_a', kind: 'magazine', w: 1, h: 2, stack: 1, ammo: 'ammo_762', capacity: 30, fits: ['rifle_a'], model: 'wpn_mag_rifle_a', iconSwatch: '#4a4535', value: 45 },
   { id: 'ammo_9mm', kind: 'ammo', w: 1, h: 1, stack: 60, iconSwatch: '#a8873c', value: 1 },
   { id: 'ammo_762', kind: 'ammo', w: 1, h: 1, stack: 60, iconSwatch: '#9a6d35', value: 2 },
   // A sealed box: Unpack gives 50 loose rounds.
@@ -89,6 +89,24 @@ const list: ItemDef[] = [
 ];
 
 export const ITEMS: Record<string, ItemDef> = Object.fromEntries(list.map((d) => [d.id, d]));
+
+/**
+ * World models for dropped items: the item's own `model` wins (weapons, magazines), then a per-item generic,
+ * then one by kind. Backpacks are tinted with their iconSwatch so different packs read apart on the ground.
+ */
+export const PICKUP_MODELS = {
+  byItem: {
+    water_bottle: 'item_bottle', canteen: 'item_bottle', painkillers: 'item_bottle', antibiotics: 'item_box_small',
+    energy_drink: 'item_can', canned_beans: 'item_can', canned_soup: 'item_can', canned_tuna: 'item_can',
+    mre: 'item_bag_soft', ifak: 'item_bag_soft', medical_bag: 'item_bag_soft', cloth: 'item_bag_soft', cloth_rag: 'item_bag_soft',
+    rope: 'item_bag_soft', wallet: 'item_bag_soft', secure_pouch: 'item_bag_soft', lunchbox: 'item_box_small',
+  } as Record<string, string>,
+  byKind: {
+    backpack: 'item_backpack_generic', clothing: 'item_bag_soft', food: 'item_can', drink: 'item_can',
+  } as Record<string, string>,
+  fallback: 'item_box_small',
+  tintKinds: ['backpack'] as string[],
+};
 
 /** Inventory rules (principles §8). Live-tunable from the debug menu. */
 export const INVENTORY = {

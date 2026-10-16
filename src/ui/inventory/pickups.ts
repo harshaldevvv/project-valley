@@ -1,42 +1,84 @@
-import { BoxGeometry, Mesh, MeshStandardMaterial, Vector3 } from 'three';
-import type { ItemInstance } from '../../content/data/types';
+import { Box3, Group, Mesh, type Material, type MeshStandardMaterial, Object3D, Vector3 } from 'three';
+import { PICKUP_MODELS } from '../../content/data/items';
+import type { ItemDef, ItemInstance } from '../../content/data/types';
 import type { Game } from '../../core/game';
+import { loadModel } from '../../engine/models';
 import { defOf } from '../../systems/inventory';
 import type { Loadout } from '../../systems/loadout';
 import { inventoryText } from '../../content/text/ui';
 import { itemName } from './screen';
 
 /**
- * World view of dropped items: a small box per pickup (footprint-sized, item swatch colour) plus an
- * "Pick up <item>" interactable. Diffed against loadout.pickups whenever the inventory changes.
+ * World view of dropped items: a model per pickup (the item's own model, else a generic from PICKUP_MODELS),
+ * laid flat on the ground with a small yaw, plus a "Pick up <item>" interactable.
+ * Diffed against loadout.pickups whenever the inventory changes.
  */
-const CELL_M = 0.1; // world size of one grid cell for the placeholder box
-const unit = new BoxGeometry(1, 1, 1);
-const mats = new Map<string, MeshStandardMaterial>();
-const mat = (c: string) => mats.get(c) ?? (mats.set(c, new MeshStandardMaterial({ color: c, roughness: 0.8 })), mats.get(c)!);
+export function pickupModelId(d: ItemDef) {
+  return d.model ?? PICKUP_MODELS.byItem[d.id] ?? PICKUP_MODELS.byKind[d.kind] ?? PICKUP_MODELS.fallback;
+}
+
+const tints = new Map<string, Material>();
+/** The shared palette material multiplied by the item's swatch (one clone per colour). */
+function tinted(base: Material, color: string) {
+  const key = `${base.uuid}:${color}`;
+  let m = tints.get(key);
+  if (!m) {
+    m = base.clone();
+    (m as MeshStandardMaterial).color?.set(color).lerp((base as MeshStandardMaterial).color, 0.35);
+    tints.set(key, m);
+  }
+  return m;
+}
+
+const _box = new Box3();
+const _size = new Vector3();
+
+/** Rotate so the thinnest axis points up (lying flat), then sit it on y=0, centred. */
+function layFlat(obj: Object3D) {
+  obj.updateMatrixWorld(true);
+  _box.setFromObject(obj).getSize(_size);
+  if (_size.x < _size.y && _size.x <= _size.z) obj.rotation.z = Math.PI / 2;
+  else if (_size.z < _size.y && _size.z < _size.x) obj.rotation.x = Math.PI / 2;
+  obj.updateMatrixWorld(true);
+  _box.setFromObject(obj);
+  const c = _box.getCenter(new Vector3());
+  obj.position.set(-c.x, -_box.min.y, -c.z);
+}
 
 export function createPickupView(game: Game, lo: Loadout, onPickedUp: (item: ItemInstance, ok: boolean) => void) {
-  const live = new Map<ItemInstance, { mesh: Mesh; unreg: () => void }>();
+  const live = new Map<ItemInstance, { root: Object3D; unreg: () => void }>();
 
   function sync() {
     const now = new Set(lo.pickups.map((p) => p.item));
     for (const [item, v] of live)
       if (!now.has(item)) {
-        v.mesh.removeFromParent();
+        v.root.removeFromParent();
         v.unreg();
         live.delete(item);
       }
     for (const p of lo.pickups) {
       if (live.has(p.item)) continue;
       const d = defOf(p.item);
-      const hgt = d.kind === 'backpack' || d.kind === 'clothing' ? 0.18 : 0.07;
-      const mesh = new Mesh(unit, mat(d.iconSwatch ?? '#777'));
-      mesh.scale.set(d.w * CELL_M + 0.04, hgt, d.h * CELL_M + 0.04);
-      mesh.position.set(p.x, p.y + hgt / 2, p.z);
-      mesh.rotation.y = (p.item.uid * 1.7) % Math.PI;
-      mesh.castShadow = true;
-      mesh.name = `pickup_${p.item.defId}`;
-      game.scene.add(mesh);
+      const root = new Group();
+      root.name = `pickup_${d.id}`;
+      root.position.set(p.x, p.y, p.z);
+      root.rotation.y = ((p.item.uid * 2.39996) % (Math.PI * 2)) - Math.PI; // stable "random" yaw per item
+      game.scene.add(root);
+      const fallback: [number, number, number] = [d.w * 0.1 + 0.04, 0.08, d.h * 0.1 + 0.04];
+      void loadModel(pickupModelId(d), fallback).then((proto) => {
+        if (live.get(p.item)?.root !== root) return; // picked up while loading
+        const inner = proto.create().root;
+        inner.traverse((o) => {
+          const m = o as Mesh;
+          if (!m.isMesh) return;
+          m.castShadow = true;
+          if (PICKUP_MODELS.tintKinds.includes(d.kind) && d.iconSwatch && !Array.isArray(m.material)) m.material = tinted(m.material, d.iconSwatch);
+        });
+        const holder = new Group();
+        holder.add(inner);
+        layFlat(inner);
+        root.add(holder);
+      });
       const item = p.item;
       const unreg = game.interact.register({
         // Raised to hip height: the interact picker measures from the chest and wants things in view,
@@ -47,7 +89,7 @@ export function createPickupView(game: Game, lo: Loadout, onPickedUp: (item: Ite
         holdSeconds: () => 0,
         onInteract: () => onPickedUp(item, lo.pickUp(item)),
       });
-      live.set(p.item, { mesh, unreg });
+      live.set(p.item, { root, unreg });
     }
   }
   return { sync };
