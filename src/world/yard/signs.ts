@@ -43,8 +43,8 @@ export function stationSign(kit: Kit, id: StationId, x: number, z: number, yaw =
 }
 
 /** Small post-mounted plate (distance markers, notices). */
-export function plateSign(kit: Kit, card: Card, x: number, z: number, yaw: number, top = 1.5) {
-  kit.box(0.08, top, 0.08, 'metal_dark', x, 0, z, yaw, true);
+export function plateSign(kit: Kit, card: Card, x: number, z: number, yaw: number, top = 1.5, post = true) {
+  if (post) kit.box(0.08, top, 0.08, 'metal_dark', x, 0, z, yaw, true);
   kit.box(0.8, 0.42, 0.04, 'paint_white_faded', x - Math.sin(yaw) * 0.06, top - 0.5, z - Math.cos(yaw) * 0.06, yaw, false, 0.8);
   text({ bg: '#d8d5cc', fg: '#262626', ...card }, 0.76, 0.38, x, top - 0.29, z, yaw, -0.085);
 }

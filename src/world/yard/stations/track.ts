@@ -25,8 +25,15 @@ function loop(): [number, number][] {
   return pts;
 }
 
+/**
+ * Radius from a corner centre to its outer furniture, on the diagonal. The run-off of a straight is the band
+ * r-hw..r+hw (8..16 m) off the corner centre; 29 m on the diagonal puts both axes at ~20.5 m, i.e. >= 4 m
+ * beyond the band and > 3 m beyond the asphalt edge. poles.ts uses CORNER_CLEAR + 2.
+ */
+export const CORNER_CLEAR = 29;
+
 /** Signed distance from the track centreline (rounded-rectangle SDF). */
-function loopDistance(x: number, z: number) {
+export function loopDistance(x: number, z: number) {
   const qx = Math.abs(x - L.cx) - (L.hx - L.r), qz = Math.abs(z - L.cz) - (L.hz - L.r);
   return Math.hypot(Math.max(qx, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qz), 0) - L.r;
 }
@@ -61,22 +68,24 @@ export function buildTrack(kit: Kit) {
   addGroundRegion((x, z) => Math.abs(loopDistance(x, z)) <= hw, 'concrete');
   for (const o of [-hw + 0.35, hw - 0.35]) kit.paint(ribbon(pts, o - 0.08, o + 0.08, 0.045), 'road_paint_white', 0.8);
 
-  // Corner furniture: tyre stacks on the outer apex, cones on the inner apex.
+  // Corner furniture (QA-036/040): a short row of tyre stacks across each outer corner, set back so it is
+  // >= 3 m from the asphalt AND outside the straight-ahead run-off of both straights (a car that misses
+  // the bend runs onto grass, not into a stack). Cones sit 3 m inside the inner edge.
   for (const [sx, sz] of [[1, -1], [1, 1], [-1, 1], [-1, -1]]) {
     const cx = L.cx + sx * (L.hx - L.r), cz = L.cz + sz * (L.hz - L.r);
+    const off = CORNER_CLEAR / Math.SQRT2; // per-axis offset of the row centre from the corner centre
     for (const k of [-1, 0, 1]) {
-      const a = Math.atan2(sz, sx) + k * 0.16;
-      const ro = L.r + hw + 5.5; // well clear of the racing line: closer stacks wedged the pickup on the NE turn (QA-036)
-      kit.place({ id: 'env_tire_stack_a', size: [0.8, 0.9, 0.8], x: cx + Math.cos(a) * ro, z: cz + Math.sin(a) * ro });
-      const ri = L.r - hw - 0.8;
+      const t = k * 1.1; // along the row (tangent to the corner)
+      kit.place({ id: 'env_tire_stack_a', size: [0.8, 0.9, 0.8], x: cx + sx * off + (t * sx) / Math.SQRT2, z: cz + sz * off - (t * sz) / Math.SQRT2 });
+      const a = Math.atan2(sz, sx) + k * 0.25, ri = L.r - hw - 3;
       kit.place({ id: 'env_cone_a', size: [0.35, 0.7, 0.35], x: cx + Math.cos(a) * ri, z: cz + Math.sin(a) * ri });
     }
   }
 
   // Jersey barriers along the outside of the east and south straights (the yard wall is close there).
   for (let i = -3; i <= 3; i++) {
-    kit.place({ id: 'env_barrier_jersey_a', size: [2, 0.8, 0.6], x: L.cx + L.hx + hw + 1.5, z: L.cz + i * 2.2, yaw: Math.PI / 2 });
-    kit.place({ id: 'env_barrier_jersey_a', size: [2, 0.8, 0.6], x: L.cx + i * 2.6, z: L.cz + L.hz + hw + 1.5 });
+    kit.place({ id: 'env_barrier_jersey_a', size: [2, 0.8, 0.6], x: L.cx + L.hx + hw + 3.5, z: L.cz + i * 2.2, yaw: Math.PI / 2 });
+    kit.place({ id: 'env_barrier_jersey_a', size: [2, 0.8, 0.6], x: L.cx + i * 2.6, z: L.cz + L.hz + hw + 3.5 });
   }
 
   // Jump ramp on the north straight, rising eastward (cars run clockwise: north straight heads east).

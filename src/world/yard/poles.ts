@@ -1,6 +1,7 @@
 import { yard } from '../../content/data/yard';
 import { faceToward, type Placement } from './kit';
 import { trackLoop as L } from './spawns';
+import { CORNER_CLEAR } from './stations/track';
 
 /**
  * Every env_light_pole_a in the Yard (plain data). Each pole's lamp arm points along its front (-Z),
@@ -15,7 +16,7 @@ const ring = Array.from({ length: 5 }, (_, k) => {
   const a = -Math.PI / 2 + ((k + 1) * Math.PI) / 3;
   return P(s.anim.x + Math.cos(a) * 5.2, s.anim.z + Math.sin(a) * 5.2, s.anim.x, s.anim.z);
 });
-const trackR = L.r + L.width / 2 + 6;
+const trackR = CORNER_CLEAR + 2; // outside the straights' run-off (QA-040)
 
 export const lightPoles: Placement[] = [
   ...ring,
@@ -30,9 +31,11 @@ export const lightPoles: Placement[] = [
     P(s.range.x + sx * 16.4, s.range.z - 26, s.range.x, s.range.z - 25),
     P(s.range.x + sx * 16.4, s.range.z - 77, s.range.x, s.range.z - 80),
   ]),
-  // pen: four corners outside the fence
-  ...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sz]) =>
-    P(s.pen.x + sx * (s.pen.w / 2 + 1.5), s.pen.z + sz * (s.pen.d / 2 + 1.5), s.pen.x, s.pen.z)),
+  // pen (QA-052): north + south sides and the east middle; nothing west of the fence, which is the
+  // track's west-straight run-off (QA-040)
+  ...[-1, 1].flatMap((sz) => [-0.75, 0.75].map((fx) =>
+    P(s.pen.x + fx * (s.pen.w / 2), s.pen.z + sz * (s.pen.d / 2 + 1.5), s.pen.x, s.pen.z))),
+  P(s.pen.x + s.pen.w / 2 + 1.5, s.pen.z, s.pen.x, s.pen.z),
   // build pad: two opposite corners
   P(s.build.x - s.build.w / 2 - 1.5, s.build.z - s.build.d / 2 - 1.5, s.build.x, s.build.z),
   P(s.build.x + s.build.w / 2 + 1.5, s.build.z + s.build.d / 2 + 1.5, s.build.x, s.build.z),
@@ -41,7 +44,7 @@ export const lightPoles: Placement[] = [
     const cx = L.cx + sx * (L.hx - L.r), cz = L.cz + sz * (L.hz - L.r);
     return P(cx + sx * trackR * Math.SQRT1_2, cz + sz * trackR * Math.SQRT1_2, cx, cz);
   }),
-  P(L.cx - L.hx - L.width / 2 - 2, L.cz + 6, L.cx - L.hx, L.cz + 6),
+  P(L.cx - L.hx - L.width / 2 - 4, L.cz + 6, L.cx - L.hx, L.cz + 6),
 ];
 
 /** World positions of the lamp heads (arm tip, ~5.9 m up, 0.85 m in front of the pole). */

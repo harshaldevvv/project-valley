@@ -24,6 +24,18 @@ function noise(x: number, z: number) {
 export const fbm = (x: number, z: number) => (noise(x, z) * 0.6 + noise(x * 2.1, z * 2.1) * 0.3 + noise(x * 4.3, z * 4.3) * 0.1);
 const smoothstep = (a: number, b: number, x: number) => smooth(Math.min(1, Math.max(0, (x - a) / (b - a))));
 
+/**
+ * Foliage undersides face down and only get the dark hemisphere ground colour, which reads as a black hole
+ * from below (QA-031). Mirror downward normals up: canopies shade like their tops (cheap translucency look).
+ */
+function soft<T extends BufferGeometry>(g: T): T {
+  const src = g.index ? (g.toNonIndexed() as T) : g;
+  src.computeVertexNormals();
+  const n = src.getAttribute('normal');
+  for (let i = 0; i < n.count; i++) if (n.getY(i) < 0) n.setY(i, -n.getY(i) * 0.6);
+  return src;
+}
+
 /** Ground height: flat inside the walls (M1 has no navmesh), low rolling hills beyond. */
 export function groundHeight(x: number, z: number) {
   const d = Math.max(Math.abs(x), Math.abs(z));
@@ -93,12 +105,12 @@ function buildTrees(kit: Kit) {
       kit.paint(new CylinderGeometry(0.18 * s, 0.28 * s, 2.5 * s + lift, 5).translate(x, y + (2.5 * s + lift) / 2, z), 'bark_dark', 0.5);
       for (let k = 0; k < 3; k++) {
         const r = (2.6 - k * 0.6) * s, h = (4.2 - k * 0.7) * s;
-        kit.paint(new ConeGeometry(r, h, 7).rotateY(a + k).translate(x, y + lift + (2.2 + k * 2.1) * s + h / 2, z), 'leaf_pine');
+        kit.paint(soft(new ConeGeometry(r, h, 7).rotateY(a + k).translate(x, y + lift + (2.2 + k * 2.1) * s + h / 2, z)), 'leaf_pine');
       }
     } else {
       const birch = rng.next() < 0.5;
       kit.paint(new CylinderGeometry(0.14 * s, 0.22 * s, 4 * s + lift, 5).translate(x, y + (4 * s + lift) / 2, z), birch ? 'bark_birch' : 'bark_dark', 0.6);
-      kit.paint(new IcosahedronGeometry(2.4 * s, 0).scale(1, 1.25, 1).rotateY(a).translate(x, y + lift + 5.3 * s, z), 'leaf_summer');
+      kit.paint(soft(new IcosahedronGeometry(2.4 * s, 0).scale(1, 1.25, 1).rotateY(a).translate(x, y + lift + 5.3 * s, z)), 'leaf_summer');
     }
   };
 

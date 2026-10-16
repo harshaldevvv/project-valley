@@ -31,6 +31,6 @@ export function buildPen(kit: Kit) {
   kit.box(2, 0.8, 0.8, 'concrete', x + 5, 0, z + 4, 0.4, true);
 
   // Warning notice beside the gate, station sign further out.
-  plateSign(kit, { title: 'DANGER', sub: 'INFECTED INSIDE - KEEP GATE SHUT', bg: '#b3122a', fg: '#e6e3da' }, x - hw - 0.4, z - 4.6, Math.PI / 2, 1.8);
-  stationSign(kit, 'pen', x - hw - 4, z + hd - 2);
+  plateSign(kit, { title: 'DANGER', sub: 'INFECTED INSIDE - KEEP GATE SHUT', bg: '#b3122a', fg: '#e6e3da' }, x - hw - 0.12, z - 4.6, Math.PI / 2, 1.8, false); // wired to the fence: nothing sticks out into the track run-off (QA-040)
+  stationSign(kit, 'pen', x - 3, z + hd + 3.5); // south side, clear of the west run-off
 }

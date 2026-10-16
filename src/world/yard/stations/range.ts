@@ -14,6 +14,9 @@ export function wedge(x0: number, x1: number, profile: [z: number, y: number][])
     .translate(x1, 0, 0);
 }
 
+/** Column centre (x offset from the lane centre) per target distance. Sight lines from the bench checked. */
+const LANE_X: Record<number, number> = { 5: -4.25, 25: 0.1, 80: 9.75 };
+
 export async function buildRange(kit: Kit) {
   const half = S.w / 2;
   const far = -yard.half + 0.4; // inner face of the north wall
@@ -38,7 +41,9 @@ export async function buildRange(kit: Kit) {
   // Targets: plate (left) + dummy (right) at each distance, distance line and marker post.
   for (const d of S.targetDistances) {
     const tz = front - d;
-    for (const [kind, id, dx, depth] of [['plate', 'prop_target_plate_a', -1.5, 0.3], ['dummy', 'prop_target_dummy_a', 1.5, 0.4]] as const) {
+    // Staggered columns (QA-043): 5 m left, 25 m centre, 80 m right, so no target hides another from the bench.
+    const col = LANE_X[d] ?? 0;
+    for (const [kind, id, dx, depth] of [['plate', 'prop_target_plate_a', col - 1.25, 0.3], ['dummy', 'prop_target_dummy_a', col + 1.25, 0.4]] as const) {
       const size: [number, number, number] = kind === 'plate' ? [0.92, 1.88, 0.34] : [0.6, 1.8, depth];
       const object = kind === 'plate' ? await kit.model({ id, size, x: S.x + dx, z: tz, yaw: Math.PI }) : await kit.one({ id, size, x: S.x + dx, z: tz, yaw: Math.PI });
       // Plates hang from the gallows bar: mechanics swings userData.hinge.rotation.x (the PLATE part node,
