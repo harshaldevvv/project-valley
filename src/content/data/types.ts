@@ -7,7 +7,9 @@
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 export type SlotName =
   | 'head' | 'face' | 'eyes' | 'ears' | 'torso' | 'armor' | 'legs' | 'gloves' | 'feet' | 'backpack'
-  | 'primary' | 'secondary' | 'sidearm' | 'melee';
+  | 'primary' | 'secondary' | 'sidearm' | 'melee'
+  /** M2: secure pouch (kept on death). */
+  | 'pouch';
 export type Caliber = '9mm' | '.45acp' | '5.56' | '7.62' | '.308' | '12ga';
 
 export interface ItemDef {
@@ -32,7 +34,13 @@ export interface ItemDef {
   /** Magazines: weapon item ids this magazine fits. */
   fits?: string[];
   /** Consumables: what using one does (survival stats arrive in M2; M1 only consumes it). */
-  use?: { seconds: number; heal?: number; food?: number; water?: number; sound?: string };
+  use?: {
+    seconds: number; heal?: number; food?: number; water?: number; sound?: string;
+    /** M2: statuses this item ends (StatusId values). */
+    cures?: string[];
+    /** M2: cures infection only up to this stage (antibiotics 2); omit = any stage when 'infection' is in cures. */
+    infectionMaxStage?: number;
+  };
 }
 
 export interface WeaponDef {

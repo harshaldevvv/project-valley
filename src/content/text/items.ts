@@ -80,6 +80,36 @@ export const itemText: Record<string, { name: string; short: string; description
     short: 'Rag',
     description: 'Half a flannel shirt. Bandage in a pinch, gun rag the rest of the time.',
   },
+  medkit: {
+    name: 'Field Medkit',
+    short: 'Medkit',
+    description: 'Gauze, clotting powder, a suture kit nobody here knows how to use. Puts a lot of you back together.',
+  },
+  splint: {
+    name: 'Splint',
+    short: 'Splint',
+    description: 'Two slats and a roll of tape. Walks a broken leg home.',
+  },
+  antibiotics: {
+    name: 'Antibiotics',
+    short: 'Antibio',
+    description: 'Half a blister pack, expired last spring. Works on an early infection, if you catch it early.',
+  },
+  antiviral: {
+    name: 'Antiviral',
+    short: 'Antivir',
+    description: 'A sealed autoinjector with a lab barcode. The only thing anyone has seen stop a late bite.',
+  },
+  energy_bar: {
+    name: 'Energy Bar',
+    short: 'Bar',
+    description: 'Chocolate-ish. Two hundred calories of optimism.',
+  },
+  secure_pouch: {
+    name: 'Secure Pouch',
+    short: 'Pouch',
+    description: 'A small zipped pouch strapped under the jacket. Whatever is in it stays with you.',
+  },
   lockpick: {
     name: 'Lockpick',
     short: 'Pick',

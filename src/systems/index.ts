@@ -3,14 +3,19 @@ import { BUILD } from '../content/data/build';
 import { BODY_BY_VARIANT, CONTAINER_INTERACT, CONTAINERS } from '../content/data/containers';
 import { INVENTORY, ITEMS } from '../content/data/items';
 import { containerText } from '../content/text/containers';
-import { inventoryText as T, lockpickText } from '../content/text/ui';
+import { inventoryText as T, lockpickText, survivalText } from '../content/text/ui';
 import type { Game } from '../core/game';
 import { installBuildMode } from '../ui/build/buildMode';
 import { createPickupView } from '../ui/inventory/pickups';
 import { InventoryScreen, containerName, itemName } from '../ui/inventory/screen';
 import { LockpickScreen } from '../ui/lockpick/lockpick';
 import { newItem, newItems } from './inventory';
-import { Loadout } from './loadout';
+import { installSave } from './installSave';
+import { installSurvival, type DeathBag } from './installSurvival';
+import { Loadout, SAVE_VERSION, type LoadoutSave } from './loadout';
+import type { Piece } from './build';
+import type { SurvivalSave } from './survival';
+import { difficulty } from '../content/data/difficulty';
 
 /** systems-builder: items, inventory + UI, loot containers, loadout, build mode. Fills game.loadout/inventory/build. */
 export async function installSystems(game: Game): Promise<void> {
@@ -99,21 +104,26 @@ export async function installSystems(game: Game): Promise<void> {
   /** Container interaction: search (hold) / open, or pick the lock first. Returns unregister. */
   const containerInteract = (id: string, type: string, position: Vector3, radius: number) => {
     const def = CONTAINERS[type];
-    const c = lo.registerContainer(id, type);
+    lo.registerContainer(id, type);
+    // Looked up each time: a save load replaces the container objects.
+    const cc = () => lo.containers.get(id) ?? lo.registerContainer(id, type);
     const name = containerName(type);
     const verb = containerText[type]?.searchVerb ?? 'Search';
     return game.interact.register({
       position,
       radius,
       prompt: () => {
+        const c = cc();
+        if (type === 'death_bag') return survivalText.recoverBag;
         if (c.locked) {
           const n = lo.count('lockpick');
           return n > 0 ? `${T.pickLock} (${T.lockpickWord} ×${n})` : T.locked;
         }
         return c.searched || def.searchSeconds === 0 ? `${T.act.open} ${name}` : `${verb} ${name}`;
       },
-      holdSeconds: () => (c.locked || c.searched ? 0 : def.searchSeconds),
+      holdSeconds: () => (cc().locked || cc().searched ? 0 : def.searchSeconds),
       onInteract: () => {
+        const c = cc();
         if (c.locked) {
           if (lo.count('lockpick') <= 0) return sfx('build_invalid');
           picking = id;
@@ -172,10 +182,7 @@ export async function installSystems(game: Game): Promise<void> {
       for (let i = 0; i < 5; i++) {
         if (!game.input.justPressed(`Digit${i + 5}`)) continue;
         const r = lo.useHotbar(i);
-        if (r?.use) {
-          sfx(r.use.sound ?? 'item_pickup');
-          toast(`${T.used} ${itemName(r.defId)}`);
-        } else if (lo.hotbar[i]) toast(`${T.no} ${itemName(lo.hotbar[i]!)}`);
+        if (r && !r.started && lo.count(r.defId) === 0) toast(`${T.no} ${itemName(r.defId)}`);
       }
     },
   });
@@ -190,6 +197,30 @@ export async function installSystems(game: Game): Promise<void> {
     lockpick.interrupt();
     toast(lockpickText.interrupted);
   });
+
+  // ---------- M2: survival, death bag, saves ----------
+  const m2 = installSurvival(game, lo, {
+    sfx,
+    toast,
+    containerInteract,
+    closeContainer: (id) => screen.container === id && screen.close(),
+  });
+  const saves = installSave(game, { toast, info: () => ({ gameDay: m2.survival.gameDay, playtimeS: Math.round(m2.survival.clock) }) });
+  const buildApi = game.build as unknown as { serialize(): Piece[]; load(l: Piece[]): void };
+  saves.section('difficulty', { version: 1, save: () => ({ ...difficulty }), load: (d) => Object.assign(difficulty, d) });
+  saves.section('build.pieces', { version: 1, save: () => buildApi.serialize(), load: (d) => buildApi.load(d as Piece[]) });
+  saves.section('inventory', {
+    version: SAVE_VERSION,
+    save: () => lo.serialize(),
+    load: (d) => {
+      screen.close();
+      lockpick.close();
+      lo.cancelUse();
+      lo.load(d as LoadoutSave);
+    },
+  });
+  saves.section('deathbags', { version: 1, save: () => m2.bags.serialize(), load: (d) => m2.bags.load(d as DeathBag[]) });
+  saves.section('survival', { version: 1, save: () => m2.survival.serialize(), load: (d) => m2.survival.load(d as SurvivalSave) });
 
   game.events.on('playerDied', () => {
     screen.close();

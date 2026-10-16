@@ -4,7 +4,7 @@ export const inventoryText = {
   noStorage: 'No storage. Equip a jacket or a backpack.',
   hint: '<kbd>Tab</kbd> close <kbd>R</kbd> rotate <kbd>Ctrl</kbd>+click quick move <kbd>Shift</kbd>+click split <kbd>RMB</kbd> actions · drag outside to drop',
   takeAll: 'Take all', sort: 'Sort',
-  slot: { head: 'Head', face: 'Face', eyes: 'Eyes', ears: 'Ears', torso: 'Torso', armor: 'Armor', legs: 'Legs', gloves: 'Gloves', feet: 'Feet', backpack: 'Backpack', primary: 'Primary', secondary: 'Secondary', sidearm: 'Sidearm', melee: 'Melee' } as Record<string, string>,
+  slot: { head: 'Head', face: 'Face', eyes: 'Eyes', ears: 'Ears', torso: 'Torso', armor: 'Armor', legs: 'Legs', gloves: 'Gloves', feet: 'Feet', backpack: 'Backpack', pouch: 'Pouch', primary: 'Primary', secondary: 'Secondary', sidearm: 'Sidearm', melee: 'Melee' } as Record<string, string>,
   kind: { weapon: 'Weapon', magazine: 'Magazine', ammo: 'Ammo', medical: 'Medical', food: 'Food', drink: 'Drink', material: 'Material', tool: 'Tool', clothing: 'Clothing', backpack: 'Backpack', misc: 'Misc' } as Record<string, string>,
   act: { use: 'Use', equip: 'Equip', unequip: 'Unequip', open: 'Open', load: 'Load ammo', unload: 'Unload magazine', unmag: 'Remove magazine', bind: 'Bind to hotbar', split: 'Split stack', drop: 'Drop', take: 'Take' },
   stat: { stack: 'Stack', rounds: 'Rounds', ammo: 'Ammo', caliber: 'Caliber', damage: 'Damage', rpm: 'Fire rate', magazine: 'Magazine', none: 'none', storage: 'Storage', items: 'items', heals: 'Heals', food: 'Food', water: 'Water', size: 'Size', value: 'Value', vsEquipped: 'vs equipped' },
@@ -22,6 +22,28 @@ export const lockpickText = {
   opened: 'Unlocked',
   interrupted: 'Interrupted!',
   difficulty: ['', 'Simple lock', 'Average lock', 'Hard lock'],
+};
+
+/** Save/load messages. */
+export const saveText = {
+  saved: 'Game saved',
+  loadedSlot: 'Game loaded',
+  fellBack: 'The latest save was damaged. Loaded the previous copy.',
+  corrupt: 'Save could not be loaded',
+  nothing: 'No save in that slot',
+};
+
+/** Survival / death text. */
+export const survivalText = {
+  recoverBag: 'Recover your bag',
+  bagName: 'Your Bag',
+  bagDropped: 'Your bag stayed where you fell',
+  using: 'Using',
+  interrupted: 'Interrupted',
+  status: {
+    bleeding: 'Bleeding', heavy_bleeding: 'Heavy bleeding', fracture: 'Fracture', infection: 'Infection',
+    well_fed: 'Well fed', starving: 'Starving', dehydrated: 'Dehydrated', exhausted: 'Exhausted',
+  } as Record<string, string>,
 };
 
 /** Small world prompts (world-builder uses these; text lives here). */

@@ -79,6 +79,8 @@ export interface SurvivalApi {
   onZombieHit(info: { damage: number; zone: 'head' | 'body' | 'limb'; armour: number }): void;
   /** Debug / item use: change needs directly (clamped). */
   adjust(delta: { hunger?: number; thirst?: number; fatigue?: number }): void;
+  /** Unrecovered death bags (HUD/compass markers). */
+  deathBags(): { id: string; x: number; y: number; z: number }[];
 }
 
 /** M2, systems-builder: versioned, atomic saves (principles §12). Every team registers its own state slice. */
@@ -119,6 +121,10 @@ export interface LoadoutApi {
   /** Consume `n` items of a def (bandages etc.). Returns how many were consumed. */
   consume(defId: string, n: number): number;
   count(defId: string): number;
+  /** M2: timed item use in progress (bandage, food...), driven by systems; mechanics animates it. */
+  readonly using: { item: ItemInstance; seconds: number; t: number } | null;
+  /** Cancel the timed use (sprint, damage). Returns true if one was running. Nothing is consumed. */
+  cancelUse(): boolean;
 }
 
 /** systems-builder: inventory screen and container looting UI. */

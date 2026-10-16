@@ -36,7 +36,7 @@ export interface LoadoutSave {
   hotbar: (string | null)[];
 }
 
-export const EQUIP_SLOTS: SlotName[] = ['head', 'face', 'eyes', 'ears', 'torso', 'armor', 'legs', 'gloves', 'feet', 'backpack'];
+export const EQUIP_SLOTS: SlotName[] = ['head', 'face', 'eyes', 'ears', 'torso', 'armor', 'legs', 'gloves', 'feet', 'backpack', 'pouch'];
 export const WEAPON_SLOTS: SlotName[] = ['primary', 'secondary', 'sidearm', 'melee'];
 
 /**
@@ -82,7 +82,7 @@ export class Loadout implements LoadoutApi {
 
   private giveQuiet(item: ItemInstance) {
     const d = defOf(item);
-    if (d.kind === 'weapon') {
+    if (d.slots) { // anything wearable goes straight into an empty slot (weapon, backpack, jacket...)
       const slot = d.slots?.find((s) => !this.equipment[s]);
       if (slot) {
         this.equipment[slot] = item;
@@ -114,7 +114,7 @@ export class Loadout implements LoadoutApi {
     const p = this.pickups.find((q) => q.item === item);
     if (!p) return false;
     const d = defOf(item);
-    const slot = d.kind === 'weapon' ? d.slots?.find((s) => !this.equipment[s]) : undefined;
+    const slot = d.slots?.find((s) => !this.equipment[s]);
     if (slot) this.equipment[slot] = item;
     else for (const { grid } of this.playerGrids()) if (autoPlace(grid, item) === 0) break;
     const placed = !!slot || this.playerGrids().some(({ grid }) => grid.contents.some((gi) => gi.item === item)) || item.count <= 0;
@@ -228,13 +228,44 @@ export class Loadout implements LoadoutApi {
     return use;
   }
 
-  /** Hotbar key 5..9 (index 0..4): use the bound item from the worn grids. */
-  useHotbar(index: number) {
+  /**
+   * Timed use (principles §7: 2–5 s, interruptible). The item is consumed only when the timer completes.
+   * Mechanics may read `using` for the hold animation.
+   */
+  using: { item: ItemInstance; seconds: number; t: number } | null = null;
+
+  beginUse(item: ItemInstance): boolean {
+    const u = defOf(item).use;
+    if (!u || this.using || item.count <= 0) return false;
+    this.using = { item, seconds: u.seconds, t: 0 };
+    this.changed();
+    return true;
+  }
+
+  cancelUse(): boolean {
+    if (!this.using) return false;
+    this.using = null;
+    this.changed();
+    return true;
+  }
+
+  /** Advance the use timer; returns the item's use data when it completes (and consumes one). */
+  stepUse(dt: number) {
+    const u = this.using;
+    if (!u) return null;
+    if (u.item.count <= 0) return this.cancelUse(), null;
+    if ((u.t += dt) < u.seconds) return null;
+    this.using = null;
+    return { defId: u.item.defId, use: this.use(u.item)! };
+  }
+
+  /** Hotbar key 5..9 (index 0..4): start using the bound item from the worn grids. */
+  useHotbar(index: number): { defId: string; started: boolean } | null {
     const defId = this.hotbar[index];
     if (!defId) return null;
     let found: ItemInstance | null = null;
     for (const { grid } of this.playerGrids()) forEachItem(grid, (gi) => !found && gi.item.defId === defId && (found = gi.item), true);
-    return found ? { defId, use: this.use(found) } : null;
+    return { defId, started: !!found && this.beginUse(found) };
   }
 
   /** Load loose ammo into a magazine. Returns rounds loaded; the ammo stack shrinks (caller removes it at 0). */
@@ -363,7 +394,8 @@ export class Loadout implements LoadoutApi {
       nextUid: uidState.next,
       equipment: this.equipment,
       pickups: this.pickups,
-      containers: [...this.containers.values()].map((c) => ({ id: c.id, defId: c.defId, searched: c.searched, locked: c.locked, contents: c.grid.contents })),
+      // Zombie bodies are transient (they despawn); everything else persists.
+      containers: [...this.containers.values()].filter((c) => !c.id.startsWith('zbody_')).map((c) => ({ id: c.id, defId: c.defId, searched: c.searched, locked: c.locked, contents: c.grid.contents })),
       hotbar: this.hotbar,
     });
   }

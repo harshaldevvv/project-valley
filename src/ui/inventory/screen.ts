@@ -3,7 +3,7 @@ import type { GridItem, ItemInstance, SlotName } from '../../content/data/types'
 import { weaponDefs } from '../../content/data/weapons';
 import { containerText } from '../../content/text/containers';
 import { itemText } from '../../content/text/items';
-import { inventoryText } from '../../content/text/ui';
+import { inventoryText, survivalText } from '../../content/text/ui';
 import iconIndex from '../../../public/assets/icons/index.json';
 import {
   autoPlace, canPlace, sortGrid, canStack, containsItem, defOf, findFree, footprint, gridOf, mergeInto, place, removeItem, splitStack, type Grid,
@@ -594,7 +594,7 @@ export class InventoryScreen {
   /** Into the worn grids (or an empty weapon slot). Returns true if all of it fit. */
   private toPlayer(item: ItemInstance): boolean {
     const d = defOf(item);
-    const slot = d.slots?.find((s) => !this.lo.equipment[s] && (d.kind === 'weapon'));
+    const slot = d.slots?.find((s) => !this.lo.equipment[s]);
     if (slot) return ((this.lo.equipment[slot] = item), true);
     for (const { grid } of this.lo.playerGrids()) if (autoPlace(grid, item) === 0) return true;
     return false;
@@ -640,12 +640,11 @@ export class InventoryScreen {
     return this.dropOn(item, src, false, { kind: 'slot', slot, ok: true, el });
   }
 
+  /** Starts the timed use; effects land when it completes (systems/index), a hit interrupts it. */
   private use(item: ItemInstance): boolean {
-    const u = this.lo.use(item);
-    if (!u) return false;
-    this.hooks.sfx(u.sound ?? 'item_pickup');
-    this.flash(`${T.used} ${itemName(item.defId)}`);
-    return true;
+    if (!this.lo.beginUse(item)) return false;
+    this.flash(`${survivalText.using} ${itemName(item.defId)}`);
+    return false; // nothing moved yet
   }
 
   /** Double-click: use > equip > open > quick move. */

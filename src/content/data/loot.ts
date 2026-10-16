@@ -17,6 +17,8 @@ const list: LootTable[] = [
       { item: 'canned_beans', weight: 10, count: [1, 2] },
       { item: 'repair_kit', weight: 3, count: [1, 1] },
       { item: 'lockpick', weight: 6, count: [1, 2] },
+      { item: 'energy_bar', weight: 10, count: [1, 3] },
+      { item: 'splint', weight: 5, count: [1, 1] },
     ],
   },
   {
@@ -31,6 +33,9 @@ const list: LootTable[] = [
       { item: 'water_bottle', weight: 12, count: [1, 1] },
       { item: 'scrap_metal', weight: 10, count: [1, 3] },
       { item: 'repair_kit', weight: 4, count: [1, 1] },
+      { item: 'medkit', weight: 5, count: [1, 1] },
+      { item: 'splint', weight: 6, count: [1, 1] },
+      { item: 'antibiotics', weight: 6, count: [1, 2] },
     ],
   },
   {
@@ -44,6 +49,7 @@ const list: LootTable[] = [
       { item: 'bandage', weight: 15, count: [1, 2] },
       { item: 'cloth_rag', weight: 15, count: [1, 4] },
       { item: 'pistol_a', weight: 4, count: [1, 1] },
+      { item: 'energy_bar', weight: 12, count: [1, 2] },
     ],
   },
   {
@@ -57,6 +63,9 @@ const list: LootTable[] = [
       { item: 'bandage', weight: 15, count: [2, 4] },
       { item: 'repair_kit', weight: 8, count: [1, 1] },
       { item: 'pistol_a', weight: 5, count: [1, 1] },
+      { item: 'medkit', weight: 8, count: [1, 1] },
+      { item: 'antibiotics', weight: 6, count: [1, 2] },
+      { item: 'antiviral', weight: 2, count: [1, 1] },
     ],
   },
   {
@@ -70,6 +79,9 @@ const list: LootTable[] = [
       { item: 'canned_beans', weight: 10, count: [1, 1] },
       { item: 'lockpick', weight: 10, count: [1, 2] },
       { item: 'repair_kit', weight: 5, count: [1, 1] },
+      { item: 'energy_bar', weight: 10, count: [1, 2] },
+      { item: 'antibiotics', weight: 5, count: [1, 1] },
+      { item: 'splint', weight: 5, count: [1, 1] },
     ],
   },
   {

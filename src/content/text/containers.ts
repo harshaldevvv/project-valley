@@ -8,5 +8,6 @@ export const containerText: Record<string, { name: string; searchVerb: string }>
   body_survivor: { name: 'Dead Survivor', searchVerb: 'Search' },
   body_zombie: { name: 'Body', searchVerb: 'Search' },
   body_zombie_soldier: { name: 'Soldier Body', searchVerb: 'Search' },
+  death_bag: { name: 'Your Bag', searchVerb: 'Recover' },
   trunk_pickup: { name: 'Pickup Truck Bed', searchVerb: 'Search' },
 };

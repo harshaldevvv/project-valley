@@ -39,6 +39,8 @@ export const BUILD = {
   freeBuilding: false, // debug toggle (F1 > Build); off so the salvage -> rebuild loop is real
   /** How long a blocking piece flashes red when X is refused, ms. */
   blockerFlashMs: 1200,
+  /** Door hinge relative to its doorway's centre (= kit_wood_doorway SOCKET_door_hinge), local metres. */
+  doorHinge: [-0.475, 0.02, 0] as [number, number, number],
   /** Door swing, degrees. */
   doorSwingDeg: 90,
 };

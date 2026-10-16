@@ -68,7 +68,14 @@ interface Live {
   unreg?: () => void;
 }
 
-const DOOR_HALF = (d: BuildPieceDef) => d.size[0] / 2;
+/**
+ * Doors: the root sits on the hinge = doorway position + the doorway's SOCKET_door_hinge offset (data), so the leaf
+ * fills the opening. kit_wood_door's own origin is at its hinge edge (leaf toward +X); the procedural placeholder box
+ * is centred, so only it needs shifting by half its width.
+ */
+const doorHinge = (rot: number) => new Vector3(...BUILD.doorHinge).applyQuaternion(yawQ(rot));
+const leafShift = (d: BuildPieceDef) => (hasAsset(d.model) ? 0 : d.size[0] / 2);
+const yawQ = (yaw: number) => new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), yaw);
 
 export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?: Vector3) => void) {
   const { R, world } = game.phys;
@@ -135,7 +142,6 @@ export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?:
   }
 
   // ---------- placement ----------
-  const yawQ = (yaw: number) => new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), yaw);
 
   function spawn(p: Piece) {
     const d = pieceDef(p.defId);
@@ -144,10 +150,9 @@ export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?:
     const l: Live = { root, body: null };
     live.set(p.uid, l);
     const isDoor = d.kind === 'door';
-    const hingeOffset = isDoor ? DOOR_HALF(d) : 0;
-    // Doors: the root is the hinge; the leaf sits +half width along local X.
-    const hinge = new Vector3(-hingeOffset, 0, 0).applyQuaternion(yawQ(p.rot));
-    root.position.set(p.x + hinge.x, p.y, p.z + hinge.z);
+    const hingeOffset = isDoor ? leafShift(d) : 0;
+    const hinge = isDoor ? doorHinge(p.rot) : new Vector3();
+    root.position.set(p.x + hinge.x, p.y + hinge.y, p.z + hinge.z);
     root.rotation.y = p.rot + (p.open ? (BUILD.doorSwingDeg * Math.PI) / 180 : 0);
     game.scene.add(root);
     void partsObject(d).then(({ obj, boxes }) => {
@@ -308,7 +313,7 @@ export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?:
   }, { passive: true });
 
   /** BuildApi plus sandbox/test hooks (debug menu, Playwright). */
-  const api: BuildApi & { pieces: Piece[]; clear(): void; select(i: number): void; rotate(): void; placeLooked(): void; removeLooked(): void } = {
+  const api: BuildApi & { serialize(): Piece[]; load(list: Piece[]): void; pieces: Piece[]; clear(): void; select(i: number): void; rotate(): void; placeLooked(): void; removeLooked(): void } = {
     get active() {
       return active;
     },
@@ -327,6 +332,17 @@ export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?:
     },
     clear() {
       for (const p of [...pieces]) removePiece(p);
+    },
+    serialize: () => structuredClone(pieces),
+    /** Save load: rebuild exactly the saved pieces (uids, paid flags, open doors). */
+    load(list: Piece[]) {
+      for (const p of [...pieces]) removePiece(p);
+      for (const p of list) {
+        const q = { ...p };
+        pieces.push(q);
+        spawn(q);
+        uid = Math.max(uid, q.uid + 1);
+      }
     },
     rotate: () => void (turns = (turns + 1) % 4),
     placeLooked: () => tryPlace(),
@@ -375,14 +391,14 @@ export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?:
         const ok = s.valid && affordable(d);
         ghostMat.color.set(ok ? '#5ec478' : '#d64a40');
         ghostMat.opacity = s.reason === 'occupied' ? 0.16 : 0.42; // don't shout over a piece you just placed
-        const hinge = d.kind === 'door' ? new Vector3(-DOOR_HALF(d), 0, 0).applyQuaternion(yawQ(s.rot)) : new Vector3();
+        const hinge = d.kind === 'door' ? doorHinge(s.rot) : new Vector3();
         // Invalid ghosts never float above the pointer (gables snap to level 1 even with no wall: QA-053).
         const gy = s.valid ? s.y : Math.min(s.y, Math.max(0, at.point.y));
-        g.position.set(s.x + hinge.x, gy, s.z + hinge.z);
+        g.position.set(s.x + hinge.x, gy + hinge.y, s.z + hinge.z);
         g.rotation.y = s.rot;
         // Door ghost: leaf offset matches spawn().
         const child = g.children[0];
-        if (child) child.position.x = d.kind === 'door' ? DOOR_HALF(d) : 0;
+        if (child) child.position.x = d.kind === 'door' ? leafShift(d) : 0;
       }
       drawBar();
     },

@@ -12,6 +12,8 @@ const list: ContainerDef[] = [
   { id: 'body_survivor', grid: { w: 5, h: 4 }, searchSeconds: 3, lootTable: 'body_survivor', lock: 0 },
   { id: 'body_zombie', grid: { w: 4, h: 3 }, searchSeconds: 2, lootTable: 'body_zombie', lock: 0 },
   { id: 'body_zombie_soldier', grid: { w: 4, h: 3 }, searchSeconds: 2, lootTable: 'body_zombie_soldier', lock: 0 },
+  // Death bag (principles §12): what you lose on death waits at the spot.
+  { id: 'death_bag', grid: { w: 10, h: 8 }, searchSeconds: 0, lootTable: 'empty', lock: 0 },
   { id: 'trunk_pickup', grid: { w: 8, h: 5 }, searchSeconds: 0, lootTable: 'empty', lock: 0 },
 ];
 

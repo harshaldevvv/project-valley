@@ -155,6 +155,6 @@ describe('loadout', () => {
     const m = new Loadout(createRng(9));
     m.load(save);
     expect(m.serialize()).toEqual(save);
-    expect(m.count('bandage')).toBe(2);
+    expect(m.count('bandage')).toBe(3);
   });
 });

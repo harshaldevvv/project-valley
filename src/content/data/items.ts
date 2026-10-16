@@ -16,8 +16,15 @@ const list: ItemDef[] = [
   { id: 'ammo_9mm', kind: 'ammo', w: 1, h: 1, stack: 60, iconSwatch: '#a8873c', value: 1 },
   { id: 'ammo_762', kind: 'ammo', w: 1, h: 1, stack: 60, iconSwatch: '#9a6d35', value: 2 },
   // Consumables.
-  { id: 'bandage', kind: 'medical', w: 1, h: 1, stack: 4, iconSwatch: '#c9c2b0', value: 15, use: { seconds: 2.5, heal: 15, sound: 'search_rustle' } },
+  // Medical (principles §7: using one takes 2–5 s and can be interrupted).
+  { id: 'bandage', kind: 'medical', w: 1, h: 1, stack: 4, iconSwatch: '#c9c2b0', value: 15, use: { seconds: 2.5, heal: 15, sound: 'search_rustle', cures: ['bleeding', 'heavy_bleeding'] } },
+  { id: 'medkit', kind: 'medical', w: 2, h: 2, stack: 5, iconSwatch: '#b8443a', value: 90, use: { seconds: 5, heal: 50, sound: 'search_rustle', cures: ['bleeding', 'heavy_bleeding'] } },
+  { id: 'splint', kind: 'medical', w: 1, h: 2, stack: 2, iconSwatch: '#a88c5c', value: 30, use: { seconds: 4, sound: 'search_rustle', cures: ['fracture'] } },
+  { id: 'antibiotics', kind: 'medical', w: 1, h: 1, stack: 5, iconSwatch: '#d9d4c0', value: 45, use: { seconds: 2, sound: 'item_pickup', cures: ['infection'], infectionMaxStage: 2 } },
+  { id: 'antiviral', kind: 'medical', w: 1, h: 1, stack: 1, iconSwatch: '#5fa3b8', value: 400, use: { seconds: 3, sound: 'item_pickup', cures: ['infection'] } },
+  // Food and drink.
   { id: 'canned_beans', kind: 'food', w: 1, h: 1, stack: 3, iconSwatch: '#8e4c3a', value: 12, use: { seconds: 3, food: 25, sound: 'item_pickup' } },
+  { id: 'energy_bar', kind: 'food', w: 1, h: 1, stack: 5, iconSwatch: '#c9a04a', value: 8, use: { seconds: 2, food: 12, sound: 'item_pickup' } },
   { id: 'water_bottle', kind: 'drink', w: 1, h: 2, stack: 1, iconSwatch: '#5d86a0', value: 10, use: { seconds: 2, water: 35, sound: 'item_pickup' } },
   // Materials (building costs come from data/build.ts).
   { id: 'wood_planks', kind: 'material', w: 1, h: 2, stack: 20, iconSwatch: '#a7825a', value: 4 },
@@ -29,6 +36,7 @@ const list: ItemDef[] = [
   { id: 'repair_kit', kind: 'tool', w: 2, h: 1, stack: 1, iconSwatch: '#b5523a', value: 120 },
   // Wearables with storage.
   { id: 'jacket_field', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['torso'], grid: { w: 4, h: 2 }, iconSwatch: '#5d6a48', value: 140 },
+  { id: 'secure_pouch', kind: 'misc', w: 2, h: 2, stack: 1, slots: ['pouch'], grid: { w: 2, h: 2 }, iconSwatch: '#3f4a3a', value: 0 },
   { id: 'backpack_small', kind: 'backpack', w: 3, h: 3, stack: 1, slots: ['backpack'], grid: { w: 4, h: 4 }, iconSwatch: '#6b5a3e', value: 180 },
 ];
 
@@ -51,11 +59,12 @@ export const INVENTORY = {
 
 /** M1 starting kit (worn items are equipped, the rest auto-placed). */
 export const STARTING_KIT = {
-  equip: { torso: 'jacket_field', backpack: 'backpack_small', melee: 'knife_a' } as Record<string, string>,
+  equip: { torso: 'jacket_field', backpack: 'backpack_small', melee: 'knife_a', pouch: 'secure_pouch' } as Record<string, string>,
   items: [
-    { item: 'bandage', count: 2 },
-    { item: 'canned_beans', count: 1 },
-    { item: 'water_bottle', count: 1 },
+    { item: 'bandage', count: 3 },
+    { item: 'canned_beans', count: 2 },
+    { item: 'water_bottle', count: 2 },
+    { item: 'splint', count: 1 },
     { item: 'wood_planks', count: 10 },
     { item: 'nails', count: 20 },
     { item: 'lockpick', count: 3 },
