@@ -2,7 +2,7 @@
  * Hit/shot effect tables (docs/research/vfx-impact-effects.md "Rules for our game"). Plain data; Fx reads it.
  * Colour language: red = flesh, yellow/white = hard target (metal), brown/grey = miss on the world.
  */
-export type FxSurface = 'flesh' | 'wood' | 'metal' | 'dirt' | 'concrete' | 'grass' | 'rubber';
+export type FxSurface = 'flesh' | 'wood' | 'metal' | 'dirt' | 'concrete' | 'grass' | 'rubber' | 'chainlink';
 
 export interface BurstDef {
   pool: 'chips' | 'smoke';
@@ -62,6 +62,12 @@ export const impacts: Record<FxSurface, ImpactDef> = {
     ],
     decal: { pool: 'bullet', color: '#2b2b2b', size: [0.05, 0.07] },
     sfx: 'impact_concrete',
+  },
+  // Wire mesh: bullets pass through (weapons), so this only shows when something stops on it (melee, sparks)
+  chainlink: {
+    bursts: [{ pool: 'chips', count: [3, 5], color: ['#ffe9a8', '#ffd27a'], size: [0.01, 0.015], speed: [5, 7], cone: 60, gravity: 6, life: [0.12, 0.2], stretch: 0.02 }],
+    decal: { pool: 'bullet', color: '#3a3a3a', size: [0.02, 0.03] },
+    sfx: 'impact_metal',
   },
   rubber: {
     bursts: [{ pool: 'chips', count: [3, 5], color: ['#222222', '#333333'], size: [0.02, 0.035], speed: [1.5, 2.5], cone: 40, gravity: 9, life: [0.4, 0.6] }],

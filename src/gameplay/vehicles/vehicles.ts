@@ -39,6 +39,8 @@ export class Car {
   readonly trunkId: string;
   hp: number;
   smokeT = 0;
+  tipped = false;
+  tippedT = 0;
   get dead() {
     return this.hp <= 0;
   }
@@ -65,6 +67,7 @@ export class Vehicles {
   private camPitch = 0;
   private lookIdle = 0;
   private camPos = new Vector3();
+  private enteredTick = -1;
   private ray: InstanceType<Ctx['game']['phys']['R']['Ray']> | null = null;
 
   constructor(private ctx: Ctx) {}
@@ -96,7 +99,7 @@ export class Vehicles {
     const m = def.massKg;
     const collider = world.createCollider(
       R.ColliderDesc.cuboid(hx, hy, hz)
-        .setMassProperties(m, { x: 0, y: -hy * 0.6, z: 0 }, { x: (m / 12) * (4 * hy * hy + 4 * hz * hz), y: (m / 12) * (4 * hx * hx + 4 * hz * hz), z: (m / 12) * (4 * hx * hx + 4 * hy * hy) }, { x: 0, y: 0, z: 0, w: 1 })
+        .setMassProperties(m, { x: 0, y: -hy - def.comDrop, z: 0 } /* low centre of mass (QA-056) */, { x: (m / 12) * (4 * hy * hy + 4 * hz * hz), y: (m / 12) * (4 * hx * hx + 4 * hz * hz), z: (m / 12) * (4 * hx * hx + 4 * hy * hy) }, { x: 0, y: 0, z: 0, w: 1 })
         .setFriction(0.4)
         .setCollisionGroups(groups(Group.VEHICLE, 0xffff)),
       body,
@@ -216,6 +219,7 @@ export class Vehicles {
     const p = this.ctx.player;
     if (this.driving || p.dead) return;
     this.driving = car;
+    this.enteredTick = this.ctx.game.tick; // the E that got you in mustn't also get you out
     p.inVehicle = true;
     p.collider.setEnabled(false);
     this.ctx.weapons.finishReload();
@@ -302,6 +306,36 @@ export class Vehicles {
     car.prevQuat.copy(car.currQuat);
   }
 
+  /**
+   * Anti-roll (QA-056): damp roll/pitch angular velocity (more in the air), a righting torque on the wheels, and an
+   * auto-flip assist when the car lies on its side, slow, for `autoFlipS`.
+   */
+  private stabilise(car: Car, contacts: number, dt: number) {
+    const d = car.def;
+    const av = car.body.angvel();
+    _q.copy(car.currQuat).invert();
+    _v.set(av.x, av.y, av.z).applyQuaternion(_q); // car space: x = pitch, z = roll
+    const k = contacts === 0 ? d.airAngDamp : d.rollDamp;
+    _v.x *= Math.max(0, 1 - k * 0.5 * dt);
+    _v.z *= Math.max(0, 1 - k * dt);
+    _v.z = MathUtils.clamp(_v.z, -d.maxRollRate, d.maxRollRate);
+    // Righting: roll angle from the car's up vector
+    _w.set(0, 1, 0).applyQuaternion(car.currQuat);
+    const rightX = _f.set(1, 0, 0).applyQuaternion(car.currQuat).y; // >0: tilted onto its left side
+    if (_w.y > 0.3) _v.z -= rightX * d.rightingRate * dt;
+    _v.applyQuaternion(car.currQuat);
+    car.body.setAngvel({ x: _v.x, y: _v.y, z: _v.z }, true);
+    _f.set(0, 0, -1).applyQuaternion(car.currQuat);
+    car.tipped = _w.y < 0.6;
+    if (car.tipped && Math.abs(car.speed) < 1.5 && car.body.linvel().y > -1) {
+      car.tippedT += dt;
+      if (car.tippedT > d.autoFlipS) {
+        this.flipReset(car);
+        car.tippedT = 0;
+      }
+    } else car.tippedT = 0;
+  }
+
   /** Car damage (zombie hits, bullets). At 0 the engine dies: no drive, black smoke (QA-050). */
   damageCar(car: Car, amount: number) {
     if (car.dead) return;
@@ -316,13 +350,14 @@ export class Vehicles {
 
   /** Distance from a point to the car's chassis box (horizontal), and the closest point on it into `out`. */
   surfaceDist(car: Car, p: Vector3, out?: Vector3) {
-    const [hx, , hz] = car.def.halfExtents;
+    // Closest point on the chassis box in 3D (works upright or on its side), distance measured horizontally
+    const [hx, hy, hz] = car.def.halfExtents;
     _q.copy(car.currQuat).invert();
     _v.subVectors(p, car.currPos).applyQuaternion(_q);
-    const cx = Math.max(-hx, Math.min(hx, _v.x));
-    const cz = Math.max(-hz, Math.min(hz, _v.z));
-    if (out) out.set(cx, 0, cz).applyQuaternion(car.currQuat).add(car.currPos).setY(p.y);
-    return Math.hypot(_v.x - cx, _v.z - cz);
+    _w.set(Math.max(-hx, Math.min(hx, _v.x)), Math.max(car.cy - hy, Math.min(car.cy + hy, _v.y)), Math.max(-hz, Math.min(hz, _v.z)));
+    _w.applyQuaternion(car.currQuat).add(car.currPos);
+    if (out) out.set(_w.x, p.y, _w.z);
+    return Math.hypot(p.x - _w.x, p.z - _w.z);
   }
 
   step(dt: number) {
@@ -335,7 +370,7 @@ export class Vehicles {
           this.enter(car);
           break;
         }
-    } else if (this.driving && c.pressed('vehicle')) this.exit();
+    } else if (this.driving && (c.pressed('vehicle') || c.pressed('interact')) && this.ctx.game.tick > this.enteredTick) this.exit(); // E or F (QA-059)
 
     for (const car of this.list) {
       car.prevPos.copy(car.currPos);
@@ -374,7 +409,10 @@ export class Vehicles {
         car.engine?.setVolume(0.45 + 0.4 * k);
       }
       // Speed-sensitive steering, rate-limited
-      const maxSteer = MathUtils.degToRad(d.maxSteerDeg) * (1 + (d.steerAtSpeed - 1) * Math.min(1, Math.abs(car.speed) / top));
+      // Speed-sensitive steering; none in the air (QA-056)
+      let contacts = 0;
+      for (let k = 0; k < 4; k++) if (car.vc.wheelIsInContact(k)) contacts++;
+      const maxSteer = contacts === 0 ? 0 : MathUtils.degToRad(d.maxSteerDeg) * (1 + (d.steerAtSpeed - 1) * Math.min(1, Math.abs(car.speed) / top));
       const want = steerIn * maxSteer;
       car.steer += MathUtils.clamp(want - car.steer, -d.steerRate * dt, d.steerRate * dt);
       for (let k = 0; k < 4; k++) {
@@ -385,6 +423,7 @@ export class Vehicles {
         car.vc.setWheelSideFrictionStiffness(k, hand && !front ? 0.35 : 1);
       }
       car.vc.updateVehicle(dt, undefined, groups(Group.VEHICLE, Group.STATIC | Group.TERRAIN | Group.BUILD));
+      this.stabilise(car, contacts, dt);
       // Damaged engine smokes from the hood: grey under 35 %, black when dead
       if (car.hp < d.hp * 0.35 && (car.smokeT -= dt) <= 0) {
         car.smokeT = car.dead ? 0.12 : 0.25;

@@ -378,6 +378,7 @@ export class Player implements PlayerView {
     this.invulnT = 1;
     if (this.crouched) this.setCrouch(false);
     this.teleport(new Vector3(yard.spawn.x, 0.05, yard.spawn.z), yard.spawn.yaw);
+    this.pitch = 0; // level view after the death cam (QA-063)
   }
 
   /** Interpolate for rendering. */

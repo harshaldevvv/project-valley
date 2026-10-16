@@ -1,7 +1,9 @@
-import { LoopOnce, LoopRepeat, SkeletonHelper, Vector3, type AnimationAction } from 'three';
+import { LoopOnce, LoopRepeat, Object3D, SkeletonHelper, Vector3, type AnimationAction } from 'three';
 import { Group, groups } from '../../engine/physics';
 import { yard } from '../../content/data/yard';
 import type { Ctx } from '../ctx';
+import { makeWeaponModel } from '../weapons/models';
+import { meleeDefs, weaponFeel } from '../../content/data/weapons';
 import { applyPose, clipNames, makeCharacter, newPose, type Character } from './character';
 
 /**
@@ -49,8 +51,29 @@ export class AnimStand {
     ch.root.rotation.y = Math.PI;
     this.ctx.game.scene.add(ch.root);
     this.ch = ch;
+    if (kind === 'survivor') await this.attachWeapons(ch);
     this.loading = false;
     this.play(kind === 'zombie' ? 'z_idle' : 'idle');
+  }
+
+  /** QA-067: the stand holds the right weapon for gun and melee clips (models in SOCKET_hand_R, identity grip). */
+  private weapons = new Map<string, Object3D>();
+  private async attachWeapons(ch: Character) {
+    for (const [id, kind] of [['pistol_a', 'pistol'], ['rifle_a', 'rifle'], ['knife_a', 'knife']] as const) {
+      let w = this.weapons.get(kind);
+      if (!w) {
+        const model = weaponFeel[id]?.model ?? meleeDefs[id]?.model;
+        w = (await makeWeaponModel(id, model, kind)).root;
+        this.weapons.set(kind, w);
+      }
+      w.visible = false;
+      ch.hand.add(w);
+      if (!ch.skinned) w.rotation.set(-Math.PI / 2, 0, 0); // placeholder arm hangs down
+    }
+  }
+  private showWeapon(clip: string) {
+    const want = /pistol|^holster$/.test(clip) ? 'pistol' : /rifle/.test(clip) ? 'rifle' : /melee/.test(clip) ? 'knife' : '';
+    for (const [k, w] of this.weapons) w.visible = this.kind === 'survivor' && k === want;
   }
 
   play(name: string) {
@@ -62,6 +85,7 @@ export class AnimStand {
       return;
     }
     this.clip = name;
+    this.showWeapon(name);
     this.t = 0;
     if (ch.mixer) {
       const a = ch.actions.get(name);

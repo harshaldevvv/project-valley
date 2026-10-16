@@ -26,6 +26,8 @@ const CSS = `
 .hud .ammo{position:absolute;right:28px;bottom:24px;text-align:right}
 .hud .ammo .n{font:700 34px/1 system-ui;letter-spacing:.5px}
 .hud .ammo .n small{font-size:18px;opacity:.7}
+.hud .ammo .n[data-mags]::after{content:attr(data-mags);font:600 15px system-ui;opacity:.8;margin-left:10px;letter-spacing:.5px}
+.hud .ammo .n[data-mags='']::after{content:none}
 .hud .ammo .w{font-size:12px;opacity:.8;margin-top:4px;text-transform:uppercase;letter-spacing:1px}
 .hud .bars{position:absolute;left:24px;bottom:24px;width:220px}
 .hud .bar{height:7px;background:#0007;border-radius:4px;margin-top:6px;overflow:hidden}
@@ -240,17 +242,21 @@ export class Hud {
     if (!hide && w.item) {
       const name = w.item.defId.replace(/_a$/, '').toUpperCase();
       if (a) {
+        // "26+1  3 mags" (QA-066); sandbox shows ∞ mags
         const res = a.reserve === Infinity ? '∞' : String(a.reserve);
-        this.set('an', this.ammoN, 'text', `${a.mag}${a.chamber ? '+1' : ''} ‖ ${res}`);
+        this.set('an', this.ammoN, 'text', `${a.mag}${a.chamber ? '+1' : ''}`);
+        this.ammoN.dataset.mags = `${res} mag${a.reserve === 1 ? '' : 's'}`;
         this.set('aw', this.ammoW, 'text', `${name} · ${w.fireMode()}${w.item.durability !== undefined ? ` · ${(w.item.durability * 100).toFixed(0)}%` : ''}`);
       } else {
         this.set('an', this.ammoN, 'text', '');
+        this.ammoN.dataset.mags = '';
         this.set('aw', this.ammoW, 'text', name);
       }
     } else {
       const car = ctx.vehicles.driving;
+      this.ammoN.dataset.mags = '';
       this.set('an', this.ammoN, 'text', car ? `${Math.abs(car.speed * 3.6).toFixed(0)} km/h` : '');
-      this.set('aw', this.ammoW, 'text', car ? (car.dead ? 'ENGINE DEAD · F to get out' : `CAR ${Math.ceil((car.hp / car.def.hp) * 100)}%`) : '');
+      this.set('aw', this.ammoW, 'text', car ? (car.dead ? 'ENGINE DEAD · F/E get out' : `CAR ${Math.ceil((car.hp / car.def.hp) * 100)}% · F/E get out${car.tipped ? ' · R flip' : ''}`) : '');
     }
     if (this.slotT > 0) {
       this.slotT -= dt;
@@ -293,7 +299,7 @@ export class Hud {
     this.set('rd', this.range, 'display', near && !hide ? 'block' : 'none');
     if (near && w.lastShot) {
       const s = w.lastShot;
-      this.set('rt', this.range, 'text', `RANGE READOUT\nlast shot  ${s.distance.toFixed(1)} m\nhit        ${s.target} / ${s.zone}\ndamage     ${s.damage.toFixed(1)}\nspread     ${w.spread.toFixed(2)}°\nshots      ${w.shotsFired}`);
+      this.set('rt', this.range, 'text', `RANGE READOUT\nlast shot  ${s.zone === 'miss' ? 'miss' : `${s.distance.toFixed(1)} m`}\nhit        ${s.zone === 'miss' ? '—' : `${s.target} / ${s.zone}`}\ndamage     ${s.damage.toFixed(1)}\nspread     ${w.spread.toFixed(2)}°\nshots      ${w.shotsFired}`);
     } else if (near) this.set('rt', this.range, 'text', `RANGE READOUT\nfire at a target\nspread     ${w.spread.toFixed(2)}°`);
 
     // Help overlay (H on foot)

@@ -4,6 +4,7 @@ import { Group, groups } from '../../engine/physics';
 import { horde as HD, senses as SN, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
 import { hasAsset } from '../../engine/assets';
 import { fxTuning } from '../../content/data/fx';
+import { surfaceOf } from '../../world/surfaces';
 import { yard } from '../../content/data/yard';
 import { yardSpawns } from '../../world/yard/spawns';
 import type { Ctx, HitInfo, HitResult, Hittable, Zone } from '../ctx';
@@ -29,6 +30,7 @@ const _w = new Vector3();
 const _to = new Vector3();
 const _o = new Vector3();
 const _tg = new Vector3();
+const seeThrough = (c: Collider) => (surfaceOf(c.handle) as string | null) !== 'chainlink';
 const _proj = new Matrix4();
 const _frustum = new Frustum();
 const _sphere = new Sphere(new Vector3(), 1.2);
@@ -68,6 +70,7 @@ export class Zombie {
   climb: { from: Vector3; to: Vector3; t: number } | null = null;
   anim: AnimationController | CrowdAnim | null = null;
   lastClip = '';
+  settled = false;
   /** Capsule centre above the feet (scaled per variant). */
   get capY() {
     return CAPSULE_HH * (this.def.scale ?? 1) + CAPSULE_R;
@@ -225,6 +228,7 @@ export class Zombies {
     const { world } = this.ctx.game.phys;
     this.ctx.hits.delete(z.capsule.handle);
     this.ctx.hits.delete(z.head.handle);
+    if (z.settled) this.ctx.game.events.emit('corpseRemoved', { id: z.id });
     world.removeRigidBody(z.body);
     z.ch.root.removeFromParent();
     if (z.anim instanceof CrowdAnim) z.anim.crowd.remove(z.anim.i);
@@ -305,6 +309,15 @@ export class Zombies {
     this.releaseToken(z);
     z.mode = 'dead';
     z.deadT = z.def.corpseTime;
+    // Corpse cap: the oldest goes first
+    let corpses = 0;
+    let oldest: Zombie | null = null;
+    for (const o of this.list) {
+      if (o.alive || o === z || o.deadT <= 0) continue;
+      corpses++;
+      if (!oldest || o.deadT < oldest.deadT) oldest = o;
+    }
+    if (oldest && corpses >= HD.maxCorpses) oldest.deadT = 0;
     z.hp = 0;
     this.kills++;
     // Fall along the shot direction (ragdoll-lite)
@@ -314,9 +327,14 @@ export class Zombies {
     this.ctx.hits.delete(z.capsule.handle);
     this.ctx.hits.delete(z.head.handle);
     this.ctx.sfx('zombie_death', z.curr, { pitchJitter: 0.1 });
-    if (z.fling.lengthSq() === 0) this.groundPool(_o.set(z.curr.x - Math.sin(z.fallDir) * 0.75, z.curr.y, z.curr.z - Math.cos(z.fallDir) * 0.75)); // under the torso, not the feet
+    if (z.fling.lengthSq() === 0) this.groundPool(this.torso(z, _o)); // under the torso, not the feet
     z.anim?.oneshot('z_death', 0.1, true, z.def.deathHoldAt);
     if (melee) this.ctx.game.events.emit('noise', { position: z.curr.clone(), radius: 5, source: 'melee_kill' });
+  }
+
+  /** Torso point of a corpse (it falls along fallDir; the feet stay at curr). */
+  private torso(z: Zombie, out: Vector3) {
+    return out.set(z.curr.x - Math.sin(z.fallDir) * 0.75, z.curr.y, z.curr.z - Math.cos(z.fallDir) * 0.75);
   }
 
   /** Blood pool only on roughly flat ground: centre + 4 points 0.35 m out must agree in height (QA-044). */
@@ -367,8 +385,14 @@ export class Zombies {
           if (z.curr.y <= z.groundY) {
             z.curr.y = z.groundY;
             z.fling.set(0, 0, 0);
-            this.groundPool(_o.set(z.curr.x - Math.sin(z.fallDir) * 0.75, z.curr.y, z.curr.z - Math.cos(z.fallDir) * 0.75)); // under the torso, not the feet
+            this.groundPool(this.torso(z, _o)); // under the torso, not the feet
           }
+        }
+        // Corpse settled (not flying, death pose held): it becomes a searchable body (systems listens, QA-058)
+        if (!z.settled && z.deadT > 0 && z.fling.lengthSq() === 0 && z.def.corpseTime - z.deadT > 1.2) {
+          z.settled = true;
+          this.torso(z, _o);
+          this.ctx.game.events.emit('zombieKilled', { id: z.id, variant: z.def.id, position: _o.clone() });
         }
         if ((z.deadT -= dt) <= 0) {
           this.remove(z);
@@ -450,7 +474,8 @@ export class Zombies {
     this.ray.origin = _o.set(ox, oy, oz);
     this.ray.dir = _w;
     const filt = this.ctx.player.inVehicle ? LOS_FILTER & ~Group.VEHICLE : LOS_FILTER; // they see the driver through the glass
-    const hit = world.castRay(this.ray, d - 0.3, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, filt));
+    // They see through chain-link (wire mesh), not through walls
+    const hit = world.castRay(this.ray, d - 0.3, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, filt), undefined, undefined, seeThrough);
     return !hit;
   }
 

@@ -20,6 +20,9 @@ import { Viewmodel, type FpKind } from './viewmodel';
 const BULLET_FILTER = Group.STATIC | Group.TERRAIN | Group.ZOMBIE | Group.VEHICLE | Group.BUILD | Group.DEBRIS;
 const MAX_BULLETS = 64;
 const EMPTY_TOAST = 'Empty — press R';
+/** Wire-mesh colliders (environment tags them 'chainlink'): bullets and the aim ray see through them. */
+const isMesh = (c: Collider) => (worldSurface(c.handle) as string | null) === 'chainlink';
+const notMesh = (c: Collider) => !isMesh(c);
 const DEG = Math.PI / 180;
 
 interface Bullet {
@@ -121,6 +124,17 @@ export class Weapons {
     for (let i = 0; i < MAX_BULLETS; i++)
       this.bullets.push({ alive: false, pos: new Vector3(), vel: new Vector3(), life: 0, dist: 0, def: weaponDefs.pistol_a });
     ctx.game.camera.add(this.fpHolder);
+    // Respawn with the weapon you died holding (or the first filled slot) (QA-063)
+    let heldSlot = 0;
+    ctx.game.events.on('playerDied', () => (heldSlot = this.slot));
+    ctx.game.events.on('playerRespawned', () => {
+      for (const i of [heldSlot, 0, 2, 1, 3])
+        if (this.loadout.equipped(weaponSlots[i])) {
+          this.cancelReload();
+          this.select(i);
+          return;
+        }
+    });
     if (!ctx.game.camera.parent) ctx.game.scene.add(ctx.game.camera);
   }
 
@@ -419,7 +433,7 @@ export class Weapons {
     const { world } = this.ctx.game.phys;
     this.ray.origin = o;
     this.ray.dir = d;
-    const hit = world.castRay(this.ray, B.maxRange, true, undefined, groups(Group.PROJECTILE, BULLET_FILTER), this.ctx.player.collider);
+    const hit = world.castRay(this.ray, B.maxRange, true, undefined, groups(Group.PROJECTILE, BULLET_FILTER), this.ctx.player.collider, undefined, notMesh);
     return out.copy(o).addScaledVector(d, hit ? Math.max(hit.timeOfImpact, 1) : B.maxRange);
   }
 
@@ -440,7 +454,7 @@ export class Weapons {
     const { world } = this.ctx.game.phys;
     this.ray.origin = muz;
     this.ray.dir = _p.divideScalar(dist);
-    const hit = world.castRay(this.ray, dist, true, undefined, groups(Group.PROJECTILE, Group.STATIC | Group.TERRAIN | Group.BUILD | Group.VEHICLE), this.ctx.player.collider);
+    const hit = world.castRay(this.ray, dist, true, undefined, groups(Group.PROJECTILE, Group.STATIC | Group.TERRAIN | Group.BUILD | Group.VEHICLE), this.ctx.player.collider, undefined, notMesh);
     return !!hit && hit.timeOfImpact < dist - 0.3 && hit.timeOfImpact < 3;
   }
 
@@ -523,7 +537,12 @@ export class Weapons {
     _n.copy(b.vel).normalize();
     this.ray.origin = b.pos;
     this.ray.dir = _n;
-    const hit = world.castRayAndGetNormal(this.ray, len, true, undefined, groups(Group.PROJECTILE, BULLET_FILTER), this.ctx.player.collider);
+    // Chain-link is a wire mesh: bullets pass through (QA-055), with an occasional spark; walkers stay blocked
+    const hit = world.castRayAndGetNormal(this.ray, len, true, undefined, groups(Group.PROJECTILE, BULLET_FILTER), this.ctx.player.collider, undefined, notMesh);
+    if (this.ctx.rand() < B.meshSparkChance) {
+      const wire = world.castRayAndGetNormal(this.ray, hit ? hit.timeOfImpact : len, true, undefined, groups(Group.PROJECTILE, Group.STATIC), this.ctx.player.collider, undefined, isMesh);
+      if (wire) this.ctx.fx.impact(_p.copy(b.pos).addScaledVector(_n, wire.timeOfImpact), _u.set(wire.normal.x, wire.normal.y, wire.normal.z), 'metal', _n, 0.4);
+    }
     if (hit) {
       b.alive = false;
       _p.copy(b.pos).addScaledVector(_n, hit.timeOfImpact);

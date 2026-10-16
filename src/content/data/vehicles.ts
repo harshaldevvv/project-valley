@@ -19,6 +19,14 @@ export interface VehicleFeel {
   /** Item that repairs the car to 100 % (and revives a dead engine), and the hold time. */
   repairItem: string;
   repairSeconds: number;
+  /** Stability (QA-056): centre-of-mass drop below the chassis centre (m), roll damping (1/s), max roll rate (rad/s),
+   * righting assist (rad/s²), extra damping in the air, auto-flip after this long on its side and slow (s). */
+  comDrop: number;
+  rollDamp: number;
+  maxRollRate: number;
+  rightingRate: number;
+  airAngDamp: number;
+  autoFlipS: number;
   engineNoise: number;
   /** Chase camera */
   camDist: number;
@@ -47,7 +55,7 @@ export const vehicles: Record<string, VehicleDef & VehicleFeel> = {
     trunk: { w: 8, h: 5 },
     fuelLiters: 70,
     hp: 1000,
-    steerAtSpeed: 0.35,
+    steerAtSpeed: 0.25,
     steerRate: 2.5,
     handbrakeForce: 160,
     reverseKmh: 25,
@@ -59,6 +67,12 @@ export const vehicles: Record<string, VehicleDef & VehicleFeel> = {
     bulletDamageMul: 0.25,
     repairItem: 'repair_kit',
     repairSeconds: 4,
+    comDrop: 0.25,
+    rollDamp: 3,
+    maxRollRate: 1.2,
+    rightingRate: 4,
+    airAngDamp: 4,
+    autoFlipS: 2,
     engineNoise: 30,
     camDist: 7.5,
     camHeight: 2.8,

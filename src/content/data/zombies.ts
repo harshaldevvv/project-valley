@@ -53,8 +53,8 @@ const zombieDefsBase: Record<string, ZombieDef> = {
     staggerWindow: 1.5,
     staggerTime: 0.8,
     flinchTime: 0.2,
-    corpseTime: 10,
-    deathHoldAt: 0.62,
+    corpseTime: 120, // searchable bodies (QA-058); horde.maxCorpses caps them
+    deathHoldAt: 0.8, // flat on the ground, arms at the sides (0.62 had the legs in the air, 1.0 splays the arms)
   },
 };
 
@@ -93,6 +93,7 @@ export const horde = {
   groanMin: 4,
   groanMax: 10,
   passive: false,
+  maxCorpses: 12, // oldest corpse removed first
   shadowDist: 15, // m from the camera; skinned shadows are expensive (principles §13)
   showSenses: false,
 };

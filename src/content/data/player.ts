@@ -61,9 +61,9 @@ export const cameraFeel = {
   // Third person (principles §2)
   shoulderX: 0.5,
   shoulderY: 0.15,
-  shoulderXAds: 0.65, // ADS pulls the camera further over the shoulder so the head clears the reticle
+  shoulderXAds: 1.0, // QA-064: further out so the shoulder/backpack clear the view // ADS pulls the camera further over the shoulder so the head clears the reticle
   armHip: 2.6,
-  armAds: 1.2,
+  armAds: 1.45,
   fovHip: 70,
   fovAdsMul: 0.8, // irons ×0.8 (TP ADS uses 55° via this * 70 ≈ 56)
   collisionRadius: 0.2,

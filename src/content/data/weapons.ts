@@ -92,6 +92,7 @@ export const ballistics = {
   shotResetS: 0.3, // pattern restarts after this pause
   magCommitAt: 0.7,
   decalBehind: 3, // m: blood decal raycast continues behind the target
+  meshSparkChance: 0.07, // a bullet passing chain-link sparks this often
 };
 
 /** Melee weapons (principles §5). */

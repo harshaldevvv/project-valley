@@ -4,6 +4,7 @@ import { cameraFeel, health, movement, stamina } from '../content/data/player';
 import { ballistics, meleeDefs, shove, weaponDefs } from '../content/data/weapons';
 import { horde, senses, zombieDefs } from '../content/data/zombies';
 import { fxTuning } from '../content/data/fx';
+import { surfaceOf } from '../world/surfaces';
 import { vehicles as vehicleDefs } from '../content/data/vehicles';
 import { Hud } from '../ui/hud/hud';
 import { AnimationController, applyPose, makeCharacter } from './animstand/character';
@@ -134,6 +135,7 @@ export async function installGameplay(game: Game): Promise<void> {
     ctx,
     /** Live data tables (the same module instances the game uses, also after HMR). */
     data: { horde, zombieDefs, senses, fxTuning, cameraFeel, movement },
+    surfaceOf,
     setLook: (yaw: number, pitch: number) => ctx.player.setLook(yaw, pitch),
     look: (dx: number, dy: number) => ((ctx.controls.lookDx += dx), (ctx.controls.lookDy += dy)),
     mouse: (button: 0 | 2, held: boolean) => ctx.controls.press('Mouse' + button, held),
