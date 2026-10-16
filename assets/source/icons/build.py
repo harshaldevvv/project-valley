@@ -137,7 +137,21 @@ def cloth_rag(m):  # crumpled rag with a folded corner
     m.box((0.075, 0.02, 0.05), (0.035, 0.004, 0.03), "cloth_grey", bevel=0.001, rot=(25, 40, 20))  # torn corner
 
 
-MODELS = {f.__name__: f for f in (ammo_9mm, ammo_762, bandage, canned_beans, water_bottle, wood_planks, nails,
+def repair_kit(m):  # red metal toolbox, carry handle, two latches, a wrench laid across the lid
+    m.box((0, 0.05, 0), (0.3, 0.1, 0.13), "paint_red_faded", bevel=0.006)  # body
+    m.box((0, 0.106, 0), (0.306, 0.016, 0.136), "paint_red_faded", bevel=0.004)  # lid
+    m.box((0, 0.098, 0), (0.308, 0.004, 0.138), "metal_dark")  # lid seam
+    for x in (-0.1, 0.1):
+        m.box((x, 0.09, -0.067), (0.026, 0.03, 0.006), "metal_bare", bevel=0.002)  # latches
+        m.box((x * 0.55, 0.124, 0), (0.012, 0.02, 0.014), "metal_dark")  # handle posts
+    m.box((0, 0.136, 0), (0.13, 0.012, 0.016), "metal_dark", bevel=0.003)  # handle grip
+    m.box((0.02, 0.118, 0.035), (0.22, 0.006, 0.018), "metal_bare", bevel=0.002, rot=(0, 12, 0))  # wrench shaft
+    for dx, r in ((-0.11, 12), (0.15, 12)):
+        m.cylinder((0.02 + dx * math.cos(math.radians(r)), 0.118, 0.035 + dx * math.sin(math.radians(r))),
+                   0.02, 0.006, "metal_bare", segments=8)  # wrench heads
+
+
+MODELS = {f.__name__: f for f in (repair_kit, ammo_9mm, ammo_762, bandage, canned_beans, water_bottle, wood_planks, nails,
                                   scrap_metal, backpack_small, jacket_field, cloth_rag)}
 
 
