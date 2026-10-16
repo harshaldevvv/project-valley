@@ -62,6 +62,8 @@ export interface Game {
   loadout: LoadoutApi;
   inventory: InventoryUi;
   build: BuildApi;
+  /** engine-builder: world clock. hours 0..24, night 0..1, day = days survived (starts at 1). */
+  time: { readonly hours: number; readonly night: number; readonly day: number };
   /** M2 (systems-builder). */
   survival: SurvivalApi;
   save: SaveApi;
@@ -136,6 +138,7 @@ export async function createGame(): Promise<Game> {
     loadout: missing('loadout') as LoadoutApi,
     inventory: missing('inventory') as InventoryUi,
     build: missing('build') as BuildApi,
+    time: missing('time') as Game['time'],
     survival: missing('survival') as SurvivalApi,
     save: missing('save') as SaveApi,
     async start() {

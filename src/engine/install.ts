@@ -53,6 +53,18 @@ export async function installEngine(game: Game) {
   // --- post + time of day ------------------------------------------------------------------
   const post = installPost(game);
   const tod = createTimeOfDay(game);
+  // Read-only clock for other teams (systems: night fatigue). ponytail: time doesn't advance yet (debug slider /
+  // saves only); add a day counter here when the world clock starts running. Not in the Game contract yet.
+  Object.defineProperty(game, 'time', {
+    value: {
+      get hours() {
+        return tod.hours;
+      },
+      get night() {
+        return tod.night;
+      },
+    },
+  });
   createSky(game, tod);
 
   // --- teleport ----------------------------------------------------------------------------
@@ -177,6 +189,12 @@ export async function installEngine(game: Game) {
     // World data exists now (installed after the engine). Lamps add fixed lights, so create them before warm-up.
     const { lampHeads } = await import('../world/yard/poles');
     createLamps(game, tod, lampHeads);
+    // M2 saves (systems installs game.save after the engine): time of day is its own slice.
+    try {
+      game.save.section('world.time', { version: 1, save: () => ({ hours: tod.hours }), load: (d) => tod.set((d as { hours: number }).hours) });
+    } catch {
+      /* no save system installed */
+    }
     await warmup(game, post);
     return start();
   };

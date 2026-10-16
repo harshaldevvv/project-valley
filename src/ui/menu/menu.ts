@@ -3,6 +3,7 @@ import type { Game } from '../../core/game';
 import { yard } from '../../content/data/yard';
 import { controlsHelp } from '../../content/text/controls';
 import { loadingTips } from '../../content/text/tips';
+import { applyPreset, difficulty, DIFFICULTY_PRESETS, type DeathPenalty } from '../../content/data/difficulty';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from './settings';
 import { MENU_CSS } from './style';
 
@@ -21,7 +22,7 @@ export interface MenuStation {
   go(): void; // teleport the player there
 }
 type Mode = 'title' | 'playing' | 'paused';
-type Page = 'main' | 'stations' | 'controls' | 'settings';
+type Page = 'main' | 'stations' | 'controls' | 'settings' | 'difficulty';
 
 const BLEND_IN_S = 1.8;
 const BLEND_OUT_S = 2.2;
@@ -99,7 +100,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     nav.replaceChildren();
     if (mode === 'title') nav.append(button('Play', () => play(), 'primary'));
     else nav.append(button('Resume', () => resume(), 'primary'));
-    nav.append(button('Jump to station', () => showPage('stations')), button('Controls', () => showPage('controls')), button('Settings', () => showPage('settings')));
+    nav.append(button('Jump to station', () => showPage('stations')), button('Controls', () => showPage('controls')), button('Settings', () => showPage('settings')), button('Difficulty', () => showPage('difficulty')));
     if (mode === 'paused') nav.append(button('Quit to title', () => quitToTitle(), 'quiet'));
     root.classList.toggle('is-paused', mode === 'paused');
   };
@@ -138,9 +139,12 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     } else if (p === 'settings') {
       panelTitle.textContent = 'Settings';
       body.append(settingsForm());
+    } else if (p === 'difficulty') {
+      panelTitle.textContent = 'Difficulty';
+      body.append(difficultyForm());
     }
   };
-  const pageAct: Record<Page, string> = { main: '', stations: 'jump-to-station', controls: 'controls', settings: 'settings' };
+  const pageAct: Record<Page, string> = { main: '', stations: 'jump-to-station', controls: 'controls', settings: 'settings', difficulty: 'difficulty' };
   panel.querySelector('.mn-x')!.addEventListener('click', () => {
     sfx('ui_close');
     showPage('main');
@@ -216,6 +220,74 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       showPage('settings');
     }, 'quiet small');
     f.append(reset);
+    return f;
+  };
+
+  /** Difficulty lives in the save (systems' 'difficulty' section), not in localStorage; edits apply live. */
+  const difficultyForm = () => {
+    const f = document.createElement('div');
+    f.className = 'mn-settings';
+    const seg = (label: string, options: [string, string][], get: () => string, set: (v: string) => void) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `<span>${label}</span><div class="mn-seg" role="radiogroup" aria-label="${label}"></div>`;
+      const box = row.querySelector('.mn-seg')!;
+      for (const [v, text] of options) {
+        const l = document.createElement('label');
+        l.innerHTML = `<input type="radio" name="mn-${label}" value="${v}"><span>${text}</span>`;
+        const r = l.querySelector('input')!;
+        r.checked = get() === v;
+        r.onchange = () => {
+          set(v);
+          sfx('ui_click');
+        };
+        box.append(l);
+      }
+      f.append(row);
+    };
+    const custom = () => (difficulty.preset = 'custom');
+    seg('Preset', [['story', 'Story'], ['survivor', 'Survivor'], ['hardcore', 'Hardcore']], () => difficulty.preset, (v) => {
+      applyPreset(v as keyof typeof DIFFICULTY_PRESETS);
+      showPage('difficulty'); // re-read every control
+    });
+    for (const [key, label] of [['hungerDrain', 'Hunger drain'], ['thirstDrain', 'Thirst drain'], ['fatigueDrain', 'Fatigue drain']] as const) {
+      const row = document.createElement('label');
+      row.className = 'row';
+      row.innerHTML = `<span>${label}</span><input type="range" min="0" max="2" step="0.05"><output></output>`;
+      const input = row.querySelector('input')!;
+      const out = row.querySelector('output')!;
+      input.value = String(difficulty[key]);
+      out.textContent = `${Math.round(difficulty[key] * 100)}%`;
+      input.oninput = () => {
+        difficulty[key] = Number(input.value);
+        out.textContent = `${Math.round(difficulty[key] * 100)}%`;
+        custom();
+      };
+      f.append(row);
+    }
+    for (const [key, label] of [['infection', 'Infection'], ['starvationDamage', 'Starvation damage']] as const) {
+      const row = document.createElement('label');
+      row.className = 'row toggle';
+      row.innerHTML = `<span>${label}</span><input type="checkbox"><i></i>`;
+      const input = row.querySelector('input')!;
+      input.checked = difficulty[key];
+      input.onchange = () => {
+        difficulty[key] = input.checked;
+        sfx('ui_click');
+        custom();
+      };
+      f.append(row);
+    }
+    seg('On death', [['story', 'Keep all'], ['survivor', 'Drop bag'], ['hardcore', 'Hardcore']], () => difficulty.deathPenalty, (v) => {
+      difficulty.deathPenalty = v as DeathPenalty;
+      custom();
+    });
+    if (difficulty.preset === 'custom') {
+      const note = document.createElement('div');
+      note.className = 'mn-note';
+      note.textContent = 'Custom — saved with your game.';
+      f.append(note);
+    }
     return f;
   };
 
