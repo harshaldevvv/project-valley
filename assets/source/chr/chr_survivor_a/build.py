@@ -73,8 +73,11 @@ for X, s in vrig.SIDES:
            n=8, sw=JEANS, cap1=False)
     vrig.boot(b, s, BOOT, SOLE, top=0.25, r_top=0.056)
 
-# ---------------- backpack, straps, jacket details
+# ---------------- backpack (separate skinned node chr_survivor_a_BACKPACK: hidden when no pack is equipped),
+# straps (part of the pack), jacket details
 PW = lambda c: blend(c.z, [(1.05, dict(spine=0.6, chest=0.4)), (1.25, dict(chest=1))])  # noqa: E731
+body = b
+b = ch.part("BACKPACK")
 b.box((0, -0.205, 1.25), (0.30, 0.15, 0.36), PACK, PW, bevel=0.025)
 b.box((0, -0.20, 1.42), (0.28, 0.17, 0.05), TRIM, PW, bevel=0.015)  # lid
 b.box((0, -0.29, 1.2), (0.2, 0.04, 0.16), TRIM, PW, bevel=0.012)  # front pocket
@@ -83,6 +86,8 @@ for s in (1, -1):
     for path in ([(s * 0.10, 0.128, 1.12), (s * 0.108, 0.13, 1.3), (s * 0.115, 0.075, 1.47), (s * 0.12, -0.035, 1.505), (s * 0.11, -0.135, 1.42)],):
         rings = [dict(c=p, r=(0.022, 0.006, 0.006)) for p in path]
         b.loft(rings, n=4, sq=8, rot=math.pi / 4, sw=STRAP, w=PW, fwd=None, side=(1, 0, 0))
+b = body
+for s in (1, -1):
     b.box((s * 0.08, 0.124, 1.33), (0.075, 0.016, 0.085), TRIM, dict(chest=1), bevel=0.006)  # chest pockets
     b.box((s * 0.115, 0.11, 1.06), (0.08, 0.02, 0.07), TRIM, dict(hips=0.5, spine=0.5), bevel=0.006)  # hip pockets
 b.box((0, 0.124, 1.22), (0.012, 0.008, 0.48), "metal_dark", lambda c: blend(c.z, TW))  # zipper
@@ -384,6 +389,90 @@ def land(t):
     return keys(t, [(0.0, fall(0), 0), (0.07, imp, 0.3), (0.2, {**imp, "hip": (0, 0, -0.18)}), (0.5, IDLE0, 0)])
 
 
+# ---------- carry poses (upper-body layer: spine and up; legs come from locomotion) + short use clips
+def carry(t, **grips):
+    b_ = S2(TAU * t / 2)
+    P = stance(stagger=0.1, z=-0.02)
+    P.update(spine=(-2, 0, 0), chest=(-1 + 0.6 * b_, 0, 0), neck=(2, 0, 0), head=(3, 0, 0), **grips)
+    return P
+
+
+def rifle_low(t):  # stock in the shoulder pocket, muzzle ~40 deg down and ~15 deg across the body, both hands on
+    return carry(t, **rifle(g=(0.11, 0.27, 1.26), f=norm((-0.26, 0.72, -0.64)), u=norm((-0.1, 0.62, 0.78))))
+
+
+def rifle_sprint(t):  # muzzle up across the chest
+    return carry(t, **rifle(g=(0.13, 0.2, 1.18), f=norm((-0.5, 0.35, 0.8)), u=norm((-0.75, -0.2, -0.3)), lh=(0.0, 0.24, 0.0)))
+
+
+def pistol_low(t):  # right arm ~20 deg forward of hanging, elbow soft, muzzle at the ground ~1.5 m ahead; left arm free
+    P = carry(t, gR=(0.21, 0.2, 0.98), gRf=norm((0, 0.5, -0.87)), gRu=norm((0, 0.87, 0.5)), eR=(0.6, -1, 0))
+    P["aL"] = IDLE0["aL"]
+    return P
+
+
+def use_bandage(t):  # left forearm held out palm up, right hand wraps it twice, head down
+    c = (-0.06, 0.24, 1.16)
+    a = TAU * 2 * smooth(min(1.0, t / 1.9))
+    gr = (c[0] + 0.02 + 0.06 * math.sin(a), c[1] + 0.02, c[2] + 0.06 * math.cos(a))
+    k = keys(t, [(0, dict(**IK0, head=(0, 0, 0)), 0), (0.3, dict(gL=(-0.03, 0.3, 1.14), gLf=norm((0.7, 0.6, 0)), gLu=(0, 0, 1), eL=(-1, -0.5, -0.4),
+                                                                       gR=gr, gRf=norm((-0.8, 0.3, -0.2)), gRu=(0, 1, 0), eR=(1, -0.6, -0.5), head=(-22, 0, 0)), 0),
+                 (1.7, dict(gL=(-0.03, 0.3, 1.14), gLf=norm((0.7, 0.6, 0)), gLu=(0, 0, 1), eL=(-1, -0.5, -0.4), head=(-22, 0, 0)), 0),
+                 (2.0, dict(**IK0, head=(0, 0, 0)), 0)])
+    if 0.3 < t < 1.7:
+        k["gR"] = gr
+    P = stance(stagger=0.08)
+    P.update(k)
+    return P
+
+
+def eat(t):  # two bites; the food item rides on SOCKET_hand_R
+    mouth = dict(gR=(0.04, 0.13, 1.6), gRf=norm((-0.5, 0.3, 0.8)), gRu=norm((0, 1, 0.2)), eR=(1, -0.3, -0.7))
+    low = dict(gR=(0.14, 0.26, 1.22), gRf=norm((0, 0.7, 0.7)), gRu=norm((0, -0.7, 0.7)), eR=(0.8, -0.3, -0.9))
+    k = keys(t, [(0, dict(gR=IK0["gR"], gRf=IK0["gRf"], gRu=IK0["gRu"], eR=IK0["eR"], head=(0, 0, 0)), 0), (0.35, {**low, "head": (-6, 0, 0)}, 0),
+                 (0.6, {**mouth, "head": (-10, 0, 0)}, 0), (0.85, {**low, "head": (-4, 0, 0)}, 0), (1.15, {**mouth, "head": (-10, 0, 0)}, 0),
+                 (1.45, {**low, "head": (-4, 0, 0)}, 0), (2.0, dict(gR=IK0["gR"], gRf=IK0["gRf"], gRu=IK0["gRu"], eR=IK0["eR"], head=(0, 0, 0)), 0)])
+    P = stance(stagger=0.08)
+    P.update(k)
+    P["aL"] = IDLE0["aL"]
+    return P
+
+
+def drink(t):  # bottle (along the thumb axis) tipped to the mouth, head back
+    sip = dict(gR=(0.05, 0.13, 1.58), gRf=norm((-0.6, 0.2, 0.75)), gRu=norm((-0.2, -0.75, 0.6)), eR=(1, 0, -0.5), head=(18, 0, 0), neck=(6, 0, 0))
+    up = dict(gR=(0.12, 0.24, 1.3), gRf=norm((0, 0.6, 0.8)), gRu=norm((0, -0.2, 1)), eR=(0.8, -0.3, -0.9), head=(0, 0, 0), neck=(0, 0, 0))
+    rest = dict(gR=IK0["gR"], gRf=IK0["gRf"], gRu=IK0["gRu"], eR=IK0["eR"], head=(0, 0, 0), neck=(0, 0, 0))
+    k = keys(t, [(0, rest, 0), (0.4, up, 0.5), (0.7, sip, 0), (1.4, sip, 0), (1.65, up, 0.5), (2.0, rest, 0)])
+    P = stance(stagger=0.08)
+    P.update(k)
+    P["aL"] = IDLE0["aL"]
+    return P
+
+
+# ---------- mocap locomotion (retarget.build_clips): name, source under assets/mocap/, kind, options
+H = 12  # 100STYLE actors look at the floor: lift the gaze
+MOCAP = [
+    ("idle", "100style/Neutral/Neutral_ID", "loop", dict(period=True, min_T=3.0, max_T=6.0, lo=0.05, hi=0.45, head=H)),
+    ("idle_b", "100style/Neutral/Neutral_ID", "loop", dict(period=True, min_T=3.0, max_T=6.0, lo=0.5, hi=0.95, head=H)),
+    ("idle_c", "100style/Depressed/Depressed_ID", "loop", dict(period=True, min_T=3.0, max_T=6.0, head=8)),
+    ("walk", "100style/Neutral/Neutral_FW", "loop", dict(warp=(1.6, 1.35, 2, 1.1), head=H)),
+    ("run", "100style/Neutral/Neutral_FR", "loop", dict(warp=(3.5, 1.15, 6, 1.3), arms=1.3, head=H)),
+    ("sprint", "100style/Neutral/Neutral_FR", "loop", dict(warp=(5.75, 1.55, 20, 1.7), arms=1.9, head=H + 8)),
+    ("walk_back", "100style/Neutral/Neutral_BW", "loop", dict(face=True, want=(0, -1), warp=(1.2, 1.2, 0, 1.0, (0, -1)), head=H)),
+    ("run_back", "100style/Neutral/Neutral_BR", "loop", dict(face=True, want=(0, -1), warp=(2.0, 1.15, 0, 1.0, (0, -1)), head=H)),
+    ("strafe_right", "100style/Neutral/Neutral_SW", "loop", dict(face=True, want=(1, 0), warp=(1.0, 1.2, 0, 1.0, (1, 0)), head=H)),
+    ("strafe_left", "100style/Neutral/Neutral_SW", "loop", dict(face=True, want=(-1, 0), foot="R", warp=(1.0, 1.2, 0, 1.0, (-1, 0)), head=H)),
+    ("run_strafe_right", "100style/Neutral/Neutral_SR", "loop", dict(face=True, want=(1, 0), warp=(2.4, 1.15, 0, 1.0, (1, 0)), head=H)),
+    ("run_strafe_left", "100style/Neutral/Neutral_SR", "loop", dict(face=True, want=(-1, 0), warp=(2.4, 1.15, 0, 1.0, (-1, 0)), head=H)),
+    ("crouch_idle", "100style/Crouched/Crouched_ID", "loop", dict(period=True, min_T=2.5, max_T=5.0, head=H)),
+    ("crouch_walk", "100style/Crouched/Crouched_FW", "loop", dict(warp=(1.5, 1.3, 0, 1.0), head=H)),
+    ("turn_left_90", "cmu/69_13", "oneshot", dict(turn=90, src_max=60)),
+    ("turn_right_90", "cmu/69_13", "oneshot", dict(turn=-90, src_max=60)),
+]
+UPPER_BODY = ["aim_pistol", "aim_rifle", "rifle_low", "rifle_sprint", "pistol_low", "fire_pistol", "fire_rifle", "reload_pistol",
+              "reload_rifle", "draw_pistol", "draw_rifle", "holster", "holster_rifle", "melee_swing", "melee_heavy", "shove",
+              "use_bandage", "eat", "drink"]
+
 CLIPS = [  # name, duration s, fn, loop
     ("idle", 3.0, idle, True), ("walk", WALK["T"], lambda t: gait(t, WALK), True), ("run", RUN["T"], lambda t: gait(t, RUN), True),
     ("sprint", SPRINT["T"], lambda t: gait(t, SPRINT), True), ("crouch_idle", 2.0, crouch, True),
@@ -393,7 +482,9 @@ CLIPS = [  # name, duration s, fn, loop
     ("reload_rifle", 2.4, reload_rifle, False), ("draw_pistol", 0.5, draw_pistol, False), ("holster", 0.5, holster, False),
     ("draw_rifle", 0.6, draw_rifle, False), ("holster_rifle", 0.6, holster_rifle, False), ("melee_swing", 0.7, melee_swing, False),
     ("melee_heavy", 1.1, melee_heavy, False), ("shove", 0.65, shove, False), ("hit_react", 0.45, hit_react, False),
-    ("death", 1.8, death, False), ("drive_sit", 2.4, drive_sit, True), ("interact_search", 2.4, interact_search, True)]
+    ("death", 1.8, death, False), ("drive_sit", 2.4, drive_sit, True), ("interact_search", 2.4, interact_search, True),
+    ("rifle_low", 2.0, rifle_low, True), ("rifle_sprint", 2.0, rifle_sprint, True), ("pistol_low", 2.0, pistol_low, True),
+    ("use_bandage", 2.0, use_bandage, False), ("eat", 2.0, eat, False), ("drink", 2.0, drink, False)]
 
 
 def cyc(T, n=6):
@@ -403,9 +494,10 @@ def cyc(T, n=6):
 SHEETS = {  # `blender -b --python build.py -- --sheets 1` (Workbench, ~1 min)
     "turnaround": [(None, [0], y, 8, 3.3, 0.92) for y in (0, 90, 180, 35)] + [(None, [0], 25, 5, 0.9, 1.68), (None, [0], 0, 8, 3.3, 0.92, None, 1),
                                                                             (None, [0], 0, 8, 3.3, 0.92, None, 2), ("idle", [0], 180, 22, 2.6, 1.3)],
-    "locomotion": [("walk", cyc(WALK["T"]), 90, 8, 3.3, 0.9), ("run", cyc(RUN["T"]), 90, 8, 3.3, 0.9), ("sprint", cyc(SPRINT["T"]), 90, 8, 3.3, 0.9),
-                   ("crouch_walk", cyc(CWALK["T"]), 90, 8, 3.3, 0.8), ("walk", cyc(WALK["T"], 3), 30, 8, 3.3, 0.9), ("idle", [0], 30, 8, 3.3, 0.9),
-                   ("crouch_idle", [0], 30, 8, 3.3, 0.8), ("jump", [0.12, 0.22], 90, 8, 3.3, 0.9), ("fall", [0], 30, 8, 3.3, 0.9), ("land", [0.07], 30, 8, 3.3, 0.9)],
+    "locomotion": [("jump", [0.12, 0.22, 0.36], 90, 8, 3.3, 0.9), ("fall", [0], 30, 8, 3.3, 0.9), ("land", [0.07, 0.2], 30, 8, 3.3, 0.9)],
+    "carry": [("rifle_low", [0], y, 5, 2.4, 1.2, "rifle") for y in (35, 90, 180)] + [("rifle_sprint", [0], y, 5, 2.4, 1.2, "rifle") for y in (35, 90)]
+             + [("pistol_low", [0], y, 5, 2.4, 1.2, "pistol") for y in (35, 90)] + [("aim_rifle", [0], 90, 5, 2.4, 1.2, "rifle")]
+             + [("use_bandage", [0.3, 0.8, 1.3], 30, 5, 2.4, 1.2), ("eat", [0.6, 1.15], 30, 5, 2.4, 1.2), ("drink", [0.4, 1.0], 30, 5, 2.4, 1.2)],
     "weapons": [("aim_pistol", [0], y, 5, 2.2, 1.25, "pistol") for y in (35, 90, 180)] + [("aim_rifle", [0], y, 5, 2.2, 1.25, "rifle") for y in (35, 90, 180)]
                + [("fire_pistol", [0.035], 90, 5, 2.2, 1.25, "pistol"), ("fire_rifle", [0.03], 90, 5, 2.2, 1.25, "rifle"),
                   ("draw_pistol", [0.18, 0.32], 40, 5, 2.4, 1.1, "pistol"), ("draw_rifle", [0.2, 0.4], 40, 5, 2.4, 1.1, "rifle"),
@@ -417,9 +509,23 @@ SHEETS = {  # `blender -b --python build.py -- --sheets 1` (Workbench, ~1 min)
 }
 
 if __name__ == "__main__":
+    import retarget  # noqa: E402
+    MC = retarget.build_clips(vrig.ROOT, MOCAP)
+    mocap_names = {m[0] for m in MC}
     for name, dur, fn, loop in CLIPS:
-        ch.clip(name, dur, fn, loop)
+        if name not in mocap_names:  # mocap replaces the code-authored version of the same clip
+            ch.clip(name, dur, fn, loop)
+    for name, frames, loop, meta in MC:
+        ch.clip_frames(name, frames, loop)
+        print("MOCAP", name, meta)
+    meta = {m[0]: m[3] for m in MC}
+    for n in UPPER_BODY:
+        meta.setdefault(n, {})["upperBody"] = True
+    vrig.write_anim_meta(ch.id, meta)
+    CLIPS = [c for c in CLIPS if c[0] not in mocap_names] + [
+        (n, len(f) / 30, (lambda fr: lambda t: fr[round(t * 30) % len(fr)])(f), lp) for n, f, lp, _ in MC]
     if "--sheets" in sys.argv:
         vrig.preview_sheets(ch, CLIPS, SHEETS)
+        vrig.preview_sheets(ch, CLIPS, vrig.mocap_sheets(MC), cols=10, size=240, main=False)
     ch.export()
     ch.report()

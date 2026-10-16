@@ -301,11 +301,12 @@
     "url": "/assets/models/chr/chr_survivor_a.glb",
     "category": "chr",
     "tris": {
-      "chr_survivor_a_LOD0": 1882,
-      "chr_survivor_a_LOD1": 934,
-      "chr_survivor_a_LOD2": 353
+      "chr_survivor_a_LOD0": 1650,
+      "chr_survivor_a_LOD1": 818,
+      "chr_survivor_a_LOD2": 311,
+      "chr_survivor_a_BACKPACK": 232
     },
-    "bytes": 518580
+    "bytes": 834896
   },
   "wpn_knife_a": {
     "url": "/assets/models/wpn/wpn_knife_a.glb",
@@ -348,7 +349,7 @@
       "zmb_shambler_a_LOD1": 717,
       "zmb_shambler_a_LOD2": 282
     },
-    "bytes": 246640
+    "bytes": 638476
   },
   "chr_arms_fp": {
     "url": "/assets/models/chr/chr_arms_fp.glb",
@@ -366,7 +367,7 @@
       "zmb_civilian_f_a_LOD1": 818,
       "zmb_civilian_f_a_LOD2": 320
     },
-    "bytes": 82056
+    "bytes": 82052
   },
   "zmb_soldier_a": {
     "url": "/assets/models/zmb/zmb_soldier_a.glb",
@@ -376,7 +377,7 @@
       "zmb_soldier_a_LOD1": 950,
       "zmb_soldier_a_LOD2": 360
     },
-    "bytes": 90336
+    "bytes": 90328
   },
   "zmb_worker_a": {
     "url": "/assets/models/zmb/zmb_worker_a.glb",
@@ -386,6 +387,64 @@
       "zmb_worker_a_LOD1": 841,
       "zmb_worker_a_LOD2": 336
     },
-    "bytes": 84560
+    "bytes": 84556
+  },
+  "wpn_crowbar_a": {
+    "url": "/assets/models/wpn/wpn_crowbar_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_crowbar_a_LOD0": 216,
+      "wpn_crowbar_a_LOD1": 108
+    },
+    "bytes": 10960
+  },
+  "wpn_hammer_a": {
+    "url": "/assets/models/wpn/wpn_hammer_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_hammer_a_LOD0": 316,
+      "wpn_hammer_a_LOD1": 150
+    },
+    "bytes": 13600
+  },
+  "item_backpack_generic": {
+    "url": "/assets/models/item/item_backpack_generic.glb",
+    "category": "item",
+    "tris": {
+      "item_backpack_generic_LOD0": 288
+    },
+    "bytes": 10056
+  },
+  "item_bag_soft": {
+    "url": "/assets/models/item/item_bag_soft.glb",
+    "category": "item",
+    "tris": {
+      "item_bag_soft_LOD0": 156
+    },
+    "bytes": 6768
+  },
+  "item_bottle": {
+    "url": "/assets/models/item/item_bottle.glb",
+    "category": "item",
+    "tris": {
+      "item_bottle_LOD0": 188
+    },
+    "bytes": 6940
+  },
+  "item_box_small": {
+    "url": "/assets/models/item/item_box_small.glb",
+    "category": "item",
+    "tris": {
+      "item_box_small_LOD0": 80
+    },
+    "bytes": 5116
+  },
+  "item_can": {
+    "url": "/assets/models/item/item_can.glb",
+    "category": "item",
+    "tris": {
+      "item_can_LOD0": 232
+    },
+    "bytes": 7404
   }
 }

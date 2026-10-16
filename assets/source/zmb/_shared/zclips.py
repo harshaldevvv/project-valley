@@ -138,3 +138,37 @@ SHEETS = {  # `blender -b --python build.py -- --sheets 1`
               ("z_death", [0.35, 0.5, 0.9, 1.5], 90, 15, 3.4, 0.6), ("z_crawl", cyc(CRAWL_T, 4), 90, 15, 3.4, 0.4)],
 }
 
+
+
+# =============================================================================== mocap clips (retarget.build_clips)
+# name, source under assets/mocap/ (100STYLE CC BY 4.0, CMU via cgspeed BVH), kind, options. Native paces fit the game's
+# zombie speeds (wander ~0.5, chase ~1.3 m/s); play at authored speed x timeScale (anim/zmb_shambler_a.json).
+S100 = "100style/{0}/{0}_{1}"
+MOCAP = [
+    ("z_walk", S100.format("Zombie", "FW"), "loop", dict(max_T=3)),          # 100STYLE Zombie
+    ("z_walk_b", "cmu/104_41", "loop", {}),                                  # CMU 104_41 ZombieWalk: arms raised
+    ("z_walk_c", "cmu/120_22", "loop", dict(foot="R", face_blend=0.6)),  # CMU 120_22 hunched
+    ("z_walk_d", "cmu/104_03", "loop", {}),                                  # CMU 104_03 Frankenstein walk
+    ("z_walk_limp", S100.format("LimpLeft", "FW"), "loop", dict(max_T=3)),
+    ("z_walk_limp_r", S100.format("LimpRight", "FW"), "loop", dict(max_T=3)),
+    ("z_walk_drag", S100.format("DragLeftLeg", "FW"), "loop", dict(max_T=3, face_blend=0.6)),
+    ("z_walk_drag_r", S100.format("DragRightLeg", "FW"), "loop", dict(max_T=3, face_blend=0.6)),
+    ("z_walk_drunk", S100.format("Drunk", "FW"), "loop", dict(max_T=3)),
+    ("z_walk_old", S100.format("Old", "FW"), "loop", dict(max_T=3)),
+    ("z_walk_bent", S100.format("BentForward", "FW"), "loop", dict(max_T=3)),
+    ("z_run", S100.format("Zombie", "FR"), "loop", {}),                      # lurching chase
+    ("z_run_b", S100.format("Drunk", "FR"), "loop", dict(face_blend=0.6)),
+    ("z_idle", S100.format("Zombie", "ID"), "loop", dict(period=True, min_T=3.0, max_T=6.0)),
+    ("z_idle_b", S100.format("Depressed", "ID"), "loop", dict(period=True, min_T=3.0, max_T=6.0)),
+    ("z_idle_c", S100.format("Old", "ID"), "loop", dict(period=True, min_T=3.0, max_T=6.0)),
+    ("z_crawl_b", "cmu/111_03", "loop", dict(face_blend=1.0, period=True, min_T=1.0, max_T=3.0, lo=0.15, hi=0.6, min_speed=0.12)),  # hands and knees
+    ("z_stagger", "cmu/105_59", "oneshot", dict(range=(12, 62))),            # CMU 105_59 small stumble
+]
+
+
+def mocap_clips(root):
+    import os
+    import sys
+    sys.path.insert(0, os.path.join(root, "tools", "blender"))
+    import retarget
+    return retarget.build_clips(root, MOCAP)

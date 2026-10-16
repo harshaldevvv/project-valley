@@ -96,12 +96,22 @@ b.paint(lambda c, n: c.z < 0.75 and c.y > 0.04 and h(c, 11) > 0.6, "mud", only={
 ch.finish(lods=(0.5, 0.2))
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "_shared"))
-from zclips import CLIPS, SHEETS  # noqa: E402
+from zclips import CLIPS, SHEETS, mocap_clips  # noqa: E402
 
 if __name__ == "__main__":
+    MC = mocap_clips(vrig.ROOT)
+    mocap_names = {m[0] for m in MC}
     for name, dur, fn, loop in CLIPS:
-        ch.clip(name, dur, fn, loop)
+        if name not in mocap_names:  # mocap replaces the code-authored version of the same clip
+            ch.clip(name, dur, fn, loop)
+    for name, frames, loop, meta in MC:
+        ch.clip_frames(name, frames, loop)
+        print("MOCAP", name, meta)
+    vrig.write_anim_meta(ch.id, {m[0]: m[3] for m in MC})
+    CLIPS = [c for c in CLIPS if c[0] not in mocap_names] + [
+        (n, len(f) / 30, (lambda fr: lambda t: fr[round(t * 30) % len(fr)])(f), lp) for n, f, lp, _ in MC]
     if "--sheets" in sys.argv:
         vrig.preview_sheets(ch, CLIPS, SHEETS)
+        vrig.preview_sheets(ch, CLIPS, vrig.mocap_sheets(MC), cols=10, size=240, main=False)
     ch.export()
     ch.report()

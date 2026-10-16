@@ -270,14 +270,20 @@ class Character:
         self.clips = []
 
     # ---------- mesh finishing ----------
-    def _mesh_object(self, name, bm):
+    def part(self, name):
+        """Extra skinned mesh `<id>_<name>` (e.g. BACKPACK) the game can hide; single LOD, same palette and rig."""
+        self.parts = getattr(self, "parts", {})
+        self.parts[name] = Body()
+        return self.parts[name]
+
+    def _mesh_object(self, name, bm, body=None):
         me = bpy.data.meshes.new(name)
         bm.to_mesh(me)
         ob = bpy.data.objects.new(name, me)
         bpy.context.scene.collection.objects.link(ob)
         for b in BONES:
             ob.vertex_groups.new(name=b)
-        for s in self.body.swatches:
+        for s in (body or self.body).swatches:
             me.materials.append(bpy.data.materials.get("pal:" + s) or bpy.data.materials.new("pal:" + s))
         return ob
 
@@ -300,11 +306,18 @@ class Character:
             with bpy.context.temp_override(object=ob, active_object=ob):
                 bpy.ops.object.modifier_apply(modifier="dec")
             objs.append(ob)
-        for ob in objs:
+        extra = []
+        for name, body in getattr(self, "parts", {}).items():
+            bmesh.ops.remove_doubles(body.bm, verts=body.bm.verts, dist=1e-5)
+            ob = self._mesh_object(f"{self.id}_{name}", body.bm, body)
+            ob["_body"] = name
+            extra.append(ob)
+        for ob in objs + extra:
             me = ob.data
+            body = self.parts[ob["_body"]] if "_body" in ob else self.body
             uv = me.uv_layers.new(name="UVMap")
             for poly in me.polygons:
-                sw = self.body.swatches[poly.material_index]
+                sw = body.swatches[poly.material_index]
                 for li in poly.loop_indices:
                     z = me.vertices[me.loops[li].vertex_index].co.z
                     u, v = vlib.swatch_uv(sw, min(max(0.25 + z / 2.4, 0), 1))
@@ -313,7 +326,9 @@ class Character:
             me.materials.append(vlib._palette_material())
             ob.parent = self.arm
             ob.modifiers.new("arm", "ARMATURE").object = self.arm
-        self.stats = {ob.name: sum(len(p.vertices) - 2 for p in ob.data.polygons) for ob in objs}
+        self.stats = {ob.name: sum(len(p.vertices) - 2 for p in ob.data.polygons) for ob in objs + extra}
+        for ob in extra:
+            del ob["_body"]
         # collider: standing capsule-ish box (the controller uses its own capsule; this is for picking/LOD sizing)
         c = bpy.data.meshes.new(f"{self.id}_COL_box")
         cb = bmesh.new()
@@ -452,8 +467,26 @@ class Character:
         return {"g" + X: back(g), "g" + X + "f": tuple(ci @ (qh @ a_r)), "g" + X + "u": tuple(ci @ (qh @ t_r)),
                 "e" + X: tuple(ci @ (el - mid).normalized())}
 
+    def basis(self, Wq, hip):
+        """World-relative-to-rest rotations {bone: Quaternion} + hips offset -> ({bone: basis quat}, hips basis loc)."""
+        out = {}
+        for name in BONES:
+            par = REST[name][2]
+            w = Wq.get(name, Quaternion())
+            loc = (Wq.get(par, Quaternion()).inverted() @ w) if par else w
+            R = self.Rq[name]
+            out[name] = R.inverted() @ loc @ R
+        return out, self.Rq["hips"].inverted() @ Vector(hip)
+
+    def clip_frames(self, name, frames, loop=False):
+        """Bake precomputed frames [(Wq, hip_offset)] (30 fps). Loops: frame n == frame 0 is appended."""
+        self._frames = frames
+        n = len(frames) if loop else len(frames) - 1
+        return self.clip(name, n / FPS, lambda t: ("__frames__", round(t * FPS)), loop)
+
     def apply(self, P):
-        rots, hl, _ = self.solve(P)
+        """P: params dict, or a precomputed frame (Wq, hip_offset)."""
+        rots, hl = self.basis(*P) if isinstance(P, tuple) else self.solve(P)[:2]
         for name, q in rots.items():
             self.arm.pose.bones[name].rotation_quaternion = q
         self.arm.pose.bones["hips"].location = hl
@@ -469,7 +502,11 @@ class Character:
         prev = {}
         for f in range(n + 1):
             t = (f % n if loop else f) / FPS
-            rots, hl, _ = self.solve(fn(t))
+            P = fn(t)
+            if isinstance(P, tuple) and P[0] == "__frames__":
+                rots, hl = self.basis(*self._frames[P[1] % len(self._frames)])
+            else:
+                rots, hl, _ = self.solve(P)
             for b, q in rots.items():
                 if b in prev and prev[b].dot(q) < 0:
                     q = -q
@@ -525,7 +562,8 @@ class Character:
         sc.world.color = (0.32, 0.34, 0.36)
         for ob in sc.objects:
             if not ob.name.startswith("_proxy"):
-                ob.hide_render = not ob.name.endswith(f"_LOD{lod}") and ob.name != "_ground"
+                part = ob.type == "MESH" and ob.name.startswith(self.id + "_") and ob.name[len(self.id) + 1:] in getattr(self, "parts", {})
+                ob.hide_render = not (ob.name.endswith(f"_LOD{lod}") or ob.name == "_ground" or (part and lod == 0))
         cam = bpy.data.objects.get("_cam")
         if not cam:
             cam = bpy.data.objects.new("_cam", bpy.data.cameras.new("_cam"))
@@ -638,13 +676,24 @@ def _proxy_mesh(name, parts, parent):
     return ob
 
 
-def preview_sheets(ch, clips, sheets, size=300, cols=6):
+def mocap_sheets(mc):
+    """Per mocap clip: 10 side frames, 5 front, 5 three-quarter across the clip (loops: one cycle)."""
+    out = {}
+    for name, frames, loop, _ in mc:
+        T = (len(frames) if loop else len(frames) - 1) / FPS
+        ts = lambda k: [round(T * i / (k if loop else k - 1), 4) for i in range(k)]  # noqa: E731
+        low = 0.5 if "crawl" in name else 0.9
+        out["m_" + name] = [(name, ts(10), 90, 8, 3.3, low), (name, ts(5), 0, 8, 3.3, low), (name, ts(5), 35, 8, 3.3, low)]
+    return out
+
+
+def preview_sheets(ch, clips, sheets, size=300, cols=6, main=True):
     """Render assets/previews/<id>.png (idle 3/4) plus <id>_<name>.png strips.
     sheets: {name: [(clip, [times], yaw, pitch, dist, target_z, prop), ...]}; clip None = rest pose."""
     fns = {c[0]: c[2] for c in clips}
     out = os.path.join(ROOT, "assets", "previews")
-    first = clips[0]
-    ch.sheet(os.path.join(out, f"{ch.id}.png"), [(fns[first[0]], 0.0, ((0, 0, 0.9), (35, 8, 3.3), 0), 0)], 1, 512)
+    if main:
+        ch.sheet(os.path.join(out, f"{ch.id}.png"), [(fns[clips[0][0]], 0.0, ((0, 0, 0.9), (35, 8, 3.3), 0), 0)], 1, 512)
     for name, rows in sheets.items():
         cells = []
         for clip, times, yaw, pitch, dist, tz, *rest in rows:
@@ -653,6 +702,27 @@ def preview_sheets(ch, clips, sheets, size=300, cols=6):
             for t in times:
                 cells.append((fns[clip] if clip else None, t, ((0, 0, tz), (yaw, pitch, dist), 0), lod, prop))
         ch.sheet(os.path.join(out, f"{ch.id}_{name}.png"), cells, cols, size)
+
+
+def write_anim_meta(asset_id, meta):
+    """Measured clip data (speed m/s, cycle s, ...) -> src/content/data/anim/<id>.json, imported by anim.ts."""
+    import json
+    d = os.path.join(ROOT, "src", "content", "data", "anim")
+    os.makedirs(d, exist_ok=True)
+    with open(os.path.join(d, f"{asset_id}.json"), "w", encoding="utf-8") as f:
+        json.dump(meta, f, indent=2)
+        f.write("\n")
+
+
+def fk_positions(Wq, hip):
+    """Joint head positions for world rotations Wq and hips offset (armature space)."""
+    pos = {}
+    for name in BONES:
+        h, _, par = REST[name]
+        pos[name] = (pos[par] + Wq.get(par, Quaternion()) @ (h - REST[par][0])) if par else h.copy()
+        if name == "hips":
+            pos[name] = h + Vector(hip)
+    return pos
 
 
 def _frame(a, h):

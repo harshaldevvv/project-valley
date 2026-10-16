@@ -123,9 +123,16 @@ def finish_variant(ch, scale):
     import sys
     from zclips import CLIPS, SHEETS
     ch.finish(lods=(0.5, 0.2), scale=scale)
-    if "--sheets" in sys.argv:
-        vrig.preview_sheets(ch, CLIPS, {"turnaround": SHEETS["turnaround"],
-                                        "clips": [r for r in SHEETS["clips"] if r[0] in ("z_walk", "z_attack")]})
+    if "--sheets" in sys.argv:  # verify the shared mocap walk and the attack on this body
+        import retarget
+        from zclips import MOCAP
+        MC = retarget.build_clips(vrig.ROOT, [m for m in MOCAP if m[0] == "z_walk"])
+        clips = [c for c in CLIPS if c[0] != "z_walk"] + [(n, len(f) / 30, (lambda fr: lambda t: fr[round(t * 30) % len(fr)])(f), lp) for n, f, lp, _ in MC]
+        T = len(MC[0][1]) / 30
+        vrig.preview_sheets(ch, clips, {"turnaround": SHEETS["turnaround"],
+                                        "clips": [("z_walk", [round(T * i / 8, 3) for i in range(8)], 90, 8, 3.3, 0.9),
+                                                  ("z_walk", [0, round(T / 4, 3), round(T / 2, 3), round(3 * T / 4, 3)], 35, 8, 3.3, 0.9)]
+                                                 + [r for r in SHEETS["clips"] if r[0] == "z_attack"]})
     ch.export(animations=False)
     ch.report()
 
