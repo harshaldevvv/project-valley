@@ -354,9 +354,9 @@
     "url": "/assets/models/chr/chr_arms_fp.glb",
     "category": "chr",
     "tris": {
-      "chr_arms_fp_LOD0": 768
+      "chr_arms_fp_LOD0": 1212
     },
-    "bytes": 419536
+    "bytes": 430684
   },
   "zmb_civilian_f_a": {
     "url": "/assets/models/zmb/zmb_civilian_f_a.glb",

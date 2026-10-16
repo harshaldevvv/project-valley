@@ -1,0 +1,21 @@
+{
+ "size": 128,
+ "ids": [
+  "pistol_a",
+  "rifle_a",
+  "knife_a",
+  "mag_pistol_a",
+  "mag_rifle_a",
+  "ammo_9mm",
+  "ammo_762",
+  "bandage",
+  "canned_beans",
+  "water_bottle",
+  "wood_planks",
+  "nails",
+  "scrap_metal",
+  "cloth_rag",
+  "jacket_field",
+  "backpack_small"
+ ]
+}

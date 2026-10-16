@@ -144,13 +144,23 @@ def hand(b, X):
            n=6, fwd=p, side=t, sw=SKIN, w={ha: 1}, cap0=0.006, cap1=0.004)
     b.loft([dict(c=P(0.04, 0.032, 0.013), r=0.0125), dict(c=P(0.068, 0.04, 0.031), r=0.0115),
             dict(c=P(0.093, 0.044, 0.047), r=0.0102)], n=6, fwd=p, side=t, sw=SKIN, w={th: 1}, cap1=0.007)
-    # fingers: proximal + distal mitt blocks (4 fingers as one), curled C1 / C1+C2 toward the palm
+    # four separate fingers (QA-041: the single mitt read as a crumpled clump). Proximal phalanx on fingers_X,
+    # middle + distal phalanx (fixed 28 deg bend) on fingertips_X; index on the thumb side (+t), staggered lengths.
     K, J, T = REST[fi][0], REST[fi][1], REST[ft][1]
+    k = a.cross(p)
     d1, d2 = (J - K).normalized(), (T - J).normalized()
-    b.loft([dict(c=tuple(K - d1 * 0.01), r=(0.04, 0.0115)), dict(c=tuple(J + d1 * 0.004), r=(0.039, 0.011))],
-           n=8, fwd=p, side=t, sw=SKIN, w={fi: 1}, sq=3.5)
-    b.loft([dict(c=tuple(J - d2 * 0.008), r=(0.037, 0.0105)), dict(c=tuple(T), r=(0.034, 0.0095))],
-           n=8, fwd=p, side=t, sw=SKIN, w={ft: 1}, sq=3.5, cap1=0.005)
+    d3 = qrot(k, 28) @ d2
+    for dt, da, l1, l2, l3, r in ((0.029, 0.0, 0.046, 0.026, 0.02, 0.0098), (0.0095, 0.004, 0.05, 0.029, 0.021, 0.0102),
+                                  (-0.0095, 0.0, 0.047, 0.027, 0.02, 0.0098), (-0.028, -0.008, 0.04, 0.021, 0.017, 0.0088)):
+        k0 = K + t * dt + a * da
+        j0 = k0 + d1 * l1
+        m0 = j0 + d2 * l2
+        b.loft([dict(c=tuple(k0 - d1 * 0.012), r=(r, r * 1.05)), dict(c=tuple(k0 + d1 * 0.004), r=(r * 1.08, r * 1.12)),
+                dict(c=tuple(j0 + d1 * 0.003), r=(r * 0.95, r * 0.95))],
+               n=6, fwd=p, side=t, sw=SKIN, w={fi: 1}, sq=2.4, cap1=0.003)
+        b.loft([dict(c=tuple(j0 - d2 * 0.006), r=(r * 0.94, r * 0.92)), dict(c=tuple(m0), r=(r * 0.88, r * 0.85)),
+                dict(c=tuple(m0 + d3 * l3), r=(r * 0.78, r * 0.72))],
+               n=6, fwd=p, side=t, sw=SKIN, w={ft: 1}, sq=2.4, cap0=0.003, cap1=0.005)
 
 
 # --------------------------------------------------------------------------------------- rig object
@@ -401,9 +411,16 @@ PS = WPN["pistol"]["loc"]
 P_HIP = F((0.135, 0.36, -0.165), nrm(-0.035, 1, 0.025), nrm(-0.1, 0, 1))
 P_ADS_D = 0.40  # rear sight distance from the eye on the centre line
 P_ADS = F((0, P_ADS_D - PS["sight"][1], -PS["sight"][2]), (0, 1, 0), (0, 0, 1))
-# left hand wrapped under/around the right fist (thumb forward along the frame's left side)
-P_SUP = Lsock("SOCKET_support_L", (-0.022, 0.012, -0.03), nrm(0.15, 1, 0.12), nrm(0.75, -0.1, 0.65),
-              Le=(-0.5, -0.4, -1), Lo=(0.03, 0.04, 0), Lc=(8, 0, 0))
+def Lgrip(pos_l, a_l, t_l, **kw):
+    """Left fist around a pole along t_l (its 'thumb-up' axis) with the forearm along a_l (weapon-local)."""
+    a = Vector(a_l).normalized()
+    t = (Vector(t_l) - a * Vector(t_l).dot(a)).normalized()
+    return Lsock("SOCKET_support_L", pos_l, tuple(t), tuple(a.cross(t)), **kw)
+
+
+# QA-041: left fist wraps the front of the right fist around the same (raked) grip axis, forearm pointing
+# forward-in, palm on the right fingers, thumb forward along the frame's left side.
+P_SUP = Lgrip((-0.02, 0.016, -0.03), (0.5, 1, 0.12), (0, 0.32, 1), Le=(-0.7, -0.4, -1), Lo=(0.03, 0.03, -0.02), Lc=(-8, -12, 0))
 P_RE = (1, -0.3, -0.9)
 
 
@@ -488,9 +505,14 @@ def pistol_reload(t):
 # ---------------------------------------------------------------- rifle
 RS = WPN["rifle"]["loc"]
 R_HIP = F((0.15, 0.27, -0.205), nrm(-0.04, 1, 0.03), nrm(-0.12, 0, 1))
-R_ADS_D = 0.30
-R_ADS = F((0, R_ADS_D - RS["sight"][1], -RS["sight"][2]), (0, 1, 0), (0, 0, 1))
-R_SUP = Lsock("SOCKET_support_L", RS["support"], (0, 1, 0), nrm(0.45, 0, 1), Le=(-0.6, -0.1, -1), Lo=(0.06, 0.1, 0.02), Lc=(-12, -18, -6))
+R_ADS_D = 0.44  # QA-041: more eye relief, the dust cover sits small below the notch instead of filling the screen
+R_FRONT = (0.36, 0.008)  # front-sight ears: 0.36 m ahead of the rear notch, 8 mm higher -> tip the gun so both sit on the axis
+R_ADS = F((0, R_ADS_D, 0), (0, 1, 0), (0, 0, 1)).turned((1, 0, 0), -math.degrees(math.atan2(R_FRONT[1], R_FRONT[0])))
+R_ADS = F(R_ADS.g - R_ADS.d(RS["sight"]), R_ADS.f, R_ADS.u)  # rear notch exactly on the centre line at R_ADS_D
+# hand further forward on the handguard, shoulder dropped, elbow down: the sleeve comes up from the bottom-left
+# corner instead of lying across the lower quarter of the screen (QA-041 c)
+R_SUP = Lsock("SOCKET_support_L", (RS["support"][0], RS["support"][1] + 0.01, RS["support"][2]), (0, 1, 0), nrm(0.45, 0, 1),
+              Le=(-0.25, -0.3, -1), Lo=(0.06, 0.13, -0.05), Lc=(-12, -18, -6))
 R_RE = (1, -0.4, -0.7)
 
 
@@ -505,7 +527,7 @@ def rifle_idle(t):
 
 
 def rifle_ads(t):
-    return gun_pose(r_hold(R_ADS, Ro=(-0.02, -0.08, 0.04), Re=(1, -0.3, -0.45), Lo=(0.08, 0.1, 0.05), Le=(-0.5, -0.1, -1)))
+    return gun_pose(r_hold(R_ADS, Ro=(-0.02, -0.04, 0.04), Re=(1, -0.3, -0.45), Lo=(0.06, 0.12, -0.03), Le=(-0.3, -0.2, -1)))
 
 
 def rifle_fire(t):
@@ -555,14 +577,15 @@ def rifle_reload(t):
         (1.56, {**R.k(), **handle(0.0)}, 0),
         (1.72, {**R.turned((0, 0, 1), 2).k(), **handle(0.08)}, 0),
         (1.82, {**R.k(), **handle(0.0), "Lc": HALF}, 0.5),
-        (2.05, r_hold(R), 0.4),
+        (2.05, r_hold(R, Lo=(0.06, 0.13, 0.0)), 0.4),
         (2.4, r_hold(R_HIP), 0)])
     return gun_pose(k)
 
 
 # ---------------------------------------------------------------- knife (left hand free, camera space)
 K_IDLE = F((0.17, 0.34, -0.2), nrm(-0.3, 1, 0.55), nrm(0.15, -0.5, 1))
-L_GUARD = dict(Lw=(-0.18, 0.3, -0.27), La=nrm(0.3, 0.75, 0.6), Lt=nrm(0.45, -0.55, 0.7), Le=(-0.8, -0.2, -1), Lc=(0, 0, 0))
+# QA-041 b: loose guard fist low-left, forearm running into the bottom-left corner (no floating hand)
+L_GUARD = dict(Lw=(-0.2, 0.33, -0.3), La=nrm(0.45, 0.85, 0.35), Lt=nrm(0.1, -0.45, 0.9), Le=(-1, -0.2, -0.6), Lc=(18, 25, 6))
 K_RE = (1, -0.3, -0.8)
 
 
@@ -577,7 +600,7 @@ def knife_pose(k):
 def knife_idle(t):
     b, s = S2(TAU * t / 3), S2(TAU * t / 3 + 1.3)
     W = K_IDLE.turned((1, 0, 0), 1.0 * b, move=(0.002 * s, 0, 0.004 * b))
-    return knife_pose(k_hold(W, Lw=(-0.18, 0.3, -0.27 + 0.003 * s)))
+    return knife_pose(k_hold(W, Lw=(L_GUARD["Lw"][0], L_GUARD["Lw"][1], L_GUARD["Lw"][2] + 0.003 * s)))
 
 
 K_EV_LIGHT = {"hit": 0.2}
@@ -596,7 +619,7 @@ def knife_light(t):  # right-to-left slash, edge leading
 def knife_heavy(t):  # overhead stab
     raise_ = F((0.16, 0.3, 0.02), nrm(-0.1, 1, 0.6), nrm(0.3, -0.4, 1))
     hit = F((0.06, 0.44, -0.17), nrm(-0.1, 0.75, -1), nrm(0.2, 0.9, 0.6))
-    k = keys(t, [(0, k_hold(K_IDLE), 0), (0.3, k_hold(raise_, Re=(1, -0.5, 0.0), Lw=(-0.18, 0.31, -0.25)), 0),
+    k = keys(t, [(0, k_hold(K_IDLE), 0), (0.3, k_hold(raise_, Re=(1, -0.5, 0.0), Lw=(-0.2, 0.34, -0.28)), 0),
                  (0.42, k_hold(raise_.turned((1, 0, 0), 6, move=(0, -0.02, 0.01)), Re=(1, -0.5, 0.0)), 0.2),
                  (0.55, k_hold(hit, Re=(1, -0.2, 0.3)), 0), (0.66, k_hold(hit.turned((1, 0, 0), 3, move=(0, -0.01, 0)), Re=(1, -0.2, 0.3)), 0),
                  (0.9, k_hold(K_IDLE), 0)])
@@ -661,6 +684,7 @@ CLIPS = [  # name, duration, fn, loop, weapon, events
 
 # =============================================================================== preview (Workbench, FP camera)
 FOV = 85.0
+FOV_ADS_MUL = 0.8  # src/content/data/player.ts fovAdsMul: the game narrows FP FOV to 68 deg in ADS
 
 
 def setup_preview():
@@ -766,7 +790,7 @@ def sheet(out, cells, cols, w=480, h=270):
     imgs = []
     cam = bpy.context.scene.camera
     for weapon, clip, fn, t, *view in cells:
-        cam.data.angle_y = math.radians(FOV)
+        cam.data.angle_y = math.radians(FOV * (FOV_ADS_MUL if clip and clip.endswith("_ads") else 1))
         cam.location, cam.rotation_euler = (0, 0, 0), (math.pi / 2, 0, 0)
         if view:  # debug orbit: (target, from)
             tgt, frm = Vector(view[0][0]), Vector(view[0][1])
@@ -803,7 +827,22 @@ def previews():
              ("knife", "fp_knife_idle", knife_idle, 0), ("pistol", "fp_shove", shove, 0.22)]
     sheet(os.path.join(out, f"{ID}_framing.png"), cells, 2, 640, 360)
     sheet(os.path.join(out, f"{ID}.png"), [("rifle", "fp_rifle_idle", rifle_idle, 0)], 1, 1280, 720)
+    for w, n, f in (("rifle", "fp_rifle_ads", rifle_ads), ("pistol", "fp_pistol_ads", pistol_ads)):  # sight picture at 720p
+        sheet(os.path.join(out, f"{ID}_{w}_ads_720.png"), [(w, n, f, 0)], 1, 1280, 720)
     if only == "framing":
+        return
+    if only == "hands":  # close-ups of both hands, seen from beside the eye (grip check)
+        cells = []
+        for w, n, f, t in (("pistol", "fp_pistol_idle", pistol_idle, 0), ("pistol", "fp_pistol_ads", pistol_ads, 0),
+                           ("rifle", "fp_rifle_idle", rifle_idle, 0), ("rifle", "fp_rifle_ads", rifle_ads, 0),
+                           ("knife", "fp_knife_idle", knife_idle, 0), ("pistol", "fp_pistol_reload", pistol_reload, 0.98)):
+            arms.apply(f(t))
+            bpy.context.view_layer.update()
+            for X, eye in (("R", (0.1, 0.0, 0.05)), ("L", (-0.1, 0.0, 0.05)), ("R", (0.35, 0.3, -0.05))):
+                pb = arms.arm.pose.bones[f"hand_{X}"]
+                tgt = arms.arm.matrix_world @ ((pb.head + pb.tail) / 2)
+                cells.append((w, n, f, t, (tuple(tgt), eye)))
+        sheet(os.path.join(out, f"{ID}_hands.png"), cells, 6, 320, 240)
         return
     if only == "debug":
         V = [((0.05, 0.4, -0.15), (0.6, 0.35, 0.0)), ((0.05, 0.4, -0.15), (-0.5, 0.5, 0.1)), ((0.05, 0.4, -0.15), (0.1, 0.9, -0.3))]
