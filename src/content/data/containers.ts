@@ -19,7 +19,16 @@ export const CONTAINERS: Record<string, ContainerDef> = Object.fromEntries(list.
 
 /** Interaction reach for containers (QA-061): measured from the player's chest to the container's top centre,
  *  plus half its footprint, so big and small containers feel the same. */
-export const CONTAINER_INTERACT = { reach: 2.2, maxPointHeight: 1.2 };
+export const CONTAINER_INTERACT = {
+  reach: 2.2,
+  maxPointHeight: 1.2,
+  /** Bodies lie on the ground among fights: a short reach from the torso so they don't steal nearby prompts (QA-070). */
+  bodyReach: 1.4,
+  /** Interact point height above the body's ground position, m. */
+  bodyPointHeight: 0.3,
+  /** The interact picker measures from the player's chest (gameplay/interact: feet + 1.2 m); bodyReach is horizontal. */
+  chestHeight: 1.2,
+};
 
 /** Zombie variant -> body container type (variants not listed use body_zombie). */
 export const BODY_BY_VARIANT: Record<string, string> = { soldier: 'body_zombie_soldier' };

@@ -125,6 +125,9 @@ export async function installSystems(game: Game): Promise<void> {
     });
   };
 
+  /** Chest-to-point radius that gives `bodyReach` metres of horizontal reach to a body on the ground. */
+  const bodyRadius = (y: number) => Math.hypot(CONTAINER_INTERACT.bodyReach, CONTAINER_INTERACT.chestHeight - y);
+
   // World containers placed by the environment team. Interact point = top centre of the bounds (QA-061).
   const box = new Box3();
   const size = new Vector3();
@@ -134,7 +137,7 @@ export async function installSystems(game: Game): Promise<void> {
       continue;
     }
     let at = pl.position;
-    let radius = CONTAINER_INTERACT.reach;
+    let radius = pl.type.startsWith('body_') ? bodyRadius(pl.position.y) : CONTAINER_INTERACT.reach;
     if (!pl.type.startsWith('body_') && pl.object) {
       box.setFromObject(pl.object);
       if (!box.isEmpty()) {
@@ -150,7 +153,9 @@ export async function installSystems(game: Game): Promise<void> {
   const bodies = new Map<number, () => void>();
   game.events.on('zombieKilled', ({ id, variant, position }) => {
     if (bodies.has(id)) return;
-    bodies.set(id, containerInteract(`zbody_${id}`, BODY_BY_VARIANT[variant] ?? 'body_zombie', position.clone(), CONTAINER_INTERACT.reach));
+    const at = position.clone();
+    at.y = Math.min(at.y, CONTAINER_INTERACT.bodyPointHeight); // torso on the ground, not chest height
+    bodies.set(id, containerInteract(`zbody_${id}`, BODY_BY_VARIANT[variant] ?? 'body_zombie', at, bodyRadius(at.y)));
   });
   game.events.on('corpseRemoved', ({ id }) => {
     bodies.get(id)?.();
@@ -179,6 +184,13 @@ export async function installSystems(game: Game): Promise<void> {
   (window as unknown as { __lockpick: LockpickScreen }).__lockpick = lockpick; // Playwright/debug hook
 
   // Death closes every systems screen (QA-046/047): screen.close() emits uiScreen close, which releases Input.blocked.
+  // Taking damage interrupts lockpicking (QA-071); the pick is not consumed.
+  game.events.on('playerDamaged', () => {
+    if (!lockpick.isOpen) return;
+    lockpick.interrupt();
+    toast(lockpickText.interrupted);
+  });
+
   game.events.on('playerDied', () => {
     screen.close();
     lockpick.close();

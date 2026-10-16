@@ -87,6 +87,17 @@ export class LockpickScreen {
     this.hooks.onOpenChange(false);
   }
 
+  /** Hit while picking: close with a red flash. No pick is used. */
+  interrupt() {
+    if (!this.isOpen) return;
+    this.close();
+    this.hooks.sfx('build_invalid');
+    const f = document.createElement('div');
+    f.className = 'lp-hurt';
+    this.root.parentElement?.appendChild(f);
+    setTimeout(() => f.remove(), 450);
+  }
+
   private build() {
     const panel = document.createElement('div');
     panel.className = 'lp-panel';

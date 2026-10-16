@@ -6,6 +6,12 @@
   font: 14px/1.3 system-ui, 'Segoe UI', sans-serif; color: #e4e8ea; user-select: none;
 }
 .lp-root[hidden] { display: none; }
+.lp-hurt {
+  position: fixed; inset: 0; z-index: 26; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(200, 30, 20, 0) 40%, rgba(200, 30, 20, 0.55));
+  animation: lp-hurt 450ms ease-out forwards;
+}
+@keyframes lp-hurt { from { opacity: 1; } to { opacity: 0; } }
 .lp-panel {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
   padding: 16px 26px 18px; border-radius: 8px;

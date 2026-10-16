@@ -20,6 +20,7 @@ export const lockpickText = {
   broke: 'The pick snapped',
   none: 'Out of lockpicks',
   opened: 'Unlocked',
+  interrupted: 'Interrupted!',
   difficulty: ['', 'Simple lock', 'Average lock', 'Hard lock'],
 };
 
