@@ -235,12 +235,13 @@ export class AnimationController {
   }
 
   /** Full-body one-shot (death, shove, melee); returns to base afterwards unless `hold` (death). */
-  oneshot(name: string, fade = 0.1, hold = false, holdAtFrac = 0) {
+  oneshot(name: string, fade = 0.1, hold = false, holdAtFrac = 0, timeScale = 1) {
     this.holdAt = holdAtFrac > 0 ? holdAtFrac * (this.ch.actions.get(name)?.getClip().duration ?? 0) : 0;
     const a = this.ch.actions.get(name);
     if (!a) return;
     if (this.oneShot && this.oneShot !== a) this.oneShot.fadeOut(fade);
     a.reset().setLoop(LoopOnce, 1);
+    a.timeScale = timeScale;
     a.clampWhenFinished = true;
     a.play();
     if (this.current) a.crossFadeFrom(this.current, fade, false);

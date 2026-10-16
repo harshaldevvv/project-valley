@@ -123,6 +123,9 @@ export const fxTuning = {
   poolRadius: [0.2, 0.4] as [number, number], // 0.4–0.8 m across (QA-044)
   poolFlatTol: 0.04, // m: pools only on flat ground (corner heights within this)
   poolGrow: 5,
+  // Headshot kill (user playtest): a burst of chunks + mist from the head, and a fast drop
+  headPopScale: 3,
+  headKillDeathSpeed: 3, // z_death plays this much faster after a headshot kill (no wind-up)
   // Melee trail
   trailSamples: 14,
   trailFade: 0.12,

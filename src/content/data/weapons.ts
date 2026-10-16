@@ -16,7 +16,7 @@ export const weaponDefs: Record<string, WeaponDef> = {
     muzzleVelocity: 350,
     falloffStart: 15,
     falloffMinMul: 0.65,
-    headMul: 3.5,
+    headMul: 3.8, // 122: one pistol headshot drops a shambler/civilian, 2 for worker/soldier
     adsMs: 150,
     sprintToFireMs: 150,
     recoilPitch: [0.9, 1.2],

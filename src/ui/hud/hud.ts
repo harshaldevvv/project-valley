@@ -24,6 +24,8 @@ const CSS = `
 .hud .hm i{position:absolute;width:2px;height:9px;background:#fff;left:-1px;top:-4.5px;box-shadow:0 0 2px #000}
 .hud .hm.head i{background:#ff4a2a;height:11px}
 .hud .hm.kill i{height:14px;width:3px;background:#ff2a1a}
+.hud .hm.skull i{display:none}
+.hud .hm.skull::after{content:'☠';position:absolute;left:-14px;top:-17px;width:28px;text-align:center;font:700 26px/1 system-ui;color:#ff3a22;text-shadow:0 0 3px #000,0 0 8px #000a}
 .hud .ammo{position:absolute;right:28px;bottom:24px;text-align:right}
 .hud .ammo .n{font:700 34px/1 system-ui;letter-spacing:.5px}
 .hud .ammo .n small{font-size:18px;opacity:.7}
@@ -171,9 +173,10 @@ export class Hud {
   }
 
   hitMarker(head: boolean, kill: boolean) {
-    this.hm.className = 'hm' + (head ? ' head' : '') + (kill ? ' kill' : '');
+    // Headshot kill gets a skull (user playtest: headshots must read)
+    this.hm.className = 'hm' + (head ? ' head' : '') + (kill ? ' kill' : '') + (head && kill ? ' skull' : '');
     this.cache.delete('hmo');
-    this.hmT = kill ? 0.22 : 0.13;
+    this.hmT = head && kill ? 0.35 : kill ? 0.22 : 0.13;
   }
 
   toast(text: string) {

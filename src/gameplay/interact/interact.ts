@@ -13,11 +13,13 @@ import type { Ctx } from '../ctx';
  */
 const VIEW_COS = Math.cos((65 * Math.PI) / 180);
 const LOS_FILTER = groups(Group.PLAYER, Group.STATIC | Group.BUILD | Group.TERRAIN);
+const LOS_BACK = groups(Group.PLAYER, Group.STATIC | Group.BUILD);
 const _chest = new Vector3();
 const _eye = new Vector3();
 const _to = new Vector3();
 const _o = new Vector3();
 const _d = new Vector3();
+const _pt = new Vector3();
 
 export class Interact {
   current: Interactable | null = null;
@@ -42,8 +44,11 @@ export class Interact {
   }
 
   /** Line of sight from the eye to an interaction point (walls block; the point's own object doesn't). */
-  private visible(p: Vector3) {
+  private visible(point: Vector3) {
     const { world } = this.ctx.game.phys;
+    // Bodies' points sit on the ground: test just above it so the terrain doesn't count as "its own object"
+    const p = _pt.copy(point);
+    p.y += 0.25;
     _to.subVectors(p, _eye);
     const d = _to.length();
     if (d < 0.3) return true;
@@ -56,8 +61,11 @@ export class Interact {
     _to.negate();
     this.ray.origin = p;
     this.ray.dir = _to;
-    const back = world.castRay(this.ray, d, true, undefined, LOS_FILTER, this.ctx.player.collider);
-    return !back || back.timeOfImpact < 0.02;
+    const back = world.castRay(this.ray, d, true, undefined, LOS_BACK, this.ctx.player.collider);
+    if (back && back.timeOfImpact >= 0.02) return false; // a wall between us and the point
+    // The point is inside what the forward ray hit: fine for a crate or door, not for a wall a body lies against
+    const he = fwd.collider.halfExtents?.();
+    return !he || Math.max(he.x, he.y, he.z) < 1.5;
   }
 
   step(dt: number) {

@@ -57,6 +57,27 @@ export const health = {
   hitIframes: 0.35, // s of invulnerability after taking a hit
 };
 
+/**
+ * Third-person body orientation and carry pose (user playtest): the body yaw is its own smoothed state.
+ * Not aiming: orient to movement; standing still the body stays put (turn-in-place past a threshold, head looks).
+ * Aiming / firing / melee: orient to the camera. Guns sit at low-ready until RMB/fire raises them.
+ */
+export const bodyFacing = {
+  moveTurnDeg: 540, // deg/s toward the movement direction
+  aimTurnDeg: 900, // deg/s toward the camera while aiming/firing
+  inPlaceTriggerDeg: 100, // camera this far from the body (standing) → turn-in-place step
+  inPlaceTurnDeg: 300,
+  easing: 12, // 1/s exponential approach (capped by the turn rates)
+  headLookDeg: 70, // head look-at toward the camera, clamped
+  raiseS: 0.18, // low-ready → aim
+  lowerS: 0.3, // aim → low-ready
+  lowerDelay: 0.6, // s after the last shot before lowering
+  fireReady: 0.6, // raise fraction needed before a TP shot leaves the barrel
+  lowReadyDeg: 45, // rifle muzzle down
+  lowReadyTuckDeg: 18, // rifle swung across the body
+  pistolLowDeg: 0, // pistol: the arm hangs at the side from the locomotion clip (aim overlay off); extra drop here
+};
+
 export const cameraFeel = {
   // Third person (principles §2)
   shoulderX: 0.5,

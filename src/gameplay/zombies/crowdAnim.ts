@@ -26,8 +26,8 @@ export class CrowdAnim {
     this.baseClip = name;
   }
 
-  oneshot(name: string, fade = 0.1, hold = false, holdAtFrac = 0) {
-    this.crowd.play(this.i, name, { fade, loop: false, restart: true });
+  oneshot(name: string, fade = 0.1, hold = false, holdAtFrac = 0, timeScale = 1) {
+    this.crowd.play(this.i, name, { fade, loop: false, restart: true, timeScale });
     this.shot = name;
     this.hold = hold;
     this.holdAt = holdAtFrac > 0 ? holdAtFrac * this.crowd.duration(name) : 0;

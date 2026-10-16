@@ -1,4 +1,6 @@
-import { Box3, BoxGeometry, Mesh, Vector3, type Material } from 'three';
+import { Box3, BoxGeometry, Mesh, Quaternion, Vector3, type Material } from 'three';
+import { BodyFacing } from './player/facing';
+import { bodyFacing as BF } from '../content/data/player';
 import type { Game } from '../core/game';
 import { cameraFeel, health, movement, stamina } from '../content/data/player';
 import { ballistics, meleeDefs, shove, weaponDefs } from '../content/data/weapons';
@@ -20,6 +22,13 @@ import { Targets } from './weapons/targets';
 import { sandboxLoadout, Weapons } from './weapons/weapons';
 import { Zombies } from './zombies/zombies';
 
+const _cq = new Quaternion();
+const _q1 = new Quaternion();
+const _q2 = new Quaternion();
+const _ax = new Vector3();
+const DEG2 = Math.PI / 180;
+const easeInOut = (t: number) => t * t * (3 - 2 * t);
+
 /** mechanics-builder: player controller + camera, weapons, melee, zombies, vehicles, interactions, HUD. Fills game.player. */
 export async function installGameplay(game: Game): Promise<void> {
   const ctx = createCtx(game) as Ctx;
@@ -34,6 +43,7 @@ export async function installGameplay(game: Game): Promise<void> {
   ctx.vehicles = new Vehicles(ctx);
   ctx.targets = new Targets(ctx);
   ctx.animStand = new AnimStand(ctx);
+  ctx.facing = new BodyFacing(ctx);
   ctx.hud = new Hud(ctx);
 
   // Player body (third person)
@@ -43,6 +53,9 @@ export async function installGameplay(game: Game): Promise<void> {
   const bodyAnim = body.skinned ? new AnimationController(body) : null;
   ctx.playerAnim = bodyAnim;
   const chest = bodyAnim?.bone('chest') ?? null;
+  const head = bodyAnim?.bone('head') ?? null;
+  const shoulderL = bodyAnim?.bone('shoulder_L') ?? null;
+  const shoulderR = bodyAnim?.bone('shoulder_R') ?? null;
   // Near-body fade (QA-064): a dithered (alphaHash, stays in the opaque pass) copy of each body material. A hidden
   // warm-up mesh keeps it in the scene so game.start()'s compileAsync builds the pipeline (no first-use hitch).
   const fadeMats = new Map<Material, Material>();
@@ -79,6 +92,7 @@ export async function installGameplay(game: Game): Promise<void> {
       ctx.rig.step(dt);
       ctx.melee.step(dt);
       ctx.weapons.step(dt);
+      ctx.facing.step(dt);
       ctx.interact.step(dt);
       ctx.vehicles.step(dt);
       ctx.targets.step(dt);
@@ -114,7 +128,7 @@ export async function installGameplay(game: Game): Promise<void> {
         for (const m of bodyMeshes) m.material = m.userData[near ? 'faded' : 'solid'];
       }
       body.root.position.copy(p.position);
-      body.root.rotation.set(0, p.yaw, 0);
+      body.root.rotation.set(0, ctx.facing.render(alpha), 0);
       const pose = body.pose;
       pose.walkPhase = p.stepPhase;
       pose.speed01 = p.speed01;
@@ -136,10 +150,31 @@ export async function installGameplay(game: Game): Promise<void> {
         bodyAnim.base(clip as string, 0.2, ref ? Math.max(0.5, Math.min(1.5, sp / (ref as number))) : 1);
         const w = ctx.weapons;
         const cls = w.def?.class === 'pistol' ? 'pistol' : 'rifle';
-        bodyAnim.overlay(`aim_${cls}`, w.item && !w.isMelee ? 1 - pose.holster : 0);
+        const gun = !!w.item && !w.isMelee && !p.dead;
+        const raise = gun ? easeInOut(w.raiseT) : 0;
+        // Rifle low-ready keeps the two-handed aim pose and swings it down; the pistol drops to the side (one hand)
+        bodyAnim.overlay(`aim_${cls}`, gun ? (cls === 'pistol' ? raise : 1) * (1 - pose.holster) : 0);
         bodyAnim.update(dt);
-        // Upper body follows the aim pitch (clips are authored level)
-        if (chest && w.item) chest.rotation.x -= p.pitch * 0.7 * (1 - pose.holster);
+        // Upper body follows the aim pitch only when raised (clips are authored level)
+        if (chest && gun) chest.rotation.x -= p.pitch * 0.7 * raise * (1 - pose.holster);
+        if (gun && chest && shoulderL && shoulderR && raise < 1) {
+          const low = 1 - raise;
+          const yaw = body.root.rotation.y;
+          chest.updateWorldMatrix(true, false);
+          chest.getWorldQuaternion(_cq).invert();
+          // Rotating both shoulders about the same body axis keeps the two-handed grip rigid
+          _ax.set(Math.cos(yaw), 0, -Math.sin(yaw)).applyQuaternion(_cq); // body right, in chest space
+          const down = (cls === 'pistol' ? BF.pistolLowDeg : BF.lowReadyDeg) * DEG2;
+          _q1.setFromAxisAngle(_ax, -down * low);
+          if (cls === 'rifle') {
+            _ax.set(0, 1, 0).applyQuaternion(_cq); // tuck across the body (toward the left)
+            _q1.premultiply(_q2.setFromAxisAngle(_ax, BF.lowReadyTuckDeg * DEG2 * low));
+            shoulderL.quaternion.premultiply(_q1);
+          }
+          shoulderR.quaternion.premultiply(_q1);
+        }
+        // Head looks toward the camera when the body doesn't follow it
+        if (head && !p.dead) head.rotation.y += ctx.facing.headYaw() * (1 - raise) * 0.85;
       } else applyPose(body);
       perf.end('anim');
       perf.begin('ui');

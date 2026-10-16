@@ -6,7 +6,7 @@ import type { LoadoutApi } from '../../core/contracts';
 import { ballistics as B, fpArms, handling as H, meleeDefs, weaponDefs, weaponFeel, weaponSlots } from '../../content/data/weapons';
 import { impacts, weaponFx } from '../../content/data/fx';
 import { surfaceOf as worldSurface } from '../../world/surfaces';
-import { cameraFeel } from '../../content/data/player';
+import { bodyFacing as BF, cameraFeel } from '../../content/data/player';
 import { probe, type Ctx, type Surface } from '../ctx';
 import { addBloom, decayBloom, easeOutCubic, falloffMul, recoilKick, recover, shotInterval, spreadDeg } from './math';
 import { makeWeaponModel, type WeaponModel } from './models';
@@ -111,6 +111,8 @@ export class Weapons {
   private legacyDummy = new Object3D();
   private sprintT = 0;
   private trailOn = false;
+  /** 0 = low-ready, 1 = raised to aim (third-person carry pose). */
+  raiseT = 0;
   private aimMiss = false;
   private swayLag = new Vector3();
   private lastYaw = 0;
@@ -298,6 +300,9 @@ export class Weapons {
     // ADS
     const def = this.def;
     const wantAds = !busy && !p.sprinting && c.down('aim') && !!def && !this.isMelee && this.switchPhase === 'none';
+    // Carry pose: low-ready ↔ raised (third person). RMB, the trigger or a recent shot raise the gun.
+    const wantRaise = !busy && !p.sprinting && !!def && !this.isMelee && (c.down('aim') || c.down('fire') || this.semiBuffered > 0 || this.sinceShot < BF.lowerDelay);
+    this.raiseT = MathUtils.clamp(this.raiseT + (wantRaise ? dt / BF.raiseS : -dt / BF.lowerS), 0, 1);
     const adsTime = def ? def.adsMs / 1000 : 0.2;
     this.adsT = MathUtils.clamp(this.adsT + (wantAds ? dt : -dt) / adsTime, 0, 1);
     this.adsEased = easeOutCubic(this.adsT);
@@ -347,11 +352,12 @@ export class Weapons {
       this.stepReload(dt);
       // Trigger
       const auto = this.fireMode() === 'auto';
-      if (c.pressed('fire')) this.semiBuffered = 0.12;
+      if (c.pressed('fire')) this.semiBuffered = this.ctx.rig.firstPerson || this.raiseT >= BF.fireReady ? 0.12 : 0.25; // covers the raise
       else this.semiBuffered -= dt;
       const pull = auto ? c.down('fire') : this.semiBuffered > 0;
       const sprintOk = this.sinceSprint * 1000 >= def.sprintToFireMs;
-      if (pull && this.cooldown <= 0 && this.ready && sprintOk && !p.sprinting) {
+      const raisedOk = this.ctx.rig.firstPerson || this.raiseT >= BF.fireReady; // TP: the barrel comes up first (~0.1 s)
+      if (pull && this.cooldown <= 0 && this.ready && sprintOk && !p.sprinting && raisedOk) {
         this.semiBuffered = 0;
         this.fire(def);
       }

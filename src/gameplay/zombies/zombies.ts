@@ -72,6 +72,7 @@ export class Zombie {
   anim: AnimationController | CrowdAnim | null = null;
   lastClip = '';
   settled = false;
+  headKill = false;
   /** Capsule centre above the feet (scaled per variant). */
   get capY() {
     return CAPSULE_HH * (this.def.scale ?? 1) + CAPSULE_R;
@@ -238,7 +239,7 @@ export class Zombies {
   // ------------------------------------------------------------- damage
   damage(z: Zombie, info: HitInfo): HitResult | null {
     if (!z.alive) return null;
-    const mul = info.zone === 'head' ? info.headMul : z.def.zoneMul[info.zone];
+    const mul = info.zone === 'head' ? info.headMul * (z.def.helmetMul ?? 1) : z.def.zoneMul[info.zone];
     const dmg = info.damage * mul;
     z.hp -= dmg;
     z.dmgLog.push({ t: this.time, amt: dmg });
@@ -261,6 +262,13 @@ export class Zombies {
       z.sense.suspicion = Math.max(z.sense.suspicion, 0.8);
     }
     if (z.hp <= 0) {
+      if (info.zone === 'head' && !info.melee) {
+        // Headshot kill: crunch, skull marker (HUD reads res.headKill), head gore pop, instant drop
+        this.ctx.sfx('hit_head', info.point, { volume: 1 });
+        this.ctx.sfx('melee_hit', info.point, { volume: 0.8, pitchJitter: 0.15 });
+        this.ctx.fx.impact(info.point, _o.copy(info.dir).negate().setY(0.6).normalize(), 'flesh', info.dir, fxTuning.headPopScale);
+        z.headKill = true;
+      }
       this.die(z, info.dir, !!info.melee);
       return { damage: dmg, kill: true, zone: info.zone };
     }
@@ -329,7 +337,7 @@ export class Zombies {
     this.ctx.hits.delete(z.head.handle);
     this.ctx.sfx('zombie_death', z.curr, { pitchJitter: 0.1 });
     if (z.fling.lengthSq() === 0) this.groundPool(this.torso(z, _o)); // under the torso, not the feet
-    z.anim?.oneshot('z_death', 0.1, true, z.def.deathHoldAt);
+    z.anim?.oneshot('z_death', z.headKill ? 0.04 : 0.1, true, z.def.deathHoldAt, z.headKill ? fxTuning.headKillDeathSpeed : 1);
     if (melee) this.ctx.game.events.emit('noise', { position: z.curr.clone(), radius: 5, source: 'melee_kill' });
   }
 

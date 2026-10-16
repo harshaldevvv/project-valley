@@ -26,6 +26,8 @@ export interface ZombieDef {
   staggerTime: number;
   flinchTime: number;
   corpseTime: number;
+  /** Headshot multiplier factor for headgear (soldier helmet), 1 = bare head. */
+  helmetMul?: number;
   /** Fraction of z_death to hold: the body is down but the arms haven't splayed yet (QA-034). */
   deathHoldAt: number;
 }
@@ -40,7 +42,7 @@ const zombieDefsBase: Record<string, ZombieDef> = {
     chase: 1.3,
     crawl: 0.5,
     turnRate: 4,
-    zoneMul: { body: 0.55, limb: 0.35 }, // QA-077: body 0.5 → 0.55
+    zoneMul: { body: 0.5, limb: 0.35 }, // body shots stay weak so aiming for the head matters
     attackRange: 1.5,
     attackWindup: 0.6,
     attackRecover: 1.0,
@@ -62,7 +64,7 @@ const zombieDefsBase: Record<string, ZombieDef> = {
 export const zombieDefs: Record<string, ZombieDef> = {
   ...zombieDefsBase,
   worker: { ...zombieDefsBase.shambler, id: 'worker', model: 'zmb_worker_a', clipsFrom: 'zmb_shambler_a', scale: 1.02, hp: 130 },
-  soldier: { ...zombieDefsBase.shambler, id: 'soldier', model: 'zmb_soldier_a', clipsFrom: 'zmb_shambler_a', scale: 1.05, hp: 160, legHp: 90 } /* tougher: kit */,
+  soldier: { ...zombieDefsBase.shambler, id: 'soldier', model: 'zmb_soldier_a', clipsFrom: 'zmb_shambler_a', scale: 1.05, hp: 160, legHp: 90, helmetMul: 0.6 } /* tougher: kit + helmet = 2 rifle headshots */,
   civilian_f: { ...zombieDefsBase.shambler, id: 'civilian_f', model: 'zmb_civilian_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.93, hp: 110 },
 };
 
