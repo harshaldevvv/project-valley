@@ -16,6 +16,9 @@ export interface GameEvents {
   /** Player died / respawned. UI screens (inventory, build mode) close on death. */
   playerDied: Record<string, never>;
   playerRespawned: Record<string, never>;
+  /** A zombie died; its corpse stays at `position` until corpseRemoved (systems makes it a searchable body). */
+  zombieKilled: { id: number; variant: string; position: Vector3 };
+  corpseRemoved: { id: number };
   /** Inventory contents changed (UI refresh, weapon re-check). */
   inventoryChanged: Record<string, never>;
   /** A UI screen opened/closed (gameplay input pauses while any is open). */
