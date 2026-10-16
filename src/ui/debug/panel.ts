@@ -72,6 +72,11 @@ export function createDebugPanel(events: EventBus): DebugApi & { readonly open: 
     if (o) for (const f of refreshers) f();
   };
   addEventListener('keydown', (e) => {
+    if (e.code === 'Escape' && open) {
+      e.stopImmediatePropagation(); // Esc closes the panel and does nothing else (QA-015)
+      setOpen(false);
+      return;
+    }
     if (e.code !== 'F1') return;
     e.preventDefault();
     setOpen(!open);

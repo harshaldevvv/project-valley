@@ -11,7 +11,7 @@ import {
   type SkinnedMesh,
 } from 'three';
 import { Frustum, MeshStandardNodeMaterial } from 'three/webgpu';
-import { attribute, cos, float, int, ivec2, mat4, normalGeometry, normalLocal, positionGeometry, sin, textureLoad, uniform, vec3, vec4 } from 'three/tsl';
+import { Fn, If, attribute, cos, float, int, ivec2, mat4, normalGeometry, normalLocal, positionGeometry, sin, textureLoad, uniform, vec3, vec4 } from 'three/tsl';
 import type { Game } from '../core/game';
 import { entries, gltfLoader } from './assets';
 import { paletteMaterial } from './palette';
@@ -23,6 +23,7 @@ import { paletteMaterial } from './palette';
  * a skeleton. Up to 3 draws per crowd (LOD0/1/2) + shadow draws for LOD0/1, whatever the count.
  *
  *   const crowd = await createCrowd(game, 'zmb_shambler_a', { max: 64 });   // null if the model isn't built
+ *   createCrowd(game, 'zmb_worker_a', { clipsFrom: 'zmb_shambler_a' })     // variant borrows clips by bone name
  *   const i = crowd.add();
  *   crowd.set(i, x, y, z, yaw);                  // each render frame (interpolated values)
  *   crowd.play(i, 'z_walk', { fade: 0.25, timeScale: 1.2 });
@@ -81,12 +82,19 @@ const _pv = new Matrix4();
 export async function createCrowd(
   game: Game,
   modelId: string,
-  opts: { max?: number; lodDistances?: [number, number]; castShadow?: boolean } = {},
+  opts: { max?: number; lodDistances?: [number, number]; castShadow?: boolean; clipsFrom?: string } = {},
 ): Promise<Crowd | null> {
   if (!(modelId in entries)) return null;
   const max = opts.max ?? 64;
   const [lod1, lod2] = opts.lodDistances ?? [15, 40];
-  const [gltf, palette] = await Promise.all([gltfLoader.loadAsync(entries[modelId].url), paletteMaterial()]);
+  const clipSrc = opts.clipsFrom && opts.clipsFrom in entries ? opts.clipsFrom : null;
+  const [gltf, palette, clipGltf] = await Promise.all([
+    gltfLoader.loadAsync(entries[modelId].url),
+    paletteMaterial(),
+    clipSrc ? gltfLoader.loadAsync(entries[clipSrc].url) : null,
+  ]);
+  // Clips bind by bone name, so a mesh+skeleton-only variant can borrow another model's clips (same joint names).
+  const animations = clipGltf?.animations ?? gltf.animations;
   const scene = gltf.scene;
   scene.updateMatrixWorld(true);
   const lods: SkinnedMesh[] = [];
@@ -105,7 +113,7 @@ export async function createCrowd(
   // --- bake -----------------------------------------------------------------------------------
   const clips: ClipInfo[] = [];
   let rows = 0;
-  for (const c of gltf.animations) {
+  for (const c of animations) {
     const frames = Math.max(1, Math.round(c.duration * FPS));
     clips.push({ name: c.name, start: rows, frames, duration: Math.max(c.duration, 1 / FPS) });
     rows += frames + 1;
@@ -120,8 +128,8 @@ export async function createCrowd(
       data.set(_m.elements, (row * B * 4 + b * 4) * 4);
     }
   };
-  if (!gltf.animations.length) writeRow(0);
-  gltf.animations.forEach((c, ci) => {
+  if (!animations.length) writeRow(0);
+  animations.forEach((c, ci) => {
     mixer.stopAllAction();
     const a = mixer.clipAction(c);
     a.play();
@@ -183,15 +191,24 @@ export async function createCrowd(
     const rowB = int(anim.z);
     const fA = anim.y;
     const wB = anim.w;
-    const wA0 = float(1).sub(wB).mul(float(1).sub(fA));
-    const wA1 = float(1).sub(wB).mul(fA);
-    let skin: Node | null = null;
-    for (const c of ['x', 'y', 'z', 'w'] as const) {
-      const bi = int(skinIndex[c]);
-      const m = boneMat(rowA, bi).mul(wA0).add(boneMat(rowA.add(1), bi).mul(wA1)).add(boneMat(rowB, bi).mul(wB)).mul(skinWeight[c]);
-      skin = skin ? skin.add(m) : m;
-    }
-    const full = pre.mul(skin!).mul(post);
+    // Clip A interpolated between its two nearest baked frames; clip B (the fade-out source) is only fetched
+    // while a crossfade is running, so a steady walker costs 2 matrix fetches per influence, not 3.
+    const C = ['x', 'y', 'z', 'w'] as const;
+    const skinFn = Fn(() => {
+      const m: Node = mat4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).toVar();
+      for (const c of C) {
+        const bi = int(skinIndex[c]);
+        m.addAssign(boneMat(rowA, bi).mul(float(1).sub(fA)).add(boneMat(rowA.add(1), bi).mul(fA)).mul(skinWeight[c]));
+      }
+      If(wB.greaterThan(0.001), () => {
+        const b: Node = mat4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0).toVar();
+        for (const c of C) b.addAssign(boneMat(rowB, int(skinIndex[c])).mul(skinWeight[c]));
+        m.assign(m.mul(float(1).sub(wB)).add(b.mul(wB)));
+      });
+      return m;
+    });
+    const skin = skinFn().toVar();
+    const full = pre.mul(skin).mul(post);
     const local = full.mul(vec4(positionGeometry, 1)).xyz;
     const yaw = xform.w;
     const cy = cos(yaw);

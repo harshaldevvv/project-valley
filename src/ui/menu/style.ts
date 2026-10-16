@@ -72,7 +72,12 @@ export const MENU_CSS = `
 #menu .mn-tip span{opacity:0;transform:translateY(4px);transition:opacity .35s ease,transform .35s ease}
 #menu .mn-tip span.in{opacity:1;transform:none}
 #menu .mn-ver{position:absolute;right:16px;bottom:12px;font:500 11px/1 var(--display);letter-spacing:.18em;color:var(--faint)}
-body:has(#menu:not(.hidden)) #perf,body:has(#menu:not(.hidden)) #ui{visibility:hidden}
+body:has(#menu:not(.hidden)) #perf,body:has(#menu:not(.hidden)) #ui,body.mn-blend #ui{visibility:hidden}
+@media (max-height:700px){#menu h1{font-size:clamp(40px,7vw,64px);margin:8px 0 6px}#menu .mn-left{gap:16px}
+ #menu .mn-btn{font-size:18px;padding:8px 0}#menu .mn-btn.primary{font-size:24px}#menu .mn-btn.quiet{margin-top:6px;font-size:14px}
+ #menu .mn-tip{bottom:10px;font-size:12.5px}#menu .mn-sub{font-size:13px}}
+@media (max-width:1100px) and (min-width:821px){#menu .mn-panel{width:min(520px,calc(100vw - 460px));min-width:340px}
+ #menu .mn-sub{max-width:300px}}
 @media (max-width:820px){#menu .mn-panel{top:auto;bottom:70px;transform:none;max-height:55vh}#menu .mn-left{justify-content:flex-start;padding-top:8vh}}
 @media (prefers-reduced-motion:reduce){#menu *{transition:none!important}}
 `;

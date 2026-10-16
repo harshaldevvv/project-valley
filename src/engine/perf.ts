@@ -2,7 +2,10 @@ import type { WebGPURenderer } from 'three/webgpu';
 
 /**
  * Per-system CPU timers + frame stats overlay (F3 toggles). Budgets come from principles §13.
- * `window.__perf()` returns a snapshot for Playwright perf runs.
+ * `window.__perf()` returns a snapshot for Playwright perf runs (incl. `hitchLog`: the systems of the frames around
+ * each > 50 ms gap). Overlay is off by default; `?perf` in the URL starts with it on.
+ * Render is split: `render` = whole renderFrame CPU, `r.scene` = scene + shadow passes, `r.post` = the rest
+ * (post chain + submit); `gpuMs` (with `?gputime`) is GPU time from timestamp queries.
  *
  *   perf.begin('ai'); ...; perf.end('ai');
  */
@@ -13,6 +16,9 @@ const HITCH_MS = 50;
 export class Perf {
   private starts = new Map<string, number>();
   private acc = new Map<string, number>(); // ms accumulated this frame
+  private prevAcc = new Map<string, number>(); // last frame's (for hitch attribution)
+  /** Last 20 hitches: gap ms, when (s since load), the heaviest timers of the frame before and the frame itself. */
+  hitchLog: { ms: number; at: number; prev: string; cur: string }[] = [];
   private avg = new Map<string, number>(); // smoothed ms per frame
   private frames = new Float32Array(WINDOW);
   private sorted = new Float32Array(WINDOW);
@@ -29,6 +35,7 @@ export class Perf {
     this.el.style.cssText =
       'position:fixed;top:8px;left:8px;margin:0;padding:8px 10px;font:12px/1.35 ui-monospace,Consolas,monospace;' +
       'color:#d8e0d0;background:rgba(10,12,11,.78);border-radius:6px;pointer-events:none;z-index:10;white-space:pre';
+    this.el.hidden = !new URLSearchParams(location.search).has('perf');
     document.body.appendChild(this.el);
     addEventListener('keydown', (e) => {
       if (e.code === 'F3') {
@@ -49,6 +56,7 @@ export class Perf {
   /** Forget history (call after loading/warm-up so one-time compile costs don't skew the stats). */
   reset() {
     this.n = this.i = this.hitches = 0;
+    this.hitchLog = [];
     this.avg.clear();
   }
 
@@ -61,14 +69,27 @@ export class Perf {
     this.acc.set(name, (this.acc.get(name) ?? 0) + t);
   }
 
+  /** Add an externally measured duration (ms) to this frame's timer `name`. */
+  add(name: string, ms: number) {
+    this.acc.set(name, (this.acc.get(name) ?? 0) + ms);
+  }
+
   /** Call once per rendered frame with the real frame time in seconds. */
   frame(frameDt: number) {
     const ms = frameDt * 1000;
     this.frames[this.i] = ms;
     this.i = (this.i + 1) % WINDOW;
     if (this.n < WINDOW) this.n++;
-    if (ms > HITCH_MS) this.hitches++;
+    if (ms > HITCH_MS) {
+      this.hitches++;
+      const top = (m: Map<string, number>) => [...m].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, v]) => `${k} ${v.toFixed(1)}`).join(', ');
+      this.hitchLog.push({ ms: Math.round(ms), at: +(performance.now() / 1000).toFixed(1), prev: top(this.prevAcc), cur: top(this.acc) });
+      if (this.hitchLog.length > 20) this.hitchLog.shift();
+    }
     for (const [k, v] of this.acc) this.avg.set(k, (this.avg.get(k) ?? v) * 0.9 + v * 0.1);
+    const t = this.prevAcc;
+    this.prevAcc = this.acc;
+    this.acc = t;
     this.acc.clear();
 
     const now = performance.now();
@@ -98,6 +119,7 @@ export class Perf {
       triangles: info.triangles,
       heapMB: mem ? mem.usedJSHeapSize / 1048576 : null,
       systems: Object.fromEntries(this.avg),
+      hitchLog: this.hitchLog,
       ...this.extra,
     };
   }

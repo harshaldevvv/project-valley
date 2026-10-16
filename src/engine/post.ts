@@ -21,6 +21,15 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
   const scenePass = pass(scene, camera);
   const toned = renderOutput(scenePass);
   const pipeline = new RenderPipeline(renderer);
+  // Time the scene (+ shadow) pass separately from the post chain: render = r.scene + r.post.
+  let sceneMs = 0;
+  const sceneUpdate = scenePass.updateBefore.bind(scenePass);
+  scenePass.updateBefore = (frame) => {
+    const t = performance.now();
+    const r = sceneUpdate(frame);
+    sceneMs += performance.now() - t;
+    return r;
+  };
   pipeline.outputColorTransform = false; // renderOutput above already tonemaps + converts
   let direct = false;
 
@@ -38,14 +47,27 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
   const timing = (renderer.backend as { trackTimestamp?: boolean }).trackTimestamp;
   let frame = 0;
   game.renderFrame = () => {
+    const t0 = performance.now();
+    sceneMs = 0;
     if (direct) renderer.render(scene, camera);
     else pipeline.render();
+    const total = performance.now() - t0;
+    if (direct) sceneMs = total;
+    perf.add('r.scene', sceneMs);
+    perf.add('r.post', total - sceneMs);
     if (timing && ++frame % 30 === 0) {
       void renderer.resolveTimestampsAsync('render').then((ms) => {
         if (typeof ms === 'number') perf.extra.gpuMs = ms.toFixed(2);
       });
     }
   };
-  return { settings, apply, pipeline };
+  /** Compile the scene's pipelines for the render target they will really draw into (the scene pass's HDR target). */
+  const compileAsync = async () => {
+    const prev = renderer.getRenderTarget();
+    if (!direct) renderer.setRenderTarget(scenePass.renderTarget);
+    await renderer.compileAsync(scene, camera);
+    renderer.setRenderTarget(prev);
+  };
+  return { settings, apply, pipeline, compileAsync };
 }
 export type Post = ReturnType<typeof installPost>;

@@ -11,7 +11,7 @@ page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 page.on('pageerror', (e) => errors.push(String(e)));
 
 await page.goto(BASE + '/' + (process.argv[2] ?? '?play')); // ?play skips the title menu
-await page.waitForFunction(() => typeof window.__perf === 'function', null, { timeout: 60_000 });
+await page.waitForFunction(() => typeof window.__perf === 'function' && window.game?.tick > 60, null, { timeout: 120_000 }); // past the load warm-up
 await page.waitForTimeout(3000); // warm-up: WASM tier-up, first pipelines
 await page.evaluate(() => window.__perfReset());
 await page.waitForTimeout(3000);

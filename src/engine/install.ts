@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, LineSegments, Vector3 } from 'three';
+import { BufferAttribute, BufferGeometry, LineSegments, Vector3, type InstancedBufferGeometry, type InstancedMesh, type Mesh } from 'three';
 import { LineBasicNodeMaterial } from 'three/webgpu';
 import type { Game } from '../core/game';
 import { look } from '../content/data/input';
@@ -8,8 +8,10 @@ import { yard, type StationId } from '../content/data/yard';
 import { createDebugPanel } from '../ui/debug/panel';
 import { installMenu } from '../ui/menu/menu';
 import { createAudio } from './audio';
-import { installPost } from './post';
+import { installPost, type Post } from './post';
 import { createTimeOfDay, TIME_PRESETS } from './timeofday';
+import { createSky } from './sky';
+import { createLamps } from './lamps';
 
 /**
  * engine-builder: installs game.debug (F1 panel), game.audio (Web Audio), post-processing (FXAA, render scale),
@@ -47,6 +49,7 @@ export async function installEngine(game: Game) {
   // --- post + time of day ------------------------------------------------------------------
   const post = installPost(game);
   const tod = createTimeOfDay(game);
+  createSky(game, tod);
 
   // --- teleport ----------------------------------------------------------------------------
   const teleport = (id: StationId | 'spawn') => {
@@ -58,7 +61,8 @@ export async function installEngine(game: Game) {
     }
   };
   game.debug.action('Teleport', 'Spawn', () => teleport('spawn'));
-  for (const id of Object.keys(yard.stations) as StationId[]) game.debug.action('Teleport', yard.stations[id].label, () => teleport(id));
+  const sentence = (t: string) => t[0] + t.slice(1).toLowerCase();
+  for (const id of Object.keys(yard.stations) as StationId[]) game.debug.action('Teleport', sentence(yard.stations[id].label), () => teleport(id));
 
   // --- time ----------------------------------------------------------------------------------
   const timeBind = {
@@ -161,9 +165,61 @@ export async function installEngine(game: Game) {
     ],
   });
 
+  // Warm-up before the loop starts (behind the title): first physics step + every pipeline compiled.
+  const start = game.start;
+  game.start = async () => {
+    // World data exists now (installed after the engine). Lamps add fixed lights, so create them before warm-up.
+    const { lampHeads } = await import('../world/yard/poles');
+    createLamps(game, tod, lampHeads);
+    await warmup(game, post);
+    return start();
+  };
+
   const engine = { audio, post, tod, menu, panel, setTimeOfDay: tod.set };
   (window as unknown as { engine: typeof engine }).engine = engine;
   return engine;
+}
+
+/**
+ * Kills first-use hitches (QA: ~0.5 s first world.step, >50 ms compiles when new things come into view):
+ * - one physics step builds the broadphase for all static colliders;
+ * - every object is temporarily made visible, unculled and non-empty, then compiled (compileAsync) and drawn
+ *   once through the real renderFrame, so colour, shadow and post pipelines all exist before play.
+ */
+async function warmup(game: Game, post: Post) {
+  const t0 = performance.now();
+  game.phys.world.step();
+  const t1 = performance.now();
+  const restore: (() => void)[] = [];
+  game.scene.traverse((o) => {
+    const { visible, frustumCulled } = o;
+    o.visible = true;
+    o.frustumCulled = false;
+    const inst = o as InstancedMesh;
+    const geo = (o as Mesh).geometry as InstancedBufferGeometry | undefined;
+    if (inst.isInstancedMesh && inst.count === 0) {
+      inst.count = 1;
+      restore.push(() => (inst.count = 0));
+    } else if (geo?.isInstancedBufferGeometry && geo.instanceCount === 0) {
+      geo.instanceCount = 1;
+      restore.push(() => (geo.instanceCount = 0));
+    }
+    restore.push(() => {
+      o.visible = visible;
+      o.frustumCulled = frustumCulled;
+    });
+  });
+  // ponytail: no compileAsync pass — measured 3–5 s for everything forced visible vs ~1–3 s for one synchronous
+  // frame (pipelines are created on first draw either way). post.compileAsync() exists if load-time compile matters.
+  void post;
+  const t2 = performance.now();
+  game.renderFrame();
+  // WebGPU compiles lazily in the GPU process; wait for the warm frame so the stall lands here, not in play.
+  const device = (game.renderer.backend as { device?: GPUDevice }).device;
+  await device?.queue.onSubmittedWorkDone();
+  const t3 = performance.now();
+  for (const r of restore) r();
+  console.info(`engine warm-up: physics ${(t1 - t0).toFixed(0)} ms, first frame ${(t3 - t2).toFixed(0)} ms`);
 }
 
 /** Rapier debugRender as line segments, refreshed every 30 frames while enabled (debug only: ~180k verts in the Yard). */

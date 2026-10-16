@@ -200,6 +200,9 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
 
   const setOpen = (open: boolean) => {
     root.classList.toggle('hidden', !open);
+    // Block input now, not at the next event drain: while game.paused the sim (and the drain) doesn't run, so the
+    // pointer lock would stay held and clicks would never reach the menu (QA-014).
+    if (open) game.input.blocked = true;
     game.events.emit('uiScreen', { name: 'menu', open });
   };
 
@@ -244,7 +247,10 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       cam.position.lerpVectors(from.pos, target.pos, e);
       cam.quaternion.slerpQuaternions(from.quat, target.quat, e);
       cam.fov = from.fov + (target.fov - from.fov) * e;
-      if (t >= 1) blend = null;
+      if (t >= 1) {
+        blend = null;
+        document.body.classList.remove('mn-blend');
+      }
     } else {
       cam.position.copy(target.pos);
       cam.quaternion.copy(target.quat);
@@ -279,6 +285,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     if (mode === 'title') {
       capture(from, shown);
       blend = { start: performance.now(), dur: BLEND_IN_S, toCine: false };
+      document.body.classList.add('mn-blend'); // HUD stays hidden until the camera lands (QA-017)
     }
     mode = 'playing';
     game.paused = false;
