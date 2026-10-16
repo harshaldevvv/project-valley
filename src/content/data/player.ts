@@ -7,6 +7,7 @@ export const movement = {
   sprint: 5.75,
   crouch: 1.5,
   adsMul: 0.6,
+  backAimMax: 1.45, // m/s aimed back-pedal cap: inside walk_back's speed-match band (QA-087; run_back's contacts skate)
   accelTime: 0.13, // s, 0 -> jog
   stopTime: 0.1, // s, jog -> 0
   sprintRamp: 0.25, // s, jog -> sprint
@@ -71,7 +72,7 @@ export const bodyFacing = {
   headLookDeg: 70, // head look-at toward the camera, clamped
   raiseS: 0.18, // low-ready → aim
   lowerS: 0.3, // aim → low-ready
-  lowerDelay: 0.6, // s after the last shot before lowering
+  lowerDelay: 1.2, // s after the last shot before lowering (QA-089: tap-fire doesn't bob)
   fireReady: 0.6, // raise fraction needed before a TP shot leaves the barrel
   lowReadyDeg: 45, // rifle muzzle down
   lowReadyTuckDeg: 18, // rifle swung across the body

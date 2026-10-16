@@ -123,6 +123,7 @@ export class Zombies {
   private lineCol = new Float32Array(30 * 8 * 3);
   kills = 0;
   private lastWindup = -9;
+  private bags = new Map<string, string[]>();
   private tickN = 0;
   private ray;
 
@@ -203,7 +204,20 @@ export class Zombies {
     );
     const z = new Zombie(this.nextId++, def, ch, body, capsule, head, HD.groanMin + this.ctx.rand() * (HD.groanMax - HD.groanMin));
     // Gait variety (mocap pools): one walk/run/idle per zombie + a playback factor; movement speeds follow the clips
-    const pick = (pool: string[]) => pool[Math.floor(this.ctx.rand() * pool.length)];
+    // QA-093: shuffle bags per pool, so a batch covers the gaits evenly before any repeats
+    const pick = (pool: string[]) => {
+      const key = pool.join();
+      let bag = this.bags.get(key);
+      if (!bag?.length) {
+        bag = [...pool];
+        for (let i = bag.length - 1; i > 0; i--) {
+          const j = Math.floor(this.ctx.rand() * (i + 1));
+          [bag[i], bag[j]] = [bag[j], bag[i]];
+        }
+        this.bags.set(key, bag);
+      }
+      return bag.pop()!;
+    };
     const has = (c: string) => ch.clips.includes(c) || ch.actions.has(c);
     const walks = A.zombieWalks.filter(has);
     const runs = A.zombieRuns.filter(has);

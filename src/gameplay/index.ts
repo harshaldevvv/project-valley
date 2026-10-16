@@ -163,7 +163,7 @@ export async function installGameplay(game: Game): Promise<void> {
         inp.crouched = p.crouched;
         inp.sprinting = p.sprinting;
         inp.strafe = gun && raise > 0.3;
-        inp.carry = gun && w.switchPhase === 'none' ? (w.def?.class === 'pistol' ? 'pistol' : 'rifle') : 'none';
+        inp.carry = gun && w.switchPhase === 'none' && !p.usingItem ? (w.def?.class === 'pistol' ? 'pistol' : 'rifle') : 'none';
         inp.raise = raise;
         bodyAnim.update(dt);
         post?.apply(dt, by, raise);

@@ -1,4 +1,5 @@
-import { Vector3 } from 'three';
+import { CylinderGeometry, Mesh, Object3D, Vector3 } from 'three';
+import { paintGeometry, paletteMaterial } from '../../engine/palette';
 import { survivalFeel as SF } from '../../content/data/player';
 import { survivalText } from '../../content/text/ui';
 import type { SurvivalApi } from '../../core/contracts';
@@ -18,6 +19,7 @@ export class SurvivalGlue {
   survival: SurvivalApi | null;
   private wasUsing = false;
   private dripT = 0;
+  private props: Map<string, { tp: Object3D; fp: Object3D }> | null = null;
 
   constructor(private ctx: Ctx) {
     this.survival = probe(ctx.game, 'survival', 'mods');
@@ -77,6 +79,13 @@ export class SurvivalGlue {
       this.ctx.weapons.cancelReload();
     }
     if (!u && this.wasUsing) this.ctx.weapons.vm.stop();
+    // QA-083: the item is in the hand (TP right hand, FP weapon socket) while it's used; the weapon is put away
+    const kind = u ? (ITEMS[u.item.defId]?.kind === 'food' ? 'food' : ITEMS[u.item.defId]?.kind === 'drink' ? 'drink' : 'med') : null;
+    this.props ??= makeProps(this.ctx);
+    for (const [k, pr] of this.props) {
+      pr.tp.visible = k === kind && !this.ctx.rig.firstPerson;
+      pr.fp.visible = k === kind && this.ctx.rig.firstPerson;
+    }
     this.wasUsing = !!u;
     // Bleeding: drops of blood on the ground behind you
     if (s && !p.inVehicle && !p.dead && (this.has('bleeding') || this.has('heavy_bleeding'))) {
@@ -114,6 +123,29 @@ export class SurvivalGlue {
       return [];
     }
   }
+}
+
+/** Held-item props (low-poly placeholders until item models exist): bandage roll, food can, water bottle. */
+function makeProps(ctx: Ctx) {
+  const props = new Map<string, { tp: Object3D; fp: Object3D }>();
+  const geos: Record<string, () => import('three').BufferGeometry> = {
+    med: () => paintGeometry(new CylinderGeometry(0.035, 0.035, 0.07, 10).rotateZ(Math.PI / 2), 'paper'),
+    food: () => paintGeometry(new CylinderGeometry(0.038, 0.038, 0.1, 10), 'metal_bare'),
+    drink: () => paintGeometry(new CylinderGeometry(0.03, 0.033, 0.22, 10), 'plastic_white'),
+  };
+  void paletteMaterial().then((mat) => {
+    for (const [k, g] of Object.entries(geos)) {
+      const tp = new Mesh(g(), mat);
+      const fp = new Mesh(g(), mat);
+      tp.visible = fp.visible = false;
+      fp.castShadow = false;
+      tp.castShadow = true;
+      ctx.playerChar.hand.add(tp);
+      (ctx.weapons.vm.socket('weapon') ?? ctx.weapons.fpHolder).add(fp);
+      props.set(k, { tp, fp });
+    }
+  });
+  return props;
 }
 
 declare module '../ctx' {

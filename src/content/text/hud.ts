@@ -6,6 +6,7 @@ export const hudText = {
   thirst: 'WATER',
   fatigue: 'REST',
   yourBag: 'Your bag',
+  day: (n: number) => `Day ${n}`,
   stage: (n: number) => `stage ${n}`,
   loadedReset: 'Loaded',
 };

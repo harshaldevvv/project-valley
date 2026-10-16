@@ -2,7 +2,7 @@ import { Vector3 } from 'three';
 import { survivalFeel as SF } from '../../content/data/player';
 import { hudText as T } from '../../content/text/hud';
 import { survivalText } from '../../content/text/ui';
-import type { Ctx } from '../../gameplay/ctx';
+import { probe, type Ctx } from '../../gameplay/ctx';
 
 /**
  * M2 survival HUD: food / water / rest bars under health and stamina (amber below 25, flashing at 0), status chips
@@ -10,10 +10,11 @@ import type { Ctx } from '../../gameplay/ctx';
  * when off screen). DOM writes only on change.
  */
 const CSS = `
-.hud .needs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}
-.hud .need{display:flex;align-items:center;gap:5px}
-.hud .need svg{width:14px;height:14px;flex:none;fill:#e8ecef;opacity:.85}
-.hud .need .bar{flex:1;margin-top:0;height:5px}
+.hud .needs{display:grid;grid-template-columns:repeat(3,minmax(64px,1fr));gap:10px;margin-top:10px}
+.hud .need{display:grid;grid-template-columns:16px 1fr;grid-template-rows:auto 7px;column-gap:5px;row-gap:2px;align-items:center}
+.hud .need svg{grid-row:1/3;width:16px;height:16px;fill:#e8ecef;opacity:.9}
+.hud .need .nl{font:600 10px system-ui;letter-spacing:1px;opacity:.8}
+.hud .need .bar{margin-top:0;height:7px;background:#0009;box-shadow:inset 0 0 0 1px #ffffff40}
 .hud .need .bar b{background:#9fc4a0}
 .hud .need.water .bar b{background:#8fb8d8}.hud .need.rest .bar b{background:#b8a8d8}
 .hud .need.low .bar b{background:#e0a030}.hud .need.low svg{fill:#e0a030;opacity:1}
@@ -24,6 +25,8 @@ const CSS = `
 .hud .chip svg{width:14px;height:14px}
 .hud .chip.bad{box-shadow:inset 0 0 0 1px #ff503c88}.hud .chip.good{box-shadow:inset 0 0 0 1px #8fd08a88}
 .hud .bleed{position:absolute;inset:0;background:radial-gradient(ellipse at center,#0000 50%,#a0000088 100%);opacity:0;pointer-events:none}
+.hud .clock{position:absolute;left:24px;top:20px;display:flex;align-items:center;gap:7px;padding:4px 10px 4px 8px;border-radius:12px;background:#000a;font:700 13px system-ui;letter-spacing:.5px}
+.hud .clock svg{width:16px;height:16px}
 .hud .bag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);display:none;text-align:center;font:700 11px system-ui;color:#ffd27a;white-space:nowrap}
 .hud .bag i{display:block;width:12px;height:12px;margin:0 auto 2px;border:2px solid #ffd27a;border-radius:2px;transform:rotate(45deg);background:#ffd27a33}
 `;
@@ -60,6 +63,8 @@ export class SurvivalHud {
   private bag: HTMLElement;
   private bagLbl: HTMLElement;
   private time = 0;
+  private clock: HTMLElement;
+  private clockKey = '';
 
   constructor(private ctx: Ctx, bars: HTMLElement, root: HTMLElement) {
     const style = document.createElement('style');
@@ -70,12 +75,14 @@ export class SurvivalHud {
       const box = el(`need ${cls}`, row);
       box.title = T[key];
       box.innerHTML = ICONS[key];
+      el('nl', box, 'span').textContent = T[key];
       const fill = el('', el('bar', box), 'b');
       this.needs.push({ key, box, fill, cls: '', w: '' });
     }
     this.chips = el('chips', bars);
     this.bleed = el('bleed', root);
     root.insertBefore(this.bleed, root.firstChild);
+    this.clock = el('clock', root);
     this.bag = el('bag', root);
     el('', this.bag, 'i');
     this.bagLbl = el('', this.bag, 'span');
@@ -83,6 +90,19 @@ export class SurvivalHud {
 
   render(dt: number) {
     this.time += dt;
+    // QA-086: day + clock with a sun/moon icon (game.time, engine)
+    const t = probe(this.ctx.game, 'time', 'hours');
+    if (t) {
+      const h = Math.floor(t.hours);
+      const m = Math.floor((t.hours - h) * 60);
+      const key = `${t.day}|${h}|${m}|${t.night > 0.5}`;
+      if (key !== this.clockKey) {
+        this.clockKey = key;
+        const icon = t.night > 0.5 ? '<svg viewBox="0 0 16 16" fill="#c9d4ff"><path d="M10.5 2.2A6 6 0 1 0 13.8 10 4.8 4.8 0 0 1 10.5 2.2z"/></svg>' : '<svg viewBox="0 0 16 16" fill="#ffd27a"><circle cx="8" cy="8" r="3.4"/><path d="M8 0.8v2.4M8 12.8v2.4M0.8 8h2.4M12.8 8h2.4M2.9 2.9l1.7 1.7M11.4 11.4l1.7 1.7M2.9 13.1l1.7-1.7M11.4 4.6l1.7-1.7" stroke="#ffd27a" stroke-width="1.4"/></svg>';
+        this.clock.innerHTML = `${icon}<span>${T.day(t.day)} · ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}</span>`;
+      }
+    }
+    this.clock.style.display = t ? 'flex' : 'none';
     const s = this.ctx.survival.survival;
     const row = this.needs[0].box.parentElement!;
     row.style.display = s ? '' : 'none';

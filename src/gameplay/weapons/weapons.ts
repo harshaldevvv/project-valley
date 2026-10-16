@@ -358,7 +358,7 @@ export class Weapons {
       const auto = this.fireMode() === 'auto';
       if (c.pressed('fire')) this.semiBuffered = this.ctx.rig.firstPerson || this.raiseT >= BF.fireReady ? 0.12 : 0.25; // covers the raise
       else this.semiBuffered -= dt;
-      const pull = auto ? c.down('fire') : this.semiBuffered > 0;
+      const pull = auto ? c.down('fire') || this.semiBuffered > 0 : this.semiBuffered > 0; // a quick tap still fires while the gun comes up
       const sprintOk = this.sinceSprint * 1000 >= def.sprintToFireMs;
       const raisedOk = this.ctx.rig.firstPerson || this.raiseT >= BF.fireReady; // TP: the barrel comes up first (~0.1 s)
       if (pull && this.cooldown <= 0 && this.ready && sprintOk && !p.sprinting && raisedOk) {
@@ -622,7 +622,7 @@ export class Weapons {
     const fp = ctx.rig.firstPerson && !ctx.player.inVehicle;
     const m = this.item ? this.models.get(this.item.defId) : undefined;
     const p = ctx.player;
-    const hidden = p.inVehicle || p.dead || this.isBuilding();
+    const hidden = p.inVehicle || p.dead || this.isBuilding() || p.usingItem; // QA-083: weapon away while using an item
     for (const [, mm] of this.models) {
       mm.fp.root.visible = !hidden && fp && mm === m;
       mm.tp.root.visible = !hidden && !fp && mm === m;

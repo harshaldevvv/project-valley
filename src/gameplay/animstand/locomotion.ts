@@ -40,6 +40,9 @@ interface Act {
   t: number; // target
 }
 
+const _hq = new Quaternion();
+const _rq = new Quaternion();
+const _hv = new Vector3();
 const spring = (w: number, t: number, dt: number, halflife: number) => w + (t - w) * (1 - Math.exp((-0.6931 * dt) / Math.max(1e-3, halflife)));
 
 export class PlayerAnimator {
@@ -61,6 +64,7 @@ export class PlayerAnimator {
 
   constructor(private ch: Character) {
     this.mixer = ch.mixer!;
+    this.hips = ch.root.getObjectByName('hips') ?? null;
     const meta = clipMeta.chr_survivor_a;
     for (const [name, action] of ch.actions) {
       const clip = action.getClip();
@@ -143,6 +147,38 @@ export class PlayerAnimator {
     this.full = null;
   }
 
+  /**
+   * QA-084: turn clips rotate the hips; move that yaw into the body yaw as it happens (onTurnDelta) and counter-rotate
+   * the hips by what the root has already received, so the end of the clip has nothing left to snap.
+   */
+  private turnAccum = 0;
+  private turnStart: number | null = null;
+  onTurnDelta: ((rad: number) => void) | null = null;
+  private turnRootMotion() {
+    const turning = !!this.full && !!this.acts.get(this.full.name)?.meta.turn_deg;
+    if (!turning || !this.hips) {
+      this.turnStart = null;
+      this.turnAccum = 0;
+      return;
+    }
+    this.ch.root.updateMatrixWorld(true);
+    this.hips.getWorldQuaternion(_hq);
+    this.ch.root.getWorldQuaternion(_rq);
+    _hq.premultiply(_rq.invert());
+    _hv.set(0, 0, 1).applyQuaternion(_hq);
+    const yaw = Math.atan2(_hv.x, _hv.z);
+    if (this.turnStart === null) this.turnStart = yaw;
+    const accum = Math.atan2(Math.sin(yaw - this.turnStart), Math.cos(yaw - this.turnStart));
+    const already = this.turnAccum; // the root got this much before this frame's render
+    this.onTurnDelta?.(accum - this.turnAccum);
+    this.turnAccum = accum;
+    // counter-rotate the hips (world up) by what the root already shows
+    this.hips.parent!.getWorldQuaternion(_rq);
+    _hv.set(0, 1, 0).applyQuaternion(_rq.invert());
+    this.hips.quaternion.premultiply(_hq.setFromAxisAngle(_hv, -already));
+  }
+  private hips: Object3D | null = null;
+
   get turning() {
     return !!this.full && this.full.name.startsWith('turn_');
   }
@@ -164,8 +200,15 @@ export class PlayerAnimator {
       const n = cx + cy || 1;
       const dirs = [i.dirY > 0 ? cy / n : 0, i.dirY < 0 ? cy / n : 0, i.dirX < 0 ? cx / n : 0, i.dirX > 0 ? cx / n : 0];
       const walkRef = dirs[0] * speedOf('walk') + dirs[1] * speedOf('walk_back') + dirs[2] * speedOf('strafe_left') + dirs[3] * speedOf('strafe_right');
+      const runRef = dirs[0] * speedOf('run') + dirs[1] * speedOf('run_back') + dirs[2] * speedOf('run_strafe_left') + dirs[3] * speedOf('run_strafe_right');
       const move = Math.min(1, sp / Math.max(0.3, walkRef));
-      const r = Math.max(0, Math.min(1, (sp - walkRef) / Math.max(0.3, walkRef)));
+      // QA-087: walk and run back/strafe clips have different contact timings, so blending them mid-stride skates.
+      // Use the walk set while it can be speed-matched (ts ≤ max), the run set once it can (ts ≥ min); blend only
+      // across the gap between the two bands.
+      const [lo, hi] = A.speedMatchClamp;
+      const walkTop = walkRef * hi;
+      const runBottom = runRef * lo;
+      const r = runBottom > walkTop ? Math.max(0, Math.min(1, (sp - walkTop) / (runBottom - walkTop))) : sp >= (walkTop + runBottom) / 2 ? 1 : 0;
       set(A.survivorIdles[0], 1 - move);
       A.survivorStrafeWalk.forEach((c, k) => set(c, dirs[k] * move * (1 - r)));
       A.survivorStrafeRun.forEach((c, k) => set(c, dirs[k] * move * r));
@@ -217,7 +260,7 @@ export class PlayerAnimator {
       if (!this.full.hold && x.time >= x.getClip().duration - 1e-3) {
         const f = this.full;
         this.full = null;
-        if (f.name.startsWith('turn_')) this.onTurnEnd?.(a.meta.turn_deg ?? 0);
+        if (f.name.startsWith('turn_')) this.onTurnEnd?.(0);
         f.onEnd?.();
       }
     }
@@ -240,6 +283,8 @@ export class PlayerAnimator {
       else if (a.meta.upperBody) sumUp += a.w;
     }
     // ---- shared phase for moving loops (φ advances by the weighted cadence)
+    // One time scale for the blend: actual speed / blended authored speed (clamped), so planted feet stay planted
+    // Phase rate: each loop's own speed-matched rate, weighted (exact whenever one clip dominates)
     let cadence = 0;
     let movingW = 0;
     for (const a of this.acts.values()) {
@@ -255,22 +300,24 @@ export class PlayerAnimator {
     // ---- apply
     const fW = this.fullW;
     const uW = this.upperW;
+    const turnLayer = !!this.lastFull && !!this.lastFull.meta.turn_deg;
     for (const a of this.acts.values()) {
       const m = a.meta;
       if (m.speed !== undefined) {
         const w = sumLoco > 0 ? a.w / sumLoco : 0;
         const time = m.speed < 0.05 ? this.idleT % (m.cycle ?? 3) : this.phase * (m.cycle ?? 1);
         if (a.lo) (a.lo.time = time), a.lo.setEffectiveWeight(w * (1 - fW));
-        if (a.up) (a.up.time = time), a.up.setEffectiveWeight(w * (1 - fW) * (1 - uW));
+        if (a.up) (a.up.time = time), a.up.setEffectiveWeight(w * (turnLayer ? 1 - fW * (1 - uW) : 1 - fW) * (1 - uW));
       } else if (m.upperBody) {
-        a.up?.setEffectiveWeight(sumUp > 0 ? (a.w / sumUp) * uW * (1 - fW) : 0);
+        a.up?.setEffectiveWeight(sumUp > 0 ? (a.w / sumUp) * uW * (turnLayer ? 1 : 1 - fW) : 0);
       } else {
         const w = a === this.lastFull ? fW : 0; // the active (or fading-out) full-body clip
         a.lo?.setEffectiveWeight(w);
-        a.up?.setEffectiveWeight(w);
+        a.up?.setEffectiveWeight(turnLayer ? w * (1 - uW) : w); // QA-084: hands stay on the gun while turning
       }
     }
     this.mixer.update(dt);
+    this.turnRootMotion();
     for (const p of this.procedural) {
       p.q.copy(p.bone.quaternion);
       p.p.copy(p.bone.position);

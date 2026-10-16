@@ -213,6 +213,7 @@ export class Player implements PlayerView {
     if (f < 0 && !this.crouched) speed *= 0.8; // backpedal
     speed *= this.speedMul * this.survivalSpeed;
     if (this.usingItem) speed = Math.min(speed, M.walk);
+    if (f < 0 && this.speedMul < 0.95) speed = Math.min(speed, M.backAimMax);
     _v.multiplyScalar(moving ? speed : 0);
 
     // Accelerate toward desired (separate up/down rates, sprint ramp, air control)

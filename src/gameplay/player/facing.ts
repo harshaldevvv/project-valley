@@ -51,9 +51,11 @@ export class BodyFacing {
       const anim = this.ctx.playerAnim;
       const diff = wrap(p.yaw - this.yaw);
       if (!anim.turning && Math.abs(diff) > AP.turnTriggerDeg * DEG) {
-        anim.onTurnEnd = (deg) => {
-          this.yaw = wrap(this.yaw + deg * DEG);
-          this.prevYaw = this.yaw;
+        anim.onTurnEnd = null;
+        // Root motion arrives frame by frame from the clip (no end-of-clip snap, QA-084)
+        anim.onTurnDelta = (rad) => {
+          this.yaw = wrap(this.yaw + rad);
+          this.prevYaw = wrap(this.prevYaw + rad);
         };
         anim.oneshot(diff > 0 ? 'turn_left_90' : 'turn_right_90', 0.06);
       }

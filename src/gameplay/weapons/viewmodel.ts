@@ -25,6 +25,9 @@ export class Viewmodel {
   private actions = new Map<string, AnimationAction>();
   private noL = new Map<string, AnimationAction>();
   private sockets = new Map<string, Object3D>();
+  socket(name: string) {
+    return this.sockets.get(name) ?? null;
+  }
   private kind: FpKind = 'rifle';
   private idle: AnimationAction | null = null;
   private ads: AnimationAction | null = null;

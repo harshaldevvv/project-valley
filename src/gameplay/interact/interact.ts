@@ -12,6 +12,7 @@ import type { Ctx } from '../ctx';
  * - QA-071: taking damage cancels a hold until E is released.
  */
 const VIEW_COS = Math.cos((65 * Math.PI) / 180);
+const AIM_ON = Math.cos((14 * Math.PI) / 180);
 const LOS_FILTER = groups(Group.PLAYER, Group.STATIC | Group.BUILD | Group.TERRAIN);
 const LOS_BACK = groups(Group.PLAYER, Group.STATIC | Group.BUILD);
 const _chest = new Vector3();
@@ -86,6 +87,10 @@ export class Interact {
     this.ray.dir = _d;
     const aimHit = this.ctx.game.phys.world.castRay(this.ray, 6, true, undefined, groups(Group.PLAYER, Group.STATIC | Group.VEHICLE | Group.BUILD), p.collider);
     const onCar = !!aimHit && this.ctx.hits.get(aimHit.collider.handle)?.kind === 'vehicle';
+    // QA-070: standing at a car (within 1.5 m of one of its prompts) also gives the car priority
+    let nearCar = false;
+    for (const v of this.ctx.vehicles.prompts) if (v.prompt() && v.position.distanceTo(_chest) < 1.5 + (v.radius ?? 2) * 0.5) nearCar = true;
+    const carFirst = onCar || nearCar;
     let best = Infinity;
     let bestText: string | null = null;
     for (const i of this.ctx.game.interact.all) {
@@ -101,7 +106,10 @@ export class Interact {
       const text = i.prompt();
       if (!text) continue;
       let score = Math.acos(Math.min(1, facing)) * 3 + d * 0.15;
-      if (onCar && this.ctx.vehicles.prompts.has(i)) score -= 10;
+      const isCar = this.ctx.vehicles.prompts.has(i);
+      if (carFirst && isCar) score -= 10;
+      // Next to a car, other prompts (bodies at your feet) need the crosshair right on them
+      else if (carFirst && !isCar && facing < AIM_ON) continue;
       if (score >= best || !this.visible(i.position)) continue;
       best = score;
       this.current = i;
