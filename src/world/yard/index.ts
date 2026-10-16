@@ -5,6 +5,7 @@ import { placeYardHouse } from './house';
 import { Kit } from './kit';
 import { setupLighting } from './lighting';
 import { lightPoles } from './poles';
+import { buildLampPools } from './pools';
 import { finishSigns } from './signs';
 import { buildAnim } from './stations/anim';
 import { buildBuildPad } from './stations/build';
@@ -23,7 +24,7 @@ export async function buildYard(game: Game): Promise<void> {
   buildPaths(kit);
   await buildLoot(kit);
   await buildRange(kit);
-  buildPen(kit);
+  await buildPen(kit);
   buildBuildPad(kit);
   await buildAnim(kit);
   buildTrack(kit);
@@ -31,6 +32,7 @@ export async function buildYard(game: Game): Promise<void> {
   await kit.finish();
   finishSigns(kit);
   placeYardHouse(game);
+  buildLampPools(game);
 }
 
 /** Gravel paths from the spawn hub to every station, plus the hub itself. */

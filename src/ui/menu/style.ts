@@ -68,7 +68,7 @@ export const MENU_CSS = `
 #menu .mn-seg label:hover span{color:var(--ink)}
 #menu .mn-seg input:checked+span{background:rgba(217,164,65,.35);color:var(--ink)}
 #menu .mn-seg input:focus-visible+span{outline:1px solid var(--accent);outline-offset:-2px}
-#mn-lockhint{position:fixed;left:50%;top:58%;transform:translateX(-50%);z-index:15;pointer-events:none;padding:7px 14px;border-radius:3px;
+#mn-lockhint{position:fixed;left:50%;top:24px;transform:translateX(-50%);z-index:15;pointer-events:none;padding:7px 14px;border-radius:3px;
  font:600 12px/1 "Bahnschrift","DIN Alternate","Arial Narrow",system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;
  color:#eef0ea;background:rgba(12,15,14,.72);border:1px solid rgba(238,240,234,.15)}
 #mn-lockhint[hidden]{display:none}

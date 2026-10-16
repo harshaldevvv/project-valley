@@ -7,7 +7,8 @@
  * Unknown handles (dynamic bodies, build pieces, zombies) return null, so the caller picks its own default.
  * The terrain collider resolves by position: painted pads/roads/lanes win over the base grass.
  */
-export type Surface = 'grass' | 'dirt' | 'concrete' | 'wood' | 'metal' | 'rubber';
+/** 'chainlink' = see-through mesh panels: they block bodies (STATIC group) but bullets pass (QA-055). */
+export type Surface = 'grass' | 'dirt' | 'concrete' | 'wood' | 'metal' | 'rubber' | 'chainlink';
 
 const byHandle = new Map<number, Surface>();
 let terrainHandle = -1;
@@ -48,8 +49,8 @@ export const assetSurface: Record<string, Surface> = {
   env_wall_concrete_a: 'concrete',
   env_barrier_jersey_a: 'concrete',
   env_pedestal_a: 'concrete',
-  env_fence_chainlink_a: 'metal',
-  env_gate_chainlink_a: 'metal',
+  env_fence_chainlink_a: 'chainlink',
+  env_gate_chainlink_a: 'chainlink',
   env_light_pole_a: 'metal',
   prop_cabinet_metal_a: 'metal',
   prop_target_plate_a: 'metal',

@@ -11,10 +11,11 @@ const P = (x: number, z: number, tx: number, tz: number): Placement => ({
   id: 'env_light_pole_a', size: [0.3, 6, 0.3], x, z, yaw: faceToward(x, z, tx, tz),
 });
 const s = yard.stations;
-const ring = Array.from({ length: 5 }, (_, k) => {
-  // anim stand: 6-slot ring, the slot toward spawn (north) left open for the viewing spot
-  const a = -Math.PI / 2 + ((k + 1) * Math.PI) / 3;
-  return P(s.anim.x + Math.cos(a) * 5.2, s.anim.z + Math.sin(a) * 5.2, s.anim.x, s.anim.z);
+const ring = [2, 3, 4].map((k) => {
+  // anim stand: 3 poles on the far (south) half only, so none stands between the viewing spot / approach
+  // path from spawn and the pedestal (QA-067)
+  const a = -Math.PI / 2 + (k * Math.PI) / 3;
+  return P(s.anim.x + Math.cos(a) * 6.5, s.anim.z + Math.sin(a) * 6.5, s.anim.x, s.anim.z);
 });
 const trackR = CORNER_CLEAR + 2; // outside the straights' run-off (QA-040)
 
@@ -36,6 +37,7 @@ export const lightPoles: Placement[] = [
   ...[-1, 1].flatMap((sz) => [-0.75, 0.75].map((fx) =>
     P(s.pen.x + fx * (s.pen.w / 2), s.pen.z + sz * (s.pen.d / 2 + 1.5), s.pen.x, s.pen.z))),
   P(s.pen.x + s.pen.w / 2 + 1.5, s.pen.z, s.pen.x, s.pen.z),
+  P(s.pen.x, s.pen.z + 0.85, s.pen.x, s.pen.z), // floodlight mast in the middle: its head is over the centre (QA-052)
   // build pad: two opposite corners
   P(s.build.x - s.build.w / 2 - 1.5, s.build.z - s.build.d / 2 - 1.5, s.build.x, s.build.z),
   P(s.build.x + s.build.w / 2 + 1.5, s.build.z + s.build.d / 2 + 1.5, s.build.x, s.build.z),
@@ -45,6 +47,13 @@ export const lightPoles: Placement[] = [
     return P(cx + sx * trackR * Math.SQRT1_2, cz + sz * trackR * Math.SQRT1_2, cx, cz);
   }),
   P(L.cx - L.hx - L.width / 2 - 4, L.cz + 6, L.cx - L.hx, L.cz + 6),
+  // track straights (QA-068): 3.5 m+ off the asphalt edge, beside the straights (not in any run-off band)
+  ...[-10, 10].flatMap((dx) => [
+    P(L.cx + dx, L.cz - L.hz - L.width / 2 - 3.5, L.cx + dx, L.cz - L.hz), // north straight
+    P(L.cx + dx, L.cz + L.hz + L.width / 2 + 5.5, L.cx + dx, L.cz + L.hz), // south (behind the barriers)
+  ]),
+  P(L.cx + L.hx + L.width / 2 + 5.5, L.cz, L.cx + L.hx, L.cz), // east (behind the barriers)
+  P(L.cx - L.hx - L.width / 2 - 3.5, L.cz - 6, L.cx - L.hx, L.cz - 6), // west
 ];
 
 /** World positions of the lamp heads (arm tip, ~5.9 m up, 0.85 m in front of the pole). */
