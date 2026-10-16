@@ -109,6 +109,28 @@ Reports:
   - Repairing the car is only possible from F1 for now; a repair-kit item is being added.
   - The pen's west fence sits near the track's run-off line.
 
+## Update 10:50 — M1 signed off (QA pass 4)
+
+- **QA pass 4 verdict: M1 is DONE** per GAME_PLAN. All P1s are fixed and nothing open is P0 or P1. Report: `docs/qa/m1-qa-report-4.md`.
+- **Fix rounds 3 and 4 added:**
+  - lockpick item and minigame, and a locked cabinet
+  - searchable survivor and zombie corpses (soldier corpses have better loot)
+  - a swinging pen gate, and chain-link fences that bullets pass through
+  - car stability with auto-flip, and zombies attacking the car (engine death, dragging you out)
+  - repair kit
+  - item icons
+  - first-person arms with real fingers
+  - night light pools
+- **Action for you:** WebGPU ran on the AMD integrated GPU after the restart. With 30 zombies, p95 frame time was 20.8 ms. In Windows Settings → System → Display → Graphics, set Chrome to **High performance**, then re-run `node artifacts/qa4/perf.mjs c` (needs `npm run dev`).
+- **Remaining polish (P2/P3):**
+  - repair prompt stolen by nearby bodies
+  - lockpick screen stays open while you're attacked
+  - FP rifle stock and ADS handguard framing
+  - one corpse pose
+  - third-person ADS shoulder
+  - text strings to move into content/text
+  - balance of the pen fight
+
 ## Still in flight at the time of writing
 - The systems agent is wiring item icons into the inventory, closing UI on death, and adding the repair kit.
 - After that: QA pass 3 and further polish.
