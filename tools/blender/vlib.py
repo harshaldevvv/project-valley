@@ -72,6 +72,7 @@ class Builder:
         self.col_boxes = []  # explicit compound collider boxes (center, size, rot)
         self._target = None
         self._xf = None  # extra placement matrix from xform()
+        self._swap = {}  # swatch substitutions from recolor()
 
     # ---------- primitives ----------
     def _slot(self, swatch):
@@ -187,6 +188,16 @@ class Builder:
         finally:
             self._xf = prev
 
+    @contextlib.contextmanager
+    def recolor(self, mapping):
+        """`with m.recolor({"wood_raw": "plywood"}):` - recolour a reused sub-model (one-step lookup)."""
+        prev = self._swap
+        self._swap = {**prev, **mapping}
+        try:
+            yield self
+        finally:
+            self._swap = prev
+
     def collider_box(self, center, size, rot=(0, 0, 0)):
         """Add one box to a compound collider (exported as <id>_COL_box_N; put the largest first). If any are
         added, finish() uses them instead of the automatic bounding box. The runtime reads each as a world AABB."""
@@ -238,6 +249,7 @@ class Builder:
         return self
 
     def _merge(self, tmp, swatch):
+        swatch = self._swap.get(swatch, swatch)
         if self._xf is not None:
             bmesh.ops.transform(tmp, matrix=self._xf, verts=tmp.verts)
         slot = self._slot(swatch)

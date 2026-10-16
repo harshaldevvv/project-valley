@@ -1,8 +1,8 @@
 """prop_weapon_rack_a — free-standing wall-style gun rack on legs, 1.6 x 1.6 x 0.5 m (empty).
 Plank backboard between two posts with splayed feet, a butt tray at the bottom and peg pairs at the top
 (front = -Z). Sockets SOCKET_slot_0..5 mark where a long gun rests (butt-in-tray point).
-rev b (QA-029): a lower barrel-rest rail at y = 1.0 for long guns, and a separate child part "GUNS"
-(an AK standing in slot 1, a pistol hanging by its trigger guard in slot 4) that the world hides once looted.
+rev b (QA-029): a lower rail with pegs at y = 1.0, and a separate child part "GUNS" (an AK lying across the
+lower pegs, a pistol hooked by its trigger guard on the top pegs) that the world hides once looted.
 """
 import os
 import sys
@@ -57,15 +57,20 @@ def slot_x(k):
     return -PX + 0.04 + (2 * PX - 0.08) * (k + 0.5) / SLOTS
 
 
-# GUNS part (pivot at the rack origin): simplified (lod 1) copies of wpn_rifle_a / wpn_pistol_a
+# GUNS part (pivot at the rack origin): simplified (lod 1) copies of wpn_rifle_a / wpn_pistol_a, lying
+# horizontally on the pegs with their side profile to the front (-Z), muzzles toward -X, a little proud of the
+# rails. Recoloured lighter than the board so they read from 3-6 m.
+LIGHT = {"wood_raw": "plywood", "wood_dark": "leather_brown", "metal_gun": "metal_dark", "metal_dark": "metal_bare"}
+PEG_TOP_REST = REST_Y + 0.015 + 0.012
+PEG_TOP_UP = 1.32 + 0.015
 m.part("GUNS", pivot=(0, 0, 0))
-bore_x = wpnlib.RIFLE_BORE - wpnlib.GY  # gun-space height of the bore above the grip -> +X once stood up
-with m.xform((slot_x(1) - bore_x, 0.215 + 0.29, -0.07), (0, 90, 0)):  # side faces -Z, receiver top to +X
-    with m.xform(rot=(90, 0, 0)):  # muzzle up, butt down in the tray
-        wpnlib.rifle_body(m, 1)
-        wpnlib.rifle_mag(m, lod=1)
-with m.xform((slot_x(4) + 0.0015, 1.32 + 0.03, -0.08), (0, 90, 0)):
-    with m.xform(rot=(-90, 0, 0)):  # muzzle down, hanging by the trigger guard on the top peg
+with m.recolor(LIGHT):
+    rec_bottom = -wpnlib.GY  # receiver underside height above the grip origin
+    with m.xform((0.156, PEG_TOP_REST + 0.002 - rec_bottom, -0.06), (0, 0, 7)):  # barrel dips onto its peg
+        with m.xform(rot=(0, 90, 0)):  # barrel -> -X, right side faces -Z
+            wpnlib.rifle_body(m, 1)
+            wpnlib.rifle_mag(m, lod=1)
+    with m.xform((slot_x(4) + 0.08, PEG_TOP_UP - 0.03, -0.06), (0, 90, 0)):  # dust cover on one peg, guard on the other
         wpnlib.pistol_body(m, 1)
         wpnlib.pistol_mag(m, lod=1)
 m.part(None)
