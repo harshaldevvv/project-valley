@@ -141,7 +141,7 @@ export class Vehicles {
     this.ctx.game.interact.register({
       position: car.doorPos,
       radius: def.doorReach,
-      prompt: () => (this.driving ? null : 'Drive  [F]'),
+      prompt: () => (this.driving ? null : 'Drive'), // E or F (QA-027: one key glyph)
       onInteract: () => this.enter(car),
     });
     return car;
@@ -313,11 +313,14 @@ export class Vehicles {
       }
       if (_v.y > 0.6 || sp < 4) continue;
       // Hit by the front/rear: throw along the travel direction and up
-      _w.copy(_f).multiplyScalar(sp * 0.8).setY(1.5 + sp * 0.25);
+      // Thrown ahead of the bumper (faster than the car, so it doesn't end up under it) and off to its side
+      _w.copy(_f).multiplyScalar(sp * 1.2).setY(1.5 + sp * 0.25);
+      _p.set(Math.sign(_v.x || 1) * sp * 0.25, 0, 0).applyQuaternion(car.currQuat);
+      _w.add(_p);
       this.ctx.zombies.fling(z, _w, sp * d.rammingDamage, d.id);
       _p.copy(z.curr).setY(z.curr.y + 1);
       this.ctx.sfx('melee_hit', _p, { volume: 1 });
-      this.ctx.fx.impact(_p, _f, 'flesh', 2);
+      this.ctx.fx.impact(_p, _f, 'flesh', _f, 2);
       if (car === this.driving) this.ctx.rig.addTrauma(0.25);
       // The bump costs the car a little speed
       const lv = car.body.linvel();

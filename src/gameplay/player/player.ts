@@ -7,6 +7,7 @@ import { yard } from '../../content/data/yard';
 import type { PlayerView } from '../../core/contracts';
 import type { Ctx } from '../ctx';
 import { Stamina } from './stamina';
+import { surfaceOf } from '../../world/surfaces';
 
 /**
  * Player controller v1 (principles §2): Rapier kinematic capsule with our own velocity state,
@@ -280,6 +281,9 @@ export class Player implements PlayerView {
       groups(Group.PLAYER, Group.STATIC | Group.TERRAIN | Group.BUILD | Group.VEHICLE),
     );
     if (!hit) return 'grass';
+    // Environment surface tags: soft ground (grass/dirt) vs hard (concrete, wood, metal…)
+    const s = surfaceOf(hit.collider.handle, this.curr.x, this.curr.z);
+    if (s) return s === 'grass' || s === 'dirt' ? 'grass' : 'concrete';
     return (hit.collider.collisionGroups() >>> 16) & Group.TERRAIN ? 'grass' : 'concrete';
   }
 

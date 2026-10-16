@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, Frustum, LineBasicMaterial, LineSegments, Matrix4, Sphere, Vector3, type Object3D } from 'three';
+import { BufferAttribute, BufferGeometry, Frustum, LineBasicMaterial, LineSegments, Matrix4, Object3D, Sphere, Vector3 } from 'three';
 import type { Collider, KinematicCharacterController, RigidBody } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
 import { horde as HD, senses as SN, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
@@ -6,7 +6,9 @@ import { hasAsset } from '../../engine/assets';
 import { yard } from '../../content/data/yard';
 import { yardSpawns } from '../../world/yard/spawns';
 import type { Ctx, HitInfo, HitResult, Hittable, Zone } from '../ctx';
-import { AnimationController, applyPose, makeCharacter, type Character } from '../animstand/character';
+import { AnimationController, applyPose, makeCharacter, newPose, type Character } from '../animstand/character';
+import { createCrowd, type Crowd } from '../../engine/crowd';
+import { CrowdAnim } from './crowdAnim';
 import { newSenseState, sightRate, updateSenses, type SenseState } from './senses';
 
 /**
@@ -62,7 +64,7 @@ export class Zombie {
   deadT = 0;
   walkPhase = 0;
   climb: { from: Vector3; to: Vector3; t: number } | null = null;
-  anim: AnimationController | null = null;
+  anim: AnimationController | CrowdAnim | null = null;
   lastClip = '';
   /** Capsule centre above the feet (scaled per variant). */
   get capY() {
@@ -110,6 +112,7 @@ export class Zombies {
   private lineCol = new Float32Array(30 * 8 * 3);
   kills = 0;
   private lastWindup = -9;
+  private tickN = 0;
   private ray;
 
   constructor(private ctx: Ctx) {
@@ -168,10 +171,19 @@ export class Zombies {
     // Ground height under the spawn point
     const down = world.castRay(new R.Ray({ x: at.x, y: at.y + 3, z: at.z }, { x: 0, y: -1, z: 0 }), 10, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, Group.STATIC | Group.TERRAIN | Group.BUILD));
     if (down) at.y = at.y + 3 - down.timeOfImpact + 0.02;
-    const ch = await makeCharacter('zombie', def.model, def.clipsFrom);
+    // GPU crowd (engine, one draw per archetype per LOD) when available; else a skinned/placeholder character
+    const crowd = await this.crowdFor(def);
+    let ch: Character;
+    let ca: CrowdAnim | null = null;
+    if (crowd) {
+      ch = { root: new Object3D(), hand: new Object3D(), skinned: true, mixer: null, actions: new Map(), clips: crowd.clips, parts: null, pose: newPose() };
+      ca = new CrowdAnim(crowd, crowd.add());
+    } else {
+      ch = await makeCharacter('zombie', def.model, def.clipsFrom);
+      this.ctx.game.scene.add(ch.root);
+    }
     const s = def.scale ?? 1;
     const capY = CAPSULE_HH * s + CAPSULE_R;
-    this.ctx.game.scene.add(ch.root);
     const body = world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(at.x, at.y + capY, at.z));
     const capsule = world.createCollider(R.ColliderDesc.capsule(CAPSULE_HH * s, CAPSULE_R).setCollisionGroups(groups(Group.ZOMBIE, 0xffff & ~Group.VEHICLE)), body); // cars plough through; Vehicles.contacts() deals the damage
     const head = world.createCollider(
@@ -184,6 +196,7 @@ export class Zombies {
     z.home.copy(at);
     z.wander.copy(at);
     z.yaw = z.prevYaw = yaw;
+    if (ca) z.anim = ca;
     this.list.push(z);
     const hittable: Hittable = {
       kind: 'zombie',
@@ -212,6 +225,7 @@ export class Zombies {
     this.ctx.hits.delete(z.head.handle);
     world.removeRigidBody(z.body);
     z.ch.root.removeFromParent();
+    if (z.anim instanceof CrowdAnim) z.anim.crowd.remove(z.anim.i);
   }
 
   // ------------------------------------------------------------- damage
@@ -298,6 +312,7 @@ export class Zombies {
     this.ctx.hits.delete(z.capsule.handle);
     this.ctx.hits.delete(z.head.handle);
     this.ctx.sfx('zombie_death', z.curr, { pitchJitter: 0.1 });
+    if (z.fling.lengthSq() === 0) this.ctx.fx.bloodPool(z.curr);
     z.anim?.oneshot('z_death', 0.1, true);
     if (melee) this.ctx.game.events.emit('noise', { position: z.curr.clone(), radius: 5, source: 'melee_kill' });
   }
@@ -315,6 +330,7 @@ export class Zombies {
   // ------------------------------------------------------------- sim
   step(dt: number) {
     this.time += dt;
+    this.tickN++;
     const p = this.ctx.player;
     const playerTarget = !p.dead;
     const stance = p.crouched ? SN.stanceCrouch : 1;
@@ -332,6 +348,7 @@ export class Zombies {
           if (z.curr.y <= z.groundY) {
             z.curr.y = z.groundY;
             z.fling.set(0, 0, 0);
+            this.ctx.fx.bloodPool(z.curr);
           }
         }
         if ((z.deadT -= dt) <= 0) {
@@ -542,9 +559,14 @@ export class Zombies {
       z.yaw += Math.max(-maxT, Math.min(maxT, dy));
     }
 
-    // Integrate with the KCC (gravity always)
+    // Integrate with the KCC (gravity always). Zombies > 12 m away move at 30 Hz (every other tick, double step):
+    // halves the character-controller cost of a crowd; the 30 Hz steps aren't visible at that range.
     z.vel.x = _v.x;
     z.vel.z = _v.z;
+    if (dist > 12 && z.mode === 'move') {
+      if ((this.tickN + z.id) & 1) return;
+      dt *= 2;
+    }
     z.vel.y = Math.max(-20, z.vel.y - 18 * dt);
     _w.set(z.vel.x * dt, z.vel.y * dt, z.vel.z * dt);
     const want = Math.hypot(_w.x, _w.z);
@@ -602,6 +624,70 @@ export class Zombies {
     this.ctx.sfx('zombie_groan', z.curr, { volume: 0.8 });
   }
 
+  private crowds = new Map<string, Promise<Crowd | null>>();
+  /** One engine crowd per variant model; null (fallback path) if not built or the bake has no clips yet. */
+  private crowdFor(def: ZombieDef): Promise<Crowd | null> {
+    let p = this.crowds.get(def.model);
+    if (!p) {
+      const opts = { max: 32, clipsFrom: def.clipsFrom } as Parameters<typeof createCrowd>[2];
+      p = createCrowd(this.ctx.game, def.model, opts)
+        .then((c) => (c && c.clips.length ? c : null))
+        .catch((e) => {
+          console.warn('crowd', def.model, e);
+          return null;
+        });
+      this.crowds.set(def.model, p);
+    }
+    return p;
+  }
+
+  /** Crowd-instanced zombie: clip choice + whole-body tilt reactions (no bone offsets on the GPU path). */
+  private renderCrowd(z: Zombie, alpha: number, li: number, show: boolean) {
+    const a = z.anim as CrowdAnim;
+    const ch = z.ch;
+    let dy = z.yaw - z.prevYaw;
+    dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    const yaw = z.alive ? z.prevYaw + dy * alpha : z.fallDir;
+    ch.root.rotation.set(0, yaw, 0);
+    const sp = Math.hypot(z.curr.x - z.prev.x, z.curr.z - z.prev.z) * 60;
+    if (z.alive) {
+      const clip = z.crawler ? 'z_crawl' : sp > 2.6 ? 'z_run' : sp > 0.1 ? 'z_walk' : 'z_idle';
+      a.base(clip, 0.25, clip === 'z_walk' ? Math.min(1.6, Math.max(0.6, sp / 1.0)) : 1);
+    }
+    a.update();
+    const p = ch.root.position;
+    a.crowd.set(a.i, p.x, p.y, p.z, yaw);
+    a.crowd.setSpeed(a.i, z.hitstop > 0 ? 0.05 : 1);
+    const flinch = z.flinch > 0 ? Math.sin(z.flinch * 40) * z.flinch * 0.6 : 0;
+    a.crowd.setTilt(a.i, z.alive ? z.headSnap * 0.8 + (z.mode === 'stagger' ? 0.18 : 0) : 0, flinch);
+    if (show && z.alive && li < 30) li = this.senseLines(z, li);
+    return li;
+  }
+
+  /** Senses debug: vision cone edges + LOS line + suspicion bar, coloured by state. */
+  private senseLines(z: Zombie, li: number) {
+    const ch = z.ch;
+    const col = z.sense.awareness === 'detected' ? [1, 0.15, 0.1] : z.sense.awareness === 'suspicious' ? [1, 0.8, 0.1] : z.sense.awareness === 'searching' ? [1, 0.5, 0.1] : [0.3, 0.9, 0.4];
+    const o = ch.root.position;
+    const half = (SN.coneDeg / 2) * (Math.PI / 180);
+    const r = SN.rangeDay * (0.2 + 0.8 * z.sense.suspicion);
+    const yaw = ch.root.rotation.y;
+    const base = li * 24;
+    const seg = (k: number, ax: number, ay: number, az: number, bx: number, by: number, bz: number, c = col) => {
+      this.linePos.set([ax, ay, az, bx, by, bz], base + k * 6);
+      this.lineCol.set([...c, ...c], base + k * 6);
+    };
+    const y = o.y + 1.6;
+    seg(0, o.x, y, o.z, o.x - Math.sin(yaw + half) * r, y, o.z - Math.cos(yaw + half) * r);
+    seg(1, o.x, y, o.z, o.x - Math.sin(yaw - half) * r, y, o.z - Math.cos(yaw - half) * r);
+    const p = this.ctx.player.position;
+    if (z.seen) seg(2, o.x, y, o.z, p.x, p.y + 1.4, p.z, [1, 1, 1]);
+    else seg(2, 0, -100, 0, 0, -100, 0);
+    // suspicion bar above head
+    seg(3, o.x - 0.4, o.y + 2.05, o.z, o.x - 0.4 + 0.8 * z.sense.suspicion, o.y + 2.05, o.z);
+    return li + 1;
+  }
+
   // ------------------------------------------------------------- render
   render(alpha: number, dt: number) {
     let li = 0;
@@ -612,6 +698,10 @@ export class Zombies {
     for (const z of this.list) {
       const ch = z.ch;
       ch.root.position.lerpVectors(z.prev, z.curr, alpha);
+      if (z.anim instanceof CrowdAnim) {
+        li = this.renderCrowd(z, alpha, li, show);
+        continue;
+      }
       // Skinned meshes aren't frustum-culled by the engine (bind-pose bounds), so cull per zombie here;
       // shadows only up close, animation rate by distance (principles §13: full < 20 m, 15 fps < 60 m, 7.5 fps beyond)
       _sphere.center.copy(ch.root.position).setY(ch.root.position.y + 0.9);
@@ -662,28 +752,7 @@ export class Zombies {
           if (z.mode === 'stagger') z.bones.spine.rotation.x -= 0.35;
         }
       } else applyPose(ch);
-      // Senses debug: vision cone edges + LOS line, coloured by state
-      if (show && z.alive && li < 30) {
-        const col = z.sense.awareness === 'detected' ? [1, 0.15, 0.1] : z.sense.awareness === 'suspicious' ? [1, 0.8, 0.1] : z.sense.awareness === 'searching' ? [1, 0.5, 0.1] : [0.3, 0.9, 0.4];
-        const o = ch.root.position;
-        const half = (SN.coneDeg / 2) * (Math.PI / 180);
-        const r = SN.rangeDay * (0.2 + 0.8 * z.sense.suspicion);
-        const yaw = ch.root.rotation.y;
-        const base = li * 24;
-        const seg = (k: number, ax: number, ay: number, az: number, bx: number, by: number, bz: number, c = col) => {
-          this.linePos.set([ax, ay, az, bx, by, bz], base + k * 6);
-          this.lineCol.set([...c, ...c], base + k * 6);
-        };
-        const y = o.y + 1.6;
-        seg(0, o.x, y, o.z, o.x - Math.sin(yaw + half) * r, y, o.z - Math.cos(yaw + half) * r);
-        seg(1, o.x, y, o.z, o.x - Math.sin(yaw - half) * r, y, o.z - Math.cos(yaw - half) * r);
-        const p = this.ctx.player.position;
-        if (z.seen) seg(2, o.x, y, o.z, p.x, p.y + 1.4, p.z, [1, 1, 1]);
-        else seg(2, 0, -100, 0, 0, -100, 0);
-        // suspicion bar above head
-        seg(3, o.x - 0.4, o.y + 2.05, o.z, o.x - 0.4 + 0.8 * z.sense.suspicion, o.y + 2.05, o.z);
-        li++;
-      }
+      if (show && z.alive && li < 30) li = this.senseLines(z, li);
     }
     this.lines.visible = show;
     if (show) {

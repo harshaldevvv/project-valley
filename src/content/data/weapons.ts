@@ -75,8 +75,8 @@ export interface WeaponFeel {
   fallbackSize: [number, number, number]; // placeholder model box
 }
 export const weaponFeel: Record<string, WeaponFeel> = {
-  pistol_a: { model: 'wpn_pistol_a', sound: 'pistol_shot', drawMs: 350, trauma: 0.1, fovKick: 1, viewPunch: 1.2, kickBack: 0.03, recoverFrac: 0.92, magSize: 15, fallbackSize: [0.04, 0.13, 0.2] },
-  rifle_a: { model: 'wpn_rifle_a', sound: 'rifle_shot', drawMs: 600, trauma: 0.13, fovKick: 1.5, viewPunch: 0.9, kickBack: 0.035, recoverFrac: 0.92, magSize: 30, fallbackSize: [0.06, 0.2, 0.9] },
+  pistol_a: { model: 'wpn_pistol_a', sound: 'pistol_shot', drawMs: 350, trauma: 0.1, fovKick: 1, viewPunch: 1.2, kickBack: 0.03, recoverFrac: 1, magSize: 15, fallbackSize: [0.04, 0.13, 0.2] },
+  rifle_a: { model: 'wpn_rifle_a', sound: 'rifle_shot', drawMs: 600, trauma: 0.13, fovKick: 1.5, viewPunch: 0.9, kickBack: 0.035, recoverFrac: 1, magSize: 30, fallbackSize: [0.06, 0.2, 0.9] },
 };
 
 /** Shared ballistics (principles §3). */
@@ -172,7 +172,6 @@ export const handling = {
     pistol: { hip: [0.12, -0.14, -0.38], adsZ: -0.36 },
     knife: { hip: [0.16, -0.17, -0.34], adsZ: -0.34 },
   } as Record<string, { hip: [number, number, number]; adsZ: number }>,
-  muzzleFlashSize: 0.32,
   /** Weapon rotation in the skinned SOCKET_hand_R (radians XYZ); tune live if the rig's socket axes change. */
   gripRot: [0, 0, 0] as [number, number, number],
 };

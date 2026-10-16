@@ -85,7 +85,7 @@ export const senses = {
 
 export const horde = {
   maxAlive: 30,
-  attackTokens: 2,
+  attackTokens: 3, // principles §6 (QA-008 tuning: 5 standing still ≈ 7 s, kiting survives 20)
   attackSpacing: 0.45, // s between any two attack windups starting (no stacked hits)
   groanMin: 4,
   groanMax: 10,

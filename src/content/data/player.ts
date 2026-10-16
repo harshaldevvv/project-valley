@@ -22,7 +22,7 @@ export const movement = {
   eyeStand: 1.62,
   eyeCrouch: 1.05,
   maxSlopeDeg: 50,
-  stepHeight: 0.55, // QA-003: the house foundation lip is 0.5 m
+  stepHeight: 0.35, // QA-003: the KCC lifts the whole capsule by this, so it must also clear door lintels (house steps are 0.167 m)
   // Vault: obstacles 0.5–1.3 m tall, ≤ 0.6 m thick, 0.4–0.6 s.
   vaultMin: 0.5,
   vaultMax: 1.3,

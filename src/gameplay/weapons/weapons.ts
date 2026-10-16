@@ -1,14 +1,16 @@
-import { BoxGeometry, Group as TGroup, MathUtils, Mesh, Object3D, Vector3 } from 'three';
-import { paintGeometry, paletteMaterial } from '../../engine/palette';
+import { MathUtils, Object3D, Vector3 } from 'three';
 import type { Collider } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
 import type { ItemInstance, SlotName, WeaponDef } from '../../content/data/types';
 import type { LoadoutApi } from '../../core/contracts';
-import { ballistics as B, handling as H, meleeDefs, weaponDefs, weaponFeel, weaponSlots } from '../../content/data/weapons';
+import { ballistics as B, fpArms, handling as H, meleeDefs, weaponDefs, weaponFeel, weaponSlots } from '../../content/data/weapons';
+import { impacts, weaponFx } from '../../content/data/fx';
+import { surfaceOf as worldSurface } from '../../world/surfaces';
 import { cameraFeel } from '../../content/data/player';
 import { probe, type Ctx, type Surface } from '../ctx';
 import { addBloom, decayBloom, easeOutCubic, falloffMul, recoilKick, recover, shotInterval, spreadDeg } from './math';
 import { makeWeaponModel, type WeaponModel } from './models';
+import { Viewmodel, type FpKind } from './viewmodel';
 
 /**
  * Weapons runtime (principles §3/§4): fire (semi/auto, RPM cap), per-tick segment-raycast ballistics,
@@ -29,30 +31,6 @@ interface Bullet {
 }
 
 /** Sandbox loadout when systems hasn't installed one: pistol + rifle + knife, infinite full mags. */
-/**
- * Placeholder first-person arms: sleeve + hand boxes on the grip (and support point), reaching back toward the
- * camera. ponytail: swap for the survivor rig's arms (FP arm clips) once asset-builder ships them.
- */
-async function fpArms(kind: 'pistol' | 'rifle' | 'knife', support: Object3D | null) {
-  const mat = await paletteMaterial();
-  const g = new TGroup();
-  const arm = (x: number, y: number, z: number, yaw: number) => {
-    const hand = new Mesh(paintGeometry(new BoxGeometry(0.042, 0.07, 0.065), 'cloth_black'), mat); // gloved
-    hand.position.set(x, y, z);
-    const sleeve = new Mesh(paintGeometry(new BoxGeometry(0.075, 0.075, 0.42).translate(0, 0, 0.23), 'cloth_olive'), mat);
-    sleeve.position.set(x, y - 0.02, z + 0.03);
-    sleeve.rotation.set(0.35, yaw, 0); // back and down toward the shoulders
-    g.add(hand, sleeve);
-  };
-  arm(0, -0.03, 0.02, 0.25); // trigger hand on the grip
-  if (kind === 'rifle') {
-    const s = support?.position;
-    arm(s ? s.x : 0, s ? s.y - 0.02 : 0.0, s ? s.z : -0.3, -0.55);
-  } else if (kind === 'pistol') arm(-0.035, -0.04, 0.03, -0.35); // cupping hand
-  g.traverse((o) => (o.castShadow = false));
-  return g;
-}
-
 export function sandboxLoadout(): LoadoutApi {
   let uid = 1e6;
   const mag = (defId: string, n: number): ItemInstance => ({ uid: uid++, defId, count: 1, rounds: n });
@@ -110,7 +88,7 @@ export class Weapons {
   switchPhase: 'none' | 'holster' | 'draw' = 'none';
   private nextSlot = 0;
   drawTotal = 0.4;
-  reload: { t: number; total: number; empty: boolean; committed: boolean; outPlayed: boolean } | null = null;
+  reload: { t: number; total: number; empty: boolean; committed: boolean; outPlayed: boolean; inPlayed: boolean } | null = null;
   readonly fireModes = new Map<number, 'semi' | 'auto'>();
   spread = 3; // current cone, degrees (HUD)
   blocked = false; // muzzle obstructed (HUD reticle)
@@ -121,11 +99,14 @@ export class Weapons {
   private bullets: Bullet[] = [];
   private ray;
   private pendingFlash = false;
-  private pendingTracer = false;
   private flashDir = new Vector3();
   private aimHit = new Vector3();
   private models = new Map<string, { tp: WeaponModel; fp: WeaponModel }>();
-  readonly fpHolder = new Object3D(); // child of the camera
+  readonly fpHolder = new Object3D(); // child of the camera (legacy viewmodel, no arms)
+  readonly vm = new Viewmodel();
+  private legacyDummy = new Object3D();
+  private sprintT = 0;
+  private trailOn = false;
   private swayLag = new Vector3();
   private lastYaw = 0;
   private lastPitch = 0;
@@ -143,15 +124,16 @@ export class Weapons {
   }
 
   async init(handSocket: Object3D) {
+    await this.vm.init(this.ctx.game.camera);
     const kinds: Record<string, 'pistol' | 'rifle' | 'knife'> = { pistol_a: 'pistol', rifle_a: 'rifle', knife_a: 'knife' };
     for (const id of Object.keys(kinds)) {
       const model = weaponFeel[id]?.model ?? meleeDefs[id]?.model;
       const [tp, fp] = await Promise.all([makeWeaponModel(id, model, kinds[id]), makeWeaponModel(id, model, kinds[id])]);
       tp.root.visible = fp.root.visible = false;
       fp.root.traverse((o) => (o.castShadow = false));
-      fp.root.add(await fpArms(kinds[id], fp.support));
       handSocket.add(tp.root);
-      this.fpHolder.add(fp.root);
+      if (this.vm.ready) this.vm.attach(id, kinds[id], fp);
+      else this.fpHolder.add(fp.root); // legacy offsets until chr_arms_fp is built
       this.models.set(id, { tp, fp });
     }
     // Start with the first non-empty slot (primary, then sidearm…)
@@ -171,6 +153,10 @@ export class Weapons {
   }
   get recoilYaw() {
     return this.recoilY + this.swayY;
+  }
+  /** Viewmodel clip family for the held item. */
+  get fpKind(): FpKind {
+    return this.isMelee ? 'knife' : this.def?.class === 'pistol' ? 'pistol' : 'rifle';
   }
   get isMelee() {
     return !!this.item && !!meleeDefs[this.item.defId];
@@ -210,6 +196,7 @@ export class Weapons {
     const feel = this.item ? weaponFeel[this.item.defId] : null;
     this.drawTotal = feel ? feel.drawMs / 1000 : 0.35;
     for (const [id, m] of this.models) m.tp.root.visible = m.fp.root.visible = id === this.item?.defId;
+    this.vm.setKind(this.fpKind);
     this.shotIdx = 0;
     this.bloom = 0;
   }
@@ -224,6 +211,7 @@ export class Weapons {
     this.cancelReload();
     this.nextSlot = i;
     if (this.def) this.ctx.playerAnim?.overlay(this.def.class === 'pistol' ? 'holster' : 'holster_rifle', 1, true);
+    if (this.item && this.fpKind !== 'knife') this.vm.play(`fp_${this.fpKind}_holster`, { seconds: H.holsterS });
     this.switchPhase = this.item ? 'holster' : 'draw';
     this.switchT = this.item ? H.holsterS : this.drawTotal;
     if (!this.item) {
@@ -235,6 +223,7 @@ export class Weapons {
   }
 
   cancelReload() {
+    if (this.reload) this.vm.stop();
     this.reload = null;
   }
 
@@ -266,6 +255,7 @@ export class Weapons {
           this.switchPhase = 'draw';
           this.switchT = this.drawTotal;
           if (this.def) this.ctx.playerAnim?.overlay(`draw_${this.def.class === 'pistol' ? 'pistol' : 'rifle'}`, 1, true);
+          this.vm.play(`fp_${this.fpKind}_draw`, { seconds: this.drawTotal });
           this.ctx.sfx('bolt_rack', undefined, { volume: 0.35, pitchJitter: 0.1 });
         } else this.switchPhase = 'none';
       }
@@ -370,8 +360,9 @@ export class Weapons {
       return;
     }
     const empty = !it.rounds;
-    this.reload = { t: 0, total: empty ? def.reloadEmptyS : def.reloadTacticalS, empty, committed: false, outPlayed: false };
+    this.reload = { t: 0, total: empty ? def.reloadEmptyS : def.reloadTacticalS, empty, committed: false, outPlayed: false, inPlayed: false };
     this.ctx.playerAnim?.overlay(`reload_${def.class === 'pistol' ? 'pistol' : 'rifle'}`, 1, true);
+    this.vm.play(`fp_${this.fpKind}_reload`, { seconds: this.reload.total });
     this.adsT = Math.min(this.adsT, 0.3);
   }
 
@@ -381,9 +372,15 @@ export class Weapons {
     if (!r || !it) return;
     r.t += dt;
     const k = r.t / r.total;
-    if (!r.outPlayed && k > 0.15) {
+    // Sounds on the arms clip's events (fractions of the authored clip), so audio matches the hands
+    const ev = fpArms.reloadEvents[this.fpKind];
+    if (!r.outPlayed && k > (ev ? ev.magOut / ev.dur : 0.15)) {
       r.outPlayed = true;
       this.ctx.sfx('reload_mag_out', this.ctx.player.curr);
+    }
+    if (!r.inPlayed && k > (ev ? ev.magIn / ev.dur : 0.6)) {
+      r.inPlayed = true;
+      this.ctx.sfx('reload_mag_in', this.ctx.player.curr);
     }
     if (!r.committed && k >= B.magCommitAt) {
       r.committed = true;
@@ -392,7 +389,6 @@ export class Weapons {
         if (it.mag) this.loadout.give(it.mag);
         it.mag = fresh;
       }
-      this.ctx.sfx('reload_mag_in', this.ctx.player.curr);
     }
     if (k >= 1) {
       if (!it.rounds && it.mag && (it.mag.rounds ?? 0) > 0) {
@@ -485,8 +481,8 @@ export class Weapons {
     this.ctx.rig.kick(feel.fovKick, feel.viewPunch);
     this.kickT = 1;
     this.ctx.playerAnim?.overlay(`fire_${def.class === 'pistol' ? 'pistol' : 'rifle'}`, 1, true);
+    if (this.adsEased < 0.5) this.vm.play(`fp_${this.fpKind}_fire`); // ADS fire is code recoil only (arms contract)
     this.pendingFlash = true;
-    this.pendingTracer = def.class !== 'pistol';
     this.ctx.game.events.emit('shot', { by: 'player', weaponId: def.id, origin: _muz.clone(), dir: _d.clone(), noise: def.noise });
     this.ctx.game.events.emit('noise', { position: _muz.clone(), radius: def.noise, source: 'shot' });
   }
@@ -539,13 +535,14 @@ export class Weapons {
       const zone = h.zone(col, point);
       const dmg = def.damage * falloffMul(dist, def.falloffStart, def.falloffMinMul);
       const res = h.hit({ point, dir, zone, damage: dmg, headMul: def.headMul, weaponId: def.id, distance: dist });
-      fx.impact(point, normal, h.surface, h.surface === 'flesh' ? (zone === 'head' ? 1.6 : 1) : 1);
+      const wfx = weaponFx[def.id];
+      fx.impact(point, normal, h.surface, dir, (wfx?.impactScale ?? 1) * (h.surface === 'flesh' && zone === 'head' ? 1.8 : 1));
       if (h.surface === 'flesh') {
         // Blood decal on whatever is up to 3 m behind the target
         this.ray.origin = point;
         this.ray.dir = dir;
         const behind = ctx.game.phys.world.castRayAndGetNormal(this.ray, B.decalBehind, true, undefined, groups(Group.PROJECTILE, Group.STATIC | Group.TERRAIN | Group.BUILD), this.ctx.player.collider);
-        if (behind) fx.decal(_p.copy(point).addScaledVector(dir, behind.timeOfImpact), _n.set(behind.normal.x, behind.normal.y, behind.normal.z), 'flesh', 0.35);
+        if (behind) fx.decal(_p.copy(point).addScaledVector(dir, behind.timeOfImpact), _n.set(behind.normal.x, behind.normal.y, behind.normal.z), 'flesh');
       } else fx.decal(point, normal, h.surface);
       if (res) {
         ctx.hud.hitMarker(res.zone === 'head', res.kill);
@@ -556,19 +553,20 @@ export class Weapons {
       }
       return;
     }
-    const surface = this.surfaceOf(col);
-    fx.impact(point, normal, surface);
+    const surface = this.surfaceOf(col, point);
+    fx.impact(point, normal, surface, dir, weaponFx[def.id]?.impactScale ?? 1);
     fx.decal(point, normal, surface);
-    ctx.sfx(surface === 'metal' ? 'impact_metal' : surface === 'wood' ? 'impact_wood' : 'impact_dirt', point, { pitchJitter: 0.08 });
+    ctx.sfx(impacts[surface].sfx, point, { pitchJitter: 0.08 });
     this.lastShot = { distance: dist, zone: 'world', damage: 0, target: surface };
   }
 
-  private surfaceOf(col: Collider): Surface {
+  private surfaceOf(col: Collider, p: Vector3): Surface {
+    const tagged = worldSurface(col.handle, p.x, p.z); // environment tags every static collider
+    if (tagged) return tagged;
     const member = col.collisionGroups() >>> 16;
-    if (member & Group.TERRAIN) return 'dirt';
+    if (member & Group.TERRAIN) return 'grass';
     if (member & Group.VEHICLE) return 'metal';
-    if (member & Group.BUILD) return 'wood';
-    return 'concrete'; // ponytail: static props have no material tag yet; add a surface map from environment when needed
+    return 'wood'; // build pieces
   }
 
   // --------------------------------------------------------------- rendering
@@ -594,15 +592,39 @@ export class Weapons {
 
     if (m) {
       // Magazine hidden between mag-out and mag-in
-      if (m.fp.mag) m.fp.mag.visible = m.tp.mag!.visible = !(r && rk > 0.2 && rk < B.magCommitAt);
-      // FP viewmodel: hip/ADS lerp, sway lag (60–80 ms), walk bob, kick, holster dip, reload tilt
+      const magOut = !!r && rk > 0.2 && rk < B.magCommitAt;
+      if (m.tp.mag) m.tp.mag.visible = !magOut;
+      if (m.fp.mag && !this.vm.ready) m.fp.mag.visible = !magOut; // with arms, the reload clip events move the mag
       const a = this.adsEased;
+      const dy0 = p.yaw - this.lastYaw;
+      const dp0 = p.pitch - this.lastPitch;
+      if (this.vm.ready) {
+        // Arms rig: clips pose everything; code adds sway lag, walk bob, recoil kick and the sprint tuck
+        this.lastYaw = p.yaw;
+        this.lastPitch = p.pitch;
+        const lagK = Math.min(1, dt / cameraFeel.swayLag);
+        this.swayLag.x += (MathUtils.clamp(dy0 * 6, -fpArms.swayMax, fpArms.swayMax) - this.swayLag.x) * lagK;
+        this.swayLag.y += (MathUtils.clamp(dp0 * 6, -fpArms.swayMax, fpArms.swayMax) - this.swayLag.y) * lagK;
+        const bob = p.grounded ? Math.min(1.6, p.speed01) * (1 - a * 0.85) : 0;
+        const tuck = p.sprinting && !this.isMelee ? 1 : 0;
+        this.sprintT += (tuck - this.sprintT) * Math.min(1, dt * 8);
+        const vp = this.vm.pivot;
+        vp.position.set(
+          this.swayLag.x * 0.25 * (1 - a) + Math.cos(p.stepPhase) * fpArms.bob * bob,
+          -this.swayLag.y * 0.25 * (1 - a) + Math.abs(Math.sin(p.stepPhase)) * fpArms.bob * bob - this.sprintT * 0.04,
+          this.kickT * fpArms.kickBack,
+        );
+        vp.rotation.set(this.kickT * fpArms.kickPitch - this.sprintT * fpArms.sprintTuck * 0.5, this.swayLag.x * (1 - a * 0.7) + this.sprintT * fpArms.sprintTuck, this.sprintT * 0.2);
+        this.vm.pivot.visible = !hidden && fp;
+        this.vm.update(dt, a, this.item?.defId ?? null);
+      }
+      // Legacy FP viewmodel (no arms asset): hip/ADS lerp, sway lag, bob, kick, holster dip, reload tilt
       const fpd = H.fp[this.isMelee ? 'knife' : this.def?.class === 'pistol' ? 'pistol' : 'rifle'];
       const [hx, hy, hz] = fpd.hip;
       const ax = 0;
       const ay = -m.fp.sightY;
       const az = fpd.adsZ;
-      const v = m.fp.root;
+      const v = this.vm.ready ? this.legacyDummy : m.fp.root;
       const dy = p.yaw - this.lastYaw;
       const dp = p.pitch - this.lastPitch;
       this.lastYaw = p.yaw;
@@ -623,7 +645,7 @@ export class Weapons {
         this.swayLag.x * 2 + reloadTilt * 0.45 + sprintT * 0.6,
         -reloadTilt * 0.5 + sprintT * 0.3,
       );
-      if (melee && this.isMelee) melee.poseViewmodel(v);
+      if (melee && this.isMelee && !this.vm.ready) melee.poseViewmodel(v);
       // TP model sits in the hand; kick slides it back along the barrel
       if (ctx.playerChar.skinned) {
         m.tp.root.position.set(0, 0, this.kickT * 0.04);
@@ -643,20 +665,36 @@ export class Weapons {
     pose.aimPitch = p.pitch + this.recoilPitch;
     if (hidden) pose.hold = 'none';
 
+    // Melee ribbon trail during the active window only (shows the real reach), blade base → tip
+    if (m && this.isMelee && melee?.phase === 'active' && !hidden) {
+      if (!this.trailOn) ctx.fx.trailBegin();
+      this.trailOn = true;
+      const km = fp ? m.fp : m.tp;
+      km.muzzle.getWorldPosition(_muz);
+      km.root.getWorldPosition(_p).lerp(_muz, 0.35);
+      ctx.fx.trailSample(_p, _muz);
+    } else if (this.trailOn) {
+      ctx.fx.trailEnd();
+      this.trailOn = false;
+    }
+
     // Visual muzzle flash/tracer/shell/smoke at the rendered muzzle
     if (this.pendingFlash && m) {
       this.pendingFlash = false;
       const muz = (fp ? m.fp : m.tp).muzzle;
       muz.getWorldPosition(_muz);
-      ctx.fx.muzzle(_muz, this.flashDir, H.muzzleFlashSize * (this.def?.class === 'pistol' ? 0.8 : 1.2));
-      // Smoke starts a little ahead of the barrel and never right in the lens
+      const wfx = weaponFx[this.item!.defId];
+      const ads = fp && this.adsEased > 0.5;
+      ctx.fx.muzzle(_muz, this.flashDir, (wfx?.flashLen ?? 0.3) * (fp ? 0.8 : 1.4), ads);
+      // Smoke: every Nth shot of a burst, a little ahead of the barrel and never right in the lens
       _p.copy(_muz).addScaledVector(this.flashDir, 0.25);
-      if (_p.distanceTo(ctx.game.camera.position) > 1.0) ctx.fx.smoke(_p, this.flashDir, this.def?.class === 'pistol' ? 2 : 1);
+      if (wfx && this.shotIdx % wfx.smokeEvery === 0 && _p.distanceTo(ctx.game.camera.position) > 1.0) ctx.fx.smokePuff(_p, this.flashDir, this.def?.class === 'pistol' ? 1 : 2);
       _r.crossVectors(this.flashDir, UP).normalize();
       _u.crossVectors(_r, this.flashDir);
       (fp ? m.fp : m.tp).root.getWorldPosition(_p);
-      ctx.fx.shell(_p.addScaledVector(UP, 0.06).addScaledVector(this.flashDir, 0.12).addScaledVector(_r, 0.03), _r, _u, this.def?.class !== 'pistol');
-      if (this.pendingTracer) ctx.fx.tracer(_muz, _n.subVectors(this.aimHit, _muz).normalize(), _muz.distanceTo(this.aimHit));
+      if (wfx?.casing) ctx.fx.casing(_p.addScaledVector(UP, 0.06).addScaledVector(this.flashDir, 0.12).addScaledVector(_r, 0.03), _r, _u, _n.copy(this.flashDir).negate(), p.curr.y, wfx.casing === 'hull');
+      // Tracers: every Nth round and always the first shot of a burst
+      if (wfx && wfx.tracerEvery > 0 && (this.shotIdx === 1 || this.shotsFired % wfx.tracerEvery === 0)) ctx.fx.tracer(_muz, this.aimHit, ctx.game.camera.position);
     }
   }
 }

@@ -22,7 +22,8 @@ export function probe<K extends keyof Game>(game: Game, k: K, member: string): G
 const noopDebug: DebugApi = { action() {}, tune() {}, toggle() {}, watch() {} };
 
 export type Zone = 'head' | 'body' | 'limb';
-export type Surface = 'flesh' | 'wood' | 'metal' | 'dirt' | 'concrete';
+export type { FxSurface as Surface } from '../content/data/fx';
+import type { FxSurface as Surface } from '../content/data/fx';
 
 export interface HitInfo {
   point: Vector3;

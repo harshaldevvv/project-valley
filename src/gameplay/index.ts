@@ -3,8 +3,8 @@ import type { Game } from '../core/game';
 import { cameraFeel, health, movement, stamina } from '../content/data/player';
 import { ballistics, meleeDefs, shove, weaponDefs } from '../content/data/weapons';
 import { horde, senses, zombieDefs } from '../content/data/zombies';
+import { fxTuning } from '../content/data/fx';
 import { vehicles as vehicleDefs } from '../content/data/vehicles';
-import { yard } from '../content/data/yard';
 import { Hud } from '../ui/hud/hud';
 import { AnimationController, applyPose, makeCharacter } from './animstand/character';
 import { AnimStand } from './animstand/stand';
@@ -76,7 +76,11 @@ export async function installGameplay(game: Game): Promise<void> {
       ctx.zombies.render(alpha, dt);
       ctx.targets.render();
       ctx.animStand.render(alpha, dt);
+      perf.end('anim');
+      perf.begin('fx');
       ctx.fx.update(dt);
+      perf.end('fx');
+      perf.begin('anim');
       // Player body
       const p = ctx.player;
       body.root.visible = !p.inVehicle && !ctx.rig.firstPerson;
@@ -115,10 +119,21 @@ export async function installGameplay(game: Game): Promise<void> {
     },
   });
 
+  // Casing tink on first ground contact (fx data), FX accessibility settings (menu settings if present)
+  ctx.fx.onCasingLand = (p) => ctx.sfx(fxTuning.casingSound, p, { volume: fxTuning.casingVolume, pitchJitter: 0.06 });
+  try {
+    const st = JSON.parse(localStorage.getItem('pv.settings.v1') ?? '{}') as { reduceFlashing?: boolean; gore?: 'full' | 'reduced' | 'off' };
+    if (st.reduceFlashing !== undefined) fxTuning.reduceFlashing = st.reduceFlashing;
+    if (st.gore) fxTuning.gore = st.gore;
+  } catch {
+    /* storage unavailable: defaults */
+  }
   installDebug(ctx);
   // Playwright / console hooks (pointer lock may not engage under automation)
   (window as unknown as { __gp: unknown }).__gp = {
     ctx,
+    /** Live data tables (the same module instances the game uses, also after HMR). */
+    data: { horde, zombieDefs, senses, fxTuning, cameraFeel, movement },
     setLook: (yaw: number, pitch: number) => ctx.player.setLook(yaw, pitch),
     look: (dx: number, dy: number) => ((ctx.controls.lookDx += dx), (ctx.controls.lookDy += dy)),
     mouse: (button: 0 | 2, held: boolean) => ctx.controls.press('Mouse' + button, held),
@@ -214,6 +229,13 @@ function installDebug(ctx: Ctx) {
   d.tune('Weapons', ballistics, 'bloomRecoverPerSec', 1, 30, 0.5);
   for (const k of ['damage', 'reach', 'windup', 'active', 'recovery', 'hitstopLight', 'hitstopHeavy'] as const) d.tune('Melee', meleeDefs.knife_a as unknown as Record<string, unknown>, k, 0, k === 'damage' ? 150 : 2.5, 0.01);
   d.tune('Melee', shove, 'range', 0.5, 4, 0.1);
+  d.toggle('FX', fxTuning as unknown as Record<string, unknown>, 'reduceFlashing');
+  d.action('FX', 'Gore: full / reduced / off', () => {
+    fxTuning.gore = fxTuning.gore === 'full' ? 'reduced' : fxTuning.gore === 'reduced' ? 'off' : 'full';
+    ctx.game.events.emit('toast', { text: `Gore: ${fxTuning.gore}` });
+  });
+  d.tune('FX', fxTuning as unknown as Record<string, unknown>, 'lightPeak', 0, 8, 0.1);
+  d.tune('FX', fxTuning as unknown as Record<string, unknown>, 'tracerSpeed', 100, 600, 10);
   d.tune('Melee', shove, 'coneDeg', 30, 180, 5);
 
   const z = ctx.zombies;
@@ -237,7 +259,8 @@ function installDebug(ctx: Ctx) {
   const v = ctx.vehicles;
   d.action('Vehicle', 'Go to car', () => {
     const car = v.list[0];
-    if (car) p.teleport(car.doorPos.clone().setY(car.currPos.y + 0.1), 0);
+    // A step out from the door, so the capsule never pokes into the body
+    if (car) p.teleport(car.doorPos.clone().sub(car.currPos).setY(0).setLength(1.8).add(car.currPos).setY(car.currPos.y + 0.1), 0);
   });
   d.action('Vehicle', 'Flip / reset car', () => v.list[0] && v.flipReset(v.list[0]));
   for (const def of Object.values(vehicleDefs)) {
@@ -245,9 +268,7 @@ function installDebug(ctx: Ctx) {
     for (const k of ['engineForce', 'brakeForce', 'frictionSlip', 'suspensionStiffness', 'suspensionDamping', 'maxSteerDeg', 'steerAtSpeed', 'topSpeedKmh', 'camDist', 'camHeight'] as const)
       d.tune(`Vehicle ${def.id}`, r, k, 0, k === 'engineForce' ? 20000 : k === 'brakeForce' ? 400 : k === 'topSpeedKmh' ? 200 : k === 'steerAtSpeed' ? 1 : 60, 0.05);
   }
-  d.action('Teleport', 'Range firing line', () => p.teleport(new Vector3(yard.stations.range.x, 0.1, yard.stations.range.z + 2), 0));
-  d.action('Teleport', 'Zombie pen (outside)', () => p.teleport(new Vector3(yard.stations.pen.x - 16, 0.1, yard.stations.pen.z), -Math.PI / 2));
-  d.action('Teleport', 'Animation stand', () => p.teleport(new Vector3(yard.stations.anim.x, 0.1, yard.stations.anim.z + 5), 0));
+  // Station teleports live in the engine's F1 → Teleport group (QA-025: no duplicates here)
 }
 
 declare module './ctx' {

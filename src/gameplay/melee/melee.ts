@@ -1,8 +1,9 @@
 import { Object3D, Vector3 } from 'three';
 import { Group, groups } from '../../engine/physics';
 import { stamina as SD } from '../../content/data/player';
-import { finisher as FIN, meleeDefs, shove as SH, type MeleeDef } from '../../content/data/weapons';
+import { finisher as FIN, fpArms as FA, meleeDefs, shove as SH, type MeleeDef } from '../../content/data/weapons';
 import type { Ctx } from '../ctx';
+import { surfaceOf } from '../../world/surfaces';
 import type { Zombie } from '../zombies/zombies';
 
 /**
@@ -22,6 +23,7 @@ export class Melee {
   t = 0;
   heavy = false;
   private buffered: 'light' | 'heavy' | null = null;
+  private vBuffered = false;
   private raysDone = 0;
   private hitThisSwing = new Set<number>();
   private target: Zombie | null = null;
@@ -63,7 +65,7 @@ export class Melee {
       const fin = this.finisherTarget();
       if (fin) this.startFinisher(fin);
       else this.startShove();
-    }
+    } else if (c.pressed('shove') && this.phase === 'shove') this.vBuffered = true; // shove → V flows into a finisher
 
     this.t -= dt;
     switch (this.phase) {
@@ -108,7 +110,10 @@ export class Melee {
           this.phase = 'idle';
           const b = this.buffered;
           this.buffered = null;
-          if (b && def) this.start(b, def); // shove -> stab flows straight into a finisher
+          const fin = this.vBuffered ? this.finisherTarget() : null;
+          this.vBuffered = false;
+          if (fin) this.startFinisher(fin);
+          else if (b && def) this.start(b, def); // shove -> stab flows straight into a finisher
         }
         break;
       case 'finisher': {
@@ -138,7 +143,7 @@ export class Melee {
             this.ctx.sfx('kill_confirm');
             this.ctx.rig.addTrauma(0.35);
             _p.copy(z.curr).setY(z.curr.y + 1.2);
-            this.ctx.fx.impact(_p, _n.copy(_d).negate(), 'flesh', 2);
+            this.ctx.fx.impact(_p, _n.copy(_d).negate(), 'flesh', _d, 2);
           }
           this.target = null;
         }
@@ -157,6 +162,9 @@ export class Melee {
     }
     this.heavy = kind === 'heavy';
     this.ctx.playerAnim?.oneshot(this.heavy ? 'melee_heavy' : 'melee_swing', 0.08);
+    // FP arms: scale the clip so its hit frame lands mid active window
+    const hitAt = (this.heavy ? def.heavyWindup : def.windup) + def.active * 0.5;
+    this.ctx.weapons.vm.play(this.heavy ? 'fp_knife_heavy' : 'fp_knife_light', { timeScale: (this.heavy ? FA.knifeHit.heavy : FA.knifeHit.light) / hitAt });
     this.phase = 'windup';
     this.t = this.heavy ? def.heavyWindup : def.windup;
   }
@@ -169,6 +177,7 @@ export class Melee {
     this.ctx.player.invulnT = FIN.duration;
     this.ctx.weapons.cancelReload();
     this.ctx.playerAnim?.oneshot('melee_heavy', 0.08);
+    this.ctx.weapons.vm.play(this.ctx.weapons.isMelee ? 'fp_knife_heavy' : 'fp_shove', { seconds: FIN.duration, leftOnly: !this.ctx.weapons.isMelee });
     this.ctx.sfx('melee_swing', this.ctx.player.curr);
     // Keep it staggered for the whole finisher
     z.mode = 'stagger';
@@ -207,7 +216,8 @@ export class Melee {
     if (!h) {
       if (this.hitThisSwing.has(-1)) return;
       this.hitThisSwing.add(-1);
-      this.ctx.fx.impact(_p, _n, 'concrete', 0.6);
+      this.ctx.fx.impact(_p, _n, surfaceOf(hit.collider.handle, _p.x, _p.z) ?? 'concrete', _d, 0.6);
+      this.ctx.fx.star(_p, 0.25); // blunt impact star
       this.ctx.sfx('impact_wood', _p, { volume: 0.6 });
       this.ctx.rig.addTrauma(0.15);
       return;
@@ -221,7 +231,8 @@ export class Melee {
       point: _p, dir: _d, zone, damage: def.damage * (this.heavy ? def.heavyDamageMul : 1), headMul: 1.5, weaponId: def.id, distance: hit.timeOfImpact,
       melee: { stagger: this.heavy || def.staggerOnHit === 1 ? 0.9 : 0, push: this.heavy ? 0.6 : 0, hitstop: this.heavy ? def.hitstopHeavy : def.hitstopLight },
     });
-    this.ctx.fx.impact(_p, _n, h.surface, 1.2);
+    this.ctx.fx.impact(_p, _n, h.surface, _d, this.heavy ? 1.6 : 1.1);
+    this.ctx.fx.freeze(this.heavy ? def.hitstopHeavy : def.hitstopLight); // FX pop on hitstop release
     this.ctx.sfx('melee_hit', _p, { pitchJitter: 0.08 });
     this.ctx.rig.addTrauma(this.heavy ? 0.3 : 0.18);
     this.ctx.rig.kick(0, this.heavy ? -1.5 : -0.8);
@@ -241,6 +252,7 @@ export class Melee {
     }
     this.phase = 'shove';
     this.ctx.playerAnim?.oneshot('shove', 0.08);
+    this.ctx.weapons.vm.play('fp_shove', { timeScale: FA.shoveHit / (SH.duration * 0.4), leftOnly: true });
     this.t = SH.duration;
     this.raysDone = 0;
     this.ctx.weapons.cancelReload();
@@ -270,7 +282,7 @@ export class Melee {
       z.push.copy(_d).multiplyScalar(SH.push / 0.25);
       z.flinch = 0.2;
       _p.copy(z.curr).setY(z.curr.y + 1.2);
-      this.ctx.fx.impact(_p, _n.copy(_d).negate(), 'dirt', 0.4);
+      this.ctx.fx.impact(_p, _n.copy(_d).negate(), 'dirt', null, 0.4);
     }
     if (n) {
       this.ctx.sfx('melee_hit', p.curr, { volume: 0.7, pitchJitter: 0.1 });

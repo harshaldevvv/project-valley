@@ -78,16 +78,24 @@ export class Targets {
   step(dt: number) {
     for (const t of this.list) {
       if (t.down > 0 && (t.down -= dt) <= 0) t.vel -= t.swing * 6; // reset nudge
-      // Plate on a hinge at its top: spring back + damping; falls flat while "down"
-      const k = t.down > 0 && t.kind === 'plate' ? 8 : 60;
-      const target = t.down > 0 && t.kind === 'plate' ? 1.25 : 0;
-      t.vel += (-(t.swing - target) * k - t.vel * (t.kind === 'plate' ? 4 : 8)) * dt;
+      // Hinged plate: kicked downrange, swings on a spring and settles (environment hinge at its top edge).
+      // Without a hinge (stand-ins) it tips back and resets after 3 s.
+      const hinged = !!t.object.userData.hinge;
+      const k = !hinged && t.down > 0 && t.kind === 'plate' ? 8 : hinged ? 30 : 60;
+      const target = !hinged && t.down > 0 && t.kind === 'plate' ? 1.25 : 0;
+      t.vel += (-(t.swing - target) * k - t.vel * (t.kind === 'plate' ? (hinged ? 2.5 : 4) : 8)) * dt;
       t.swing += t.vel * dt;
+      if (hinged) t.swing = Math.min(t.swing, 1.1); // only the PLATE node swings on the gallows bar
     }
   }
 
   render() {
     for (const t of this.list) {
+      const hinge = t.object.userData.hinge as Object3D | undefined;
+      if (hinge) {
+        hinge.rotation.x = -t.swing; // negative = bottom kicks away from the shooter
+        continue;
+      }
       t.object.quaternion.copy(t.base);
       t.object.rotateX(t.swing * (t.kind === 'plate' ? 1 : 0.25));
     }

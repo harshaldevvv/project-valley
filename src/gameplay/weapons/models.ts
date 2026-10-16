@@ -17,6 +17,8 @@ export interface WeaponModel {
   sightY: number;
   /** Support-hand point (handguard), grip-local; null for one-handed. */
   support: Object3D | null;
+  /** Model sockets (muzzle, mag, sight…) when built. */
+  sockets?: Map<string, Object3D>;
 }
 
 type Kind = 'pistol' | 'rifle' | 'knife';
@@ -60,11 +62,11 @@ export async function makeWeaponModel(id: string, modelId: string, kind: Kind): 
     const sock = m.sockets.get('muzzle') ?? m.sockets.get('tip');
     root.traverse((o) => { if ((o as Mesh).isMesh) o.castShadow = true; });
     const support = m.sockets.get('support') ?? null;
-    if (sock) return { root, muzzle: sock, mag, sightY, support };
+    if (sock) return { root, muzzle: sock, mag, sightY, support, sockets: m.sockets };
     const muzzle = new Object3D();
     muzzle.position.set(0, (b.max.y + b.min.y) / 2 + 0.02, b.min.z);
     root.add(muzzle);
-    return { root, muzzle, mag, sightY, support };
+    return { root, muzzle, mag, sightY, support, sockets: m.sockets };
   } else {
     const m = new Mesh(placeholder(kind), mat);
     root.add(m);

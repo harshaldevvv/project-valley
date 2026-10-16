@@ -67,6 +67,7 @@ export class Interact {
       return;
     }
     const need = cur.holdSeconds?.() ?? 0;
+    if (this.held === 0 && need > 0) this.ctx.weapons.vm.play('fp_interact', { seconds: Math.min(need, 0.8), leftOnly: true });
     this.held += dt;
     this.progress = need > 0 ? Math.min(1, this.held / need) : 1;
     if (!this.fired && this.held >= need) {
