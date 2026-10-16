@@ -23,6 +23,8 @@ export const buildText = {
   holdsAbove: 'Remove the {piece} above first',
   holdsOn: 'Remove the {piece} first',
   refund: 'Salvaged',
+  /** One salvaged stack: {item} name, {n} count. */
+  refundItem: '{item} ×{n}',
   open: 'Open door',
   close: 'Close door',
 };

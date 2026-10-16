@@ -3,6 +3,7 @@ import { SURVIVAL, WOUNDS, ZOMBIE_HIT } from '../content/data/survival';
 import type { ItemDef } from '../content/data/types';
 import type { StatusId, SurvivalApi } from '../core/contracts';
 import type { Rng } from '../engine/rng';
+import { useText as USE_TEXT } from '../content/text/ui';
 
 /**
  * Survival needs + status effects (principles §7). Pure: the world is reached through `SurvivalHost`
@@ -10,6 +11,7 @@ import type { Rng } from '../engine/rng';
  */
 export interface SurvivalHost {
   maxHp(): number;
+  hp(): number;
   hurt(amount: number, cause: string): void;
   heal(amount: number): void;
   isNight(): boolean;
@@ -88,7 +90,7 @@ export class Survival implements SurvivalApi {
     if (id === 'bleeding' || id === 'heavy_bleeding') {
       if (id === 'bleeding' && this.map.has('heavy_bleeding')) return; // heavy already covers it
       const w = WOUNDS[id];
-      s = { timeLeft: opts.seconds ?? this.range(w.seconds), tick: this.range(w.every) };
+      s = { timeLeft: opts.seconds ?? (w.seconds ? this.range(w.seconds) : null), tick: this.range(w.every) };
       if (id === 'heavy_bleeding') this.drop('bleeding');
     } else if (id === 'fracture') s = { timeLeft: opts.seconds ?? WOUNDS.fracture.healSeconds, tick: 0 };
     else if (id === 'infection') {
@@ -127,6 +129,30 @@ export class Survival implements SurvivalApi {
     if (d.hunger) this.hunger = c(this.hunger + d.hunger);
     if (d.thirst) this.thirst = c(this.thirst + d.thirst);
     if (d.fatigue) this.fatigue = c(this.fatigue + d.fatigue);
+  }
+
+  /**
+   * Would using this do anything right now? Null = yes; else the reason it would be wasted (QA-085).
+   * Any real benefit counts (a bandage that only heals, a can that only half-fills you).
+   */
+  useRefusal(use: NonNullable<ItemDef['use']>, kind: ItemDef['kind']): string | null {
+    const T = USE_TEXT;
+    if (use.heal && this.host.hp() < this.host.maxHp() - 0.5) return null;
+    if (use.food && this.hunger < 99) return null;
+    if (use.water && this.thirst < 99) return null;
+    if (use.stamina) return null; // stamina is mechanics' meter; always worth it
+    let blockedInfection: number | null = null;
+    for (const id of (use.cures ?? []) as StatusId[]) {
+      const s = this.map.get(id);
+      if (!s) continue;
+      if (id === 'infection' && use.infectionMaxStage !== undefined && (s.stage ?? 1) > use.infectionMaxStage) {
+        blockedInfection = s.stage ?? 1;
+        continue;
+      }
+      return null;
+    }
+    if (blockedInfection !== null) return T.tooFarGone.replace('{stage}', String(blockedInfection));
+    return kind === 'food' ? T.full : kind === 'drink' ? T.notThirsty : T.nothing;
   }
 
   /** Apply a consumable's effects (called when its use timer completes). */

@@ -240,9 +240,17 @@ export class Loadout implements LoadoutApi {
    */
   using: { item: ItemInstance; seconds: number; t: number } | null = null;
 
+  /** Set by the survival layer: null = OK to use, else the reason it would be wasted. */
+  useValidator: ((item: ItemInstance) => string | null) | null = null;
+  /** Why the last beginUse() refused (for the toast). */
+  useRefusal: string | null = null;
+
   beginUse(item: ItemInstance): boolean {
     const u = defOf(item).use;
+    this.useRefusal = null;
     if (!u || this.using || item.count <= 0) return false;
+    this.useRefusal = this.useValidator?.(item) ?? null;
+    if (this.useRefusal) return false;
     this.using = { item, seconds: u.seconds, t: 0 };
     this.changed();
     return true;

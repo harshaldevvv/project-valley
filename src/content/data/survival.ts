@@ -29,8 +29,9 @@ export const SURVIVAL = {
 
 /** Wounds. Bleeds tick a % of max HP; [min, max] ranges are rolled with the seeded rng. */
 export const WOUNDS = {
-  bleeding: { pct: [2, 4] as [number, number], every: [1, 2] as [number, number], seconds: [5, 10] as [number, number] },
-  heavy_bleeding: { pct: [4, 6] as [number, number], every: [1, 1.5] as [number, number], seconds: [10, 15] as [number, number] },
+  // QA-090: light bleeds stop on their own after 30-45 s (so a bandage matters); heavy bleeds never do.
+  bleeding: { pct: [2, 4] as [number, number], every: [1, 2] as [number, number], seconds: [30, 45] as [number, number] | null },
+  heavy_bleeding: { pct: [4, 6] as [number, number], every: [1, 1.5] as [number, number], seconds: null as [number, number] | null },
   fracture: { moveSpeed: 0.8, healSeconds: 600 },
   /** 4 stages over 3 in-game days; effects escalate. hpPerMin = HP lost per real minute. */
   infection: {

@@ -183,6 +183,7 @@ export async function installSystems(game: Game): Promise<void> {
         if (!game.input.justPressed(`Digit${i + 5}`)) continue;
         const r = lo.useHotbar(i);
         if (r && !r.started && lo.count(r.defId) === 0) toast(`${T.no} ${itemName(r.defId)}`);
+        else if (r && !r.started && lo.useRefusal) (toast(lo.useRefusal), sfx('build_invalid'));
       }
     },
   });

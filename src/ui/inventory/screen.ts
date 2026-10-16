@@ -231,10 +231,25 @@ export class InventoryScreen {
     return col;
   }
 
-  /** Several grids of one item (bag + side pockets, vest pouches). */
+  /**
+   * Several grids of one item. A bag with side pockets: main grid, then the pockets stacked in a column beside it
+   * (wrapping into more columns no taller than the main grid). Pocket-only items (vest, pants): one wrapping row.
+   */
   private gridGroup(gidBase: string, grids: Grid[]) {
     const row = h('div', 'inv-grids');
-    grids.forEach((g, i) => row.append(this.gridEl(`${gidBase}:${i}`, g)));
+    const main = grids[0] && !grids[0].accepts && defOf(grids[0].owner!).grid ? grids[0] : null;
+    if (!main) {
+      grids.forEach((g, i) => row.append(this.gridEl(`${gidBase}:${i}`, g)));
+      return row;
+    }
+    row.classList.add('side');
+    row.append(this.gridEl(`${gidBase}:0`, main));
+    if (grids.length > 1) {
+      const side = h('div', 'inv-pockets');
+      side.style.maxHeight = `calc(var(--cell) * ${main.h} + 2px)`;
+      grids.slice(1).forEach((g, i) => side.append(this.gridEl(`${gidBase}:${i + 1}`, g)));
+      row.append(side);
+    }
     return row;
   }
 
@@ -652,7 +667,10 @@ export class InventoryScreen {
 
   /** Starts the timed use; effects land when it completes (systems/index), a hit interrupts it. */
   private use(item: ItemInstance): boolean {
-    if (!this.lo.beginUse(item)) return false;
+    if (!this.lo.beginUse(item)) {
+      if (this.lo.useRefusal) (this.flash(this.lo.useRefusal), this.hooks.sfx('build_invalid'));
+      return false;
+    }
     this.flash(`${survivalText.using} ${itemName(item.defId)}`);
     return false; // nothing moved yet
   }

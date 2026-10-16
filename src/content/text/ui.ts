@@ -46,6 +46,14 @@ export const survivalText = {
   } as Record<string, string>,
 };
 
+/** Why a consumable was not used (QA-085). {stage} = infection stage. */
+export const useText = {
+  nothing: 'Nothing to treat',
+  full: "You're not hungry",
+  notThirsty: "You're not thirsty",
+  tooFarGone: "Antibiotics can't stop a stage {stage} infection. You need an antiviral.",
+};
+
 /** Small world prompts (world-builder uses these; text lives here). */
 export const worldText = {
   gateOpen: 'Open gate',
@@ -54,7 +62,7 @@ export const worldText = {
 
 /** Title / pause menu (engine-builder's src/ui/menu; narrative may reword). */
 export const menuText = {
-  kicker: 'M1 · The Yard',
+  kicker: 'M2 · The Yard',
   title: ['Project', 'Valley'],
   subtitle: 'Survival sandbox — every mechanic, one walled yard.',
   paused: 'Paused',

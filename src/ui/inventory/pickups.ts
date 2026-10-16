@@ -1,4 +1,4 @@
-import { Box3, Group, Mesh, type Material, type MeshStandardMaterial, Object3D, Vector3 } from 'three';
+import { Box3, Group, Mesh, type Material, MeshStandardMaterial, Object3D, Vector3 } from 'three';
 import { PICKUP_MODELS } from '../../content/data/items';
 import type { ItemDef, ItemInstance } from '../../content/data/types';
 import type { Game } from '../../core/game';
@@ -18,15 +18,13 @@ export function pickupModelId(d: ItemDef) {
 }
 
 const tints = new Map<string, Material>();
-/** The shared palette material multiplied by the item's swatch (one clone per colour). */
-function tinted(base: Material, color: string) {
-  const key = `${base.uuid}:${color}`;
-  let m = tints.get(key);
-  if (!m) {
-    m = base.clone();
-    (m as MeshStandardMaterial).color?.set(color).lerp((base as MeshStandardMaterial).color, 0.35);
-    tints.set(key, m);
-  }
+/**
+ * Swatch-coloured material for generic models (QA-088). Multiplying the palette texture doesn't read: the generic
+ * pack's texels are dark olive, so blue * olive is still olive. A flat swatch colour does; one material per colour.
+ */
+function tinted(color: string) {
+  let m = tints.get(color);
+  if (!m) tints.set(color, (m = new MeshStandardMaterial({ color, roughness: 0.85 })));
   return m;
 }
 
@@ -72,7 +70,7 @@ export function createPickupView(game: Game, lo: Loadout, onPickedUp: (item: Ite
           const m = o as Mesh;
           if (!m.isMesh) return;
           m.castShadow = true;
-          if (PICKUP_MODELS.tintKinds.includes(d.kind) && d.iconSwatch && !Array.isArray(m.material)) m.material = tinted(m.material, d.iconSwatch);
+          if (PICKUP_MODELS.tintKinds.includes(d.kind) && d.iconSwatch) m.material = tinted(d.iconSwatch);
         });
         const holder = new Group();
         holder.add(inner);

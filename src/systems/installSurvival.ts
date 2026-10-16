@@ -7,7 +7,7 @@ import type { StatusId } from '../core/contracts';
 import type { Game } from '../core/game';
 import { loadModel } from '../engine/models';
 import { itemName } from '../ui/inventory/screen';
-import { autoPlace } from './inventory';
+import { autoPlace, defOf } from './inventory';
 import type { Loadout } from './loadout';
 import { Survival } from './survival';
 
@@ -46,6 +46,7 @@ export function installSurvival(
 
   const survival = new Survival(game.rng, {
     maxHp: () => player()?.maxHp ?? 100,
+    hp: () => player()?.hp ?? 100,
     hurt: (n, cause) => player()?.hurt(n, cause),
     heal: (n) => player()?.heal(n),
     isNight,
@@ -58,6 +59,10 @@ export function installSurvival(
     },
   });
   game.survival = survival;
+  lo.useValidator = (item) => {
+    const d = defOf(item);
+    return d.use ? survival.useRefusal(d.use, d.kind) : null;
+  };
 
   // ---------- timed item use ----------
   const bar = document.createElement('div');

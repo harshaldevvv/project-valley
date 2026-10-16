@@ -10,6 +10,7 @@ const host = (night = false) => {
   const api: SurvivalHost = {
     maxHp: () => 100,
     hurt: (n, cause) => ((h.hp -= n), h.events.push(cause)),
+    hp: () => h.hp,
     heal: (n) => (h.hp = Math.min(100, h.hp + n)),
     isNight: () => night,
     days: () => h.days,
@@ -41,11 +42,30 @@ describe('survival', () => {
     s.addStatus('bleeding');
     run(s, 3);
     expect(h.hp).toBeLessThan(100);
-    run(s, WOUNDS.bleeding.seconds[1]);
+    run(s, WOUNDS.bleeding.seconds![1]);
     expect(s.statuses.has('bleeding')).toBe(false);
     s.addStatus('heavy_bleeding');
+    run(s, 120, 1);
+    expect(s.statuses.has('heavy_bleeding')).toBe(true); // heavy bleeds need treatment
     s.applyUse(ITEMS.bandage.use!);
     expect(s.statuses.has('heavy_bleeding')).toBe(false);
+  });
+
+  it('refuses uses that would do nothing (QA-085)', () => {
+    const { h, api } = host();
+    const s = new Survival(createRng(8), api);
+    expect(s.useRefusal(ITEMS.bandage.use!, 'medical')).toBeTruthy(); // full HP, no bleed
+    s.addStatus('bleeding');
+    expect(s.useRefusal(ITEMS.bandage.use!, 'medical')).toBeNull();
+    s.cure('bleeding');
+    h.hp = 80;
+    expect(s.useRefusal(ITEMS.bandage.use!, 'medical')).toBeNull(); // still heals
+    s.addStatus('infection', { stage: 3 });
+    expect(s.useRefusal(ITEMS.antibiotics.use!, 'medical')).toMatch(/3/);
+    expect(s.useRefusal(ITEMS.antiviral.use!, 'medical')).toBeNull();
+    expect(s.useRefusal(ITEMS.canned_beans.use!, 'food')).toBeTruthy(); // not hungry
+    s.adjust({ hunger: -10 });
+    expect(s.useRefusal(ITEMS.canned_beans.use!, 'food')).toBeNull();
   });
 
   it('fracture limps and blocks sprint until splinted', () => {

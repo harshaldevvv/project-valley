@@ -281,7 +281,7 @@ export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?:
     removePiece(p);
     const refund = refundOf(p);
     for (const r of refund) for (const it of newItems(r.item, r.count)) lo.give(it);
-    if (refund.length) say(`${T.refund}: ${refund.map((r) => `${r.count} ${itemName(r.item)}`).join(', ')}`);
+    if (refund.length) say(`${T.refund}: ${refund.map((r) => T.refundItem.replace('{item}', itemName(r.item)).replace('{n}', String(r.count))).join(', ')}`);
     sfx('build_remove', new Vector3(p.x, p.y, p.z));
   }
 
