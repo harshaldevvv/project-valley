@@ -9,7 +9,7 @@ import type { Game } from '../../core/game';
 import { hasAsset, loadAsset } from '../../engine/assets';
 import { paintGeometry, paletteMaterial } from '../../engine/palette';
 import { Group, groups } from '../../engine/physics';
-import { canRemove, pieceDef, refundOf, slotOf, snapToHit, type Area, type Piece } from '../../systems/build';
+import { blockerOf, pieceDef, refundOf, slotOf, snapToHit, type Area, type Piece } from '../../systems/build';
 import { newItems } from '../../systems/inventory';
 import type { Loadout } from '../../systems/loadout';
 import { itemName, itemShort } from '../inventory/screen';
@@ -188,6 +188,19 @@ export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?:
     }
   }
 
+  const redMat = new MeshBasicMaterial({ color: '#d64a40', transparent: true, opacity: 0.85 });
+  /** Tint a placed piece red for a moment. */
+  function flashRed(p: Piece) {
+    const l = live.get(p.uid);
+    if (!l) return;
+    const saved: [Mesh, Mesh['material']][] = [];
+    l.root.traverse((o) => {
+      const m = o as Mesh;
+      if (m.isMesh) (saved.push([m, m.material]), (m.material = redMat));
+    });
+    setTimeout(() => saved.forEach(([m, mat]) => (m.material = mat)), BUILD.blockerFlashMs);
+  }
+
   function despawn(p: Piece) {
     const l = live.get(p.uid);
     if (!l) return;
@@ -253,7 +266,13 @@ export function installBuildMode(game: Game, lo: Loadout, sfx: (id: string, at?:
     const at = look();
     const p = at?.piece;
     if (!p) return;
-    if (!canRemove(p, pieces)) return say(T.holds, 'build_invalid');
+    const blocker = blockerOf(p, pieces);
+    if (blocker) {
+      // Name and flash the piece in the way (QA-062).
+      const name = T.pieces[blocker.defId] ?? blocker.defId;
+      flashRed(blocker);
+      return say((blocker.y > p.y + 0.1 ? T.holdsAbove : T.holdsOn).replace('{piece}', name), 'build_invalid');
+    }
     removePiece(p);
     const refund = refundOf(p);
     for (const r of refund) for (const it of newItems(r.item, r.count)) lo.give(it);

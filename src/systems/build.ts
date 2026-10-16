@@ -188,12 +188,14 @@ export function snapToHit(defId: string, hit: { x: number; y: number; z: number 
   return checkSlot(defId, slotOf(defId, x, y, z, rot + flip), pieces, area);
 }
 
-/** Removing `p` must not leave anything floating. */
-export function canRemove(p: Piece, pieces: Piece[]): boolean {
+/** The first piece that would be left floating if `p` were removed (null = safe to remove). */
+export function blockerOf(p: Piece, pieces: Piece[]): Piece | null {
   const rest = pieces.filter((q) => q !== p);
   const by = indexPieces(rest);
-  return rest.every((q) => isSupported(q.defId, slotOfPiece(q), by));
+  return rest.find((q) => !isSupported(q.defId, slotOfPiece(q), by)) ?? null;
 }
+
+export const canRemove = (p: Piece, pieces: Piece[]) => !blockerOf(p, pieces);
 
 export function refundOf(p: Piece): { item: string; count: number }[] {
   if (!p.paid) return [];

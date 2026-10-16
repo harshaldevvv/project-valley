@@ -16,6 +16,7 @@ const list: LootTable[] = [
       { item: 'cloth_rag', weight: 15, count: [1, 3] },
       { item: 'canned_beans', weight: 10, count: [1, 2] },
       { item: 'repair_kit', weight: 3, count: [1, 1] },
+      { item: 'lockpick', weight: 6, count: [1, 2] },
     ],
   },
   {
@@ -43,6 +44,56 @@ const list: LootTable[] = [
       { item: 'bandage', weight: 15, count: [1, 2] },
       { item: 'cloth_rag', weight: 15, count: [1, 4] },
       { item: 'pistol_a', weight: 4, count: [1, 1] },
+    ],
+  },
+  {
+    id: 'cabinet_locked',
+    rolls: [3, 5],
+    entries: [
+      { item: 'ammo_762', weight: 25, count: [15, 40] },
+      { item: 'ammo_9mm', weight: 20, count: [15, 40] },
+      { item: 'mag_rifle_a', weight: 15, count: [1, 1] },
+      { item: 'mag_pistol_a', weight: 12, count: [1, 1] },
+      { item: 'bandage', weight: 15, count: [2, 4] },
+      { item: 'repair_kit', weight: 8, count: [1, 1] },
+      { item: 'pistol_a', weight: 5, count: [1, 1] },
+    ],
+  },
+  {
+    id: 'body_survivor',
+    rolls: [2, 4],
+    entries: [
+      { item: 'bandage', weight: 25, count: [1, 2] },
+      { item: 'mag_pistol_a', weight: 15, count: [1, 1] },
+      { item: 'ammo_9mm', weight: 15, count: [5, 15] },
+      { item: 'scrap_metal', weight: 15, count: [1, 3] },
+      { item: 'canned_beans', weight: 10, count: [1, 1] },
+      { item: 'lockpick', weight: 10, count: [1, 2] },
+      { item: 'repair_kit', weight: 5, count: [1, 1] },
+    ],
+  },
+  {
+    // Zombie corpses: small and mostly junk.
+    id: 'body_zombie',
+    rolls: [0, 2],
+    entries: [
+      { item: 'cloth_rag', weight: 45, count: [1, 2] },
+      { item: 'bandage', weight: 12, count: [1, 1] },
+      { item: 'ammo_9mm', weight: 15, count: [3, 8] },
+      { item: 'scrap_metal', weight: 15, count: [1, 1] },
+      { item: 'lockpick', weight: 8, count: [1, 1] },
+      { item: 'mag_pistol_a', weight: 3, count: [1, 1] },
+    ],
+  },
+  {
+    id: 'body_zombie_soldier',
+    rolls: [1, 2],
+    entries: [
+      { item: 'ammo_762', weight: 40, count: [5, 15] },
+      { item: 'mag_rifle_a', weight: 12, count: [1, 1] },
+      { item: 'bandage', weight: 20, count: [1, 2] },
+      { item: 'cloth_rag', weight: 20, count: [1, 2] },
+      { item: 'lockpick', weight: 8, count: [1, 1] },
     ],
   },
   {

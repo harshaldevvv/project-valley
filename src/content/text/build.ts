@@ -19,6 +19,9 @@ export const buildText = {
   support: 'Needs support',
   need: 'Need',
   holds: 'Remove what rests on it first',
+  /** {piece} = blocking piece name. */
+  holdsAbove: 'Remove the {piece} above first',
+  holdsOn: 'Remove the {piece} first',
   refund: 'Salvaged',
   open: 'Open door',
   close: 'Close door',

@@ -1,13 +1,14 @@
-import { Vector3 } from 'three';
+import { Box3, Vector3 } from 'three';
 import { BUILD } from '../content/data/build';
-import { CONTAINERS } from '../content/data/containers';
+import { BODY_BY_VARIANT, CONTAINER_INTERACT, CONTAINERS } from '../content/data/containers';
 import { INVENTORY, ITEMS } from '../content/data/items';
 import { containerText } from '../content/text/containers';
-import { inventoryText as T } from '../content/text/ui';
+import { inventoryText as T, lockpickText } from '../content/text/ui';
 import type { Game } from '../core/game';
 import { installBuildMode } from '../ui/build/buildMode';
 import { createPickupView } from '../ui/inventory/pickups';
 import { InventoryScreen, containerName, itemName } from '../ui/inventory/screen';
+import { LockpickScreen } from '../ui/lockpick/lockpick';
 import { newItem, newItems } from './inventory';
 import { Loadout } from './loadout';
 
@@ -79,27 +80,84 @@ export async function installSystems(game: Game): Promise<void> {
     },
   };
 
-  // World containers placed by the environment team.
+  // Lockpick minigame (locked containers).
+  let picking: string | null = null;
+  const lockpick = new LockpickScreen(game.rng, {
+    sfx,
+    onOpenChange: (open) => game.events.emit('uiScreen', { name: 'lockpick', open }),
+    picks: () => lo.count('lockpick'),
+    onBreak: () => lo.consume('lockpick', 1),
+    onSuccess: () => {
+      const c = picking && lo.containers.get(picking);
+      if (!c) return;
+      c.locked = false;
+      toast(lockpickText.opened);
+      game.inventory.openContainer(c.id);
+    },
+  }, game.ui);
+
+  /** Container interaction: search (hold) / open, or pick the lock first. Returns unregister. */
+  const containerInteract = (id: string, type: string, position: Vector3, radius: number) => {
+    const def = CONTAINERS[type];
+    const c = lo.registerContainer(id, type);
+    const name = containerName(type);
+    const verb = containerText[type]?.searchVerb ?? 'Search';
+    return game.interact.register({
+      position,
+      radius,
+      prompt: () => {
+        if (c.locked) {
+          const n = lo.count('lockpick');
+          return n > 0 ? `${T.pickLock} (${T.lockpickWord} ×${n})` : T.locked;
+        }
+        return c.searched || def.searchSeconds === 0 ? `${T.act.open} ${name}` : `${verb} ${name}`;
+      },
+      holdSeconds: () => (c.locked || c.searched ? 0 : def.searchSeconds),
+      onInteract: () => {
+        if (c.locked) {
+          if (lo.count('lockpick') <= 0) return sfx('build_invalid');
+          picking = id;
+          return lockpick.open(def.lock);
+        }
+        if (!c.searched) sfx('search_rustle', position);
+        game.inventory.openContainer(id);
+      },
+    });
+  };
+
+  // World containers placed by the environment team. Interact point = top centre of the bounds (QA-061).
+  const box = new Box3();
+  const size = new Vector3();
   for (const pl of game.places.containers) {
-    const def = CONTAINERS[pl.type];
-    if (!def) {
+    if (!CONTAINERS[pl.type]) {
       console.warn(`systems: unknown container type "${pl.type}" (${pl.id})`);
       continue;
     }
-    const c = lo.registerContainer(pl.id, pl.type);
-    const name = containerName(pl.type);
-    const verb = containerText[pl.type]?.searchVerb ?? 'Search';
-    game.interact.register({
-      position: pl.position,
-      radius: 2.2,
-      prompt: () => (c.searched || def.searchSeconds === 0 ? `${T.act.open} ${name}` : `${verb} ${name}`),
-      holdSeconds: () => (c.searched ? 0 : def.searchSeconds),
-      onInteract: () => {
-        if (!c.searched) sfx('search_rustle', pl.position);
-        game.inventory.openContainer(pl.id);
-      },
-    });
+    let at = pl.position;
+    let radius = CONTAINER_INTERACT.reach;
+    if (!pl.type.startsWith('body_') && pl.object) {
+      box.setFromObject(pl.object);
+      if (!box.isEmpty()) {
+        box.getSize(size);
+        at = new Vector3((box.min.x + box.max.x) / 2, Math.min(box.max.y, CONTAINER_INTERACT.maxPointHeight), (box.min.z + box.max.z) / 2);
+        radius += Math.max(size.x, size.z) / 2;
+      }
+    }
+    containerInteract(pl.id, pl.type, at, radius);
   }
+
+  // Zombie corpses become searchable bodies until they despawn.
+  const bodies = new Map<number, () => void>();
+  game.events.on('zombieKilled', ({ id, variant, position }) => {
+    if (bodies.has(id)) return;
+    bodies.set(id, containerInteract(`zbody_${id}`, BODY_BY_VARIANT[variant] ?? 'body_zombie', position.clone(), CONTAINER_INTERACT.reach));
+  });
+  game.events.on('corpseRemoved', ({ id }) => {
+    bodies.get(id)?.();
+    bodies.delete(id);
+    if (screen.container === `zbody_${id}`) screen.close();
+    lo.removeContainer(`zbody_${id}`);
+  });
 
   // Hotbar 5..9 (consumables, bound by item id).
   game.addSystem({
@@ -118,10 +176,12 @@ export async function installSystems(game: Game): Promise<void> {
   });
 
   game.build = installBuildMode(game, lo, sfx);
+  (window as unknown as { __lockpick: LockpickScreen }).__lockpick = lockpick; // Playwright/debug hook
 
   // Death closes every systems screen (QA-046/047): screen.close() emits uiScreen close, which releases Input.blocked.
   game.events.on('playerDied', () => {
     screen.close();
+    lockpick.close();
     if (game.build.active) game.build.toggle();
   });
 
@@ -143,6 +203,7 @@ export async function installSystems(game: Game): Promise<void> {
       lo.give(newItem('ammo_762', 60));
       lo.give(newItem('ammo_9mm', 60));
     });
+    d.action('Items', 'Give lockpicks', () => lo.give(newItem('lockpick', 10)));
     d.action('Items', 'Give building materials', () => {
       for (const it of [...newItems('wood_planks', 40), ...newItems('nails', 60)]) lo.give(it);
     });

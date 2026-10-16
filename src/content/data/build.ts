@@ -37,6 +37,8 @@ export const BUILD = {
   refund: 0.5,
   /** Sandbox cheat: building costs nothing (free pieces refund nothing). */
   freeBuilding: false, // debug toggle (F1 > Build); off so the salvage -> rebuild loop is real
+  /** How long a blocking piece flashes red when X is refused, ms. */
+  blockerFlashMs: 1200,
   /** Door swing, degrees. */
   doorSwingDeg: 90,
 };

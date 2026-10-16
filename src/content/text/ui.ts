@@ -9,4 +9,22 @@ export const inventoryText = {
   act: { use: 'Use', equip: 'Equip', unequip: 'Unequip', open: 'Open', load: 'Load ammo', unload: 'Unload magazine', unmag: 'Remove magazine', bind: 'Bind to hotbar', split: 'Split stack', drop: 'Drop', take: 'Take' },
   stat: { stack: 'Stack', rounds: 'Rounds', ammo: 'Ammo', caliber: 'Caliber', damage: 'Damage', rpm: 'Fire rate', magazine: 'Magazine', none: 'none', storage: 'Storage', items: 'items', heals: 'Heals', food: 'Food', water: 'Water', size: 'Size', value: 'Value', vsEquipped: 'vs equipped' },
   used: 'Used', full: 'No room', pickUp: 'Pick up', no: 'No',
+  pickLock: 'Pick lock', lockpickWord: 'lockpick', locked: 'Locked — needs a lockpick',
+};
+
+/** Lockpick minigame text. */
+export const lockpickText = {
+  title: 'Pick the lock',
+  hint: '<kbd>Mouse</kbd> move the pick <kbd>A</kbd>/<kbd>D</kbd> or <kbd>LMB</kbd> turn <kbd>Esc</kbd> cancel',
+  picks: 'Lockpicks',
+  broke: 'The pick snapped',
+  none: 'Out of lockpicks',
+  opened: 'Unlocked',
+  difficulty: ['', 'Simple lock', 'Average lock', 'Hard lock'],
+};
+
+/** Small world prompts (world-builder uses these; text lives here). */
+export const worldText = {
+  gateOpen: 'Open gate',
+  gateClose: 'Close gate',
 };

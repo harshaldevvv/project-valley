@@ -3,6 +3,7 @@ import { loadAsset } from '../../../engine/assets';
 import { Group as G, groups } from '../../../engine/physics';
 import { tagCollider } from '../../surfaces';
 import { yard } from '../../../content/data/yard';
+import { worldText } from '../../../content/text/ui';
 import type { Kit } from '../kit';
 import { plateSign, stationSign } from '../signs';
 
@@ -10,8 +11,7 @@ const S = yard.stations.pen; // 24 x 24 at (40,-15); gate on the west side (face
 const PANEL = 3;
 const GATE_OPEN = (95 * Math.PI) / 180; // swings into the pen
 const GATE_SPEED = 3; // rad/s
-// ponytail: player-facing strings belong in src/content/text (narrative); move them there when it has a slot.
-const GATE_TEXT = { open: 'Open gate', close: 'Close gate' };
+
 
 /**
  * The pen gate: its own object (not instanced) hinged at its north end, with a kinematic collider that follows
@@ -49,7 +49,7 @@ async function buildGate(kit: Kit, hingeX: number, hingeZ: number) {
   game.interact.register({
     position: new Vector3(hingeX - 0.6, 1.2, hingeZ + PANEL / 2),
     radius: 2.5,
-    prompt: () => (open ? GATE_TEXT.close : GATE_TEXT.open),
+    prompt: () => (open ? worldText.gateClose : worldText.gateOpen),
     holdSeconds: () => 0,
     onInteract: () => {
       open = !open;

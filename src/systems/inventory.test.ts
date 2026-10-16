@@ -134,6 +134,19 @@ describe('loadout', () => {
     expect(l.openContainer('c1').grid.contents.length).toBe(first - 1);
   });
 
+  it('locked containers stay locked through save/load until picked; bodies roll loot', () => {
+    const l = kit();
+    expect(l.count('lockpick')).toBe(3);
+    expect(l.registerContainer('lc', 'cabinet_locked').locked).toBe(true);
+    const m = new Loadout(createRng(2));
+    m.load(JSON.parse(JSON.stringify(l.serialize())));
+    expect(m.containers.get('lc')!.locked).toBe(true);
+    m.registerContainer('zb', 'body_zombie_soldier');
+    expect(() => m.openContainer('zb')).not.toThrow();
+    m.removeContainer('zb');
+    expect(m.containers.has('zb')).toBe(false);
+  });
+
   it('serialize/load round-trips', () => {
     const l = kit();
     l.registerContainer('c1', 'cabinet_metal');

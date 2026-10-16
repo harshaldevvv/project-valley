@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BUILD } from '../content/data/build';
 import { yard } from '../content/data/yard';
 import { yardHouse } from '../world/yard/house';
-import { canRemove, checkSlot, refundOf, slotOf, snapToHit, type Piece } from './build';
+import { blockerOf, canRemove, checkSlot, refundOf, slotOf, snapToHit, type Piece } from './build';
 
 const area = { x0: 0, z0: 0, x1: 24, z1: 24 };
 let uid = 1;
@@ -41,6 +41,7 @@ describe('build rules', () => {
     const doorway = p.find((q) => q.defId === 'wood_doorway')!;
     const door = p.find((q) => q.defId === 'wood_door')!;
     expect(canRemove(doorway, p)).toBe(false); // door + floor rest on it
+    expect(blockerOf(doorway, p)?.defId).toBe('wood_door');
     expect(canRemove(door, p)).toBe(true);
     expect(refundOf(door)).toEqual([{ item: 'wood_planks', count: 1 }, { item: 'nails', count: 2 }]);
   });

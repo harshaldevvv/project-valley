@@ -14,6 +14,8 @@ export interface WorldContainer {
   defId: string;
   grid: Grid;
   searched: boolean;
+  /** Needs a lockpick (def.lock > 0) until picked once. */
+  locked: boolean;
 }
 
 /** An item lying in the world (dropped by the player). */
@@ -30,7 +32,7 @@ export interface LoadoutSave {
   nextUid: number;
   equipment: Partial<Record<SlotName, ItemInstance>>;
   pickups: Pickup[];
-  containers: { id: string; defId: string; searched: boolean; contents: Grid['contents'] }[];
+  containers: { id: string; defId: string; searched: boolean; locked?: boolean; contents: Grid['contents'] }[];
   hotbar: (string | null)[];
 }
 
@@ -291,8 +293,13 @@ export class Loadout implements LoadoutApi {
     const def = CONTAINERS[defId];
     if (!def) throw new Error(`unknown container "${defId}"`);
     let c = this.containers.get(id);
-    if (!c) this.containers.set(id, (c = { id, defId, grid: { w: def.grid.w, h: def.grid.h, contents: [] }, searched: false }));
+    if (!c) this.containers.set(id, (c = { id, defId, grid: { w: def.grid.w, h: def.grid.h, contents: [] }, searched: false, locked: def.lock > 0 }));
     return c;
+  }
+
+  /** Forget a container (zombie corpse despawned). Whatever was left in it is gone with the body. */
+  removeContainer(id: string) {
+    this.containers.delete(id);
   }
 
   /** First open rolls the loot; refill-on-open containers re-roll every time. */
@@ -356,7 +363,7 @@ export class Loadout implements LoadoutApi {
       nextUid: uidState.next,
       equipment: this.equipment,
       pickups: this.pickups,
-      containers: [...this.containers.values()].map((c) => ({ id: c.id, defId: c.defId, searched: c.searched, contents: c.grid.contents })),
+      containers: [...this.containers.values()].map((c) => ({ id: c.id, defId: c.defId, searched: c.searched, locked: c.locked, contents: c.grid.contents })),
       hotbar: this.hotbar,
     });
   }
@@ -370,7 +377,7 @@ export class Loadout implements LoadoutApi {
     this.containers.clear();
     for (const c of s.containers) {
       const def = CONTAINERS[c.defId];
-      this.containers.set(c.id, { id: c.id, defId: c.defId, searched: c.searched, grid: { w: def.grid.w, h: def.grid.h, contents: c.contents } });
+      this.containers.set(c.id, { id: c.id, defId: c.defId, searched: c.searched, locked: c.locked ?? def.lock > 0, grid: { w: def.grid.w, h: def.grid.h, contents: c.contents } });
     }
     this.hotbar = s.hotbar;
     this.changed();
