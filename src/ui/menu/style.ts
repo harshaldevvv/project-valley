@@ -59,6 +59,19 @@ export const MENU_CSS = `
 #menu input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;margin-top:-6px;border-radius:50%;background:var(--ink);border:2px solid var(--accent)}
 #menu input[type=range]::-moz-range-track{height:2px;background:rgba(238,240,234,.25)}
 #menu input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--ink);border:2px solid var(--accent)}
+#menu .mn-seg{grid-column:2/4;justify-self:end;display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+#menu .mn-seg label{cursor:pointer}
+#menu .mn-seg input{position:absolute;opacity:0;pointer-events:none}
+#menu .mn-seg span{display:block;padding:6px 12px;font:600 12px/1 var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);
+ background:rgba(255,255,255,.03);border-left:1px solid var(--line);transition:background .15s,color .15s}
+#menu .mn-seg label:first-child span{border-left:0}
+#menu .mn-seg label:hover span{color:var(--ink)}
+#menu .mn-seg input:checked+span{background:rgba(217,164,65,.35);color:var(--ink)}
+#menu .mn-seg input:focus-visible+span{outline:1px solid var(--accent);outline-offset:-2px}
+#mn-lockhint{position:fixed;left:50%;top:58%;transform:translateX(-50%);z-index:15;pointer-events:none;padding:7px 14px;border-radius:3px;
+ font:600 12px/1 "Bahnschrift","DIN Alternate","Arial Narrow",system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;
+ color:#eef0ea;background:rgba(12,15,14,.72);border:1px solid rgba(238,240,234,.15)}
+#mn-lockhint[hidden]{display:none}
 #menu .toggle{cursor:pointer}
 #menu .toggle input{position:absolute;opacity:0;pointer-events:none}
 #menu .toggle i{grid-column:3;justify-self:end;width:38px;height:20px;border-radius:10px;background:rgba(255,255,255,.12);position:relative;transition:background .2s}

@@ -191,16 +191,23 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     check('fxaa', 'Anti-aliasing (FXAA)');
     check('reduceFlashing', 'Reduce flashing');
     {
-      const row = document.createElement('label');
+      // segmented control (QA-048): native radios, styled; arrow keys work as usual
+      const row = document.createElement('div');
       row.className = 'row';
-      row.innerHTML = `<span>Gore</span><select><option value="full">Full</option><option value="reduced">Reduced</option><option value="off">Off</option></select>`;
-      const sel = row.querySelector('select')!;
-      sel.value = settings.gore;
-      sel.onchange = () => {
-        settings.gore = sel.value as typeof settings.gore;
-        sfx('ui_click');
-        commit();
-      };
+      row.innerHTML = `<span>Gore</span><div class="mn-seg" role="radiogroup" aria-label="Gore"></div>`;
+      const seg = row.querySelector('.mn-seg')!;
+      for (const [v, label] of [['full', 'Full'], ['reduced', 'Reduced'], ['off', 'Off']] as const) {
+        const l = document.createElement('label');
+        l.innerHTML = `<input type="radio" name="mn-gore" value="${v}"><span>${label}</span>`;
+        const r = l.querySelector('input')!;
+        r.checked = settings.gore === v;
+        r.onchange = () => {
+          settings.gore = v;
+          sfx('ui_click');
+          commit();
+        };
+        seg.append(l);
+      }
       f.append(row);
     }
     const reset = button('Reset to defaults', () => {
@@ -311,6 +318,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
   const pause = () => {
     if (mode !== 'playing') return;
     mode = 'paused';
+    lockedThisPlay = false;
     game.paused = true; // freeze zombies/physics while the pause menu is up
     renderNav();
     showPage('main');
@@ -337,9 +345,30 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     } else if (mode === 'paused') resume();
   });
   // Chrome eats the Esc that releases pointer lock, so losing the lock while playing also pauses.
+  // Losing the lock pauses only if the lock was taken in this play session and held a moment. Within ~1 s of an Esc
+  // unlock Chrome grants a new lock and revokes it ~15 ms later; that revoke used to re-pause Resume (QA-038).
+  let lockedThisPlay = false;
+  let lockedAt = 0;
   document.addEventListener('pointerlockchange', () => {
-    if (mode === 'playing' && !document.pointerLockElement && !game.input.blocked) pause();
+    if (document.pointerLockElement) {
+      if (mode === 'playing') lockedThisPlay = true;
+      lockedAt = performance.now();
+      return;
+    }
+    const held = performance.now() - lockedAt;
+    if (mode === 'playing' && lockedThisPlay && held > 300 && !game.input.blocked) pause();
+    lockedThisPlay = false;
   });
+  // When Chrome refuses the lock (re-lock cooldown after Esc, or Esc closing the debug panel — Esc is not a user
+  // activation), say so; the next click on the canvas locks (Input does that) (QA-038, QA-054).
+  const hint = document.createElement('div');
+  hint.id = 'mn-lockhint';
+  hint.textContent = 'Click to capture mouse';
+  hint.hidden = true;
+  document.body.appendChild(hint);
+  setInterval(() => {
+    hint.hidden = !(mode === 'playing' && !blend && !document.pointerLockElement && !game.input.blocked);
+  }, 200);
 
   renderNav();
   if (new URLSearchParams(location.search).has('play')) {

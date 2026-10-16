@@ -30,8 +30,11 @@ export function stationSpot(id: StationId | 'spawn'): { p: Vector3; yaw: number 
 }
 
 export async function installEngine(game: Game) {
+  let menu: ReturnType<typeof installMenu> | null = null; // created last; the debug panel's relock reads it
   // --- debug panel -------------------------------------------------------------------------
-  const panel = createDebugPanel(game.events);
+  const panel = createDebugPanel(game.events, () => {
+    if (menu?.mode === 'playing') void game.renderer.domElement.requestPointerLock()?.catch?.(() => {});
+  });
   game.debug = panel;
 
   // --- audio -------------------------------------------------------------------------------
@@ -150,7 +153,7 @@ export async function installEngine(game: Game) {
   game.debug.watch('Audio', 'last / voices', () => `${last || '-'} / ${audio.voices} (${audio.ctx.state})`);
 
   // --- menu ----------------------------------------------------------------------------------
-  const menu = installMenu(game, {
+  menu = installMenu(game, {
     applySettings(s) {
       cameraFeel.fovHip = s.fov;
       look.sensitivity = BASE_SENSITIVITY * s.sensitivity;

@@ -28,7 +28,7 @@ const CSS = `
 #dbg .watch{color:#9fd3a8;white-space:pre}
 `;
 
-export function createDebugPanel(events: EventBus): DebugApi & { readonly open: boolean; setOpen(o: boolean): void } {
+export function createDebugPanel(events: EventBus, relock?: () => void): DebugApi & { readonly open: boolean; setOpen(o: boolean): void } {
   const style = document.createElement('style');
   style.textContent = CSS;
   document.head.appendChild(style);
@@ -80,6 +80,8 @@ export function createDebugPanel(events: EventBus): DebugApi & { readonly open: 
     if (e.code !== 'F1') return;
     e.preventDefault();
     setOpen(!open);
+    // F1 is a user activation (Esc is not), so closing with F1 can take the mouse back right away (QA-054).
+    if (!open) relock?.();
   });
   setInterval(() => {
     if (!open) return;
