@@ -24,6 +24,11 @@ export function buildWalls(kit: Kit) {
     kit.box(0.9, 0.15, 0.9, 'concrete_dark', sx * (GATE_HALF - 0.4), 3.6, h);
     kit.place({ id: 'env_gate_chainlink_a', size: [3, 2.2, 0.08], x: sx * 1.5, z: h, yaw: Math.PI });
   }
+  // Invisible ceiling along the whole perimeter (QA-082): a 12 m tall blocker on the wall line, so nothing in
+  // the yard (berm, ramp, stacked crates, roofs, built stairs) can be used to climb or jump over the wall.
+  const H = 12;
+  for (const [x, z, hx, hz] of [[0, -h, h, 0.15], [0, h, h, 0.15], [-h, 0, 0.15, h], [h, 0, 0.15, h]]) kit.cuboid(hx, H / 2, hz, x, H / 2, z);
+
   // Corner pillars hide the segment overlaps.
   for (const [cx, cz] of [[-h, -h], [h, -h], [-h, h], [h, h]]) kit.box(0.7, 3.3, 0.7, 'concrete_dark', cx, 0, cz, 0, false, 0.5);
 }

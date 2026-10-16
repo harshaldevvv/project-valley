@@ -17,6 +17,9 @@ export function wedge(x0: number, x1: number, profile: [z: number, y: number][])
 /** Column centre (x offset from the lane centre) per target distance. Sight lines from the bench checked. */
 const LANE_X: Record<number, number> = { 5: -4.25, 25: 0.1, 80: 9.75 };
 
+/** Berm height: above the 1.8 m targets, below the 3 m wall top so it can't be used to climb out (QA-082). */
+const BERM_H = 2.8;
+
 export async function buildRange(kit: Kit) {
   const half = S.w / 2;
   const far = -yard.half + 0.4; // inner face of the north wall
@@ -29,7 +32,7 @@ export async function buildRange(kit: Kit) {
 
   // Side walls (stop strays into the loot/pen stations) and the earth berm behind the 80 m targets.
   for (const sx of [-1, 1]) kit.box(0.3, 2.4, front - 2 - far, 'concrete', S.x + sx * (half + 0.15), 0, (front - 2 + far) / 2, 0, true);
-  const berm = kit.paint(wedge(S.x - half, S.x + half, [[far, 0], [far + 6, 0], [far + 1.6, 4.5], [far, 4.5]]), 'dirt');
+  const berm = kit.paint(wedge(S.x - half, S.x + half, [[far, 0], [far + 6, 0], [far + 1.6, BERM_H], [far, BERM_H]]), 'dirt');
   kit.hull(berm, 'dirt');
 
   // Bench at the firing line, weapon rack beside it.
