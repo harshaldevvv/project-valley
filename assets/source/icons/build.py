@@ -24,8 +24,9 @@ SIZE, RENDER = 128, 512
 OUT = os.path.join(vlib.ROOT, "public", "assets", "icons")
 WPN = os.path.join(vlib.ROOT, "public", "assets", "models", "wpn")
 GLB = {"pistol_a": "wpn_pistol_a", "rifle_a": "wpn_rifle_a", "knife_a": "wpn_knife_a",
-       "mag_pistol_a": "wpn_mag_pistol_a", "mag_rifle_a": "wpn_mag_rifle_a"}
-SIDE = {"pistol_a", "rifle_a", "knife_a"}  # side profile
+       "mag_pistol_a": "wpn_mag_pistol_a", "mag_rifle_a": "wpn_mag_rifle_a",
+       "crowbar_a": "wpn_crowbar_a", "hammer_a": "wpn_hammer_a"}
+SIDE = {"pistol_a", "rifle_a", "knife_a", "crowbar_a", "hammer_a", "metal_pipe"}  # side profile
 
 
 def items():
@@ -155,6 +156,513 @@ MODELS = {f.__name__: f for f in (repair_kit, ammo_9mm, ammo_762, bandage, canne
                                   scrap_metal, backpack_small, jacket_field, cloth_rag)}
 
 
+# ------------------------------------------------------------------------------- M2 content items (asset-builder A)
+# Authored with the showcase face toward -Z (the game's front); build() turns them 180 deg so that face is toward the
+# icon camera (which sits on the +Z side). Real-ish sizes in metres; the camera fits the frame.
+FRONT_TO_CAMERA = set()
+
+
+def m2(f):
+    FRONT_TO_CAMERA.add(f.__name__)
+    return f
+
+
+def _can(m, r, h, body, label, band=None, rim="metal_bare"):
+    m.lathe([(0.0, 0.0), (r, 0.0), (r + 0.002, 0.004), (r, 0.008), (r, h - 0.008), (r + 0.002, h - 0.004), (r, h),
+             (0.0, h)], rim, segments=14)
+    m.lathe([(r + 0.0015, h * 0.15), (r + 0.0015, h * 0.85)], body, segments=14)
+    if label:
+        m.lathe([(r + 0.0018, h * 0.38), (r + 0.0018, h * 0.62)], label, segments=14)
+    if band:
+        m.lathe([(r + 0.0018, h * 0.7), (r + 0.0018, h * 0.78)], band, segments=14)
+
+
+def _cross(m, c, s, t, sw="stencil_white", axis="z"):
+    """Flat plus sign centred at c, arm length s, thickness t; on a face normal to `axis`."""
+    x, y, z = c
+    if axis == "z":
+        m.box((x, y, z), (s, s / 3, t), sw)
+        m.box((x, y, z), (s / 3, s, t), sw)
+    else:  # on a top (y) face
+        m.box((x, y, z), (s, t, s / 3), sw)
+        m.box((x, y, z), (s / 3, t, s), sw)
+
+
+@m2
+def ammo_9mm_box(m):  # closed blue-labelled carton, rounds spilled in front
+    m.box((0, 0.025, 0), (0.12, 0.05, 0.08), "cardboard", bevel=0.003)
+    m.box((0, 0.025, -0.0405), (0.1, 0.03, 0.002), "paint_blue_faded")
+    m.box((-0.02, 0.025, -0.042), (0.04, 0.012, 0.002), "stencil_white")
+    m.box((0, 0.051, 0), (0.122, 0.003, 0.02), "paper")  # end flap tape
+    for i, (x, z, r) in enumerate(((-0.03, -0.07, 70), (0.0, -0.075, 100), (0.035, -0.065, 80))):
+        m.lathe([(0.0, 0.0), (0.0048, 0.0), (0.0048, 0.019), (0.003, 0.026), (0.0, 0.028)], "paint_yellow_faded",
+                center=(x, 0.005, z), segments=8, axis="x", rot=(0, r, 0))
+
+
+@m2
+def medkit(m):  # red hard case, white cross on the lid, grey handle and latches
+    m.box((0, 0.06, 0), (0.3, 0.12, 0.22), "paint_red_faded", bevel=0.012)
+    m.box((0, 0.065, 0), (0.304, 0.008, 0.224), "metal_dark")  # lid seam
+    _cross(m, (0, 0.121, 0.01), 0.11, 0.004, axis="y")
+    for x in (-0.09, 0.09):
+        m.box((x, 0.06, -0.112), (0.03, 0.03, 0.008), "metal_bare", bevel=0.002)  # latches
+    m.box((0, 0.1, -0.118), (0.1, 0.014, 0.014), "plastic_black", bevel=0.004)  # handle
+
+
+@m2
+def splint(m):  # two slats bound with white tape
+    for x in (-0.022, 0.022):
+        m.box((x, 0.2, 0), (0.035, 0.4, 0.012), "wood_raw", bevel=0.003)
+    for y in (0.07, 0.2, 0.33):
+        m.box((0, y, 0), (0.084, 0.03, 0.02), "stencil_white", bevel=0.003)
+
+
+@m2
+def antibiotics(m):  # white/blue carton with a foil blister sheet half out
+    m.box((0, 0.015, 0.02), (0.1, 0.03, 0.06), "plastic_white", bevel=0.002)
+    m.box((0.01, 0.015, -0.0105), (0.07, 0.02, 0.002), "paint_blue_faded")
+    m.box((-0.045, 0.031, 0.02), (0.01, 0.002, 0.06), "paint_blue_faded")
+    m.box((0.035, 0.006, -0.03), (0.08, 0.004, 0.05), "metal_bare", rot=(0, 15, 0))  # blister foil
+    for i in range(3):
+        for j in range(2):
+            m.cylinder((0.008 + i * 0.022, 0.011, -0.038 + j * 0.02), 0.006, 0.006, "plastic_white", segments=6)
+
+
+@m2
+def ifak(m):  # olive MOLLE pouch, red cross patch, black buckle strap
+    m.box((0, 0.06, 0), (0.2, 0.12, 0.08), "military_olive", bevel=0.02)
+    m.box((0, 0.1, -0.035), (0.2, 0.04, 0.03), "cloth_olive", bevel=0.01, rot=(-10, 0, 0))  # lid
+    m.box((0, 0.055, -0.042), (0.06, 0.06, 0.004), "cloth_red", bevel=0.002)
+    _cross(m, (0, 0.055, -0.045), 0.04, 0.002)
+    for x in (-0.07, 0.07):
+        m.box((x, 0.07, -0.042), (0.02, 0.09, 0.004), "cloth_black")
+
+
+@m2
+def painkillers(m):  # orange pharmacy bottle, white child cap, paper label
+    m.lathe([(0.0, 0.0), (0.02, 0.0), (0.022, 0.004), (0.022, 0.06), (0.0, 0.06)], "fabric_orange", segments=12)
+    m.lathe([(0.0225, 0.012), (0.0225, 0.046)], "paper", segments=12)
+    m.lathe([(0.0, 0.058), (0.024, 0.058), (0.025, 0.062), (0.025, 0.078), (0.0, 0.08)], "plastic_white", segments=12)
+    for k in range(6):  # cap ridges
+        a = k * math.pi / 3
+        m.box((0.0255 * math.cos(a), 0.07, 0.0255 * math.sin(a)), (0.004, 0.014, 0.004), "plastic_white")
+
+
+@m2
+def antiviral(m):  # autoinjector pen with an orange safety cap and a barcode band, plus a small vial
+    with m.xform((0, 0.014, 0), (0, 30, 90)):
+        m.lathe([(0.0, -0.075), (0.013, -0.075), (0.014, -0.07), (0.014, 0.06), (0.0, 0.06)], "plastic_white",
+                segments=10)
+        m.lathe([(0.0145, -0.02), (0.0145, 0.02)], "paint_blue_faded", segments=10)
+        for k in range(5):
+            m.lathe([(0.0148, -0.015 + k * 0.007), (0.0148, -0.012 + k * 0.007)], "plastic_black", segments=10)
+        m.lathe([(0.0, 0.06), (0.012, 0.06), (0.012, 0.08), (0.0, 0.082)], "fabric_orange", segments=10)
+    m.lathe([(0.0, 0.0), (0.011, 0.0), (0.011, 0.03), (0.006, 0.036), (0.0, 0.036)], "glass", center=(0.03, 0, -0.04),
+            segments=8)
+    m.lathe([(0.0, 0.034), (0.008, 0.034), (0.008, 0.045), (0.0, 0.045)], "paint_red_faded", center=(0.03, 0, -0.04),
+            segments=8)
+
+
+@m2
+def energy_bar(m):  # wrapped bar with crimped ends
+    m.box((0, 0.012, 0), (0.1, 0.022, 0.04), "paint_yellow_faded", bevel=0.006)
+    for x in (-0.056, 0.056):
+        m.box((x, 0.012, 0), (0.014, 0.004, 0.042), "paint_yellow_faded")
+    m.box((0, 0.012, -0.0205), (0.05, 0.012, 0.002), "leather_brown")
+    m.box((0, 0.0235, 0), (0.05, 0.002, 0.02), "leather_brown")
+
+
+@m2
+def canned_soup(m):
+    _can(m, 0.034, 0.105, "plastic_white", None)
+    m.lathe([(0.0357, 0.055), (0.0357, 0.09)], "paint_red_faded", segments=14)  # red top half of the label
+    m.lathe([(0.0359, 0.03), (0.0359, 0.04)], "paint_yellow_faded", segments=14)  # gold medallion band
+
+
+@m2
+def canned_tuna(m):  # flat can, blue label, pull ring
+    _can(m, 0.044, 0.04, "paint_blue_faded", "paper")
+    m.lathe([(0.012, 0.041), (0.016, 0.041), (0.016, 0.043), (0.012, 0.043)], "metal_dark", center=(0.015, 0, 0),
+            segments=8, closed=True)
+    m.box((0.0, 0.042, 0), (0.016, 0.002, 0.008), "metal_dark")
+
+
+@m2
+def mre(m):  # tan retort pouch standing up, heat seal, black text block
+    m.box((0, 0.13, 0), (0.18, 0.26, 0.04), "military_tan", bevel=0.014)
+    m.box((0, 0.25, 0), (0.18, 0.025, 0.012), "military_tan", bevel=0.003)  # top seal
+    for y in (0.23, 0.0035):
+        m.box((0, y + 0.012, -0.0205), (0.16, 0.004, 0.002), "cardboard")
+    m.box((0, 0.16, -0.0205), (0.11, 0.05, 0.002), "hazard_black")
+    m.box((0, 0.1, -0.0205), (0.07, 0.015, 0.002), "hazard_black")
+
+
+@m2
+def energy_drink(m):  # tall slim can, black with green slashes
+    _can(m, 0.028, 0.16, "hazard_black", None)
+    for y, r in ((0.06, 20), (0.1, 20)):
+        m.box((0, y, -0.0298), (0.03, 0.014, 0.002), "paint_green_faded", rot=(0, 0, r))
+    m.lathe([(0.0, 0.16), (0.02, 0.16), (0.016, 0.165), (0.0, 0.165)], "metal_bare", segments=10)
+
+
+@m2
+def canteen(m):  # olive-covered steel canteen standing, black screw cap with chain
+    m.lathe([(0.0, 0.0), (0.06, 0.0), (0.068, 0.02), (0.07, 0.12), (0.06, 0.17), (0.03, 0.19), (0.0, 0.19)],
+            "cloth_olive", segments=12, scale=(1, 1, 0.55))
+    m.lathe([(0.0, 0.185), (0.017, 0.185), (0.017, 0.215), (0.0, 0.216)], "plastic_black", segments=10)
+    m.box((0, 0.12, -0.04), (0.06, 0.07, 0.004), "military_olive", bevel=0.002)  # cover pocket
+    m.box((0.035, 0.18, -0.02), (0.006, 0.04, 0.004), "metal_bare", rot=(0, 0, -30))  # chain
+    m.box((0, 0.02, -0.035), (0.09, 0.012, 0.012), "cloth_black")  # belt clip strap
+
+
+@m2
+def cloth(m):  # stack of three folded fabric squares
+    for i, (sw, r) in enumerate((("cloth_denim", 0), ("cloth_grey", 9), ("cloth_red", -6))):
+        m.box((0.004 * i, 0.012 + i * 0.018, 0), (0.17, 0.016, 0.13), sw, bevel=0.006, rot=(0, r, 0))
+    m.box((0.06, 0.06, 0.03), (0.05, 0.004, 0.06), "cloth_red", rot=(0, -6, 18))  # loose corner
+
+
+@m2
+def duct_tape(m):  # silver roll lying flat, cardboard core, a tail hanging off
+    m.lathe([(0.033, 0.0), (0.055, 0.0), (0.056, 0.004), (0.056, 0.046), (0.055, 0.05), (0.033, 0.05)],
+            "metal_bare", segments=16, closed=True)
+    m.lathe([(0.03, 0.0), (0.033, 0.0), (0.033, 0.05), (0.03, 0.05)], "cardboard", segments=16, closed=True)
+    m.box((0.04, 0.025, -0.07), (0.045, 0.002, 0.06), "metal_bare", rot=(0, 30, 0))
+
+
+@m2
+def rope(m):  # coiled rope standing on edge, tail across
+    for i in range(4):
+        m.lathe([(0.1 + 0.016 * math.cos(a), 0.016 * math.sin(a))
+                 for a in (2 * math.pi * k / 6 for k in range(6))], "fabric_orange" if i % 2 else "cloth_khaki",
+                center=(0.004 * i, 0.12, -0.045 + i * 0.03), segments=14, axis="z", closed=True)
+    m.box((0.0, 0.12, 0.0), (0.03, 0.06, 0.13), "cloth_khaki", bevel=0.008)  # binding wrap
+    m.box((0.06, 0.012, -0.06), (0.024, 0.024, 0.2), "cloth_khaki", rot=(0, 40, 0))  # loose tail
+
+
+@m2
+def electronic_parts(m):  # green circuit board, chips, capacitors, two wires
+    m.box((0, 0.004, 0), (0.15, 0.006, 0.1), "paint_green_faded", bevel=0.001)
+    for x, z, w in ((-0.03, -0.01, 0.04), (0.035, 0.02, 0.025)):
+        m.box((x, 0.011, z), (w, 0.008, 0.025), "plastic_black", bevel=0.001)
+    for x, z in ((0.04, -0.025), (0.055, -0.025), (-0.055, 0.03)):
+        m.cylinder((x, 0.017, z), 0.006, 0.02, "paint_blue_faded", segments=8)
+    m.box((-0.05, 0.012, -0.03), (0.02, 0.01, 0.012), "paint_yellow_faded")
+    for sw, z, r in (("cloth_red", 0.035, 12), ("paint_blue_faded", 0.045, -8)):
+        m.box((-0.02, 0.01, z + 0.02), (0.13, 0.006, 0.006), sw, rot=(0, r, 0))
+
+
+@m2
+def gunpowder(m):  # black metal tin, red label, gold cap
+    m.lathe([(0.0, 0.0), (0.045, 0.0), (0.045, 0.09), (0.03, 0.105), (0.0, 0.105)], "metal_dark", segments=14)
+    m.lathe([(0.0455, 0.02), (0.0455, 0.075)], "paint_red_faded", segments=14)
+    m.lathe([(0.0458, 0.04), (0.0458, 0.055)], "hazard_black", segments=14)
+    m.lathe([(0.0, 0.1), (0.022, 0.1), (0.022, 0.122), (0.0, 0.123)], "paint_yellow_faded", segments=10)
+
+
+@m2
+def metal_pipe(m):  # steel pipe standing, threaded collar on top, rust bands
+    m.lathe([(0.03, 0.0), (0.04, 0.0), (0.04, 0.84), (0.03, 0.84)], "metal_bare", segments=10, closed=True)  # icon: chunky
+    m.lathe([(0.048, 0.8), (0.048, 0.9)], "metal_dark", segments=10)  # threaded coupling
+    for y in (0.2, 0.55):
+        m.lathe([(0.041, y), (0.041, y + 0.08)], "rust", segments=10)
+
+
+@m2
+def lockpick(m):  # tension wrench + hook pick, black grips, on a small leather wallet
+    m.box((0, 0.003, 0), (0.12, 0.004, 0.08), "leather_brown", bevel=0.003)  # open leather roll
+    for i, z in enumerate((-0.022, 0.0, 0.022)):  # three picks: bright handle + steel shank + tip shape
+        m.box((-0.035, 0.009, z), (0.04, 0.008, 0.012), "fabric_orange", bevel=0.002)
+        m.box((0.02, 0.008, z), (0.07, 0.004, 0.004), "metal_bare")
+        m.box((0.054, 0.008, z - 0.003 * (i - 1)), (0.006, 0.004, 0.01 + 0.004 * i), "metal_bare")
+    m.box((0.0, 0.009, 0.034), (0.08, 0.004, 0.006), "metal_bare", rot=(0, -4, 0))  # tension wrench
+    m.box((-0.04, 0.009, 0.026), (0.006, 0.004, 0.02), "metal_bare")
+
+
+@m2
+def wrench(m):  # adjustable wrench standing, head up
+    m.box((0, 0.11, 0), (0.024, 0.22, 0.009), "metal_bare", bevel=0.003)
+    m.extrude([(-0.03, 0.21), (0.03, 0.21), (0.034, 0.25), (0.016, 0.28), (0.016, 0.245), (-0.008, 0.245),
+               (-0.008, 0.275), (-0.026, 0.26)], 0.012, "metal_bare", axis="z", bevel=0.002)
+    m.cylinder((0.0, 0.222, -0.007), 0.007, 0.006, "metal_dark", segments=8, axis="z")  # worm screw
+    m.box((0, 0.06, -0.006), (0.012, 0.05, 0.002), "rust")
+    m.cylinder((0, 0.018, 0), 0.006, 0.012, "metal_dark", segments=8, axis="z")  # hang hole
+
+
+@m2
+def flashlight_a(m):  # heavy aluminium flashlight standing, head up, warm lens
+    m.lathe([(0.0, 0.0), (0.017, 0.0), (0.018, 0.01), (0.018, 0.16), (0.026, 0.19), (0.027, 0.23), (0.0, 0.23)],
+            "metal_dark", segments=12)
+    m.lathe([(0.0, 0.231), (0.022, 0.231)], "light_warm", segments=12)
+    m.lathe([(0.0185, 0.04), (0.0185, 0.13)], "plastic_black", segments=12)  # knurled grip
+    m.box((0, 0.15, -0.019), (0.012, 0.016, 0.006), "plastic_black", bevel=0.002)  # switch
+
+
+@m2
+def cash(m):  # banknote bundle with a paper band, one note sliding off
+    for i, r in enumerate((0, 8, -6, 14)):  # fanned banknotes: pale green with a white border + portrait oval
+        y = 0.004 + i * 0.006
+        m.box((0.01 * i, y, -0.006 * i), (0.15, 0.004, 0.07), "paper", rot=(0, r, 0))
+        m.box((0.01 * i, y + 0.0025, -0.006 * i), (0.136, 0.002, 0.058), "grass", rot=(0, r, 0))
+        m.box((0.01 * i + 0.03, y + 0.004, -0.006 * i), (0.03, 0.002, 0.035), "leaf_dead", rot=(0, r, 0))
+    m.box((0.0, 0.016, 0), (0.03, 0.026, 0.074), "cloth_red")  # rubber band
+
+
+@m2
+def wallet(m):  # brown bifold, slightly open, a card peeking out
+    m.box((0.055, 0.004, 0), (0.11, 0.008, 0.09), "leather_brown", bevel=0.003)  # open bifold, right half flat
+    m.box((-0.05, 0.035, 0), (0.11, 0.008, 0.09), "leather_brown", bevel=0.003, rot=(0, 0, -35))  # left half up
+    for i in range(3):  # card slots + cards
+        m.box((0.055, 0.0095 + i * 0.0012, -0.025 + i * 0.016), (0.09, 0.002, 0.03), "wood_dark" if i % 2 else "leather_brown")
+    m.box((0.06, 0.013, -0.028), (0.075, 0.002, 0.03), "plastic_white")
+    m.box((0.035, 0.013, -0.028), (0.02, 0.0025, 0.012), "paint_yellow_faded")  # card chip
+    m.box((0.06, 0.012, 0.03), (0.09, 0.004, 0.02), "grass")  # a banknote
+
+
+@m2
+def lunchbox(m):  # tin lunchbox, blue body, faded yellow/red lid art, handle
+    m.box((0, 0.08, 0), (0.25, 0.16, 0.1), "paint_blue_faded", bevel=0.01)
+    m.box((0, 0.165, 0), (0.25, 0.012, 0.1), "paint_blue_faded", bevel=0.005)
+    m.box((0, 0.085, -0.051), (0.18, 0.11, 0.002), "paint_yellow_faded")
+    m.box((-0.03, 0.08, -0.053), (0.06, 0.06, 0.002), "paint_red_faded")
+    m.box((0.05, 0.1, -0.053), (0.05, 0.03, 0.002), "plastic_white")
+    m.box((0, 0.182, 0), (0.1, 0.01, 0.012), "metal_dark", bevel=0.003)
+    for x in (-0.05, 0.05):
+        m.box((x, 0.175, 0), (0.008, 0.016, 0.01), "metal_dark")
+    m.box((0, 0.155, -0.052), (0.03, 0.02, 0.004), "metal_bare")  # latch
+
+
+@m2
+def medical_bag(m):  # red zip bag, white cross, black handles
+    m.box((0, 0.11, 0), (0.35, 0.22, 0.2), "cloth_red", bevel=0.04)
+    m.box((0, 0.218, 0), (0.3, 0.008, 0.012), "metal_dark")  # zip
+    _cross(m, (0, 0.11, -0.101), 0.1, 0.004)
+    for z in (-0.06, 0.06):
+        m.box((0, 0.25, z), (0.14, 0.012, 0.016), "cloth_black", bevel=0.004)
+        for x in (-0.06, 0.06):
+            m.box((x, 0.23, z), (0.016, 0.04, 0.016), "cloth_black")
+
+
+@m2
+def ammo_tin(m):  # .50-style olive can, side latch lever, yellow stencil, handle on top
+    m.box((0, 0.09, 0), (0.28, 0.18, 0.1), "military_olive", bevel=0.006)
+    m.box((0, 0.185, 0), (0.29, 0.016, 0.11), "military_olive", bevel=0.004)  # lid
+    m.box((0.15, 0.15, 0), (0.016, 0.07, 0.03), "metal_dark", bevel=0.003)  # latch lever
+    m.box((-0.02, 0.1, -0.0505), (0.14, 0.03, 0.002), "paint_yellow_faded")
+    m.box((0, 0.2, 0), (0.12, 0.01, 0.014), "metal_dark", bevel=0.003)
+    for x in (-0.05, 0.05):
+        m.box((x, 0.197, 0), (0.01, 0.012, 0.014), "metal_dark")
+
+
+def _flat_shirt(m, body, trim, hood=False):
+    """Garment shown upright (as if hung up), front toward -Z: torso, sleeves angled down, cuffs, hem band."""
+    m.box((0, 0.24, 0), (0.34, 0.42, 0.05), body, bevel=0.015)  # torso
+    for s in (-1, 1):
+        m.box((s * 0.22, 0.25, 0.005), (0.1, 0.36, 0.045), body, bevel=0.012, rot=(0, 0, s * 22))  # sleeves
+        m.box((s * 0.285, 0.085, 0.005), (0.1, 0.05, 0.05), trim, bevel=0.008, rot=(0, 0, s * 22))  # cuffs
+    m.box((0, 0.045, 0), (0.34, 0.05, 0.055), trim, bevel=0.01)  # hem band
+    if hood:
+        m.box((0, 0.48, 0.02), (0.2, 0.16, 0.07), body, bevel=0.03)
+        m.box((0, 0.47, -0.016), (0.13, 0.1, 0.004), "cloth_black")  # hood opening
+
+
+@m2
+def hoodie(m):  # grey hoodie: hood, kangaroo pocket, white drawstrings
+    _flat_shirt(m, "cloth_grey", "cloth_black", hood=True)
+    m.box((0, 0.14, -0.028), (0.2, 0.1, 0.008), "cloth_grey", bevel=0.004)  # pocket
+    m.box((0, 0.14, -0.033), (0.16, 0.06, 0.002), "cloth_black")  # pocket shadow
+    for x in (-0.035, 0.035):
+        m.box((x, 0.36, -0.03), (0.008, 0.1, 0.006), "plastic_white")
+
+
+@m2
+def military_jacket(m):  # olive field jacket: collar, placket, 4 flapped pockets
+    _flat_shirt(m, "cloth_olive", "military_olive")
+    m.box((0, 0.45, 0.0), (0.22, 0.05, 0.07), "military_olive", bevel=0.01)  # collar
+    m.box((0, 0.24, -0.027), (0.02, 0.4, 0.006), "military_olive")  # placket
+    for x in (-0.085, 0.085):
+        for y in (0.33, 0.14):
+            m.box((x, y, -0.029), (0.1, 0.09, 0.008), "military_olive", bevel=0.003)
+            m.box((x, y + 0.04, -0.034), (0.102, 0.025, 0.006), "cloth_olive", bevel=0.002)
+
+
+@m2
+def cargo_pants(m):  # tan cargo trousers laid flat, side pockets, belt band
+    m.box((0, 0.012, -0.17), (0.3, 0.02, 0.06), "military_tan", bevel=0.006)  # waistband
+    m.box((0, 0.012, -0.11), (0.3, 0.02, 0.1), "cloth_khaki", bevel=0.006)  # seat
+    for s in (-1, 1):
+        m.box((s * 0.085, 0.012, 0.09), (0.13, 0.02, 0.36), "cloth_khaki", bevel=0.006, rot=(0, s * -3, 0))
+        m.box((s * 0.1, 0.025, 0.05), (0.08, 0.008, 0.09), "military_tan", bevel=0.003)  # cargo pockets
+        m.box((s * 0.09, 0.023, 0.255), (0.12, 0.004, 0.03), "military_tan")  # hems
+    for x in (-0.1, -0.03, 0.03, 0.1):
+        m.box((x, 0.024, -0.17), (0.012, 0.004, 0.05), "military_olive")  # belt loops
+
+
+@m2
+def tactical_vest(m):  # plate carrier front: 4 mag pouches, admin pouch, shoulder straps
+    m.box((0, 0.2, 0), (0.34, 0.4, 0.05), "military_olive", bevel=0.02)  # front plate bag
+    for x in (-0.11, 0.11):
+        m.box((x, 0.44, 0.0), (0.07, 0.1, 0.04), "military_olive", bevel=0.01)  # shoulder straps
+    for i in range(4):
+        x = -0.12 + i * 0.08
+        m.box((x, 0.07, -0.05), (0.07, 0.12, 0.05), "cloth_olive", bevel=0.008)  # mag pouches
+        m.box((x, 0.13, -0.055), (0.072, 0.02, 0.054), "military_olive", bevel=0.004)  # flaps
+    m.box((0, 0.24, -0.035), (0.18, 0.12, 0.025), "cloth_olive", bevel=0.006)  # admin pouch
+    for y in (0.3, 0.33, 0.36):  # MOLLE rows
+        m.box((0, y, -0.027), (0.3, 0.008, 0.006), "cloth_black")
+    m.box((0, 0.24, -0.049), (0.06, 0.03, 0.003), "stencil_white")  # name tape
+
+
+@m2
+def beanie(m):  # red knit beanie with a folded cuff
+    m.lathe([(0.0, 0.17), (0.04, 0.165), (0.07, 0.14), (0.09, 0.1), (0.095, 0.06), (0.095, 0.03), (0.0, 0.03)],
+            "cloth_red", segments=14)
+    m.lathe([(0.0, 0.0), (0.1, 0.0), (0.102, 0.045), (0.0, 0.045)], "cloth_red", segments=14)
+    for k in range(7):  # knit ribs on the cuff
+        a = k * 2 * math.pi / 7
+        m.box((0.103 * math.cos(a), 0.022, 0.103 * math.sin(a)), (0.008, 0.04, 0.008), "blood_dry")
+
+
+@m2
+def cap(m):  # baseball cap: blue crown, white front panel, curved brim (-Z)
+    m.lathe([(0.0, 0.11), (0.05, 0.105), (0.085, 0.07), (0.098, 0.03), (0.1, 0.0), (0.0, 0.0)], "paint_blue_faded",
+            segments=14)
+    m.box((0, 0.055, -0.07), (0.1, 0.07, 0.04), "plastic_white", rot=(-35, 0, 0))  # front panel
+    m.extrude([(-0.09, 0.0), (0.09, 0.0), (0.07, -0.06), (0.0, -0.085), (-0.07, -0.06)], 0.01, "paint_blue_faded",
+              axis="y", center=(0, 0.005, -0.08), rot=(8, 0, 0))
+    m.cylinder((0, 0.112, 0), 0.01, 0.008, "paint_blue_faded", segments=8)  # button
+
+
+@m2
+def helmet_military(m):  # olive MICH-style dome, chin strap, NVG plate
+    m.lathe([(0.0, 0.18), (0.06, 0.175), (0.1, 0.15), (0.125, 0.1), (0.13, 0.04), (0.128, 0.0), (0.11, 0.0),
+             (0.0, 0.0)], "military_olive", segments=16, scale=(0.9, 1, 1.05))
+    m.box((0, 0.12, -0.12), (0.06, 0.05, 0.02), "metal_dark", bevel=0.004, rot=(-30, 0, 0))  # NVG mount
+    for s in (-1, 1):
+        m.box((s * 0.11, 0.04, -0.02), (0.012, 0.05, 0.04), "cloth_black")  # strap
+    m.box((0, 0.002, -0.06), (0.16, 0.004, 0.02), "cloth_black")
+
+
+@m2
+def gas_mask(m):  # black rubber face piece, two round eye lenses, olive filter on one side
+    m.lathe([(0.0, 0.0), (0.06, 0.005), (0.09, 0.04), (0.1, 0.1), (0.085, 0.16), (0.04, 0.19), (0.0, 0.195)],
+            "rubber_black", segments=14, scale=(1, 1, 0.55))
+    for x in (-0.042, 0.042):
+        m.lathe([(0.0, 0.0), (0.03, 0.0), (0.03, 0.01), (0.0, 0.01)], "glass", center=(x, 0.12, -0.045), segments=10,
+                axis="z", rot=(0, 180, 0))
+        m.lathe([(0.032, 0.0), (0.034, 0.0), (0.034, 0.012), (0.032, 0.012)], "metal_dark", center=(x, 0.12, -0.045),
+                segments=10, axis="z", rot=(0, 180, 0), closed=True)
+    m.lathe([(0.0, 0.0), (0.04, 0.0), (0.042, 0.05), (0.035, 0.06), (0.0, 0.06)], "military_olive",
+            center=(0.06, 0.045, -0.05), segments=12, axis="x", rot=(0, -30, 0))  # filter
+    m.box((0, 0.11, 0.06), (0.2, 0.02, 0.01), "cloth_black")  # head strap
+
+
+@m2
+def glasses(m):  # wire-rim glasses, temples folded open
+    for x in (-0.033, 0.033):
+        m.lathe([(0.024, -0.002), (0.026, -0.002), (0.026, 0.002), (0.024, 0.002)], "metal_dark",
+                center=(x, 0.03, 0), segments=12, axis="z", closed=True)
+        m.lathe([(0.0, 0.0), (0.024, 0.0)], "glass", center=(x, 0.03, 0), segments=12, axis="z")
+        m.box((x * 2.1, 0.034, 0.06), (0.003, 0.004, 0.12), "metal_dark")  # temples
+    m.box((0, 0.042, 0), (0.02, 0.003, 0.003), "metal_dark")  # bridge
+
+
+@m2
+def secure_pouch(m):  # black zipped body pouch with a lock tab
+    m.box((0, 0.02, 0), (0.15, 0.04, 0.12), "cloth_black", bevel=0.012)
+    m.box((0, 0.041, -0.035), (0.13, 0.004, 0.008), "metal_dark")
+    m.box((0.06, 0.044, -0.035), (0.016, 0.006, 0.02), "metal_bare")
+    m.box((0, 0.042, 0.02), (0.06, 0.003, 0.03), "military_olive")  # patch
+    m.box((-0.08, 0.02, 0.03), (0.012, 0.012, 0.06), "metal_bare")  # belt loop D-ring
+
+
+# backpacks: showcase (pocket) side at -Z, straps at +Z
+def _pack(m, w, h, d, body, trim, pocket=True, sides=True, top=True):
+    m.box((0, h / 2, 0), (w, h, d), body, bevel=min(0.045, d / 4))
+    if pocket:
+        m.box((0, h * 0.3, -d / 2 - 0.02), (w * 0.7, h * 0.35, 0.05), trim, bevel=0.018)
+        m.box((0, h * 0.47, -d / 2 - 0.044), (w * 0.6, 0.008, 0.006), "metal_dark")  # zip
+    if sides:
+        for s in (-1, 1):
+            m.box((s * (w / 2 + 0.02), h * 0.3, 0), (0.05, h * 0.35, d * 0.7), trim, bevel=0.015)
+    if top:
+        m.box((0, h - 0.02, -0.01), (w * 0.95, 0.06, d * 0.9), trim, bevel=0.02)
+    for x in (-w * 0.25, w * 0.25):
+        m.box((x, h * 0.55, d / 2 + 0.012), (0.05, h * 0.75, 0.02), "cloth_black", bevel=0.005)  # straps
+    m.box((0, h + 0.015, d * 0.2), (0.07, 0.025, 0.02), "cloth_black", bevel=0.006)  # grab handle
+
+
+@m2
+def school_bag(m):  # blue kid backpack, red front pocket, yellow keychain
+    _pack(m, 0.3, 0.4, 0.14, "paint_blue_faded", "cloth_red", sides=False, top=False)
+    m.lathe([(0.0, 0.4), (0.12, 0.38), (0.15, 0.3), (0.15, 0.0)], "paint_blue_faded", segments=12,
+            scale=(1, 1, 0.46))  # rounded top
+    m.box((0.07, 0.08, -0.115), (0.03, 0.04, 0.012), "paint_yellow_faded", bevel=0.005, rot=(0, 0, 20))  # charm
+    m.box((0.06, 0.15, -0.11), (0.004, 0.06, 0.004), "metal_bare")
+
+
+@m2
+def hiking_pack(m):  # orange body, grey bottom + pockets, hip belt
+    _pack(m, 0.32, 0.5, 0.2, "fabric_orange", "cloth_grey")
+    m.box((0, 0.06, 0), (0.33, 0.12, 0.21), "cloth_grey", bevel=0.03)
+    for s in (-1, 1):
+        m.box((s * 0.2, 0.1, 0.06), (0.1, 0.06, 0.1), "cloth_black", bevel=0.01)  # hip belt wings
+    for y in (0.3, 0.38):
+        m.box((0, y, -0.105), (0.26, 0.012, 0.006), "cloth_black")  # compression straps
+
+
+@m2
+def military_pack(m):  # olive assault pack with MOLLE rows
+    _pack(m, 0.35, 0.5, 0.25, "military_olive", "cloth_olive", sides=False)
+    for k in range(5):
+        m.box((0, 0.1 + k * 0.035, -0.172), (0.22, 0.01, 0.006), "cloth_black")
+    for s in (-1, 1):
+        for k in range(4):
+            m.box((s * 0.177, 0.15 + k * 0.06, 0), (0.006, 0.012, 0.2), "cloth_black")
+
+
+@m2
+def alice_pack(m):  # army frame pack: big bag + 2 side pouches + exposed metal frame
+    _pack(m, 0.38, 0.48, 0.22, "cloth_olive", "military_olive", sides=False, pocket=False)
+    for s in (-1, 1):
+        m.box((s * 0.12, 0.18, -0.14), (0.12, 0.17, 0.08), "military_olive", bevel=0.02)  # 2 front pouches
+        m.box((s * 0.12, 0.27, -0.15), (0.125, 0.04, 0.085), "cloth_olive", bevel=0.01)
+        m.box((s * 0.22, 0.2, -0.02), (0.06, 0.18, 0.12), "military_olive", bevel=0.015)  # side pouches
+    for s in (-1, 1):  # frame uprights
+        m.box((s * 0.15, 0.29, 0.14), (0.025, 0.66, 0.025), "metal_dark", bevel=0.004)
+    for y in (0.02, 0.3, 0.55):
+        m.box((0, y, 0.14), (0.32, 0.02, 0.025), "metal_dark", bevel=0.003)
+    m.box((0, 0.07, 0.16), (0.3, 0.06, 0.02), "cloth_black")  # kidney pad
+
+
+@m2
+def large_hiking_pack(m):  # tall expedition pack, red lid, grey body, bedroll strapped below
+    _pack(m, 0.34, 0.72, 0.24, "cloth_grey", "cloth_red", sides=True)
+    m.box((0, 0.72, -0.02), (0.33, 0.1, 0.24), "cloth_red", bevel=0.035)  # extended lid
+    m.lathe([(0.0, -0.2), (0.07, -0.2), (0.075, -0.19), (0.075, 0.19), (0.07, 0.2), (0.0, 0.2)], "cloth_khaki",
+            center=(0, -0.05, -0.01), segments=12, axis="x")  # bedroll under the pack
+    for x in (-0.12, 0.12):
+        m.lathe([(0.077, -0.012), (0.077, 0.012)], "cloth_black", center=(x, -0.05, -0.01), segments=12, axis="x")
+
+
+@m2
+def laboratory_pack(m):  # white hard-shell field-lab pack, hazard band, sealed grey lid
+    m.box((0, 0.3, 0), (0.42, 0.6, 0.26), "plastic_white", bevel=0.05)
+    m.box((0, 0.6, 0), (0.43, 0.06, 0.27), "cloth_grey", bevel=0.02)
+    n = 8
+    for i in range(n):  # diagonal hazard band
+        x = -0.19 + 0.38 * (i + 0.5) / n
+        m.box((x, 0.2, -0.132), (0.035, 0.07, 0.004), "hazard_yellow" if i % 2 else "hazard_black", rot=(0, 0, 30))
+    m.box((0, 0.2, -0.131), (0.4, 0.075, 0.003), "hazard_black")
+    m.box((0, 0.42, -0.133), (0.12, 0.09, 0.004), "cloth_grey", bevel=0.003)  # sample port
+    m.cylinder((0, 0.42, -0.137), 0.03, 0.006, "metal_bare", segments=10, axis="z")
+    for x in (-0.12, 0.12):
+        m.box((x, 0.33, 0.14), (0.05, 0.45, 0.02), "cloth_black", bevel=0.005)
+
+
+MODELS.update({k: v for k, v in globals().items() if callable(v) and k in FRONT_TO_CAMERA})
+
+
 def build(item):
     """Fresh scene with the item's visible meshes; returns them."""
     if item in GLB:
@@ -176,7 +684,8 @@ def build(item):
         print(f"ICON_SKIP {item}: no model or icon builder")
         return []
     m = vlib.Builder(f"icon_{item}", category="icon")
-    MODELS[item](m)
+    with m.xform(rot=(0, 180 if item in FRONT_TO_CAMERA else 0, 0)):
+        MODELS[item](m)
     m.finish(lods=(), collider=None)
     return [bpy.data.objects[f"icon_{item}_LOD0"]]
 
