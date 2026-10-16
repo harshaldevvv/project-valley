@@ -35,6 +35,7 @@ export class Car {
   wheelSpin = [0, 0, 0, 0];
   readonly trunkPos = new Vector3();
   readonly doorPos = new Vector3();
+  readonly hoodPos = new Vector3();
   readonly trunkId: string;
   hp: number;
   smokeT = 0;
@@ -154,6 +155,34 @@ export class Vehicles {
         else this.ctx.game.events.emit('toast', { text: 'Trunk: inventory not installed yet' });
       },
     });
+    // Repair at the hood with a repair kit (systems item); hidden when the car is at full HP
+    const kits = () => {
+      const lo = probe(this.ctx.game, 'loadout', 'count');
+      try {
+        return lo ? lo.count(car.def.repairItem) : 0;
+      } catch {
+        return 0;
+      }
+    };
+    this.ctx.game.interact.register({
+      position: car.hoodPos,
+      radius: 2,
+      prompt: () => (this.driving || car.hp >= car.def.hp ? null : kits() > 0 ? 'Repair car (repair kit)' : 'Repair car: needs a repair kit'),
+      holdSeconds: () => (kits() > 0 ? car.def.repairSeconds : 0),
+      onInteract: () => {
+        if (kits() <= 0) {
+          this.ctx.game.events.emit('toast', { text: 'Needs a repair kit' });
+          return;
+        }
+        const lo = probe(this.ctx.game, 'loadout', 'consume');
+        if (lo && lo.consume(car.def.repairItem, 1) < 1) return;
+        car.hp = car.def.hp; // also revives a dead engine; smoke stops below
+        car.smokeT = 0;
+        this.ctx.playerAnim?.oneshot('interact_search', 0.1);
+        this.ctx.sfx('build_place', car.hoodPos);
+        this.ctx.game.events.emit('toast', { text: 'Car repaired' });
+      },
+    });
     this.ctx.game.interact.register({
       position: car.doorPos,
       radius: def.doorReach,
@@ -176,6 +205,8 @@ export class Vehicles {
     const door = car.model.sockets.get('door_L');
     if (door) door.getWorldPosition(car.doorPos);
     else car.doorPos.set(-hx - 0.4, 1, -hz * 0.15).applyQuaternion(car.currQuat).add(car.currPos);
+    // Hood: front of the chassis (no socket on the pickup yet)
+    car.hoodPos.set(0, car.cy + car.def.halfExtents[1], -hz - 0.3).applyQuaternion(car.currQuat).add(car.currPos);
     const trunk = car.model.sockets.get('trunk');
     if (trunk) trunk.getWorldPosition(car.trunkPos);
     else car.trunkPos.set(0, 1, hz + 0.4).applyQuaternion(car.currQuat).add(car.currPos);
@@ -358,7 +389,7 @@ export class Vehicles {
       if (car.hp < d.hp * 0.35 && (car.smokeT -= dt) <= 0) {
         car.smokeT = car.dead ? 0.12 : 0.25;
         _p.set(0, car.cy + d.halfExtents[1] + 0.1, -d.halfExtents[2] + 0.6).applyQuaternion(car.currQuat).add(car.currPos);
-        this.ctx.fx.smokePuff(_p, UPV, 1, car.dead ? '#2a2826' : '#7a7670', 1.2);
+        this.ctx.fx.smokePuff(_p, UPV, 1, car.dead ? '#2a2826' : '#7a7670', 4); // bigger than muzzle wisps so it reads at chase-cam distance
       }
       this.syncState(car);
       if (Math.abs(car.speed) > 2.5) this.contacts(car, dt);

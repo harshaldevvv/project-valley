@@ -16,6 +16,9 @@ export interface VehicleFeel {
   zombieDamageMul: number;
   /** Bullets that hit the car: weapon damage × this. */
   bulletDamageMul: number;
+  /** Item that repairs the car to 100 % (and revives a dead engine), and the hold time. */
+  repairItem: string;
+  repairSeconds: number;
   engineNoise: number;
   /** Chase camera */
   camDist: number;
@@ -54,6 +57,8 @@ export const vehicles: Record<string, VehicleDef & VehicleFeel> = {
     rammingDamage: 18,
     zombieDamageMul: 3,
     bulletDamageMul: 0.25,
+    repairItem: 'repair_kit',
+    repairSeconds: 4,
     engineNoise: 30,
     camDist: 7.5,
     camHeight: 2.8,
