@@ -120,4 +120,194 @@ export const itemText: Record<string, { name: string; short: string; description
     short: 'Repair',
     description: 'Hose clamps, wire, a roll of tape and a wrench that fits nothing exactly. Enough to keep a truck limping.',
   },
+  crowbar_a: {
+    name: "Crowbar",
+    short: "Crowbar",
+    description: "A yard of hooked steel. Opens doors, crates and arguments.",
+  },
+  hammer_a: {
+    name: "Claw Hammer",
+    short: "Hammer",
+    description: "For nails, mostly. Mostly.",
+  },
+  ammo_9mm_box: {
+    name: "Box of 9 mm (50)",
+    short: "9mm Box",
+    description: "A sealed cardboard box of fifty rounds. Unpack it to load magazines.",
+  },
+  ifak: {
+    name: "IFAK",
+    short: "IFAK",
+    description: "Individual first aid kit: tourniquet, gauze, a pressure dressing. Stops bad bleeding fast.",
+  },
+  painkillers: {
+    name: "Painkillers",
+    short: "Pills",
+    description: "Ibuprofen by the handful. Takes the edge off and puts a little spring back in your step.",
+  },
+  canned_soup: {
+    name: "Canned Soup",
+    short: "Soup",
+    description: "Chicken noodle, mostly noodle. Eats and drinks at the same time.",
+  },
+  canned_tuna: {
+    name: "Canned Tuna",
+    short: "Tuna",
+    description: "Packed in oil. Pull tab, no opener needed, small mercies.",
+  },
+  mre: {
+    name: "MRE",
+    short: "MRE",
+    description: "Meal, ready to eat. Twelve hundred calories, a flameless heater and a sense of being looked after.",
+  },
+  energy_drink: {
+    name: "Energy Drink",
+    short: "Energy",
+    description: "Neon green and fizzy. Your heart will thank you later, or not.",
+  },
+  canteen: {
+    name: "Canteen",
+    short: "Canteen",
+    description: "Dented steel canteen, full. Somebody will want to refill this.",
+  },
+  cloth: {
+    name: "Cloth",
+    short: "Cloth",
+    description: "Folded fabric scraps. Bandages, patches, wicks: it all starts here.",
+  },
+  duct_tape: {
+    name: "Duct Tape",
+    short: "Tape",
+    description: "Half a roll. Holds the valley together.",
+  },
+  rope: {
+    name: "Rope",
+    short: "Rope",
+    description: "Ten metres of nylon rope, coiled tight.",
+  },
+  electronic_parts: {
+    name: "Electronic Parts",
+    short: "Electro",
+    description: "Circuit boards and wire salvaged from dead appliances.",
+  },
+  gunpowder: {
+    name: "Gunpowder",
+    short: "Powder",
+    description: "Smokeless powder in a screw-top tin. Keep it dry and away from the stove.",
+  },
+  metal_pipe: {
+    name: "Metal Pipe",
+    short: "Pipe",
+    description: "A length of steel pipe. Builders want it; so does anyone without a weapon.",
+  },
+  wrench: {
+    name: "Wrench",
+    short: "Wrench",
+    description: "Adjustable wrench, rusted at the worm screw but still turning.",
+  },
+  flashlight_a: {
+    name: "Flashlight",
+    short: "Torch",
+    description: "Heavy aluminium flashlight. The batteries rattle when you shake it.",
+  },
+  cash: {
+    name: "Cash",
+    short: "Cash",
+    description: "Folded bills. The traders still take it, and nobody asks why.",
+  },
+  wallet: {
+    name: "Wallet",
+    short: "Wallet",
+    description: "A worn leather wallet. Room for cash, cards and a lockpick or two.",
+  },
+  lunchbox: {
+    name: "Lunchbox",
+    short: "Lunch",
+    description: "A tin lunchbox with a faded cartoon on the lid. Food and drink only.",
+  },
+  medical_bag: {
+    name: "Medical Bag",
+    short: "Med Bag",
+    description: "A red zip bag with elastic loops inside. Keeps medicine sorted and together.",
+  },
+  ammo_tin: {
+    name: "Ammo Tin",
+    short: "Ammo Tin",
+    description: "Military surplus can with a rubber seal. Ammunition and magazines only.",
+  },
+  hoodie: {
+    name: "Hoodie",
+    short: "Hoodie",
+    description: "Grey cotton hoodie with a deep front pocket on each side.",
+  },
+  military_jacket: {
+    name: "Military Jacket",
+    short: "Mil Jkt",
+    description: "Woodland field jacket with four bellows pockets that actually close.",
+  },
+  cargo_pants: {
+    name: "Cargo Pants",
+    short: "Cargos",
+    description: "Ripstop trousers with a big thigh pocket on each leg.",
+  },
+  tactical_vest: {
+    name: "Tactical Vest",
+    short: "Vest",
+    description: "Plate carrier with four magazine pouches and an admin pocket. Pouches take magazines only.",
+  },
+  beanie: {
+    name: "Beanie",
+    short: "Beanie",
+    description: "Knitted wool hat. Warm, at least.",
+  },
+  cap: {
+    name: "Baseball Cap",
+    short: "Cap",
+    description: "A feed-store cap, sun-bleached at the brim.",
+  },
+  helmet_military: {
+    name: "Military Helmet",
+    short: "Helmet",
+    description: "Kevlar combat helmet. Teeth do not get through it.",
+  },
+  gas_mask: {
+    name: "Gas Mask",
+    short: "Gas Mask",
+    description: "Full-face respirator with one filter. Fit it before you need it.",
+  },
+  glasses: {
+    name: "Glasses",
+    short: "Glasses",
+    description: "Wire-rimmed glasses. Not your prescription, but the world is sharper anyway.",
+  },
+  school_bag: {
+    name: "School Bag",
+    short: "School",
+    description: "A kid’s backpack with a broken keychain on the zip. Small, but every bit counts.",
+  },
+  hiking_pack: {
+    name: "Hiking Pack",
+    short: "Hiking",
+    description: "Day-hiking pack with a hip belt. Carries more than it looks.",
+  },
+  military_pack: {
+    name: "Military Pack",
+    short: "Mil Pack",
+    description: "MOLLE assault pack in olive drab. Built to be overloaded.",
+  },
+  alice_pack: {
+    name: "ALICE Pack",
+    short: "ALICE",
+    description: "Old army frame pack: a big main bag and two side pouches.",
+  },
+  large_hiking_pack: {
+    name: "Large Hiking Pack",
+    short: "Lg Hike",
+    description: "Expedition pack with an internal frame. Room for a week, or a month if you are careful.",
+  },
+  laboratory_pack: {
+    name: "Laboratory Pack",
+    short: "Lab Pack",
+    description: "A sealed, oversized field-lab pack. Nobody hauls one of these without a reason.",
+  },
 };

@@ -1,11 +1,11 @@
 import { CONTAINERS } from '../content/data/containers';
 import { INVENTORY, ITEMS, STARTING_KIT } from '../content/data/items';
-import { LOOT } from '../content/data/loot';
+import { LOOT, rarityMul } from '../content/data/loot';
 import type { ItemInstance, SlotName } from '../content/data/types';
 import type { LoadoutApi } from '../core/contracts';
 import type { Rng } from '../engine/rng';
 import {
-  autoPlace, containsItem, defOf, forEachItem, gridOf, mergeInto, newItem, newItems, removeItem, uidState, type Grid,
+  autoPlace, containsItem, defOf, forEachItem, gridsOf, mergeInto, newItem, newItems, removeItem, uidState, type Grid,
 } from './inventory';
 
 /** A world container instance (loot crate, cabinet, car trunk). Plain data. */
@@ -68,10 +68,18 @@ export class Loadout implements LoadoutApi {
     const order = [...INVENTORY.fillOrder, ...EQUIP_SLOTS] as SlotName[];
     const out: { slot: SlotName; grid: Grid }[] = [];
     for (const slot of new Set(order)) {
-      const g = gridOf(this.equipment[slot]);
-      if (g) out.push({ slot, grid: g });
+      for (const g of gridsOf(this.equipment[slot])) out.push({ slot, grid: g });
     }
     return out;
+  }
+
+  /** Into the worn grids: pockets made for this kind first (mag pouches for magazines), then fill order. True if all fit. */
+  storeWorn(item: ItemInstance): boolean {
+    const kind = defOf(item).kind;
+    const grids = this.playerGrids().map((p) => p.grid);
+    const ordered = [...grids.filter((g) => g.accepts?.includes(kind)), ...grids.filter((g) => !g.accepts)];
+    for (const g of ordered) if (autoPlace(g, item) === 0) return true;
+    return false;
   }
 
   /** Into the worn grids (empty matching weapon slot first for weapons); else onto the ground. Never loses items. */
@@ -89,7 +97,7 @@ export class Loadout implements LoadoutApi {
         return;
       }
     }
-    for (const { grid } of this.playerGrids()) if (autoPlace(grid, item) === 0) return;
+    if (this.storeWorn(item)) return;
     this.drop(item);
   }
 
@@ -116,7 +124,7 @@ export class Loadout implements LoadoutApi {
     const d = defOf(item);
     const slot = d.slots?.find((s) => !this.equipment[s]);
     if (slot) this.equipment[slot] = item;
-    else for (const { grid } of this.playerGrids()) if (autoPlace(grid, item) === 0) break;
+    else this.storeWorn(item);
     const placed = !!slot || this.playerGrids().some(({ grid }) => grid.contents.some((gi) => gi.item === item)) || item.count <= 0;
     if (placed) this.takePickup(item);
     this.changed();
@@ -203,14 +211,12 @@ export class Loadout implements LoadoutApi {
       if (hit) return true;
     }
     if (this.takePickup(item)) return true;
-    for (const p of this.pickups) {
-      const g = gridOf(p.item);
-      if (g) {
+    for (const p of this.pickups)
+      for (const g of gridsOf(p.item)) {
         let hit = false;
         forEachItem(g, (gi, grid) => !hit && gi.item === item && (hit = !!removeItem(grid, item)), true);
         if (hit) return true;
       }
-    }
     return false;
   }
 
@@ -340,17 +346,18 @@ export class Loadout implements LoadoutApi {
     const def = CONTAINERS[c.defId];
     if (!c.searched || def.refillOnOpen) {
       if (def.refillOnOpen) c.grid.contents.length = 0;
-      for (const item of this.rollLoot(def.lootTable)) autoPlace(c.grid, item);
+      for (const item of this.rollLoot(def.lootTable, def.tier)) autoPlace(c.grid, item);
       c.searched = true;
       this.changed();
     }
     return c;
   }
 
-  rollLoot(tableId: string): ItemInstance[] {
+  /** Roll a table (nested `table` entries roll their shared table once). Item weights scale by rarity for the tier. */
+  rollLoot(tableId: string, tier?: number, out: ItemInstance[] = []): ItemInstance[] {
     const t = LOOT[tableId];
-    if (!t) return [];
-    const out: ItemInstance[] = [];
+    if (!t) return out;
+    const zone = tier ?? t.tier ?? 1;
     const make = (item: string, count: number, rounds?: number) => {
       const d = defOf(item);
       const extra: Partial<ItemInstance> = {};
@@ -365,12 +372,16 @@ export class Loadout implements LoadoutApi {
       else for (let i = 0; i < count; i++) out.push(newItem(item, 1, { ...extra }));
     };
     for (const g of t.guaranteed ?? []) make(g.item, g.count, g.rounds);
-    const total = t.entries.reduce((s, e) => s + e.weight, 0);
+    const weights = t.entries.map((e) => e.weight * (e.item ? rarityMul(zone, defOf(e.item).rarity) : 1));
+    const total = weights.reduce((s, w) => s + w, 0);
     const rolls = this.rng.int(t.rolls[0], t.rolls[1]);
     for (let r = 0; r < rolls && total > 0; r++) {
       let pick = this.rng.next() * total;
-      const e = t.entries.find((en) => (pick -= en.weight) < 0) ?? t.entries[t.entries.length - 1];
-      make(e.item, this.rng.int(e.count[0], e.count[1]));
+      let k = weights.findIndex((w) => (pick -= w) < 0);
+      if (k < 0) k = weights.length - 1;
+      const e = t.entries[k];
+      if (e.table) this.rollLoot(e.table, zone, out);
+      else if (e.item) make(e.item, this.rng.int(e.count[0], e.count[1]));
     }
     return out;
   }

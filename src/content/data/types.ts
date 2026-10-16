@@ -14,7 +14,7 @@ export type Caliber = '9mm' | '.45acp' | '5.56' | '7.62' | '.308' | '12ga';
 
 export interface ItemDef {
   id: string;
-  kind: 'weapon' | 'magazine' | 'ammo' | 'medical' | 'food' | 'drink' | 'material' | 'tool' | 'clothing' | 'backpack' | 'misc';
+  kind: 'weapon' | 'magazine' | 'ammo' | 'medical' | 'food' | 'drink' | 'material' | 'tool' | 'clothing' | 'backpack' | 'misc' | 'valuable' | 'container';
   /** Grid footprint (cells). */
   w: number;
   h: number;
@@ -23,6 +23,14 @@ export interface ItemDef {
   slots?: SlotName[];
   /** Containers (backpacks, clothing with pockets): their inner grid. */
   grid?: { w: number; h: number };
+  /** Extra sub-grids (side pockets, mag pouches). `accepts` limits which item kinds fit. Stored in ItemInstance.pockets. */
+  pockets?: { w: number; h: number; accepts?: ItemDef['kind'][] }[];
+  /** Armour rating of worn gear (helmet 3 = infection-proof head, principles §7). */
+  armour?: number;
+  /** Loot rarity (principles §9 tier weights). Default common. */
+  rarity?: Rarity;
+  /** Boxed goods: "Unpack" turns one into `count` of `item` (an ammo box into loose rounds). */
+  unpack?: { item: string; count: number };
   /** Optional 3D model id from the asset manifest (world/hand model). */
   model?: string;
   /** Icon colour swatch for the placeholder icon until real icons exist. */
@@ -40,6 +48,8 @@ export interface ItemDef {
     cures?: string[];
     /** M2: cures infection only up to this stage (antibiotics 2); omit = any stage when 'infection' is in cures. */
     infectionMaxStage?: number;
+    /** Stamina boost (energy drink, painkillers); mechanics applies it from the itemUsed event. */
+    stamina?: number;
   };
 }
 
@@ -85,6 +95,8 @@ export interface ItemInstance {
   mag?: ItemInstance | null;
   /** Containers/backpacks: their contents. */
   contents?: GridItem[];
+  /** Sub-grid contents, one array per ItemDef.pockets entry. */
+  pockets?: GridItem[][];
   rarity?: Rarity;
 }
 
@@ -102,6 +114,8 @@ export interface ContainerDef {
   lootTable: string;
   /** Lock difficulty 0 = unlocked. */
   lock: number;
+  /** Zone tier 1..5 for rarity weighting (overrides the table's tier). */
+  tier?: number;
   /** Sandbox only: contents are re-rolled every time it is opened (M1 weapon rack). */
   refillOnOpen?: boolean;
 }
@@ -109,7 +123,10 @@ export interface ContainerDef {
 export interface LootTable {
   id: string;
   rolls: [number, number];
-  entries: { item: string; weight: number; count: [number, number] }[];
+  /** Entries roll an item, or (with `table`) a nested shared table. */
+  entries: { item?: string; table?: string; weight: number; count: [number, number] }[];
+  /** Zone tier 1..5: scales entry weights by item rarity (principles §9). */
+  tier?: number;
   /** Always added, before the weighted rolls. `rounds` = -1: magazines full, weapons loaded with a full magazine. */
   guaranteed?: { item: string; count: number; rounds?: number }[];
 }

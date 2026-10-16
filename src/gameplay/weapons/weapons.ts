@@ -147,7 +147,7 @@ export class Weapons {
 
   async init(handSocket: Object3D) {
     await this.vm.init(this.ctx.game.camera);
-    const kinds: Record<string, 'pistol' | 'rifle' | 'knife'> = { pistol_a: 'pistol', rifle_a: 'rifle', knife_a: 'knife' };
+    const kinds: Record<string, 'pistol' | 'rifle' | 'knife'> = { pistol_a: 'pistol', rifle_a: 'rifle', knife_a: 'knife', crowbar_a: 'knife', hammer_a: 'knife' };
     for (const id of Object.keys(kinds)) {
       const model = weaponFeel[id]?.model ?? meleeDefs[id]?.model;
       const [tp, fp] = await Promise.all([makeWeaponModel(id, model, kinds[id]), makeWeaponModel(id, model, kinds[id])]);

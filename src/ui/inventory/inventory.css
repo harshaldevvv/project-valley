@@ -82,6 +82,10 @@
   border: 1px solid var(--edge);
   box-sizing: content-box;
 }
+.inv-grids { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; }
+/* Restricted pockets (mag pouches, medical bag): a faint diagonal hatch so they read as "special". */
+.inv-grid.only { background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px),
+  repeating-linear-gradient(45deg, rgba(217, 178, 90, 0.07) 0 6px, transparent 6px 12px); background-size: var(--cell) var(--cell), var(--cell) var(--cell), auto; }
 .inv-fp { position: absolute; pointer-events: none; z-index: 3; border-radius: 2px; }
 .inv-fp.ok { background: var(--ok); outline: 1px solid rgba(120, 230, 150, 0.8); }
 .inv-fp.bad { background: var(--bad); outline: 1px solid rgba(240, 110, 100, 0.85); }
@@ -129,7 +133,7 @@
 /* Equipment */
 .inv-equip { width: calc(var(--cell) * 5.6); }
 /* Fixed column widths: the layout never jumps when grids empty or panels open (QA-023). */
-.inv-player { min-width: calc(var(--cell) * 5); }
+.inv-player { min-width: calc(var(--cell) * 5); max-width: calc(var(--cell) * 7.4 + 24px); }
 .inv-loot { min-width: calc(var(--cell) * 8); }
 .inv-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .inv-wslots { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }

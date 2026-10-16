@@ -6,7 +6,7 @@ import { itemText } from '../../content/text/items';
 import { inventoryText, survivalText } from '../../content/text/ui';
 import iconIndex from '../../../public/assets/icons/index.json';
 import {
-  autoPlace, canPlace, sortGrid, canStack, containsItem, defOf, findFree, footprint, gridOf, mergeInto, place, removeItem, splitStack, type Grid,
+  autoPlace, autoPlaceInto, canPlace, sortGrid, canStack, containsItem, defOf, findFree, footprint, gridsOf, hasStorage, mergeInto, newItems, place, removeItem, splitStack, type Grid,
 } from '../../systems/inventory';
 import { EQUIP_SLOTS, WEAPON_SLOTS, type Loadout } from '../../systems/loadout';
 import './inventory.css';
@@ -220,12 +220,22 @@ export class InventoryScreen {
     col.append(h('h2', '', T.inventory));
     const worn = this.lo.playerGrids();
     if (!worn.length) col.append(h('div', 'inv-empty', T.noStorage));
-    for (const { slot, grid } of worn) {
+    // One header per worn item; its grids (main + pockets) sit side by side and wrap.
+    const bySlot = new Map<SlotName, Grid[]>();
+    for (const { slot, grid } of worn) bySlot.set(slot, [...(bySlot.get(slot) ?? []), grid]);
+    for (const [slot, grids] of bySlot) {
       const head = h('h3');
-      head.append(h('span', 't', itemName(grid.owner!.defId)), this.btn(T.sort, () => sortGrid(grid)));
-      col.append(head, this.gridEl(`eq:${slot}`, grid));
+      head.append(h('span', 't', itemName(grids[0].owner!.defId)), this.btn(T.sort, () => grids.map((g) => sortGrid(g)).some(Boolean)));
+      col.append(head, this.gridGroup(`eq:${slot}`, grids));
     }
     return col;
+  }
+
+  /** Several grids of one item (bag + side pockets, vest pouches). */
+  private gridGroup(gidBase: string, grids: Grid[]) {
+    const row = h('div', 'inv-grids');
+    grids.forEach((g, i) => row.append(this.gridEl(`${gidBase}:${i}`, g)));
+    return row;
   }
 
   private renderRight() {
@@ -237,12 +247,11 @@ export class InventoryScreen {
       col.append(head, this.gridEl(`c:${c.id}`, c.grid));
     }
     for (const bag of this.bags) {
-      const g = gridOf(bag)!;
       const head = h('h3');
       const x = h('span', 'x', '✕');
       x.onclick = () => ((this.bags = this.bags.filter((b) => b !== bag)), this.render());
-      head.append(h('span', '', itemName(bag.defId)), x);
-      col.append(head, this.gridEl(`bag:${bag.uid}`, g));
+      head.append(h('span', 't', itemName(bag.defId)), x);
+      col.append(head, this.gridGroup(`bag:${bag.uid}`, gridsOf(bag)));
     }
     const gh = h(c || this.bags.length ? 'h3' : 'h2');
     gh.append(h('span', 't', T.vicinity));
@@ -277,8 +286,9 @@ export class InventoryScreen {
 
   private gridEl(gid: string, grid: Grid) {
     this.grids.set(gid, grid);
-    const el = h('div', 'inv-grid');
+    const el = h('div', grid.accepts ? 'inv-grid only' : 'inv-grid');
     el.dataset.gid = gid;
+    if (grid.accepts) el.title = grid.accepts.map((k) => T.kind[k] ?? k).join(' / ');
     el.style.width = `calc(var(--cell) * ${grid.w})`;
     el.style.height = `calc(var(--cell) * ${grid.h})`;
     for (const gi of grid.contents) {
@@ -325,7 +335,8 @@ export class InventoryScreen {
 
   private itemTile(item: ItemInstance, rotated?: boolean) {
     const t = this.tileFor(item.defId, this.badge(item), rotated);
-    if (item.contents?.length) t.append(h('span', 'bag', `▤ ${item.contents.length}`));
+    const n = (item.contents?.length ?? 0) + (item.pockets ?? []).reduce((s, p) => s + p.length, 0);
+    if (n) t.append(h('span', 'bag', `▤ ${n}`));
     return t;
   }
 
@@ -440,8 +451,7 @@ export class InventoryScreen {
       if (canStack(t, d.item) && t.count < td.stack) return { kind: 'merge', item: t, el: itemEl! };
       if (dd.kind === 'ammo' && td.kind === 'magazine' && td.ammo === d.item.defId && (t.rounds ?? 0) < (td.capacity ?? 0)) return { kind: 'load', item: t, el: itemEl! };
       if (dd.kind === 'magazine' && dd.fits?.includes(t.defId)) return { kind: 'insert', item: t, el: itemEl! };
-      const inner = gridOf(t);
-      if (inner && !containsItem(d.item, t) && findFree(inner, d.item)) return { kind: 'into', item: t, el: itemEl! };
+      if (!containsItem(d.item, t) && gridsOf(t).some((g) => findFree(g, d.item))) return { kind: 'into', item: t, el: itemEl! };
     }
     const slotEl = under.closest<HTMLElement>('.inv-slot');
     if (slotEl) {
@@ -554,7 +564,7 @@ export class InventoryScreen {
         return this.lo.insertMagazine(t.item, item) || back();
       case 'into':
         this.take(src, item);
-        return autoPlace(gridOf(t.item)!, item) === 0 || back();
+        return autoPlaceInto(t.item, item) === 0 || back();
       case 'grid': {
         if (!t.ok) return back();
         const grid = this.grids.get(t.gid)!;
@@ -596,7 +606,7 @@ export class InventoryScreen {
     const d = defOf(item);
     const slot = d.slots?.find((s) => !this.lo.equipment[s]);
     if (slot) return ((this.lo.equipment[slot] = item), true);
-    for (const { grid } of this.lo.playerGrids()) if (autoPlace(grid, item) === 0) return true;
+    if (this.lo.storeWorn(item)) return true;
     return false;
   }
 
@@ -652,8 +662,18 @@ export class InventoryScreen {
     const d = defOf(item);
     if (d.use) return this.use(item);
     if (d.slots && src.kind !== 'slot') return this.equip(item, src);
-    if (d.grid && src.kind !== 'slot') return this.openBag(item);
+    if (hasStorage(item) && src.kind !== 'slot') return this.openBag(item);
     return this.quickMove(item, src);
+  }
+
+  /** Boxed goods: the box becomes loose contents (ammo box -> 50 rounds) in the same place, overflow to the player. */
+  private unpack(item: ItemInstance, src: Src): boolean {
+    const u = defOf(item).unpack;
+    if (!u || src.kind !== 'grid') return false;
+    const grid = this.grids.get(src.gid)!;
+    this.take(src, item);
+    for (const it of newItems(u.item, u.count * item.count)) if (autoPlace(grid, it) > 0) this.lo.give(it);
+    return true;
   }
 
   private openBag(item: ItemInstance) {
@@ -676,7 +696,8 @@ export class InventoryScreen {
     if (d.use) opts.push([T.act.use, () => this.use(item)]);
     if (d.slots && src.kind !== 'slot') opts.push([T.act.equip, () => this.equip(item, src)]);
     if (src.kind === 'slot') opts.push([T.act.unequip, () => (this.take(src, item), this.toPlayer(item) || this.lo.drop(item), true)]);
-    if (d.grid && src.kind !== 'slot') opts.push([T.act.open, () => this.openBag(item)]);
+    if (hasStorage(item) && src.kind !== 'slot') opts.push([T.act.open, () => this.openBag(item)]);
+    if (d.unpack) opts.push([T.act.unpack, () => this.unpack(item, src)]);
     if (d.kind === 'magazine' && (item.rounds ?? 0) < (d.capacity ?? 0) && this.lo.count(d.ammo!) > 0) opts.push([T.act.load, () => this.loadFromInventory(item)]);
     if (d.kind === 'magazine' && (item.rounds ?? 0) > 0) opts.push([T.act.unload, () => this.lo.unloadMagazine(item) > 0]);
     if (item.mag) opts.push([T.act.unmag, () => (this.lo.removeMagazine(item), true)]);
@@ -724,9 +745,15 @@ export class InventoryScreen {
     const ewd = eqD ? weaponDefs[eqD.id] : undefined;
     if (wd) rows.push([S.caliber, wd.caliber], [S.damage, String(wd.damage), ewd && wd.damage - ewd.damage], [S.rpm, `${wd.rpm} rpm`, ewd && wd.rpm - ewd.rpm]);
     if (it.mag !== undefined) rows.push([S.magazine, it.mag ? `${it.mag.rounds ?? 0} / ${defOf(it.mag).capacity}` : S.none]);
-    if (d.grid) {
-      const cells = d.grid.w * d.grid.h;
-      rows.push([S.storage, `${d.grid.w}×${d.grid.h}${it.contents?.length ? ` · ${it.contents.length} ${S.items}` : ''}`, eqD?.grid && cells - eqD.grid.w * eqD.grid.h]);
+    if (hasStorage(it)) {
+      // "6×6 + 2×4 + 2×4 (60 cells)" — compare total cells with what's worn in that slot.
+      const shape = (dd: typeof d) => [...(dd.grid ? [dd.grid] : []), ...(dd.pockets ?? [])];
+      const cellsOf = (dd: typeof d) => shape(dd).reduce((s, g) => s + g.w * g.h, 0);
+      const cells = cellsOf(d);
+      const parts = shape(d).map((g) => `${g.w}×${g.h}`).join(' + ');
+      rows.push([S.storage, `${parts} (${cells})`, eqD && hasStorage(eqD.id) ? cells - cellsOf(eqD) : undefined]);
+      const only = (d.pockets ?? []).find((p) => p.accepts)?.accepts;
+      if (only) rows.push([S.only, only.map((k) => T.kind[k] ?? k).join(', ')]);
     }
     if (d.use?.heal) rows.push([S.heals, `+${d.use.heal}`]);
     if (d.use?.food) rows.push([S.food, `+${d.use.food}`]);

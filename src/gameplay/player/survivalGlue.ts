@@ -3,6 +3,7 @@ import { survivalFeel as SF } from '../../content/data/player';
 import { survivalText } from '../../content/text/ui';
 import type { SurvivalApi } from '../../core/contracts';
 import { probe, type Ctx } from '../ctx';
+import { ITEMS } from '../../content/data/items';
 
 /**
  * M2 glue between systems' survival/use state and the player (mechanics side):
@@ -20,6 +21,15 @@ export class SurvivalGlue {
 
   constructor(private ctx: Ctx) {
     this.survival = probe(ctx.game, 'survival', 'mods');
+    // Painkillers / energy drink: use.stamina is a stamina boost (systems ignores it)
+    ctx.game.events.on('itemUsed', (e) => {
+      const st = (e.use as { stamina?: number } | undefined)?.stamina;
+      if (st) {
+        const s = ctx.player.stamina;
+        s.value = Math.min(100, s.value + st);
+        if (s.value >= 30) s.exhausted = false;
+      }
+    });
   }
 
   get using(): Using {
@@ -74,10 +84,17 @@ export class SurvivalGlue {
     }
   }
 
+  /** Armour rating covering a hit zone: helmet for the head, rig/vest for the body (ItemDef.armour). */
+  private armour(zone: 'head' | 'body' | 'limb') {
+    const lo = probe(this.ctx.game, 'loadout', 'equipped');
+    const it = zone === 'head' ? lo?.equipped('head') : zone === 'body' ? lo?.equipped('armor') : null;
+    return it ? (ITEMS[it.defId]?.armour ?? 0) : 0;
+  }
+
   /** A zombie hit landed: systems rolls bleeding / infection / fracture. */
   zombieHit(damage: number, zone: 'head' | 'body' | 'limb') {
     try {
-      this.survival?.onZombieHit({ damage, zone, armour: 0 });
+      this.survival?.onZombieHit({ damage, zone, armour: this.armour(zone) });
     } catch (e) {
       console.warn('onZombieHit', e);
     }

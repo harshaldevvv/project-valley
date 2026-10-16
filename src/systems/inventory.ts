@@ -14,6 +14,8 @@ export interface Grid {
   contents: GridItem[];
   /** The item this grid belongs to (to stop a bag going inside itself). */
   owner?: ItemInstance;
+  /** Only these item kinds fit (mag pouches, wallets, medical bags). */
+  accepts?: string[];
 }
 
 let nextUid = 1;
@@ -37,6 +39,7 @@ export function newItem(defId: string, count = 1, extra: Partial<ItemInstance> =
   const d = defOf(defId);
   const item: ItemInstance = { uid: nextUid++, defId, count: Math.min(count, d.stack) };
   if (d.grid) item.contents = [];
+  if (d.pockets) item.pockets = d.pockets.map(() => []);
   if (d.kind === 'magazine') item.rounds = 0;
   if (d.kind === 'weapon' && d.capacity !== undefined) item.rounds = 0; // internal magazine
   else if (d.kind === 'weapon' && !d.slots?.includes('melee')) item.mag = null;
@@ -64,20 +67,46 @@ export function gridOf(item: ItemInstance | null | undefined): Grid | null {
   return { w: d.grid.w, h: d.grid.h, contents: item.contents, owner: item };
 }
 
+/** Every storage grid of an item: the main grid, then each pocket (multi-grid bags, vests, wallets). */
+export function gridsOf(item: ItemInstance | null | undefined): Grid[] {
+  if (!item) return [];
+  const d = defOf(item);
+  const out: Grid[] = [];
+  const main = gridOf(item);
+  if (main) out.push(main);
+  if (d.pockets) {
+    item.pockets ??= d.pockets.map(() => []);
+    d.pockets.forEach((p, i) => out.push({ w: p.w, h: p.h, contents: (item.pockets![i] ??= []), owner: item, accepts: p.accepts }));
+  }
+  return out;
+}
+
+export const hasStorage = (item: ItemInstance | string) => {
+  const d = defOf(item);
+  return !!(d.grid || d.pockets);
+};
+
 /** True if `needle` is `hay` or sits anywhere inside it. */
 export function containsItem(hay: ItemInstance, needle: ItemInstance): boolean {
   if (hay === needle) return true;
-  for (const gi of hay.contents ?? []) if (containsItem(gi.item, needle)) return true;
+  for (const contents of [hay.contents ?? [], ...(hay.pockets ?? [])]) for (const gi of contents) if (containsItem(gi.item, needle)) return true;
   return false;
+}
+
+/** Put an item into a container item's grids (first that takes it). Returns the count that did not fit. */
+export function autoPlaceInto(container: ItemInstance, item: ItemInstance): number {
+  for (const g of gridsOf(container)) if (autoPlace(g, item) === 0) return 0;
+  return item.count;
 }
 
 /** Can `item` sit at (x,y) in `grid`? `ignore` = an item already in the grid to treat as absent (moving it). */
 export function canPlace(grid: Grid, item: ItemInstance, x: number, y: number, rotated: boolean, ignore?: ItemInstance): boolean {
   const [w, h] = footprint(item, rotated);
   if (x < 0 || y < 0 || x + w > grid.w || y + h > grid.h) return false;
+  if (grid.accepts && !grid.accepts.includes(defOf(item).kind)) return false;
   if (grid.owner) {
     if (containsItem(item, grid.owner)) return false; // bag into itself (or into a bag inside it)
-    if (!INVENTORY.bagception && defOf(item).grid) return false;
+    if (!INVENTORY.bagception && hasStorage(item)) return false;
   }
   for (const gi of grid.contents) {
     if (gi.item === item || gi.item === ignore) continue;
@@ -156,10 +185,7 @@ export function splitStack(item: ItemInstance, n: number): ItemInstance | null {
 export function forEachItem(grid: Grid, fn: (gi: GridItem, grid: Grid) => void, deep = false) {
   for (const gi of [...grid.contents]) {
     fn(gi, grid);
-    if (deep) {
-      const inner = gridOf(gi.item);
-      if (inner) forEachItem(inner, fn, true);
-    }
+    if (deep) for (const inner of gridsOf(gi.item)) forEachItem(inner, fn, true);
   }
 }
 

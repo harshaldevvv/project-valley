@@ -1,0 +1,399 @@
+{
+  "idle": {
+    "source": "100style/Neutral/Neutral_ID",
+    "speed": 0.001,
+    "cycle": 3.0,
+    "dir": [
+      0.92,
+      -0.38
+    ],
+    "slide_before_m": 0.002,
+    "slide_after_m_per_frame": 0.0039,
+    "ankle_below_flat_m": 0.001,
+    "contact_frac": {
+      "R": 1.0,
+      "L": 1.0
+    },
+    "facing_vs_travel_deg": -0.1,
+    "seam_ratio": 0.5,
+    "seam_deg": 2.1
+  },
+  "idle_b": {
+    "source": "100style/Neutral/Neutral_ID",
+    "speed": 0.002,
+    "cycle": 3.0,
+    "dir": [
+      0.2,
+      -0.98
+    ],
+    "slide_before_m": 0.003,
+    "slide_after_m_per_frame": 0.0057,
+    "ankle_below_flat_m": 0.001,
+    "contact_frac": {
+      "R": 1.0,
+      "L": 1.0
+    },
+    "facing_vs_travel_deg": 0.0,
+    "seam_ratio": 1.08,
+    "seam_deg": 2.5
+  },
+  "idle_c": {
+    "source": "100style/Depressed/Depressed_ID",
+    "speed": 0.002,
+    "cycle": 3.0,
+    "dir": [
+      -0.25,
+      -0.97
+    ],
+    "slide_before_m": 0.003,
+    "slide_after_m_per_frame": 0.005,
+    "ankle_below_flat_m": 0.001,
+    "contact_frac": {
+      "R": 1.0,
+      "L": 1.0
+    },
+    "facing_vs_travel_deg": -0.1,
+    "seam_ratio": 1.11,
+    "seam_deg": 6.1
+  },
+  "walk": {
+    "source": "100style/Neutral/Neutral_FW",
+    "speed": 1.6,
+    "cycle": 1.0,
+    "dir": [
+      -0.0,
+      1.0
+    ],
+    "slide_before_m": 0.021,
+    "slide_after_m_per_frame": 0.0,
+    "ankle_below_flat_m": -0.002,
+    "contact_frac": {
+      "R": 0.46,
+      "L": 0.49
+    },
+    "facing_vs_travel_deg": 2.0,
+    "warp": {
+      "ts": 1.35,
+      "stride_k": 1.416,
+      "pelvis_drop_max_m": 0.06
+    },
+    "seam_ratio": 0.93,
+    "seam_deg": 50.8
+  },
+  "run": {
+    "source": "100style/Neutral/Neutral_FR",
+    "speed": 3.5,
+    "cycle": 0.7,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "slide_before_m": 0.006,
+    "slide_after_m_per_frame": 0.0,
+    "ankle_below_flat_m": -0.002,
+    "contact_frac": {
+      "R": 0.25,
+      "L": 0.25
+    },
+    "facing_vs_travel_deg": 3.1,
+    "warp": {
+      "ts": 1.15,
+      "stride_k": 1.676,
+      "pelvis_drop_max_m": 0.054
+    },
+    "seam_ratio": 1.35,
+    "seam_deg": 123.8
+  },
+  "sprint": {
+    "source": "100style/Neutral/Neutral_FR",
+    "speed": 5.75,
+    "cycle": 0.5,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "slide_before_m": 0.006,
+    "slide_after_m_per_frame": 0.0,
+    "ankle_below_flat_m": -0.002,
+    "contact_frac": {
+      "R": 0.25,
+      "L": 0.25
+    },
+    "facing_vs_travel_deg": 3.1,
+    "warp": {
+      "ts": 1.55,
+      "stride_k": 2.043,
+      "pelvis_drop_max_m": 0.07
+    },
+    "seam_ratio": 1.41,
+    "seam_deg": 207.5
+  },
+  "walk_back": {
+    "source": "100style/Neutral/Neutral_BW",
+    "speed": 1.2,
+    "cycle": 1.133,
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "slide_before_m": 0.03,
+    "slide_after_m_per_frame": 0.0014,
+    "ankle_below_flat_m": -0.001,
+    "contact_frac": {
+      "R": 0.54,
+      "L": 0.54
+    },
+    "facing_vs_travel_deg": 2.5,
+    "warp": {
+      "ts": 1.2,
+      "stride_k": 1.343,
+      "pelvis_drop_max_m": 0.048
+    },
+    "seam_ratio": 1.14,
+    "seam_deg": 46.4
+  },
+  "run_back": {
+    "source": "100style/Neutral/Neutral_BR",
+    "speed": 2.0,
+    "cycle": 0.567,
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "slide_before_m": 0.011,
+    "slide_after_m_per_frame": 0.0,
+    "ankle_below_flat_m": 0.012,
+    "contact_frac": {
+      "R": 0.3,
+      "L": 0.2
+    },
+    "facing_vs_travel_deg": 2.4,
+    "warp": {
+      "ts": 1.15,
+      "stride_k": 1.438,
+      "pelvis_drop_max_m": 0.016
+    },
+    "seam_ratio": 0.88,
+    "seam_deg": 68.5
+  },
+  "strafe_right": {
+    "source": "100style/Neutral/Neutral_SW",
+    "speed": 1.0,
+    "cycle": 1.033,
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "slide_before_m": 0.039,
+    "slide_after_m_per_frame": 0.001,
+    "ankle_below_flat_m": -0.003,
+    "contact_frac": {
+      "R": 0.49,
+      "L": 0.62
+    },
+    "facing_vs_travel_deg": 1.1,
+    "warp": {
+      "ts": 1.2,
+      "stride_k": 1.481,
+      "pelvis_drop_max_m": 0.047
+    },
+    "seam_ratio": 1.11,
+    "seam_deg": 43.8
+  },
+  "strafe_left": {
+    "source": "100style/Neutral/Neutral_SW",
+    "speed": 1.0,
+    "cycle": 1.067,
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "slide_before_m": 0.025,
+    "slide_after_m_per_frame": 0.0,
+    "ankle_below_flat_m": -0.001,
+    "contact_frac": {
+      "R": 0.64,
+      "L": 0.51
+    },
+    "facing_vs_travel_deg": -2.6,
+    "warp": {
+      "ts": 1.2,
+      "stride_k": 1.675,
+      "pelvis_drop_max_m": 0.053
+    },
+    "seam_ratio": 0.71,
+    "seam_deg": 25.5
+  },
+  "run_strafe_right": {
+    "source": "100style/Neutral/Neutral_SR",
+    "speed": 2.4,
+    "cycle": 0.567,
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "slide_before_m": 0.012,
+    "slide_after_m_per_frame": 0.0,
+    "ankle_below_flat_m": 0.009,
+    "contact_frac": {
+      "R": 0.25,
+      "L": 0.25
+    },
+    "facing_vs_travel_deg": 6.0,
+    "warp": {
+      "ts": 1.15,
+      "stride_k": 1.611,
+      "pelvis_drop_max_m": 0.028
+    },
+    "seam_ratio": 1.02,
+    "seam_deg": 84.2
+  },
+  "run_strafe_left": {
+    "source": "100style/Neutral/Neutral_SR",
+    "speed": 2.4,
+    "cycle": 0.633,
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "slide_before_m": 0.013,
+    "slide_after_m_per_frame": 0.0,
+    "ankle_below_flat_m": -0.002,
+    "contact_frac": {
+      "R": 0.32,
+      "L": 0.18
+    },
+    "facing_vs_travel_deg": 0.7,
+    "warp": {
+      "ts": 1.15,
+      "stride_k": 1.46,
+      "pelvis_drop_max_m": 0.044
+    },
+    "seam_ratio": 0.88,
+    "seam_deg": 73.2
+  },
+  "crouch_idle": {
+    "source": "100style/Crouched/Crouched_ID",
+    "speed": 0.004,
+    "cycle": 2.9,
+    "dir": [
+      -0.65,
+      -0.76
+    ],
+    "slide_before_m": 0.006,
+    "slide_after_m_per_frame": 0.0125,
+    "ankle_below_flat_m": -0.0,
+    "contact_frac": {
+      "R": 1.0,
+      "L": 1.0
+    },
+    "facing_vs_travel_deg": 0.1,
+    "seam_ratio": 1.09,
+    "seam_deg": 6.7
+  },
+  "crouch_walk": {
+    "source": "100style/Crouched/Crouched_FW",
+    "speed": 1.5,
+    "cycle": 0.967,
+    "dir": [
+      -0.0,
+      1.0
+    ],
+    "slide_before_m": 0.032,
+    "slide_after_m_per_frame": 0.0,
+    "ankle_below_flat_m": -0.0,
+    "contact_frac": {
+      "R": 0.55,
+      "L": 0.55
+    },
+    "facing_vs_travel_deg": 5.3,
+    "warp": {
+      "ts": 1.3,
+      "stride_k": 1.733,
+      "pelvis_drop_max_m": 0.045
+    },
+    "seam_ratio": 0.76,
+    "seam_deg": 34.9
+  },
+  "turn_left_90": {
+    "source": "cmu/69_13",
+    "turn_deg": 92.2,
+    "duration": 0.967,
+    "slide_before_m": 0.015,
+    "slide_after_m_per_frame": 0.0,
+    "ankle_below_flat_m": -0.0,
+    "contact_frac": {
+      "R": 0.07,
+      "L": 0.13
+    }
+  },
+  "turn_right_90": {
+    "source": "cmu/69_13",
+    "turn_deg": -90.0,
+    "duration": 1.167,
+    "slide_before_m": 0.057,
+    "slide_after_m_per_frame": 0.0,
+    "ankle_below_flat_m": -0.002,
+    "contact_frac": {
+      "R": 0.72,
+      "L": 0.58
+    }
+  },
+  "aim_pistol": {
+    "upperBody": true
+  },
+  "aim_rifle": {
+    "upperBody": true
+  },
+  "rifle_low": {
+    "upperBody": true
+  },
+  "rifle_sprint": {
+    "upperBody": true
+  },
+  "pistol_low": {
+    "upperBody": true
+  },
+  "fire_pistol": {
+    "upperBody": true
+  },
+  "fire_rifle": {
+    "upperBody": true
+  },
+  "reload_pistol": {
+    "upperBody": true
+  },
+  "reload_rifle": {
+    "upperBody": true
+  },
+  "draw_pistol": {
+    "upperBody": true
+  },
+  "draw_rifle": {
+    "upperBody": true
+  },
+  "holster": {
+    "upperBody": true
+  },
+  "holster_rifle": {
+    "upperBody": true
+  },
+  "melee_swing": {
+    "upperBody": true
+  },
+  "melee_heavy": {
+    "upperBody": true
+  },
+  "shove": {
+    "upperBody": true
+  },
+  "use_bandage": {
+    "upperBody": true
+  },
+  "eat": {
+    "upperBody": true
+  },
+  "drink": {
+    "upperBody": true
+  }
+}

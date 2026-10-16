@@ -140,6 +140,15 @@ export const meleeDefs: Record<string, MeleeDef> = {
     noise: 5,
     durabilityPerHit: 0.01,
   },
+  // Heavy tools: slower, stagger on every hit (principles §5); models are placeholders until wpn_crowbar_a/wpn_hammer_a exist
+  crowbar_a: {
+    id: 'crowbar_a', model: 'wpn_crowbar_a', damage: 70, reach: 1.9, arcDeg: 90, rays: 5, windup: 0.26, active: 0.12, recovery: 0.42, bufferWindow: 0.15,
+    staggerOnHit: 1, hitstopLight: 0.08, hitstopHeavy: 0.12, hitstopKill: 0.15, heavyDamageMul: 1.7, heavyWindup: 0.5, heavyRecovery: 0.55, noise: 6, durabilityPerHit: 0.004,
+  },
+  hammer_a: {
+    id: 'hammer_a', model: 'wpn_hammer_a', damage: 60, reach: 1.6, arcDeg: 80, rays: 5, windup: 0.22, active: 0.1, recovery: 0.36, bufferWindow: 0.15,
+    staggerOnHit: 1, hitstopLight: 0.07, hitstopHeavy: 0.11, hitstopKill: 0.14, heavyDamageMul: 1.8, heavyWindup: 0.42, heavyRecovery: 0.5, noise: 5, durabilityPerHit: 0.006,
+  },
 };
 
 export const shove = {

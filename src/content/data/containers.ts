@@ -2,18 +2,27 @@ import type { ContainerDef } from './types';
 
 /** World container types (environment places these by `type`; mechanics registers the vehicle trunk). */
 const list: ContainerDef[] = [
-  { id: 'crate_wood', grid: { w: 6, h: 4 }, searchSeconds: 2.5, lootTable: 'crate_wood', lock: 0 },
-  { id: 'cabinet_metal', grid: { w: 5, h: 6 }, searchSeconds: 3.5, lootTable: 'cabinet_metal', lock: 0 },
-  { id: 'duffel', grid: { w: 6, h: 4 }, searchSeconds: 2, lootTable: 'duffel', lock: 0 },
+  // Yard containers, each mapped to a POI-themed table and a zone tier (principles §9).
+  { id: 'crate_wood', grid: { w: 6, h: 4 }, searchSeconds: 2.5, lootTable: 'tool_box', tier: 1, lock: 0 },
+  { id: 'cabinet_metal', grid: { w: 5, h: 6 }, searchSeconds: 3.5, lootTable: 'medical_cabinet', tier: 2, lock: 0 },
+  { id: 'duffel', grid: { w: 6, h: 4 }, searchSeconds: 2, lootTable: 'civilian_wardrobe', tier: 1, lock: 0 },
+  { id: 'cabinet_locked', grid: { w: 5, h: 6 }, searchSeconds: 1.5, lootTable: 'military_crate', tier: 3, lock: 1 },
+  // Themed types for the open world (environment places these; models can reuse crate/cabinet until new ones exist).
+  { id: 'tool_box', grid: { w: 5, h: 3 }, searchSeconds: 2, lootTable: 'tool_box', tier: 1, lock: 0 },
+  { id: 'medical_cabinet', grid: { w: 5, h: 5 }, searchSeconds: 3, lootTable: 'medical_cabinet', tier: 2, lock: 0 },
+  { id: 'military_crate', grid: { w: 6, h: 4 }, searchSeconds: 3, lootTable: 'military_crate', tier: 3, lock: 0 },
+  { id: 'wardrobe', grid: { w: 5, h: 7 }, searchSeconds: 3, lootTable: 'civilian_wardrobe', tier: 1, lock: 0 },
+  { id: 'food_cupboard', grid: { w: 5, h: 4 }, searchSeconds: 2, lootTable: 'food_cupboard', tier: 1, lock: 0 },
+  { id: 'car_trunk', grid: { w: 8, h: 5 }, searchSeconds: 2, lootTable: 'car_trunk', tier: 1, lock: 0 },
   // Sandbox rack: fixed kit, refilled on every open (an M1-only faucet, never ship it to the real world).
   { id: 'weapon_rack', grid: { w: 8, h: 6 }, searchSeconds: 0, lootTable: 'weapon_rack', lock: 0, refillOnOpen: true },
-  { id: 'cabinet_locked', grid: { w: 5, h: 6 }, searchSeconds: 1.5, lootTable: 'cabinet_locked', lock: 1 },
   // Bodies (searchable). Zombie corpses register at runtime from the zombieKilled event.
   { id: 'body_survivor', grid: { w: 5, h: 4 }, searchSeconds: 3, lootTable: 'body_survivor', lock: 0 },
   { id: 'body_zombie', grid: { w: 4, h: 3 }, searchSeconds: 2, lootTable: 'body_zombie', lock: 0 },
   { id: 'body_zombie_soldier', grid: { w: 4, h: 3 }, searchSeconds: 2, lootTable: 'body_zombie_soldier', lock: 0 },
   // Death bag (principles §12): what you lose on death waits at the spot.
   { id: 'death_bag', grid: { w: 10, h: 8 }, searchSeconds: 0, lootTable: 'empty', lock: 0 },
+  // The player's pickup truck bed: storage, starts empty.
   { id: 'trunk_pickup', grid: { w: 8, h: 5 }, searchSeconds: 0, lootTable: 'empty', lock: 0 },
 ];
 
