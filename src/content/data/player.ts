@@ -71,6 +71,8 @@ export const cameraFeel = {
   shoulderSwap: 0.2, // s
   collapseIn: 0.6, // m camera-to-eye: below this the TP camera switches to the eye (QA-001)
   collapseOut: 0.8, // hysteresis
+  bodyFadeDist: 1.6, // m camera-to-eye: closer than this (TP ADS, tight spots) the player body dithers to bodyFadeOpacity (QA-064)
+  bodyFadeOpacity: 0.3,
   deathCamHeight: 4.5,
   // First person
   fovFp: 85,

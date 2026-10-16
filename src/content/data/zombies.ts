@@ -34,13 +34,13 @@ const zombieDefsBase: Record<string, ZombieDef> = {
   shambler: {
     id: 'shambler',
     model: 'zmb_shambler_a',
-    hp: 150,
-    legHp: 80,
+    hp: 120, // QA-077: rifle body-only ≈ 6 hits, head 1; a competent rifle fight vs 5 ends ~60–80 HP
+    legHp: 70,
     walk: 0.5,
     chase: 1.3,
     crawl: 0.5,
     turnRate: 4,
-    zoneMul: { body: 0.5, limb: 0.35 },
+    zoneMul: { body: 0.55, limb: 0.35 }, // QA-077: body 0.5 → 0.55
     attackRange: 1.5,
     attackWindup: 0.6,
     attackRecover: 1.0,
@@ -61,9 +61,9 @@ const zombieDefsBase: Record<string, ZombieDef> = {
 /** Visual/physical variants of the shambler (same AI). Soldiers wear kit: a little more HP. */
 export const zombieDefs: Record<string, ZombieDef> = {
   ...zombieDefsBase,
-  worker: { ...zombieDefsBase.shambler, id: 'worker', model: 'zmb_worker_a', clipsFrom: 'zmb_shambler_a', scale: 1.02, hp: 160 },
-  soldier: { ...zombieDefsBase.shambler, id: 'soldier', model: 'zmb_soldier_a', clipsFrom: 'zmb_shambler_a', scale: 1.05, hp: 190, legHp: 95 },
-  civilian_f: { ...zombieDefsBase.shambler, id: 'civilian_f', model: 'zmb_civilian_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.93, hp: 135 },
+  worker: { ...zombieDefsBase.shambler, id: 'worker', model: 'zmb_worker_a', clipsFrom: 'zmb_shambler_a', scale: 1.02, hp: 130 },
+  soldier: { ...zombieDefsBase.shambler, id: 'soldier', model: 'zmb_soldier_a', clipsFrom: 'zmb_shambler_a', scale: 1.05, hp: 160, legHp: 90 } /* tougher: kit */,
+  civilian_f: { ...zombieDefsBase.shambler, id: 'civilian_f', model: 'zmb_civilian_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.93, hp: 110 },
 };
 
 /** Spawn mix (weights, seeded RNG). */

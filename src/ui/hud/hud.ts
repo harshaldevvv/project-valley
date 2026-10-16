@@ -3,6 +3,7 @@ import { yard } from '../../content/data/yard';
 import { weaponSlots } from '../../content/data/weapons';
 import { health as HD, stamina as SD } from '../../content/data/player';
 import { probe, type Ctx } from '../../gameplay/ctx';
+import { vehicleText } from '../../content/text/vehicles';
 
 /**
  * Gameplay HUD (DOM over the canvas): crosshair (spread + blocked), hit markers, ammo + fire mode, health/stamina,
@@ -256,7 +257,7 @@ export class Hud {
       const car = ctx.vehicles.driving;
       this.ammoN.dataset.mags = '';
       this.set('an', this.ammoN, 'text', car ? `${Math.abs(car.speed * 3.6).toFixed(0)} km/h` : '');
-      this.set('aw', this.ammoW, 'text', car ? (car.dead ? 'ENGINE DEAD · F/E get out' : `CAR ${Math.ceil((car.hp / car.def.hp) * 100)}% · F/E get out${car.tipped ? ' · R flip' : ''}`) : '');
+      this.set('aw', this.ammoW, 'text', car ? (car.dead ? vehicleText.hudEngineDead : vehicleText.hudCar(Math.ceil((car.hp / car.def.hp) * 100)) + (car.tipped ? vehicleText.hudFlip : '')) : '');
     }
     if (this.slotT > 0) {
       this.slotT -= dt;

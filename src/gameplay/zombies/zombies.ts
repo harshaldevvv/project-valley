@@ -5,6 +5,7 @@ import { horde as HD, senses as SN, zombieDefs, zombieMix, type ZombieDef } from
 import { hasAsset } from '../../engine/assets';
 import { fxTuning } from '../../content/data/fx';
 import { surfaceOf } from '../../world/surfaces';
+import { vehicleText } from '../../content/text/vehicles';
 import { yard } from '../../content/data/yard';
 import { yardSpawns } from '../../world/yard/spawns';
 import type { Ctx, HitInfo, HitResult, Hittable, Zone } from '../ctx';
@@ -509,7 +510,7 @@ export class Zombies {
               this.ctx.sfx('impact_metal', z.curr, { volume: 0.9, pitchJitter: 0.1 });
               if (car.dead) {
                 this.ctx.vehicles.exit();
-                this.ctx.game.events.emit('toast', { text: 'Dragged out!' });
+                this.ctx.game.events.emit('toast', { text: vehicleText.draggedOut });
                 p.damage(d.attackDamage, z.curr);
               } else this.ctx.vehicles.damageCar(car, d.attackDamage * car.def.zombieDamageMul);
             } else this.ctx.sfx('melee_swing', z.curr, { volume: 0.6 });

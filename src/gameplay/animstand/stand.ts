@@ -35,6 +35,16 @@ export class AnimStand {
     d.action('Animation', 'Switch survivor / zombie', () => void this.load(this.kind === 'survivor' ? 'zombie' : 'survivor'));
     d.watch('Animation', 'clip', () => `${this.kind}: ${this.clip}${this.ch?.skinned ? '' : ' (placeholder rig)'}`);
     for (const c of [...clipNames('survivor'), ...clipNames('zombie')]) d.action('Animation', c, () => this.play(c));
+    // QA-078: first-person arms preview (switches to FP, draws the matching weapon, plays the clip)
+    const fpClips = ['idle', 'fire', 'reload', 'draw', 'holster', 'ads'].flatMap((c) => [`fp_rifle_${c}`, `fp_pistol_${c}`]).concat(['fp_knife_idle', 'fp_knife_light', 'fp_knife_heavy', 'fp_knife_draw', 'fp_shove', 'fp_interact']);
+    for (const c of fpClips)
+      d.action('Stand: first-person view', c, () => {
+        const w = this.ctx.weapons;
+        this.ctx.rig.mode = 'fp';
+        const slot = c.includes('rifle') ? 0 : c.includes('pistol') ? 2 : c.includes('knife') ? 3 : -1;
+        if (slot >= 0 && w.slot !== slot) w.select(slot);
+        setTimeout(() => (c.endsWith('_ads') ? this.ctx.game.events.emit('toast', { text: 'Hold RMB for the ADS pose' }) : w.vm.play(c, { leftOnly: c === 'fp_shove' || c === 'fp_interact' })), slot >= 0 && w.slot !== slot ? 900 : 0);
+      });
   }
 
   private async load(kind: 'survivor' | 'zombie') {

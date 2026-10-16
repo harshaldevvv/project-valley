@@ -38,7 +38,7 @@ export const weaponDefs: Record<string, WeaponDef> = {
     caliber: '7.62',
     fireModes: ['auto', 'semi'],
     rpm: 600,
-    damage: 40,
+    damage: 42, // QA-077 (headshot 168 still one-shots the 160 HP soldier)
     pellets: 1,
     muzzleVelocity: 715,
     falloffStart: 40,
@@ -198,4 +198,6 @@ export const fpArms = {
   sprintTuck: 0.35, // rad
   /** ADS: slide the rig forward along the sight line (keeps the sight centred, shrinks the receiver; QA-041). */
   adsForward: { rifle: 0, pistol: 0 } as Record<string, number>,
+  /** Hip: extra rig offset (m, camera space) so the rifle stock doesn't run into the corner (QA-041). */
+  hipOffset: { rifle: [0.02, -0.02, -0.08], pistol: [0, 0, 0], knife: [0, 0, 0] } as Record<string, [number, number, number]>,
 };

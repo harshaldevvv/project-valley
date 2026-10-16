@@ -6,6 +6,8 @@ import { vehicles as VD, type VehicleFeel } from '../../content/data/vehicles';
 import type { VehicleDef } from '../../content/data/types';
 import { yardSpawns } from '../../world/yard/spawns';
 import { probe, type Ctx } from '../ctx';
+import type { Interactable } from '../../core/contracts';
+import { vehicleText as T } from '../../content/text/vehicles';
 
 /**
  * Data-driven cars (one VehicleDef row = one car on the track): Rapier DynamicRayCastVehicleController,
@@ -67,6 +69,12 @@ export class Vehicles {
   private camPitch = 0;
   private lookIdle = 0;
   private camPos = new Vector3();
+  /** Car interactables (interact gives them priority when the crosshair is on a car, QA-070). */
+  readonly prompts = new Set<Interactable>();
+  private registerPrompt(i: Interactable) {
+    this.prompts.add(i);
+    this.ctx.game.interact.register(i);
+  }
   private enteredTick = -1;
   private ray: InstanceType<Ctx['game']['phys']['R']['Ray']> | null = null;
 
@@ -146,16 +154,16 @@ export class Vehicles {
     } catch (e) {
       console.warn('registerContainer', e);
     }
-    this.ctx.game.interact.register({
+    this.registerPrompt({
       position: car.trunkPos,
       radius: 1.8,
-      prompt: () => (this.driving ? null : 'Open trunk'),
+      prompt: () => (this.driving ? null : T.openTrunk),
       holdSeconds: () => 0.4,
       onInteract: () => {
         this.ctx.sfx('car_door', car.trunkPos);
         const api = probe(this.ctx.game, 'inventory', 'openContainer');
         if (api) api.openContainer(car.trunkId);
-        else this.ctx.game.events.emit('toast', { text: 'Trunk: inventory not installed yet' });
+        else this.ctx.game.events.emit('toast', { text: T.trunkUnavailable });
       },
     });
     // Repair at the hood with a repair kit (systems item); hidden when the car is at full HP
@@ -167,14 +175,14 @@ export class Vehicles {
         return 0;
       }
     };
-    this.ctx.game.interact.register({
+    this.registerPrompt({
       position: car.hoodPos,
       radius: 2,
-      prompt: () => (this.driving || car.hp >= car.def.hp ? null : kits() > 0 ? 'Repair car (repair kit)' : 'Repair car: needs a repair kit'),
+      prompt: () => (this.driving || car.hp >= car.def.hp ? null : kits() > 0 ? T.repairWithKit : T.repairNeedsKit),
       holdSeconds: () => (kits() > 0 ? car.def.repairSeconds : 0),
       onInteract: () => {
         if (kits() <= 0) {
-          this.ctx.game.events.emit('toast', { text: 'Needs a repair kit' });
+          this.ctx.game.events.emit('toast', { text: T.needsKit });
           return;
         }
         const lo = probe(this.ctx.game, 'loadout', 'consume');
@@ -183,13 +191,13 @@ export class Vehicles {
         car.smokeT = 0;
         this.ctx.playerAnim?.oneshot('interact_search', 0.1);
         this.ctx.sfx('build_place', car.hoodPos);
-        this.ctx.game.events.emit('toast', { text: 'Car repaired' });
+        this.ctx.game.events.emit('toast', { text: T.repaired });
       },
     });
-    this.ctx.game.interact.register({
+    this.registerPrompt({
       position: car.doorPos,
       radius: def.doorReach,
-      prompt: () => (this.driving ? null : 'Drive'), // E or F (QA-027: one key glyph)
+      prompt: () => (this.driving ? null : T.drive), // E or F (QA-027: one key glyph)
       onInteract: () => this.enter(car),
     });
     return car;
@@ -344,7 +352,7 @@ export class Vehicles {
       car.engine?.stop();
       car.engine = null;
       this.ctx.sfx('impact_metal', car.currPos, { volume: 1 });
-      if (car === this.driving) this.ctx.game.events.emit('toast', { text: 'Engine destroyed' });
+      if (car === this.driving) this.ctx.game.events.emit('toast', { text: T.engineDestroyed });
     }
   }
 

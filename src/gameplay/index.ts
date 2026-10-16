@@ -1,4 +1,4 @@
-import { Box3, Vector3 } from 'three';
+import { Box3, BoxGeometry, Mesh, Vector3, type Material } from 'three';
 import type { Game } from '../core/game';
 import { cameraFeel, health, movement, stamina } from '../content/data/player';
 import { ballistics, meleeDefs, shove, weaponDefs } from '../content/data/weapons';
@@ -43,6 +43,29 @@ export async function installGameplay(game: Game): Promise<void> {
   const bodyAnim = body.skinned ? new AnimationController(body) : null;
   ctx.playerAnim = bodyAnim;
   const chest = bodyAnim?.bone('chest') ?? null;
+  // Near-body fade (QA-064): a dithered (alphaHash, stays in the opaque pass) copy of each body material. A hidden
+  // warm-up mesh keeps it in the scene so game.start()'s compileAsync builds the pipeline (no first-use hitch).
+  const fadeMats = new Map<Material, Material>();
+  const bodyMeshes: Mesh[] = [];
+  body.root.traverse((o) => {
+    const m = o as Mesh;
+    if (!m.isMesh || Array.isArray(m.material)) return;
+    let f = fadeMats.get(m.material);
+    if (!f) {
+      f = m.material.clone();
+      Object.assign(f, { alphaHash: true, opacity: cameraFeel.bodyFadeOpacity });
+      fadeMats.set(m.material, f);
+    }
+    bodyMeshes.push(m);
+    m.userData.solid = m.material;
+    m.userData.faded = f;
+  });
+  for (const f of fadeMats.values()) {
+    const warm = new Mesh(new BoxGeometry(0.01, 0.01, 0.01), f);
+    warm.position.set(0, -50, 0);
+    game.scene.add(warm);
+  }
+  let faded = false;
   await ctx.weapons.init(body.hand);
   await Promise.all([ctx.targets.init(), ctx.vehicles.init(), ctx.animStand.init()]);
 
@@ -85,6 +108,11 @@ export async function installGameplay(game: Game): Promise<void> {
       // Player body
       const p = ctx.player;
       body.root.visible = !p.inVehicle && !ctx.rig.firstPerson;
+      const near = body.root.visible && game.camera.position.distanceTo(p.eye) < cameraFeel.bodyFadeDist;
+      if (near !== faded) {
+        faded = near;
+        for (const m of bodyMeshes) m.material = m.userData[near ? 'faded' : 'solid'];
+      }
       body.root.position.copy(p.position);
       body.root.rotation.set(0, p.yaw, 0);
       const pose = body.pose;

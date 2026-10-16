@@ -111,6 +111,7 @@ export class Weapons {
   private legacyDummy = new Object3D();
   private sprintT = 0;
   private trailOn = false;
+  private aimMiss = false;
   private swayLag = new Vector3();
   private lastYaw = 0;
   private lastPitch = 0;
@@ -434,6 +435,7 @@ export class Weapons {
     this.ray.origin = o;
     this.ray.dir = d;
     const hit = world.castRay(this.ray, B.maxRange, true, undefined, groups(Group.PROJECTILE, BULLET_FILTER), this.ctx.player.collider, undefined, notMesh);
+    this.aimMiss = !hit;
     return out.copy(o).addScaledVector(d, hit ? Math.max(hit.timeOfImpact, 1) : B.maxRange);
   }
 
@@ -477,6 +479,8 @@ export class Weapons {
     it.durability = Math.max(0, (it.durability ?? 1) - def.durabilityPerShot);
     this.cooldown = shotInterval(def.rpm);
     this.shotsFired++;
+    // Nothing under the crosshair: the readout says "miss" now, not when the round expires (QA-073)
+    if (this.aimMiss) this.lastShot = { distance: 0, zone: 'miss', damage: 0, target: '—' };
     const feel = weaponFeel[def.id];
 
     // Direction: muzzle -> camera-ray hit, then spread cone
@@ -642,10 +646,11 @@ export class Weapons {
         const tuck = p.sprinting && !this.isMelee ? 1 : 0;
         this.sprintT += (tuck - this.sprintT) * Math.min(1, dt * 8);
         const vp = this.vm.pivot;
+        const ho = fpArms.hipOffset[this.fpKind] ?? [0, 0, 0];
         vp.position.set(
-          this.swayLag.x * 0.25 * (1 - a) + Math.cos(p.stepPhase) * fpArms.bob * bob,
-          -this.swayLag.y * 0.25 * (1 - a) + Math.abs(Math.sin(p.stepPhase)) * fpArms.bob * bob - this.sprintT * 0.04,
-          this.kickT * fpArms.kickBack - a * (fpArms.adsForward[this.fpKind] ?? 0),
+          ho[0] * (1 - a) + this.swayLag.x * 0.25 * (1 - a) + Math.cos(p.stepPhase) * fpArms.bob * bob,
+          ho[1] * (1 - a) - this.swayLag.y * 0.25 * (1 - a) + Math.abs(Math.sin(p.stepPhase)) * fpArms.bob * bob - this.sprintT * 0.04,
+          ho[2] * (1 - a) + this.kickT * fpArms.kickBack - a * (fpArms.adsForward[this.fpKind] ?? 0),
         );
         vp.rotation.set(this.kickT * fpArms.kickPitch - this.sprintT * fpArms.sprintTuck * 0.5, this.swayLag.x * (1 - a * 0.7) + this.sprintT * fpArms.sprintTuck, this.sprintT * 0.2);
         this.vm.pivot.visible = !hidden && fp;
