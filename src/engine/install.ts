@@ -12,6 +12,8 @@ import { createAudio } from './audio';
 import { installPost, type Post } from './post';
 import { createTimeOfDay, TIME_PRESETS } from './timeofday';
 import { createSky } from './sky';
+import { detectGpu } from './gpuinfo';
+import { menuText } from '../content/text/ui';
 import { createClock, type Clock } from './clock';
 import { createLamps } from './lamps';
 
@@ -204,6 +206,12 @@ export async function installEngine(game: Game) {
     await warmup(game, post);
     return start();
   };
+
+  // Which GPU (QA-075): label in the F3 overlay; on integrated graphics a one-time menu note.
+  void detectGpu(game.renderer).then((gpu) => {
+    game.perf.extra.gpu = gpu.label + (gpu.integrated ? ' (integrated)' : '');
+    if (gpu.integrated) menu?.showNote('igpu', menuText.igpuNote);
+  });
 
   const engine = { audio, post, tod, menu, panel, setTimeOfDay: setHours, get clock() { return clock; } };
   (window as unknown as { engine: typeof engine }).engine = engine;

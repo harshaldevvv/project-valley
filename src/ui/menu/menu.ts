@@ -474,7 +474,32 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     root.classList.add('hidden');
   } else setOpen(true);
 
+  /** One-time note on the menu (e.g. integrated-GPU hint); dismissing it remembers `key` in localStorage. */
+  const showNote = (key: string, text: string) => {
+    const k = `pv.note.${key}`;
+    try {
+      if (localStorage.getItem(k)) return;
+    } catch {
+      /* storage blocked: show it */
+    }
+    const note = document.createElement('div');
+    note.className = 'mn-notice';
+    note.innerHTML = `<span></span><button aria-label="${T.dismiss}">&times;</button>`;
+    note.querySelector('span')!.textContent = text;
+    note.querySelector('button')!.onclick = () => {
+      sfx('ui_close');
+      note.remove();
+      try {
+        localStorage.setItem(k, '1');
+      } catch {
+        /* ignore */
+      }
+    };
+    root.append(note);
+  };
+
   return {
+    showNote,
     get mode() {
       return mode;
     },

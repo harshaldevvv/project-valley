@@ -128,7 +128,8 @@ export class Perf {
     const s = this.snapshot();
     const fps = s.p50 > 0 ? 1000 / s.p50 : 0;
     const lines = [
-      `${s.backend.toUpperCase()}  ${fps.toFixed(0)} fps   p50 ${s.p50.toFixed(1)}  p95 ${s.p95.toFixed(1)}  p99 ${s.p99.toFixed(1)} ms`,
+      `${s.backend.toUpperCase()}${this.extra.gpu ? ` · ${this.extra.gpu}` : ''}`,
+      `${fps.toFixed(0)} fps   p50 ${s.p50.toFixed(1)}  p95 ${s.p95.toFixed(1)}  p99 ${s.p99.toFixed(1)} ms`,
       `draws ${s.drawCalls}   tris ${(s.triangles / 1000).toFixed(1)}k   hitches>50ms ${s.hitches}` +
         (s.heapMB !== null ? `   heap ${s.heapMB.toFixed(0)} MB` : ''),
     ];
@@ -136,7 +137,7 @@ export class Perf {
       const b = BUDGET_MS[k];
       lines.push(`${k.padEnd(8)} ${v.toFixed(2).padStart(6)} ms${b ? (v > b ? `  OVER ${b}` : `  / ${b}`) : ''}`);
     }
-    for (const [k, v] of Object.entries(this.extra)) lines.push(`${k}: ${v}`);
+    for (const [k, v] of Object.entries(this.extra)) if (k !== 'gpu') lines.push(`${k}: ${v}`);
     this.el.textContent = lines.join('\n');
   }
 }

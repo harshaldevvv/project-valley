@@ -69,6 +69,8 @@ export const menuText = {
   tip: 'Tip',
   back: 'Back',
   captureMouse: 'Click to capture mouse',
+  igpuNote: 'Running on integrated graphics. For better FPS set Chrome to High performance in Windows Settings > Display > Graphics.',
+  dismiss: 'Dismiss',
   nav: { play: 'Play', resume: 'Resume', stations: 'Jump to station', controls: 'Controls', settings: 'Settings', difficulty: 'Difficulty', quit: 'Quit to title' },
   settings: {
     fov: 'Field of view', sensitivity: 'Mouse sensitivity', shake: 'Camera shake', volume: 'Master volume', renderScale: 'Render scale',

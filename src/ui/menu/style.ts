@@ -68,6 +68,10 @@ export const MENU_CSS = `
 #menu .mn-seg label:hover span{color:var(--ink)}
 #menu .mn-seg input:checked+span{background:rgba(217,164,65,.35);color:var(--ink)}
 #menu .mn-seg input:focus-visible+span{outline:1px solid var(--accent);outline-offset:-2px}
+#menu .mn-notice{position:absolute;right:16px;bottom:34px;max-width:340px;display:flex;gap:10px;align-items:flex-start;padding:10px 10px 10px 14px;
+ font-size:12.5px;line-height:1.4;color:var(--dim);background:var(--glass);border:1px solid var(--line);border-left:2px solid var(--accent);border-radius:3px}
+#menu .mn-notice button{flex:none;background:none;border:0;color:var(--faint);font-size:16px;line-height:1;cursor:pointer;padding:0 2px}
+#menu .mn-notice button:hover{color:var(--ink)}
 #menu .mn-note{margin-top:12px;font-size:12.5px;color:var(--faint)}
 #mn-lockhint{position:fixed;left:50%;top:24px;transform:translateX(-50%);z-index:15;pointer-events:none;padding:7px 14px;border-radius:3px;
  font:600 12px/1 "Bahnschrift","DIN Alternate","Arial Narrow",system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;
