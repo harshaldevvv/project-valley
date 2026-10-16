@@ -21,6 +21,7 @@ const _f = new Vector3();
 const _cam = new Vector3();
 const _look = new Vector3();
 const _p = new Vector3();
+const UPV = new Vector3(0, 1, 0);
 
 export class Car {
   readonly prevPos = new Vector3();
@@ -35,6 +36,11 @@ export class Car {
   readonly trunkPos = new Vector3();
   readonly doorPos = new Vector3();
   readonly trunkId: string;
+  hp: number;
+  smokeT = 0;
+  get dead() {
+    return this.hp <= 0;
+  }
   cy: number; // chassis centre height above the model origin
   constructor(
     readonly n: number,
@@ -46,6 +52,7 @@ export class Car {
     cy: number,
   ) {
     this.trunkId = `veh_${n}_trunk`;
+    this.hp = def.hp;
     this.cy = cy;
   }
 }
@@ -117,7 +124,16 @@ export class Vehicles {
     car.prevPos.copy(car.currPos);
     car.prevQuat.copy(car.currQuat);
     this.list.push(car);
-    this.ctx.hits.set(collider.handle, { kind: 'vehicle', surface: 'metal', zone: () => 'body', hit: () => null });
+    this.ctx.hits.set(collider.handle, {
+      kind: 'vehicle',
+      surface: 'metal',
+      zone: () => 'body',
+      hit: (info) => {
+        const dmg = info.damage * def.bulletDamageMul;
+        this.damageCar(car, dmg);
+        return { damage: dmg, kill: false, zone: 'body' };
+      },
+    });
 
     // Trunk container + interactables (door + trunk)
     const inv = probe(this.ctx.game, 'inventory', 'registerContainer');
@@ -171,7 +187,7 @@ export class Vehicles {
     this.driving = car;
     p.inVehicle = true;
     p.collider.setEnabled(false);
-    this.ctx.weapons.cancelReload();
+    this.ctx.weapons.finishReload();
     this.ctx.sfx('car_door', car.doorPos);
     this.ctx.sfx('car_start', car.currPos);
     car.engine = this.ctx.loopSfx('car_engine_loop', car.model.root, { volume: 0.6 });
@@ -214,14 +230,68 @@ export class Vehicles {
     this.ctx.rig.override = null;
   }
 
+  /**
+   * Put the car back on its wheels on clear ground (QA-039): keep its heading (from the nose, or the roof if it
+   * stands on its tail), find the ground under it, and if the chassis box would overlap anything, try spots in
+   * rings of 3 and 6 m around it.
+   */
   flipReset(car: Car) {
+    const { R, world } = this.ctx.game.phys;
     const t = car.body.translation();
     _f.set(0, 0, -1).applyQuaternion(car.currQuat);
+    if (Math.abs(_f.y) > 0.8) _f.set(0, 1, 0).applyQuaternion(car.currQuat); // nose up/down: the roof gives the heading
     const yaw = Math.atan2(-_f.x, -_f.z);
-    car.body.setTranslation({ x: t.x, y: t.y + 1.5, z: t.z }, true);
-    car.body.setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) }, true);
+    const rot = { x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) };
+    const [hx, hy, hz] = car.def.halfExtents;
+    const box = new R.Cuboid(hx + 0.1, hy, hz + 0.1);
+    const ground = groups(Group.VEHICLE, Group.STATIC | Group.TERRAIN | Group.BUILD);
+    const spots: [number, number][] = [[0, 0]];
+    for (const r of [3, 6]) for (let k = 0; k < 8; k++) spots.push([Math.cos((k / 8) * Math.PI * 2) * r, Math.sin((k / 8) * Math.PI * 2) * r]);
+    let best: { x: number; y: number; z: number } | null = null;
+    for (const [dx, dz] of spots) {
+      const x = t.x + dx;
+      const z = t.z + dz;
+      const down = world.castRay(new R.Ray({ x, y: t.y + 12, z }, { x: 0, y: -1, z: 0 }), 40, true, R.QueryFilterFlags.EXCLUDE_SENSORS, ground, car.collider);
+      if (!down) continue;
+      const y = t.y + 12 - down.timeOfImpact + car.cy + 0.25;
+      let blocked = false;
+      world.intersectionsWithShape({ x, y, z }, rot, box, () => ((blocked = true), false), R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.VEHICLE, Group.STATIC | Group.BUILD | Group.VEHICLE), car.collider);
+      if (!blocked) {
+        best = { x, y, z };
+        break;
+      }
+    }
+    best ??= { x: t.x, y: t.y + 2, z: t.z };
+    car.body.setTranslation(best, true);
+    car.body.setRotation(rot, true);
     car.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
     car.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    this.syncState(car);
+    car.prevPos.copy(car.currPos);
+    car.prevQuat.copy(car.currQuat);
+  }
+
+  /** Car damage (zombie hits, bullets). At 0 the engine dies: no drive, black smoke (QA-050). */
+  damageCar(car: Car, amount: number) {
+    if (car.dead) return;
+    car.hp = Math.max(0, car.hp - amount);
+    if (car.dead) {
+      car.engine?.stop();
+      car.engine = null;
+      this.ctx.sfx('impact_metal', car.currPos, { volume: 1 });
+      if (car === this.driving) this.ctx.game.events.emit('toast', { text: 'Engine destroyed' });
+    }
+  }
+
+  /** Distance from a point to the car's chassis box (horizontal), and the closest point on it into `out`. */
+  surfaceDist(car: Car, p: Vector3, out?: Vector3) {
+    const [hx, , hz] = car.def.halfExtents;
+    _q.copy(car.currQuat).invert();
+    _v.subVectors(p, car.currPos).applyQuaternion(_q);
+    const cx = Math.max(-hx, Math.min(hx, _v.x));
+    const cz = Math.max(-hz, Math.min(hz, _v.z));
+    if (out) out.set(cx, 0, cz).applyQuaternion(car.currQuat).add(car.currPos).setY(p.y);
+    return Math.hypot(_v.x - cx, _v.z - cz);
   }
 
   step(dt: number) {
@@ -253,10 +323,10 @@ export class Vehicles {
         const back = c.down('back');
         steerIn = (c.down('left') ? 1 : 0) - (c.down('right') ? 1 : 0);
         hand = c.down('handbrake');
-        if (fwd) engine = car.speed < top ? d.engineForce : 0;
+        if (fwd && !car.dead) engine = car.speed < top ? d.engineForce : 0;
         if (back) {
           if (car.speed > 1) brake = d.brakeForce;
-          else engine = car.speed > -d.reverseKmh / 3.6 ? -d.engineForce * 0.6 : 0;
+          else if (!car.dead) engine = car.speed > -d.reverseKmh / 3.6 ? -d.engineForce * 0.6 : 0;
         }
         if (!fwd && !back) brake = d.brakeForce * 0.04; // engine braking
         if (c.pressed('horn')) {
@@ -284,6 +354,12 @@ export class Vehicles {
         car.vc.setWheelSideFrictionStiffness(k, hand && !front ? 0.35 : 1);
       }
       car.vc.updateVehicle(dt, undefined, groups(Group.VEHICLE, Group.STATIC | Group.TERRAIN | Group.BUILD));
+      // Damaged engine smokes from the hood: grey under 35 %, black when dead
+      if (car.hp < d.hp * 0.35 && (car.smokeT -= dt) <= 0) {
+        car.smokeT = car.dead ? 0.12 : 0.25;
+        _p.set(0, car.cy + d.halfExtents[1] + 0.1, -d.halfExtents[2] + 0.6).applyQuaternion(car.currQuat).add(car.currPos);
+        this.ctx.fx.smokePuff(_p, UPV, 1, car.dead ? '#2a2826' : '#7a7670', 1.2);
+      }
       this.syncState(car);
       if (Math.abs(car.speed) > 2.5) this.contacts(car, dt);
     }

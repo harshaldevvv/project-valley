@@ -19,6 +19,7 @@ import { Viewmodel, type FpKind } from './viewmodel';
  */
 const BULLET_FILTER = Group.STATIC | Group.TERRAIN | Group.ZOMBIE | Group.VEHICLE | Group.BUILD | Group.DEBRIS;
 const MAX_BULLETS = 64;
+const EMPTY_TOAST = 'Empty — press R';
 const DEG = Math.PI / 180;
 
 interface Bullet {
@@ -222,6 +223,18 @@ export class Weapons {
     this.ctx.sfx('reload_mag_out', undefined, { volume: 0.25, pitchJitter: 0.1 });
   }
 
+  /** Complete a reload now (getting into a car mid-reload finishes it instead of silently dropping it, QA-051). */
+  finishReload() {
+    const r = this.reload;
+    if (!r) return;
+    r.t = Math.max(r.t, r.total * B.magCommitAt);
+    r.outPlayed = r.inPlayed = true;
+    this.stepReload(0); // commits the magazine
+    r.t = r.total;
+    this.stepReload(0); // chambers if it was empty
+    this.vm.stop();
+  }
+
   cancelReload() {
     if (this.reload) this.vm.stop();
     this.reload = null;
@@ -363,6 +376,7 @@ export class Weapons {
     this.reload = { t: 0, total: empty ? def.reloadEmptyS : def.reloadTacticalS, empty, committed: false, outPlayed: false, inPlayed: false };
     this.ctx.playerAnim?.overlay(`reload_${def.class === 'pistol' ? 'pistol' : 'rifle'}`, 1, true);
     this.vm.play(`fp_${this.fpKind}_reload`, { seconds: this.reload.total });
+    this.ctx.hud.clearToast(EMPTY_TOAST);
     this.adsT = Math.min(this.adsT, 0.3);
   }
 
@@ -437,7 +451,7 @@ export class Weapons {
       this.ctx.sfx('dry_fire', p.curr);
       this.cooldown = 0.25;
       this.semiBuffered = 0;
-      if ((it.mag?.rounds ?? 0) === 0) this.ctx.game.events.emit('toast', { text: 'Empty — press R' });
+      if ((it.mag?.rounds ?? 0) === 0) this.ctx.game.events.emit('toast', { text: EMPTY_TOAST });
       return;
     }
     // Chamber -> fire -> chamber from mag
@@ -612,7 +626,7 @@ export class Weapons {
         vp.position.set(
           this.swayLag.x * 0.25 * (1 - a) + Math.cos(p.stepPhase) * fpArms.bob * bob,
           -this.swayLag.y * 0.25 * (1 - a) + Math.abs(Math.sin(p.stepPhase)) * fpArms.bob * bob - this.sprintT * 0.04,
-          this.kickT * fpArms.kickBack,
+          this.kickT * fpArms.kickBack - a * (fpArms.adsForward[this.fpKind] ?? 0),
         );
         vp.rotation.set(this.kickT * fpArms.kickPitch - this.sprintT * fpArms.sprintTuck * 0.5, this.swayLag.x * (1 - a * 0.7) + this.sprintT * fpArms.sprintTuck, this.sprintT * 0.2);
         this.vm.pivot.visible = !hidden && fp;
@@ -688,7 +702,7 @@ export class Weapons {
       ctx.fx.muzzle(_muz, this.flashDir, (wfx?.flashLen ?? 0.3) * (fp ? 0.8 : 1.4), ads);
       // Smoke: every Nth shot of a burst, a little ahead of the barrel and never right in the lens
       _p.copy(_muz).addScaledVector(this.flashDir, 0.25);
-      if (wfx && this.shotIdx % wfx.smokeEvery === 0 && _p.distanceTo(ctx.game.camera.position) > 1.0) ctx.fx.smokePuff(_p, this.flashDir, this.def?.class === 'pistol' ? 1 : 2);
+      if (wfx && !ads && this.shotIdx % wfx.smokeEvery === 0 && _p.distanceTo(ctx.game.camera.position) > 1.0) ctx.fx.smokePuff(_p, this.flashDir, this.def?.class === 'pistol' ? 1 : 2);
       _r.crossVectors(this.flashDir, UP).normalize();
       _u.crossVectors(_r, this.flashDir);
       (fp ? m.fp : m.tp).root.getWorldPosition(_p);

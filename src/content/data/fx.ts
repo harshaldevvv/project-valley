@@ -96,6 +96,7 @@ export const fxTuning = {
   // Smoke / mist
   smokeOpacity: 0.15,
   smokeMaxSize: 0.4,
+  smokeMinCamDist: 0.6, // puffs closer than this to the camera are hidden
   // Tracers
   tracerSpeed: 320, // visual m/s
   tracerLength: 4,
@@ -113,7 +114,8 @@ export const fxTuning = {
   decalFade: 2,
   // Blood pools under corpses
   poolMax: 12,
-  poolRadius: [0.6, 1.0] as [number, number],
+  poolRadius: [0.2, 0.4] as [number, number], // 0.4–0.8 m across (QA-044)
+  poolFlatTol: 0.04, // m: pools only on flat ground (corner heights within this)
   poolGrow: 5,
   // Melee trail
   trailSamples: 14,

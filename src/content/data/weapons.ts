@@ -195,4 +195,6 @@ export const fpArms = {
   swayMax: 0.05, // rad lag
   bob: 0.012, // m
   sprintTuck: 0.35, // rad
+  /** ADS: slide the rig forward along the sight line (keeps the sight centred, shrinks the receiver; QA-041). */
+  adsForward: { rifle: 0.22, pistol: 0.06 } as Record<string, number>,
 };

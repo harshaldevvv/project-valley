@@ -26,6 +26,8 @@ export interface ZombieDef {
   staggerTime: number;
   flinchTime: number;
   corpseTime: number;
+  /** Fraction of z_death to hold: the body is down but the arms haven't splayed yet (QA-034). */
+  deathHoldAt: number;
 }
 
 const zombieDefsBase: Record<string, ZombieDef> = {
@@ -52,6 +54,7 @@ const zombieDefsBase: Record<string, ZombieDef> = {
     staggerTime: 0.8,
     flinchTime: 0.2,
     corpseTime: 10,
+    deathHoldAt: 0.62,
   },
 };
 

@@ -12,6 +12,10 @@ export interface VehicleFeel {
   hornNoise: number; // m
   /** Damage dealt to a zombie per m/s of impact speed (150 HP shambler dies at ≈ 30 km/h). */
   rammingDamage: number;
+  /** Zombie hits on the car: attackDamage × this (≈ 15–20 s for 3 attackers to kill the engine). */
+  zombieDamageMul: number;
+  /** Bullets that hit the car: weapon damage × this. */
+  bulletDamageMul: number;
   engineNoise: number;
   /** Chase camera */
   camDist: number;
@@ -48,6 +52,8 @@ export const vehicles: Record<string, VehicleDef & VehicleFeel> = {
     maxRate: 1.9,
     hornNoise: 60,
     rammingDamage: 18,
+    zombieDamageMul: 3,
+    bulletDamageMul: 0.25,
     engineNoise: 30,
     camDist: 7.5,
     camHeight: 2.8,

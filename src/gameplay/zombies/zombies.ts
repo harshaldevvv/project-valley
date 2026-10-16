@@ -3,6 +3,7 @@ import type { Collider, KinematicCharacterController, RigidBody } from '@dimforg
 import { Group, groups } from '../../engine/physics';
 import { horde as HD, senses as SN, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
 import { hasAsset } from '../../engine/assets';
+import { fxTuning } from '../../content/data/fx';
 import { yard } from '../../content/data/yard';
 import { yardSpawns } from '../../world/yard/spawns';
 import type { Ctx, HitInfo, HitResult, Hittable, Zone } from '../ctx';
@@ -27,6 +28,7 @@ const _v = new Vector3();
 const _w = new Vector3();
 const _to = new Vector3();
 const _o = new Vector3();
+const _tg = new Vector3();
 const _proj = new Matrix4();
 const _frustum = new Frustum();
 const _sphere = new Sphere(new Vector3(), 1.2);
@@ -312,9 +314,26 @@ export class Zombies {
     this.ctx.hits.delete(z.capsule.handle);
     this.ctx.hits.delete(z.head.handle);
     this.ctx.sfx('zombie_death', z.curr, { pitchJitter: 0.1 });
-    if (z.fling.lengthSq() === 0) this.ctx.fx.bloodPool(z.curr);
-    z.anim?.oneshot('z_death', 0.1, true);
+    if (z.fling.lengthSq() === 0) this.groundPool(_o.set(z.curr.x - Math.sin(z.fallDir) * 0.75, z.curr.y, z.curr.z - Math.cos(z.fallDir) * 0.75)); // under the torso, not the feet
+    z.anim?.oneshot('z_death', 0.1, true, z.def.deathHoldAt);
     if (melee) this.ctx.game.events.emit('noise', { position: z.curr.clone(), radius: 5, source: 'melee_kill' });
+  }
+
+  /** Blood pool only on roughly flat ground: centre + 4 points 0.35 m out must agree in height (QA-044). */
+  private groundPool(at: Vector3) {
+    const { R, world } = this.ctx.game.phys;
+    const filt = groups(Group.ZOMBIE, Group.STATIC | Group.TERRAIN | Group.BUILD);
+    let y0 = NaN;
+    for (let k = 0; k < 5; k++) {
+      const x = at.x + (k === 1 ? 0.35 : k === 2 ? -0.35 : 0);
+      const z = at.z + (k === 3 ? 0.35 : k === 4 ? -0.35 : 0);
+      const hit = world.castRayAndGetNormal(new R.Ray({ x, y: at.y + 1, z }, { x: 0, y: -1, z: 0 }), 2, true, R.QueryFilterFlags.EXCLUDE_SENSORS, filt);
+      if (!hit || hit.normal.y < 0.9) return;
+      const y = at.y + 1 - hit.timeOfImpact;
+      if (k === 0) y0 = y;
+      else if (Math.abs(y - y0) > fxTuning.poolFlatTol) return;
+    }
+    this.ctx.fx.bloodPool(_tg.set(at.x, y0, at.z));
   }
 
   private releaseToken(z: Zombie) {
@@ -348,7 +367,7 @@ export class Zombies {
           if (z.curr.y <= z.groundY) {
             z.curr.y = z.groundY;
             z.fling.set(0, 0, 0);
-            this.ctx.fx.bloodPool(z.curr);
+            this.groundPool(_o.set(z.curr.x - Math.sin(z.fallDir) * 0.75, z.curr.y, z.curr.z - Math.cos(z.fallDir) * 0.75)); // under the torso, not the feet
           }
         }
         if ((z.deadT -= dt) <= 0) {
@@ -430,12 +449,17 @@ export class Zombies {
     _w.divideScalar(d);
     this.ray.origin = _o.set(ox, oy, oz);
     this.ray.dir = _w;
-    const hit = world.castRay(this.ray, d - 0.3, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, LOS_FILTER));
+    const filt = this.ctx.player.inVehicle ? LOS_FILTER & ~Group.VEHICLE : LOS_FILTER; // they see the driver through the glass
+    const hit = world.castRay(this.ray, d - 0.3, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, filt));
     return !hit;
   }
 
   private think(z: Zombie, dt: number, dist: number) {
     const p = this.ctx.player;
+    // Driver in a car: the target is the closest point on the car body, the reach is to its surface (QA-050)
+    const car = p.inVehicle ? this.ctx.vehicles.driving : null;
+    const tgt = car ? _tg : p.curr;
+    const rd = car ? this.ctx.vehicles.surfaceDist(car, z.curr, _tg) - CAPSULE_R : dist;
     const d = z.def;
     _v.set(0, 0, 0); // desired velocity
     let face: Vector3 | null = null;
@@ -446,18 +470,30 @@ export class Zombies {
         if (z.modeT <= 0) z.mode = 'move';
         break;
       case 'windup':
-        face = p.curr;
+        face = tgt;
         if (z.modeT <= 0) {
           // Strike lands only if still in reach, in front, with no wall between (never through walls)
           const fwdX = -Math.sin(z.yaw);
           const fwdZ = -Math.cos(z.yaw);
-          _w.subVectors(p.curr, z.curr);
+          _w.subVectors(tgt, z.curr);
           const inFront = (fwdX * _w.x + fwdZ * _w.z) / Math.max(1e-3, Math.hypot(_w.x, _w.z)) > 0.4;
-          const reach = dist <= d.attackRange + 0.35 && Math.abs(_w.y) < 1.4;
-          const miss = p.sprinting && this.ctx.rand() < d.sprintMissChance;
-          if (reach && inFront && !miss && this.los(z, p.curr, 1.0) && !this.ctx.melee?.invulnerable) {
-            if (p.damage(d.attackDamage, z.curr)) this.ctx.sfx('melee_hit', p.curr, { volume: 0.8 });
-          } else this.ctx.sfx('melee_swing', z.curr, { volume: 0.6 });
+          const reach = rd <= d.attackRange + 0.35 && Math.abs(_w.y) < 1.6;
+          if (car) {
+            // QA-050: zombies beat on the car; once its engine is dead they drag the driver out
+            if (reach && inFront) {
+              this.ctx.sfx('impact_metal', z.curr, { volume: 0.9, pitchJitter: 0.1 });
+              if (car.dead) {
+                this.ctx.vehicles.exit();
+                this.ctx.game.events.emit('toast', { text: 'Dragged out!' });
+                p.damage(d.attackDamage, z.curr);
+              } else this.ctx.vehicles.damageCar(car, d.attackDamage * car.def.zombieDamageMul);
+            } else this.ctx.sfx('melee_swing', z.curr, { volume: 0.6 });
+          } else {
+            const miss = p.sprinting && this.ctx.rand() < d.sprintMissChance;
+            if (reach && inFront && !miss && this.los(z, p.curr, 1.0) && !this.ctx.melee?.invulnerable) {
+              if (p.damage(d.attackDamage, z.curr)) this.ctx.sfx('melee_hit', p.curr, { volume: 0.8 });
+            } else this.ctx.sfx('melee_swing', z.curr, { volume: 0.6 });
+          }
           z.mode = 'recover';
           z.modeT = d.attackRecover;
         }
@@ -488,11 +524,11 @@ export class Zombies {
         const s = z.sense.awareness;
         const speed = z.crawler ? d.crawl : d.chase;
         if (s === 'detected') {
-          face = p.curr;
+          face = tgt;
           // Ask for an attack token on approach; holders close in, the rest circle (Doom tokens)
           if (!z.token && dist < d.circleRadius + 1 && this.tokensInUse() < HD.attackTokens) z.token = true;
           if (z.token && dist > d.circleRadius + 3) z.token = false;
-          if (dist <= d.attackRange && Math.abs(p.curr.y - z.curr.y) < 1.4) {
+          if (rd <= d.attackRange && Math.abs(tgt.y - z.curr.y) < 1.6) {
             if (z.token && this.time - this.lastWindup >= HD.attackSpacing && !HD.passive) {
               this.lastWindup = this.time;
               // Telegraph: windup with an audio cue ≥ 0.3 s before the hit lands
@@ -503,15 +539,15 @@ export class Zombies {
               break;
             }
           }
-          if (!z.token && dist < d.circleRadius + 0.6) {
+          if (!z.token && !car && dist < d.circleRadius + 0.6) {
             // No token: circle at 1.5–2.5 m and growl
             _w.subVectors(z.curr, p.curr).setY(0).normalize();
             const tangent = (z.id & 1 ? 1 : -1) * 0.6;
             _v.set(-_w.z * tangent, 0, _w.x * tangent).addScaledVector(_w, (d.circleRadius - dist) * 1.5);
             if (_v.lengthSq() > speed * speed) _v.setLength(speed);
           } else {
-            _v.subVectors(p.curr, z.curr).setY(0);
-            if (_v.lengthSq() > 0.01) _v.setLength(speed);
+            _v.subVectors(tgt, z.curr).setY(0);
+            if (_v.lengthSq() > 0.01) _v.setLength(rd < 0.2 ? 0 : speed);
           }
         } else if (s === 'searching') {
           _v.subVectors(z.lastKnown, z.curr).setY(0);
@@ -589,7 +625,7 @@ export class Zombies {
     // Blocked while chasing/searching: climb onto vehicles and low walls (anti-cheese), 1.5–2 s
     if (z.mode === 'move' && want > 0.005 && Math.hypot(m.x, m.z) < want * 0.3 && z.sense.awareness !== 'unaware') {
       z.stuckT += dt;
-      if (z.stuckT > 0.4) this.tryClimb(z);
+      if (z.stuckT > 0.4 && !p.inVehicle) this.tryClimb(z); // beat on an occupied car instead of climbing it
     } else z.stuckT = 0;
   }
 
@@ -657,7 +693,7 @@ export class Zombies {
     a.update();
     const p = ch.root.position;
     a.crowd.set(a.i, p.x, p.y, p.z, yaw);
-    a.crowd.setSpeed(a.i, z.hitstop > 0 ? 0.05 : 1);
+    a.crowd.setSpeed(a.i, a.frozen ? 0 : z.hitstop > 0 ? 0.05 : 1);
     const flinch = z.flinch > 0 ? Math.sin(z.flinch * 40) * z.flinch * 0.6 : 0;
     a.crowd.setTilt(a.i, z.alive ? z.headSnap * 0.8 + (z.mode === 'stagger' ? 0.18 : 0) : 0, flinch);
     if (show && z.alive && li < 30) li = this.senseLines(z, li);

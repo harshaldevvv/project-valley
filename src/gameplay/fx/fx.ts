@@ -1,5 +1,6 @@
 import {
   AdditiveBlending,
+  IcosahedronGeometry,
   BoxGeometry,
   BufferAttribute,
   BufferGeometry,
@@ -155,6 +156,8 @@ export class Fx {
   private poolAge = new Float32Array(T.poolMax).fill(-1);
   private poolR = new Float32Array(T.poolMax);
   private poolNext = 0;
+  private poolRot = new Float32Array(T.poolMax);
+  private poolSq = new Float32Array(T.poolMax);
   private tracers: InstancedMesh; // 2 instances per tracer: core + sheath
   private tFrom = new Float32Array(TRACERS * 3);
   private tDir = new Float32Array(TRACERS * 3);
@@ -172,6 +175,7 @@ export class Fx {
   private lastFlash = -9;
   private time = 0;
   private freezeT = 0;
+  private cam = new Vector3(0, -1e4, 0);
   // melee trail (ribbon of base/tip samples)
   private trail: Mesh;
   private trailPos: Float32Array;
@@ -184,13 +188,14 @@ export class Fx {
 
   constructor(scene: Scene) {
     this.chips = new Pool(CHIPS, new InstancedMesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: '#ffffff' }), CHIPS));
-    this.smoke = new Pool(SMOKE, new InstancedMesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: T.smokeOpacity, depthWrite: false }), SMOKE));
+    // Smoke/mist: round low-poly puffs (not cards), translucent (QA-045)
+    this.smoke = new Pool(SMOKE, new InstancedMesh(new IcosahedronGeometry(0.5, 1), new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: T.smokeOpacity, depthWrite: false }), SMOKE));
     this.casings = new Pool(CASINGS, new InstancedMesh(new BoxGeometry(0.4, 0.4, 1.2), new MeshBasicMaterial({ color: '#ffffff' }), CASINGS));
     const decalMat = () => new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 });
     this.decals = new Decals(DECALS, decalMat());
     this.blood = new Decals(BLOOD, decalMat());
     // Corpse blood pools: flat octagons, grow under the body
-    this.pools = new InstancedMesh(new CircleGeometry(1, 8).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color: '#3d0705', transparent: true, opacity: 0.9, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 }), T.poolMax);
+    this.pools = new InstancedMesh(poolGeometry(), new MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.92, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 }), T.poolMax);
     this.pools.frustumCulled = false;
     for (let i = 0; i < T.poolMax; i++) this.pools.setMatrixAt(i, HIDE);
     // Tracers: unit box stretched along +Z from its origin; additive, colour = brightness
@@ -290,14 +295,14 @@ export class Fx {
   }
 
   /** Muzzle smoke wisp (translucent pool). */
-  smokePuff(p: Vector3, dir: Vector3, n = 1) {
-    _c.set('#d8d4cc');
+  smokePuff(p: Vector3, dir: Vector3, n = 1, color = '#d8d4cc', size = 1) {
+    _c.set(color);
     for (let k = 0; k < n; k++) {
       _v.copy(dir).multiplyScalar(0.4 + k * 0.3);
       _v.x += rnd(-0.1, 0.1);
       _v.y += rnd(0.3, 0.6);
       _v.z += rnd(-0.1, 0.1);
-      this.smoke.spawn(p, _v, rnd(0.6, 1.2), 0.05, -0.2, _c);
+      this.smoke.spawn(p, _v, rnd(0.6, 1.2), 0.05 * size, -0.2, _c);
     }
   }
 
@@ -356,6 +361,8 @@ export class Fx {
     p.toArray(this.poolPos, i * 3);
     this.poolAge[i] = 0;
     this.poolR[i] = rnd(T.poolRadius[0], T.poolRadius[1]);
+    this.poolRot[i] = Math.random() * Math.PI * 2;
+    this.poolSq[i] = rnd(0.75, 1.25); // stretch: no two pools the same shape
   }
 
   /** Melee trail: call begin at the active window, sample (blade base, tip) every frame, end afterwards. */
@@ -434,7 +441,17 @@ export class Fx {
         V[j + 2] *= 0.4;
         V[j + 1] *= -0.25;
       }
-      if (kind === 'smoke') sz = Math.min(sz * (1 + (1 - t) * 2), T.smokeMaxSize); // grows ×1 → ×3, capped at 0.4 m
+      if (kind === 'smoke') {
+        sz = Math.min(sz * (1 + (1 - t) * 2), T.smokeMaxSize); // grows ×1 → ×3, capped at 0.4 m
+        // Never inside / right in front of the lens (QA-045)
+        const dx = P[j] - this.cam.x;
+        const dy = P[j + 1] - this.cam.y;
+        const dz = P[j + 2] - this.cam.z;
+        if (dx * dx + dy * dy + dz * dz < (T.smokeMinCamDist + sz) ** 2) {
+          pool.mesh.setMatrixAt(i, HIDE);
+          continue;
+        }
+      }
       else sz *= 0.4 + 0.6 * t;
       if (kind === 'chips' && pool.stretch[i] > 0) {
         // Sparks / splinters: a thin box stretched along the velocity
@@ -452,8 +469,9 @@ export class Fx {
     if (any) pool.mesh.instanceMatrix.needsUpdate = true;
   }
 
-  update(dt: number) {
+  update(dt: number, cam?: Vector3) {
     this.time += dt;
+    if (cam) this.cam.copy(cam);
     // Flash + light are not frozen (they belong to the gun, not the impact)
     if (this.flashT > 0 && (this.flashT -= dt) <= 0) this.flash.visible = false;
     if (this.lightT > 0) {
@@ -486,7 +504,8 @@ export class Fx {
       this.poolAge[i] += dt;
       const k = 1 - (1 - Math.min(1, this.poolAge[i] / T.poolGrow)) ** 3;
       const r = this.poolR[i] * k;
-      _m.compose(_p.fromArray(this.poolPos, i * 3).setY(this.poolPos[i * 3 + 1] + 0.012), _q.identity(), _s.set(r, 1, r));
+      _q.setFromAxisAngle(_v.set(0, 1, 0), this.poolRot[i]);
+      _m.compose(_p.fromArray(this.poolPos, i * 3).setY(this.poolPos[i * 3 + 1] + 0.012), _q, _s.set(r * this.poolSq[i], 1, r / this.poolSq[i]));
       this.pools.setMatrixAt(i, _m);
     }
     if (anyP) this.pools.instanceMatrix.needsUpdate = true;
@@ -543,6 +562,36 @@ function flashGeometry(pts: number) {
   }
   parts.push(starGeometry(pts, 0.6, 0.2));
   return mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)))!;
+}
+
+/**
+ * Irregular blood pool (QA-044): a few overlapping jittered blobs (dark outer, darker inner), radius ≈ 1, flat on XZ.
+ * Fixed seed so it builds identically every time; instances vary by rotation and stretch.
+ */
+function poolGeometry() {
+  let s = 7;
+  const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  const blobs: [number, number, number, string, number][] = [
+    [0, 0, 0.75, '#4a0806', 0], [0.35, 0.15, 0.5, '#4a0806', 0], [-0.3, -0.25, 0.45, '#4a0806', 0], [0.05, 0.35, 0.4, '#4a0806', 0],
+    [0.05, 0.05, 0.45, '#2e0403', 0.002], [0.25, 0.15, 0.25, '#2e0403', 0.002],
+  ];
+  const parts: BufferGeometry[] = [];
+  for (const [cx, cz, rad, col, y] of blobs) {
+    const g = new CircleGeometry(1, 12);
+    const pos = g.getAttribute('position');
+    for (let i = 1; i < pos.count; i++) {
+      const k = rad * (0.8 + r() * 0.35);
+      pos.setXY(i, pos.getX(i) * k + cx, pos.getY(i) * k + cz);
+    }
+    pos.setXY(0, cx, cz);
+    g.rotateX(-Math.PI / 2).translate(0, y, 0);
+    const c = new Color(col);
+    const cols = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i++) c.toArray(cols, i * 3);
+    g.setAttribute('color', new BufferAttribute(cols, 3));
+    parts.push(g.toNonIndexed());
+  }
+  return mergeGeometries(parts)!;
 }
 
 /** Flat star in the XY plane. */

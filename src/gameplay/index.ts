@@ -78,7 +78,7 @@ export async function installGameplay(game: Game): Promise<void> {
       ctx.animStand.render(alpha, dt);
       perf.end('anim');
       perf.begin('fx');
-      ctx.fx.update(dt);
+      ctx.fx.update(dt, game.camera.position);
       perf.end('fx');
       perf.begin('anim');
       // Player body
@@ -263,6 +263,8 @@ function installDebug(ctx: Ctx) {
     if (car) p.teleport(car.doorPos.clone().sub(car.currPos).setY(0).setLength(1.8).add(car.currPos).setY(car.currPos.y + 0.1), 0);
   });
   d.action('Vehicle', 'Flip / reset car', () => v.list[0] && v.flipReset(v.list[0]));
+  d.action('Vehicle', 'Repair car', () => v.list.forEach((c) => (c.hp = c.def.hp)));
+  d.watch('Vehicle', 'car hp', () => v.list.map((c) => `${c.def.id} ${Math.ceil(c.hp)}`).join(', '));
   for (const def of Object.values(vehicleDefs)) {
     const r = def as unknown as Record<string, unknown>;
     for (const k of ['engineForce', 'brakeForce', 'frictionSlip', 'suspensionStiffness', 'suspensionDamping', 'maxSteerDeg', 'steerAtSpeed', 'topSpeedKmh', 'camDist', 'camHeight'] as const)

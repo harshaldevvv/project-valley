@@ -146,6 +146,7 @@ export class Hud {
     }
 
     ctx.game.events.on('toast', ({ text }) => this.toast(text));
+    ctx.game.events.on('playerDied', () => (this.helpOpen = false));
     // Hidden behind the title/pause menu (QA-017)
     ctx.game.events.on('uiScreen', ({ name, open }) => {
       if (name === 'menu') this.root.style.display = open ? 'none' : '';
@@ -186,6 +187,11 @@ export class Hud {
     d.textContent = text;
     while (this.toasts.children.length > 4) this.toasts.firstElementChild!.remove();
     d._t = [setTimeout(() => (d.style.opacity = '0'), 1800), setTimeout(() => d.remove(), 2300)] as unknown as number[];
+  }
+
+  /** Drop a toast that no longer applies (e.g. "Empty — press R" once the reload starts, QA-049). */
+  clearToast(text: string) {
+    for (const c of [...this.toasts.children]) if (c.textContent === text) c.remove();
   }
 
   /** Show the slot name briefly when switching. */
@@ -242,8 +248,9 @@ export class Hud {
         this.set('aw', this.ammoW, 'text', name);
       }
     } else {
-      this.set('an', this.ammoN, 'text', '');
-      this.set('aw', this.ammoW, 'text', p.inVehicle ? `${Math.abs((ctx.vehicles.driving?.speed ?? 0) * 3.6).toFixed(0)} km/h` : '');
+      const car = ctx.vehicles.driving;
+      this.set('an', this.ammoN, 'text', car ? `${Math.abs(car.speed * 3.6).toFixed(0)} km/h` : '');
+      this.set('aw', this.ammoW, 'text', car ? (car.dead ? 'ENGINE DEAD · F to get out' : `CAR ${Math.ceil((car.hp / car.def.hp) * 100)}%`) : '');
     }
     if (this.slotT > 0) {
       this.slotT -= dt;

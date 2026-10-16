@@ -186,6 +186,7 @@ export class AnimationController {
   private overlays = new Map<string, AnimationAction>();
   private oneShot: AnimationAction | null = null;
   private hold = false;
+  private holdAt = 0;
 
   constructor(private ch: Character) {
     const mixer = ch.mixer;
@@ -234,7 +235,8 @@ export class AnimationController {
   }
 
   /** Full-body one-shot (death, shove, melee); returns to base afterwards unless `hold` (death). */
-  oneshot(name: string, fade = 0.1, hold = false) {
+  oneshot(name: string, fade = 0.1, hold = false, holdAtFrac = 0) {
+    this.holdAt = holdAtFrac > 0 ? holdAtFrac * (this.ch.actions.get(name)?.getClip().duration ?? 0) : 0;
     const a = this.ch.actions.get(name);
     if (!a) return;
     if (this.oneShot && this.oneShot !== a) this.oneShot.fadeOut(fade);
@@ -268,6 +270,7 @@ export class AnimationController {
   }
 
   private updateMixer(dt: number) {
+    if (this.hold && this.holdAt > 0 && this.oneShot && this.oneShot.time >= this.holdAt) this.oneShot.paused = true;
     if (this.oneShot && !this.hold && !this.oneShot.isRunning() && this.current) {
       this.current.reset().play().crossFadeFrom(this.oneShot, 0.15, false);
       this.oneShot = null;
