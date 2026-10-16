@@ -45,3 +45,28 @@ export const anim = {
   zombieIdles: ['z_idle', 'z_idle_b', 'z_idle_c'],
   zombieTimeScale: [0.85, 1.15] as [number, number],
 };
+
+/** Procedural pass after the mixer (gameplay/player/bodyPost.ts), live-tunable from F1 → Animation. */
+export const animPost = {
+  // Aim offsets: pitch/yaw split over spine, chest, neck (research §3.7)
+  aimPitchSplit: [0.25, 0.45, 0.3] as [number, number, number],
+  aimYawSplit: [0.3, 0.4, 0.3] as [number, number, number],
+  aimPitchMaxDeg: 60,
+  aimYawMaxDeg: 70,
+  headLookDeg: 70,
+  headPitchDeg: 40,
+  // Lean (§3.8)
+  leanTurn: 0.035, // roll rad per (m/s · rad/s)
+  leanMaxDeg: 12,
+  leanAccel: 0.012, // pitch rad per m/s²
+  leanAccelMaxDeg: 8,
+  leanHalflife: 0.15,
+  // Foot IK + pelvis (§3.3)
+  footIK: true,
+  footIKMaxSpeed: 5,
+  footIKReach: 0.3,
+  pelvisMax: 0.25,
+  pelvisHalflife: 0.06,
+  // Turn in place (§3.5): threshold, the upper body absorbs the rest
+  turnTriggerDeg: 80,
+};

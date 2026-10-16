@@ -1,5 +1,6 @@
 import type { Object3D } from 'three';
-import type { Crowd } from '../../engine/crowd';
+import type { Crowd as CrowdT } from '../../engine/crowd';
+type Crowd = CrowdT;
 
 /**
  * Same surface as AnimationController (base / oneshot / update) over one engine crowd instance (GPU-baked clips,
@@ -14,7 +15,7 @@ export class CrowdAnim {
   frozen = false;
   constructor(readonly crowd: Crowd, readonly i: number) {}
 
-  base(name: string, fade = 0.2, timeScale = 1) {
+  base(name: string, fade = 0.2, timeScale = 1, startTime?: number) {
     this.baseScale = timeScale;
     if (this.hold) return;
     if (this.shot) {
@@ -22,7 +23,9 @@ export class CrowdAnim {
       return;
     }
     // Same clip without restart only updates the rate
-    this.crowd.play(this.i, name, { fade, loop: true, timeScale });
+    // Random start phase when the clip changes (gait variety); same clip only updates the rate
+    const time = name !== this.baseClip ? (startTime ?? 0) : undefined;
+    this.crowd.play(this.i, name, { fade, loop: true, timeScale, time } as Parameters<Crowd['play']>[2]);
     this.baseClip = name;
   }
 

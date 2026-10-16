@@ -1,8 +1,7 @@
-import { Box3, BoxGeometry, Mesh, Quaternion, Vector3, type Material } from 'three';
+import { Box3, BoxGeometry, Mesh, Vector3, type Material } from 'three';
 import { BodyFacing } from './player/facing';
 import { installSaves } from './saves';
 import { SurvivalGlue } from './player/survivalGlue';
-import { bodyFacing as BF } from '../content/data/player';
 import type { Game } from '../core/game';
 import { cameraFeel, health, movement, stamina } from '../content/data/player';
 import { ballistics, meleeDefs, shove, weaponDefs } from '../content/data/weapons';
@@ -11,10 +10,12 @@ import { fxTuning } from '../content/data/fx';
 import { surfaceOf } from '../world/surfaces';
 import { vehicles as vehicleDefs } from '../content/data/vehicles';
 import { Hud } from '../ui/hud/hud';
-import { AnimationController, applyPose, makeCharacter } from './animstand/character';
+import { applyPose, makeCharacter } from './animstand/character';
+import { PlayerAnimator } from './animstand/locomotion';
+import { BodyPost } from './player/bodyPost';
 import { AnimStand } from './animstand/stand';
 import { CameraRig } from './camera/rig';
-import { createCtx, type Ctx } from './ctx';
+import { createCtx, probe, type Ctx } from './ctx';
 import { Fx } from './fx/fx';
 import { Interact } from './interact/interact';
 import { Melee } from './melee/melee';
@@ -24,11 +25,6 @@ import { Targets } from './weapons/targets';
 import { sandboxLoadout, Weapons } from './weapons/weapons';
 import { Zombies } from './zombies/zombies';
 
-const _cq = new Quaternion();
-const _q1 = new Quaternion();
-const _q2 = new Quaternion();
-const _ax = new Vector3();
-const DEG2 = Math.PI / 180;
 const easeInOut = (t: number) => t * t * (3 - 2 * t);
 
 /** mechanics-builder: player controller + camera, weapons, melee, zombies, vehicles, interactions, HUD. Fills game.player. */
@@ -53,12 +49,18 @@ export async function installGameplay(game: Game): Promise<void> {
   const body = await makeCharacter('survivor', 'chr_survivor_a');
   ctx.playerChar = body;
   game.scene.add(body.root);
-  const bodyAnim = body.skinned ? new AnimationController(body) : null;
+  const bodyAnim = body.skinned ? new PlayerAnimator(body) : null;
   ctx.playerAnim = bodyAnim;
-  const chest = bodyAnim?.bone('chest') ?? null;
-  const head = bodyAnim?.bone('head') ?? null;
-  const shoulderL = bodyAnim?.bone('shoulder_L') ?? null;
-  const shoulderR = bodyAnim?.bone('shoulder_R') ?? null;
+  const post = bodyAnim ? new BodyPost(ctx, body.root, bodyAnim) : null;
+  // Backpack mesh follows the backpack slot (asset node chr_survivor_a_BACKPACK)
+  const pack = body.root.getObjectByName('chr_survivor_a_BACKPACK');
+  const syncPack = () => {
+    const lo = probe(game, 'loadout', 'equipped');
+    if (pack && lo) pack.visible = !!lo.equipped('backpack');
+  };
+  syncPack();
+  game.events.on('inventoryChanged', syncPack);
+  game.events.on('playerRespawned', syncPack);
   // Near-body fade (QA-064): a dithered (alphaHash, stays in the opaque pass) copy of each body material. A hidden
   // warm-up mesh keeps it in the scene so game.start()'s compileAsync builds the pipeline (no first-use hitch).
   const fadeMats = new Map<Material, Material>();
@@ -148,37 +150,23 @@ export async function installGameplay(game: Game): Promise<void> {
         pose.hold = 'none';
       }
       if (bodyAnim) {
-        // Locomotion clip by gait, playback rate matched to ground speed (no foot sliding)
-        const sp = p.speed01 * movement.jog;
-        const [clip, ref] = p.crouched ? (p.gait === 'idle' ? ['crouch_idle', 0] : ['crouch_walk', movement.crouch]) : p.gait === 'sprint' ? ['sprint', movement.sprint] : p.gait === 'jog' ? ['run', movement.jog] : p.gait === 'walk' ? ['walk', movement.walk] : ['idle', 0];
-        bodyAnim.base(clip as string, 0.2, ref ? Math.max(0.5, Math.min(1.5, sp / (ref as number))) : 1);
+        // Locomotion input for the blend space (body frame), carry state for the upper layer
         const w = ctx.weapons;
-        const cls = w.def?.class === 'pistol' ? 'pistol' : 'rifle';
-        const gun = !!w.item && !w.isMelee && !p.dead;
+        const gun = !!w.item && !w.isMelee && !p.dead && !p.inVehicle;
         const raise = gun ? easeInOut(w.raiseT) : 0;
-        // Rifle low-ready keeps the two-handed aim pose and swings it down; the pistol drops to the side (one hand)
-        bodyAnim.overlay(`aim_${cls}`, gun ? (cls === 'pistol' ? raise : 1) * (1 - pose.holster) : 0);
+        const by = body.root.rotation.y;
+        const sp = Math.hypot(p.vel.x, p.vel.z);
+        const inp = bodyAnim.input;
+        inp.speed = p.grounded ? sp : 0;
+        inp.dirX = sp > 0.05 ? (p.vel.x * Math.cos(by) - p.vel.z * Math.sin(by)) / sp : 0;
+        inp.dirY = sp > 0.05 ? (-p.vel.x * Math.sin(by) - p.vel.z * Math.cos(by)) / sp : 1;
+        inp.crouched = p.crouched;
+        inp.sprinting = p.sprinting;
+        inp.strafe = gun && raise > 0.3;
+        inp.carry = gun && w.switchPhase === 'none' ? (w.def?.class === 'pistol' ? 'pistol' : 'rifle') : 'none';
+        inp.raise = raise;
         bodyAnim.update(dt);
-        // Upper body follows the aim pitch only when raised (clips are authored level)
-        if (chest && gun) chest.rotation.x -= p.pitch * 0.7 * raise * (1 - pose.holster);
-        if (gun && chest && shoulderL && shoulderR && raise < 1) {
-          const low = 1 - raise;
-          const yaw = body.root.rotation.y;
-          chest.updateWorldMatrix(true, false);
-          chest.getWorldQuaternion(_cq).invert();
-          // Rotating both shoulders about the same body axis keeps the two-handed grip rigid
-          _ax.set(Math.cos(yaw), 0, -Math.sin(yaw)).applyQuaternion(_cq); // body right, in chest space
-          const down = (cls === 'pistol' ? BF.pistolLowDeg : BF.lowReadyDeg) * DEG2;
-          _q1.setFromAxisAngle(_ax, -down * low);
-          if (cls === 'rifle') {
-            _ax.set(0, 1, 0).applyQuaternion(_cq); // tuck across the body (toward the left)
-            _q1.premultiply(_q2.setFromAxisAngle(_ax, BF.lowReadyTuckDeg * DEG2 * low));
-            shoulderL.quaternion.premultiply(_q1);
-          }
-          shoulderR.quaternion.premultiply(_q1);
-        }
-        // Head looks toward the camera when the body doesn't follow it
-        if (head && !p.dead) head.rotation.y += ctx.facing.headYaw() * (1 - raise) * 0.85;
+        post?.apply(dt, by, raise);
       } else applyPose(body);
       perf.end('anim');
       perf.begin('ui');
@@ -346,6 +334,6 @@ function installDebug(ctx: Ctx) {
 declare module './ctx' {
   interface Ctx {
     playerChar: import('./animstand/character').Character;
-    playerAnim: AnimationController | null;
+    playerAnim: PlayerAnimator | null;
   }
 }

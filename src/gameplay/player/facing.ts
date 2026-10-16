@@ -1,4 +1,5 @@
 import { bodyFacing as BF } from '../../content/data/player';
+import { animPost as AP } from '../../content/data/anim';
 import type { Ctx } from '../ctx';
 
 const DEG = Math.PI / 180;
@@ -35,6 +36,7 @@ export class BodyFacing {
       return;
     }
     const sp = Math.hypot(p.vel.x, p.vel.z);
+    if ((sp > 0.3 || this.aiming) && this.ctx.playerAnim?.turning) this.ctx.playerAnim.cancelFull();
     let target = this.yaw;
     let rate = BF.moveTurnDeg;
     if (this.aiming && !p.sprinting) {
@@ -44,6 +46,19 @@ export class BodyFacing {
     } else if (sp > 0.3) {
       target = Math.atan2(-p.vel.x, -p.vel.z);
       this.turningInPlace = false;
+    } else if (this.ctx.playerAnim?.has('turn_left_90')) {
+      // Turn in place with the mocap clips (feet step, no yaw sliding); body yaw jumps by turn_deg when it ends
+      const anim = this.ctx.playerAnim;
+      const diff = wrap(p.yaw - this.yaw);
+      if (!anim.turning && Math.abs(diff) > AP.turnTriggerDeg * DEG) {
+        anim.onTurnEnd = (deg) => {
+          this.yaw = wrap(this.yaw + deg * DEG);
+          this.prevYaw = this.yaw;
+        };
+        anim.oneshot(diff > 0 ? 'turn_left_90' : 'turn_right_90', 0.06);
+      }
+      this.turningInPlace = anim.turning;
+      return;
     } else {
       const diff = Math.abs(wrap(p.yaw - this.yaw));
       if (!this.turningInPlace && diff > BF.inPlaceTriggerDeg * DEG) this.turningInPlace = true;

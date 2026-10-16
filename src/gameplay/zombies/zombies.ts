@@ -4,6 +4,8 @@ import { Group, groups } from '../../engine/physics';
 import { horde as HD, senses as SN, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
 import { hasAsset } from '../../engine/assets';
 import { fxTuning } from '../../content/data/fx';
+import { anim as A, clipMeta } from '../../content/data/anim';
+const ZM = clipMeta.zmb_shambler_a;
 import { surfaceOf } from '../../world/surfaces';
 import { vehicleText } from '../../content/text/vehicles';
 import { yard } from '../../content/data/yard';
@@ -71,6 +73,8 @@ export class Zombie {
   climb: { from: Vector3; to: Vector3; t: number } | null = null;
   anim: AnimationController | CrowdAnim | null = null;
   lastClip = '';
+  gait = { walk: 'z_walk', run: 'z_run', idle: 'z_idle', k: 1 };
+  walkSpeed = 0.5;
   settled = false;
   headKill = false;
   /** Capsule centre above the feet (scaled per variant). */
@@ -198,6 +202,17 @@ export class Zombies {
       body,
     );
     const z = new Zombie(this.nextId++, def, ch, body, capsule, head, HD.groanMin + this.ctx.rand() * (HD.groanMax - HD.groanMin));
+    // Gait variety (mocap pools): one walk/run/idle per zombie + a playback factor; movement speeds follow the clips
+    const pick = (pool: string[]) => pool[Math.floor(this.ctx.rand() * pool.length)];
+    const has = (c: string) => ch.clips.includes(c) || ch.actions.has(c);
+    const walks = A.zombieWalks.filter(has);
+    const runs = A.zombieRuns.filter(has);
+    const idles = A.zombieIdles.filter(has);
+    z.gait.walk = walks.length ? pick(walks) : 'z_walk';
+    z.gait.run = runs.length ? pick(runs) : 'z_run';
+    z.gait.idle = idles.length ? pick(idles) : 'z_idle';
+    z.gait.k = A.zombieTimeScale[0] + this.ctx.rand() * (A.zombieTimeScale[1] - A.zombieTimeScale[0]);
+    z.walkSpeed = (ZM[z.gait.walk]?.speed ?? def.walk) * z.gait.k;
     z.curr.copy(at);
     z.prev.copy(at);
     z.home.copy(at);
@@ -559,7 +574,7 @@ export class Zombies {
       }
       case 'move': {
         const s = z.sense.awareness;
-        const speed = z.crawler ? d.crawl : d.chase;
+        const speed = z.crawler ? d.crawl : d.chase * z.gait.k;
         if (s === 'detected') {
           face = tgt;
           // Ask for an attack token on approach; holders close in, the rest circle (Doom tokens)
@@ -590,13 +605,13 @@ export class Zombies {
           _v.subVectors(z.lastKnown, z.curr).setY(0);
           const dl = _v.length();
           if (dl > 1.5) _v.setLength(speed * 0.8);
-          else this.wanderAround(z, z.lastKnown, dt, d.walk);
+          else this.wanderAround(z, z.lastKnown, dt, z.walkSpeed);
           face = null;
         } else if (s === 'suspicious') {
           face = z.lastKnown.lengthSq() > 0 ? z.lastKnown : p.curr; // head-turn toward the stimulus
           if (z.seen) z.lastKnown.copy(p.curr);
         } else {
-          this.wanderAround(z, z.home, dt, d.walk);
+          this.wanderAround(z, z.home, dt, z.walkSpeed);
         }
         break;
       }
@@ -673,7 +688,7 @@ export class Zombies {
       const r = 1 + this.ctx.rand() * 3;
       z.wander.set(center.x + Math.cos(a) * r, z.curr.y, center.z + Math.sin(a) * r);
     }
-    if (z.wander.distanceToSquared(z.curr) > 0.25) _v.subVectors(z.wander, z.curr).setY(0).setLength(z.def.walk);
+    if (z.wander.distanceToSquared(z.curr) > 0.25) _v.subVectors(z.wander, z.curr).setY(0).setLength(z.walkSpeed);
   }
 
   private tryClimb(z: Zombie) {
@@ -724,8 +739,13 @@ export class Zombies {
     ch.root.rotation.set(0, yaw, 0);
     const sp = Math.hypot(z.curr.x - z.prev.x, z.curr.z - z.prev.z) * 60;
     if (z.alive) {
-      const clip = z.crawler ? 'z_crawl' : sp > 2.6 ? 'z_run' : sp > 0.1 ? 'z_walk' : 'z_idle';
-      a.base(clip, 0.25, clip === 'z_walk' ? Math.min(1.6, Math.max(0.6, sp / 1.0)) : 1);
+      // Speed-matched gait: walk while wandering/searching slowly, run when chasing; timeScale = speed / authored speed
+      const g = z.gait;
+      const runCut = ((ZM[g.walk]?.speed ?? 0.5) * g.k + (ZM[g.run]?.speed ?? 1.27)) / 2;
+      const clip = z.crawler ? 'z_crawl' : sp > runCut ? g.run : sp > 0.05 ? g.walk : g.idle;
+      const ref = ZM[clip]?.speed;
+      const ts = ref && ref > 0.05 ? Math.max(0.6, Math.min(1.6, sp / ref)) : g.k;
+      a.base(clip, 0.3, ts, (ZM[clip]?.cycle ?? 1) * ((z.id * 0.6180339) % 1));
     }
     a.update();
     const p = ch.root.position;

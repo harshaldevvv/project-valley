@@ -67,7 +67,12 @@ export class SurvivalGlue {
     }
     if (u && !this.wasUsing) {
       // Use animation: survivor search/bandage motion in TP, left hand in FP
-      this.ctx.playerAnim?.oneshot('interact_search', 0.12);
+      // Use clip by item kind (mocap): bandage / eat / drink, scaled to the use time
+      const kind = ITEMS[u.item.defId]?.kind;
+      const clip = kind === 'food' ? 'eat' : kind === 'drink' ? 'drink' : 'use_bandage';
+      const anim = this.ctx.playerAnim;
+      if (anim?.has(clip)) anim.oneshot(clip, 0.1, false, 0, (anim.duration(clip) || u.seconds) / Math.max(0.5, u.seconds));
+      else anim?.oneshot('interact_search', 0.12);
       this.ctx.weapons.vm.play('fp_interact', { seconds: Math.max(0.6, u.seconds), leftOnly: true });
       this.ctx.weapons.cancelReload();
     }

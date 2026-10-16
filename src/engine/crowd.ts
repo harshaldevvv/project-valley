@@ -43,6 +43,8 @@ export interface CrowdPlayOpts {
   loop?: boolean;
   timeScale?: number;
   restart?: boolean;
+  /** Start time in seconds when the clip (re)starts (random phase for gait variety); wrapped for loops. */
+  time?: number;
 }
 export interface Crowd {
   readonly clips: string[];
@@ -380,7 +382,8 @@ export async function createCrowd(
         S.fade[i] = S.fadeDur[i] = fade;
       } else S.fade[i] = 0;
       S.clipA[i] = ci;
-      S.tA[i] = 0;
+      const t0 = o.time ?? 0;
+      S.tA[i] = (o.loop ?? true) ? ((t0 % clips[ci].duration) + clips[ci].duration) % clips[ci].duration : Math.max(0, t0);
       S.loopA[i] = (o.loop ?? true) ? 1 : 0;
     },
     setTilt(i, pitch, roll = 0) {
