@@ -125,6 +125,7 @@ export class Player implements PlayerView {
       this.dead = true;
       this.deadT = HD.respawnDelay;
       this.ctx.game.events.emit('toast', { text: 'You died. Respawning…' });
+      this.ctx.game.events.emit('playerDied', {});
     }
     return true;
   }
@@ -369,6 +370,7 @@ export class Player implements PlayerView {
   }
 
   respawn() {
+    if (this.dead) this.ctx.game.events.emit('playerRespawned', {});
     this.dead = false;
     this.hp = HD.max;
     this.stamina.value = SD.max;

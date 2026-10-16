@@ -13,6 +13,9 @@ export interface GameEvents {
   noise: { position: Vector3; radius: number; source: string };
   /** Player took damage. `from` = world position of the attacker (for the direction wedge). */
   playerDamaged: { amount: number; from: Vector3 | null };
+  /** Player died / respawned. UI screens (inventory, build mode) close on death. */
+  playerDied: Record<string, never>;
+  playerRespawned: Record<string, never>;
   /** Inventory contents changed (UI refresh, weapon re-check). */
   inventoryChanged: Record<string, never>;
   /** A UI screen opened/closed (gameplay input pauses while any is open). */
