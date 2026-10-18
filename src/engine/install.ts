@@ -43,7 +43,6 @@ export async function installEngine(game: Game) {
   // --- audio -------------------------------------------------------------------------------
   const audio = createAudio();
   game.audio = audio.api;
-  void audio.preload();
   game.addSystem({
     name: 'audio',
     render() {
@@ -204,6 +203,8 @@ export async function installEngine(game: Game) {
     createLamps(game, tod, lampHeads);
     clock = createClock(game, tod); // also registers the 'world.time' save slice
     await warmup(game, post);
+    // After boot, so 135 sound files don't share bandwidth with the models; until a buffer lands, play() uses a synth.
+    void audio.preload();
     return start();
   };
 
