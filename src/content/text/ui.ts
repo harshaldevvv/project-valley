@@ -69,7 +69,7 @@ export const menuText = {
   tip: 'Tip',
   back: 'Back',
   captureMouse: 'Click to capture mouse',
-  igpuNote: 'Running on integrated graphics. For better FPS set Chrome to High performance in Windows Settings > Display > Graphics.',
+  igpuNote: 'Your browser is running on integrated graphics, so FPS will be low. The browser picks the GPU, not the game: in Windows Settings > System > Display > Graphics, add your browser, choose High performance, then fully restart it. (The NVIDIA Control Panel setting does not change this for Chrome or Edge.)',
   dismiss: 'Dismiss',
   nav: { play: 'Play', resume: 'Resume', stations: 'Jump to station', controls: 'Controls', settings: 'Settings', difficulty: 'Difficulty', quit: 'Quit to title' },
   settings: {
