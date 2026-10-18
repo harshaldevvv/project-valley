@@ -1,5 +1,6 @@
 import { Vector3, type Object3D, type PerspectiveCamera } from 'three';
 import type { AudioApi } from '../core/contracts';
+import { assetUrl } from './assetUrl';
 import { sounds, type SoundDef } from '../content/data/sounds';
 
 /**
@@ -57,7 +58,7 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
   const load = (file: string) => {
     let p = loading.get(file);
     if (!p) {
-      p = fetch(`/assets/audio/${file}`)
+      p = fetch(assetUrl(`assets/audio/${file}`))
         .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${r.status}`))))
         .then((b) => ctx.decodeAudioData(b))
         .catch((e) => {

@@ -2,6 +2,7 @@ import { Box3, BoxGeometry, LOD, Mesh, MeshStandardMaterial, Object3D, Vector3 }
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import manifest from '../../public/assets/models/manifest.json';
+import { assetUrl } from './assetUrl';
 import { paletteMaterial } from './palette';
 
 /**
@@ -24,7 +25,9 @@ export interface AssetProto {
 
 export const gltfLoader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const cache = new Map<string, Promise<AssetProto>>();
-export const entries = manifest as Record<string, { url: string }>;
+export const entries: Record<string, { url: string }> = Object.fromEntries(
+  Object.entries(manifest as Record<string, { url: string }>).map(([id, e]) => [id, { ...e, url: assetUrl(e.url) }]),
+);
 
 export function hasAsset(id: AssetId) {
   return id in entries;

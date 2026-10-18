@@ -5,6 +5,7 @@ import { containerText } from '../../content/text/containers';
 import { itemText } from '../../content/text/items';
 import { inventoryText, survivalText } from '../../content/text/ui';
 import iconIndex from '../../../public/assets/icons/index.json';
+import { assetUrl } from '../../engine/assetUrl';
 import {
   autoPlace, autoPlaceInto, canPlace, sortGrid, canStack, containsItem, defOf, findFree, footprint, gridsOf, hasStorage, mergeInto, newItems, place, removeItem, splitStack, type Grid,
 } from '../../systems/inventory';
@@ -24,7 +25,7 @@ function iconImg(defId: string) {
   if (!ICONS.has(defId)) return null;
   const img = document.createElement('img');
   img.className = 'ic';
-  img.src = `/assets/icons/${defId}.png`;
+  img.src = assetUrl(`assets/icons/${defId}.png`);
   img.alt = '';
   img.draggable = false;
   return img;

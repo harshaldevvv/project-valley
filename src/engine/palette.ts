@@ -1,6 +1,7 @@
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { BufferAttribute, BufferGeometry, LinearFilter, SRGBColorSpace, Texture, TextureLoader } from 'three';
 import palette from '../content/data/palette.json';
+import { assetUrl } from './assetUrl';
 
 /**
  * The one shared material for all palette-atlas models (art bible). GLBs ship without textures;
@@ -11,7 +12,7 @@ let shared: MeshStandardNodeMaterial | null = null;
 
 export async function paletteMaterial() {
   if (shared) return shared;
-  const tex: Texture = await new TextureLoader().loadAsync('/assets/textures/palette.png');
+  const tex: Texture = await new TextureLoader().loadAsync(assetUrl('assets/textures/palette.png'));
   tex.flipY = false; // glTF UV convention
   tex.colorSpace = SRGBColorSpace;
   tex.generateMipmaps = false;
