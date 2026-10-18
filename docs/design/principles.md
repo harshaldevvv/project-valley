@@ -4,7 +4,7 @@ This is our rulebook, distilled from the research in `docs/research/`:
 - `game-feel-combat.md`
 - `survival-systems-loops.md`
 - `engine-architecture-optimization.md`
-- the two the reference game teardowns
+- genre research (systems, world, art and tech)
 
 Every number is a **default**: it lives in `src/content/data/` and can be tuned live from the debug panel. When a number changes after playtesting, update it here too and note why.
 
@@ -331,9 +331,9 @@ Shamblers move at 1.0–1.5 m/s and runners at 4.5–5.0 m/s, which is **slower 
 **Spawning**
 - Never inside the camera's view frustum or line of sight, and never closer than 25 m.
 - Wandering zombies are stored as a **count per cell**. They are created when the player approaches, and a cell's count resets once the player has seen it.
-- No respawning on save load. This fixes a the reference game complaint.
+- No respawning on save load. This fixes a common genre complaint.
 
-**Anti-cheese (the reference game's exploits)**
+**Anti-cheese (common genre exploits)**
 - Zombies **climb onto vehicles and low walls**.
 - Zombies **react to sniping** by searching toward the sound.
 - Zombies are always audible: idle groans every 4–10 s, a shriek when they detect the player, and footsteps 3 dB louder than normal when within 6 m behind the player.
@@ -380,7 +380,7 @@ Shamblers move at 1.0–1.5 m/s and runners at 4.5–5.0 m/s, which is **slower 
 
 **Medical items**
 - Using one takes 2–5 s and can be interrupted.
-- Item stats follow the the reference game table in the research doc.
+- Item stats follow genre-standard values, tuned in `src/content/data/items.ts`.
 
 **Sliders:** drain rate for each need 0–200%; infection on/off; starvation damage on/off.
 
@@ -559,7 +559,7 @@ Backpacks: 4×4, 5×6 and 6×8.
 - **Clearing:**
   - Clearing a core permanently shrinks it and unlocks an outpost slot.
   - The remaining cores escalate, each stage adding **a new mechanic, not just more HP**.
-  - Primary cores are invulnerable until their secondary cores are destroyed (the reference game's model).
+  - Primary cores are invulnerable until their secondary cores are destroyed (a common genre model).
 
 **Dynamic events**
 - Rolled every 30–45 real minutes, with a 40% chance.

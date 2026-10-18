@@ -1,13 +1,13 @@
-# Project Valley — browser open-world zombie survival (genre-inspired)
+# Project Valley: browser open-world zombie survival
 
 Read before working:
 - `GAME_PLAN.md` — the vision, the engine decision (three.js WebGPU, not Unity), scope, milestones, team and folder ownership.
 - `docs/design/principles.md` — research-backed rules for game feel, systems and engine performance. Follow its numbers as defaults.
 - `docs/design/art-bible.md` — palette, scale, triangle and frame budgets, asset naming.
-- `docs/research/` — the reference game teardowns, the reference for every system.
+- `docs/research/`: genre, engine, animation and VFX research.
 
 ## Team
-Specialist subagents live in `.claude/agents/`:
+Specialist subagents live in `.claude/agents/` (kept local, not published):
 - `engine-builder`
 - `systems-builder`
 - `mechanics-builder`
@@ -19,7 +19,7 @@ The main session is the lead. It assigns work by folder ownership (see GAME_PLAN
 
 Asset requests go through `docs/pipeline/asset-requests.md`. Credits and licences go in `docs/pipeline/asset-credits.md`.
 
-## Skills (project-local, in `.claude/skills/`)
+## Skills (kept local in `.claude/skills/`, not published)
 - `threejs-game-director` and its siblings: gameplay, graphics, UI, debug, QA, 3D, image and audio generators.
 - `three-best-practices`
 - `blender-image-to-3d`
@@ -33,4 +33,3 @@ Asset requests go through `docs/pipeline/asset-requests.md`. Credits and licence
 - All tunable numbers live in `src/content/data/`. All player-facing text lives in `src/content/text/`.
 - Keep the simulation (plain data) separate from rendering, so saves and future co-op stay possible.
 - Blender 5.2.2 LTS is at `C:\Program Files\Blender Foundation\Blender 5.2\blender.exe` (not on PATH; pass it as `BLENDER_BIN`). Run it headless: `"$BLENDER_BIN" --background --python <script> -- <args>`.
-- This laptop overheats under long full-load jobs. Keep heavy Blender bakes and long builds batched, and check that FanKick is running if anything crashes.

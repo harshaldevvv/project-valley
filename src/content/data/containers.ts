@@ -45,7 +45,7 @@ export const CONTAINER_INTERACT = {
 export const BODY_BY_VARIANT: Record<string, string> = { soldier: 'body_zombie_soldier' };
 
 /**
- * Lockpicking minigame (the reference game / Skyrim style). The pick angle is 0..180° across the top of the lock;
+ * Lockpicking minigame (classic Skyrim-style). The pick angle is 0..180° across the top of the lock;
  * a hidden sweet spot per attempt. Closer to it = the cylinder turns further. Forcing it builds stress.
  */
 export const LOCKPICK = {

@@ -9,7 +9,7 @@ export const inventoryText = {
   act: { use: 'Use', equip: 'Equip', unequip: 'Unequip', open: 'Open', load: 'Load ammo', unload: 'Unload magazine', unmag: 'Remove magazine', bind: 'Bind to hotbar', split: 'Split stack', drop: 'Drop', take: 'Take', unpack: 'Unpack' },
   stat: { stack: 'Stack', rounds: 'Rounds', ammo: 'Ammo', caliber: 'Caliber', damage: 'Damage', rpm: 'Fire rate', magazine: 'Magazine', none: 'none', storage: 'Storage', only: 'Holds only', items: 'items', heals: 'Heals', food: 'Food', water: 'Water', size: 'Size', value: 'Value', vsEquipped: 'vs equipped' },
   used: 'Used', full: 'No room', pickUp: 'Pick up', no: 'No',
-  pickLock: 'Pick lock', lockpickWord: 'lockpick', locked: 'Locked — needs a lockpick',
+  pickLock: 'Pick lock', lockpickWord: 'lockpick', locked: 'Locked: needs a lockpick',
 };
 
 /** Lockpick minigame text. */
@@ -64,7 +64,7 @@ export const worldText = {
 export const menuText = {
   kicker: 'M2 · The Yard',
   title: ['Project', 'Valley'],
-  subtitle: 'Survival sandbox — every mechanic, one walled yard.',
+  subtitle: 'Survival sandbox: every mechanic, one walled yard.',
   paused: 'Paused',
   tip: 'Tip',
   back: 'Back',
@@ -83,6 +83,6 @@ export const menuText = {
     infection: 'Infection', starvationDamage: 'Starvation damage',
     onDeath: 'On death', keepAll: 'Keep all', dropBag: 'Drop bag',
     dayLength: 'Day length', minutes: 'min',
-    custom: 'Custom — saved with your game.',
+    custom: 'Custom, saved with your game.',
   },
 };

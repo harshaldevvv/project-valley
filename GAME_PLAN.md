@@ -1,11 +1,8 @@
-# Game plan — browser open-world zombie survival — **Project Valley**
+# Game plan: browser open-world zombie survival, **Project Valley**
 
-A classic open-world zombie survival game that runs in the browser: loot, a grid inventory, deep gunplay, base building, infestations, traders and vehicles. It fixes the things the reference game players complain about.
+A classic open-world zombie survival game that runs in the browser: loot, a grid inventory, deep gunplay, base building, infestations, traders and vehicles. It fixes the most common complaints players have about the genre.
 
-Reference research:
-- `docs/research/the reference game-gameplay-systems.md` covers every system, with numbers.
-- `docs/research/the reference game-world-art-tech.md` covers the map, art, tech and browser feasibility.
-- `docs/research/raw/` holds all 163 the reference game patch notes and a sample of 200 reviews.
+Research notes (genre systems, engine, animation, VFX): `docs/research/`.
 
 Engineering and design rules: `docs/design/principles.md`. Art rules and budgets: `docs/design/art-bible.md`.
 
@@ -37,9 +34,9 @@ Change to Unity only if the target moves from "plays in a browser" to "Steam/con
 4. **Long-term progress you can see.** Tiered regions, keycards, crafting tiers and meaningful perks. No "geared in 5 hours".
 5. **Instant to play.** Open a link and play, at 60 fps on a mid laptop. Saves never break.
 
-## 3. How we beat the reference game (its top complaints → our answer)
+## 3. Genre complaints → our answer
 
-| the reference game complaint | Our design |
+| Common genre complaint | Our design |
 |---|---|
 | No raids, so building feels pointless | **Horde nights**: horde night every 5 in-game days, plus noise and heat (light, generators, gunfire) drawing roaming hordes to your base. Structure tiers: wood → scrap → concrete → reinforced. Zombies path to and break the weakest point |
 | Geared in 5–10 h, legendaries too easy, money snowball | Tiered regions (T1 → T5) with item level by region, rarer legendaries, a pity counter, real sinks (repairs, ammo crafting cost, trader cash limits, upkeep) |
@@ -53,7 +50,7 @@ Change to Unity only if the target moves from "plays in a browser" to "Steam/con
 
 ## 4. Feature scope
 
-The full parity list is the research doc. Below is the target per area. ★ = beyond the reference game.
+The full parity list is the research doc. Below is the target per area. ★ = beyond the genre baseline.
 
 - **Player:**
   - Third person with a first-person toggle.
@@ -63,7 +60,7 @@ The full parity list is the research doc. Below is the target per area. ★ = be
   - Health, hunger, thirst, stamina, radiation.
   - Bleed, heavy bleed, fracture, infection, burning.
   - ★ Light fatigue. ★ Temperature (winter, wet).
-  - Medical items as in the reference game, with short use animations.
+  - Genre-standard medical items, with short use animations.
 - **Inventory:**
   - Tetris grid, equipment slots (head, face, eyes, ears, torso, armor, legs, gloves, feet, backpack), nested containers.
   - Vicinity panel, quick-move, split, inspect.
@@ -110,7 +107,7 @@ The full parity list is the research doc. Below is the target per area. ★ = be
 - **Size:**
   - Milestone 3 ships a **2 × 2 km** slice: the starter town, its outskirts and one military site.
   - The full game targets **4 × 4 km** (16 km²), streamed in 128 m chunks.
-  - the reference game's map is estimated at about 64–100 km², but most of it is empty forest. We go **denser instead of bigger**, aiming for around the same POI count (about 120) in a quarter of the area.
+  - Genre maps often reach 64–100 km², but most of that is empty forest. We go **denser instead of bigger**, aiming for around the same POI count (about 120) in a quarter of the area.
 - **Regions and tiers (T1 → T5):**
   - Starter town and farms (T1).
   - River suburbs and the mall (T2).
@@ -213,7 +210,7 @@ Each milestone ends playable in the browser, with a perf report and a short demo
 | Hundreds of animated zombies in the browser | VAT instancing, crowd in a worker, distance LOD. Proved in M1/M3 with a perf test before adding content |
 | Asset volume (hundreds of models) | Modular kits (walls, windows, roofs), variants by palette swap, a build script per asset, CC0 bases |
 | Character animation quality | CC0 rigged sets plus retargeting. Mixamo and Tripo as an upgrade path |
-| Laptop heat during Blender bakes and long builds | Light preview renders, small bakes, batched heavy jobs, keep FanKick running |
+| Laptop heat during Blender bakes and long builds | Light preview renders, small bakes, batched heavy jobs |
 | Scope creep | Milestones are vertical. Nothing from a later milestone starts before the current one is playable |
 | Browser memory limits | Streaming budgets in the art bible, perf test in CI |
 

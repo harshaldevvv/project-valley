@@ -2,7 +2,7 @@ import type { ItemDef } from './types';
 
 /**
  * Item table. Footprints follow principles §8 (pistol 2x1, rifle 5x2, ammo/bandage/can 1x1).
- * Stacks follow the the reference game teardown (§2), ammo capped at 60 per principles §8.
+ * Stacks follow genre-standard sizes, ammo capped at 60 per principles §8.
  * A new item is a new row here plus its text in src/content/text/items.ts.
  */
 const list: ItemDef[] = [
@@ -117,7 +117,7 @@ export const INVENTORY = {
   vicinityW: 8,
   /** Dropped items land this far in front of the player, m. */
   dropAhead: 0.7,
-  /** Hotbar keys 5..9 bind consumables by item id (the reference game binds by type, not by instance). */
+  /** Hotbar keys 5..9 bind consumables by item id (by type, not by instance). */
   hotbar: ['bandage', 'canned_beans', 'water_bottle', null, null] as (string | null)[],
   /** Order in which worn grids receive picked-up items. */
   fillOrder: ['torso', 'legs', 'armor', 'backpack'] as const,
