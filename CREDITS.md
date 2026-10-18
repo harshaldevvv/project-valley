@@ -45,12 +45,6 @@ funding from NSF EIA-0196217.
 
 CC0 needs no attribution. They are listed here as thanks.
 
-## Libraries
-
-- [three.js](https://threejs.org/) (MIT)
-- [Rapier](https://rapier.rs/) physics (Apache 2.0)
-- [Vite](https://vite.dev/), [Vitest](https://vitest.dev/), [glTF Transform](https://gltf-transform.dev/), [meshoptimizer](https://meshoptimizer.org/) (MIT)
-
 ## Code libraries
 
 | Library | Used for | Licence |
