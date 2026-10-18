@@ -7,6 +7,7 @@ import { cameraFeel, health, movement, stamina } from '../content/data/player';
 import { ballistics, meleeDefs, shove, weaponDefs } from '../content/data/weapons';
 import { horde, senses, zombieDefs } from '../content/data/zombies';
 import { fxTuning } from '../content/data/fx';
+import { atmosphere } from '../content/data/sounds';
 import { surfaceOf } from '../world/surfaces';
 import { vehicles as vehicleDefs } from '../content/data/vehicles';
 import { Hud } from '../ui/hud/hud';
@@ -89,6 +90,21 @@ export async function installGameplay(game: Game): Promise<void> {
 
   const perf = game.perf;
   let wasDead = false;
+  // Music intensity (engine/atmosphere.ts): zombies hunting the player nearby, or damage taken in the last few seconds.
+  let hurtT = 0;
+  game.events.on('playerDamaged', () => (hurtT = atmosphere.music.hurtDangerS));
+  const danger = (dt: number) => {
+    hurtT = Math.max(0, hurtT - dt);
+    if (hurtT > 0) return 1;
+    const r2 = atmosphere.music.dangerRadius ** 2;
+    let d = 0;
+    for (const z of ctx.zombies.list) {
+      if (!z.alive || z.sense.awareness === 'unaware' || z.curr.distanceToSquared(ctx.player.position) > r2) continue;
+      if (z.sense.awareness === 'detected') return 1;
+      d = 0.6;
+    }
+    return d;
+  };
   game.addSystem({
     name: 'sim',
     step(dt) {
@@ -109,6 +125,7 @@ export async function installGameplay(game: Game): Promise<void> {
     name: 'ai',
     step(dt) {
       ctx.zombies.step(dt);
+      game.audio.setDanger(danger(dt));
       ctx.controls.endTick();
     },
     render(alpha, dt) {

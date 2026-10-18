@@ -22,6 +22,9 @@ export interface AudioSettings {
   master: number; // 0..1
   sfx: number;
   ui: number;
+  music: number; // background music bus (engine/atmosphere.ts)
+  ambience: number; // wind, birds, crickets, distant sounds
+  bgMuted: boolean; // mutes music + ambience only
 }
 
 interface Voice {
@@ -31,18 +34,24 @@ interface Voice {
   loop: boolean;
 }
 
-export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui: 0.8 }) {
+export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui: 0.8, music: 0.4, ambience: 0.6, bgMuted: false }) {
   const ctx = new AudioContext({ latencyHint: 'interactive' });
   const master = ctx.createGain();
   const sfx = ctx.createGain();
   const ui = ctx.createGain();
+  const music = ctx.createGain();
+  const amb = ctx.createGain();
   sfx.connect(master);
   ui.connect(master);
+  music.connect(master);
+  amb.connect(master);
   master.connect(ctx.destination);
   const applyVolumes = () => {
     master.gain.value = settings.master;
     sfx.gain.value = settings.sfx;
     ui.gain.value = settings.ui;
+    music.gain.value = settings.bgMuted ? 0 : settings.music;
+    amb.gain.value = settings.bgMuted ? 0 : settings.ambience;
   };
   applyVolumes();
 
@@ -146,8 +155,10 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
   };
 
   const follows: { v: Voice; obj: Object3D }[] = [];
+  let danger = 0; // 0 calm .. 1 fight, set by gameplay each step, read by engine/atmosphere.ts
 
   const api: AudioApi = {
+    setDanger: (level) => (danger = level),
     play(id, position, opts) {
       const def = lookup(id);
       if (!def || ctx.state !== 'running') return;
@@ -252,7 +263,12 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
     settings,
     applyVolumes,
     preload,
+    load,
     update,
+    buses: { music, amb },
+    get danger() {
+      return danger;
+    },
     get voices() {
       return voices.length;
     },

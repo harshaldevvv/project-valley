@@ -18,6 +18,7 @@ The current build is **The Yard**: one walled sandbox with a station for every c
 - **Survival:** health, stamina, food, water and rest, bleeding and medical items, a day clock.
 - **Building:** place, rotate and remove wall pieces on a build pad.
 - **Vehicles:** a pickup truck you can drive around a track.
+- **Sound:** 3D positional effects, an exploring score that crossfades into a fight layer when zombies close in, and wind, birds, crickets and crows that follow the day and night.
 - **Lockpicking**, saves, a settings menu, difficulty presets, and a debug and performance overlay.
 
 | | |

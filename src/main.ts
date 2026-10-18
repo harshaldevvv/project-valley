@@ -13,7 +13,7 @@ import { buildYard } from './world/yard/index';
 try {
   const models = prefetchModels(); // downloads in parallel with renderer + physics start-up
   const game = await createGame();
-  await installEngine(game);
+  const engine = await installEngine(game);
   await models;
   loading.phase(0.88, 'Building the yard');
   await buildYard(game);
@@ -23,6 +23,7 @@ try {
   await nextPaint();
   await game.start();
   loading.done();
+  engine.startAtmosphere(); // music + ambience load after the loading screen
   (window as unknown as { game: typeof game }).game = game; // console/debug + Playwright access
 } catch (err) {
   loading.fail(err);

@@ -42,6 +42,8 @@ export interface AudioApi {
   play(id: string, position?: Vector3, opts?: { volume?: number; pitchJitter?: number }): void;
   /** Looping sound attached to an object (engine idle, zombie groan). Returns a handle to stop/adjust. */
   loop(id: string, follow: Object3D, opts?: { volume?: number }): { setVolume(v: number): void; setRate(r: number): void; stop(): void };
+  /** How dangerous the moment is, 0 calm .. 1 fight (zombies hunting the player nearby). Drives the music layers. */
+  setDanger(level: number): void;
 }
 
 /** mechanics-builder: read-only view of the player for other teams. */

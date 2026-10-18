@@ -8,6 +8,7 @@ import { sounds } from '../content/data/sounds';
 import { yard, type StationId } from '../content/data/yard';
 import { createDebugPanel } from '../ui/debug/panel';
 import { installMenu } from '../ui/menu/menu';
+import { createAtmosphere } from './atmosphere';
 import { createAudio } from './audio';
 import { installPost, type Post } from './post';
 import { createTimeOfDay, TIME_PRESETS } from './timeofday';
@@ -33,6 +34,7 @@ export function stationSpot(id: StationId | 'spawn'): { p: Vector3; yaw: number 
 }
 
 export async function installEngine(game: Game) {
+  let atmosphere: ReturnType<typeof createAtmosphere> | null = null; // created after warm-up (game.start)
   let menu: ReturnType<typeof installMenu> | null = null; // created last; the debug panel's relock reads it
   // --- debug panel -------------------------------------------------------------------------
   const panel = createDebugPanel(game.events, () => {
@@ -185,6 +187,7 @@ export async function installEngine(game: Game) {
       Object.assign(post.settings, { fxaa: s.fxaa, renderScale: s.renderScale, shadows: s.shadows });
       post.apply();
       audio.settings.master = s.volume;
+      Object.assign(audio.settings, { music: s.music, ambience: s.ambience, bgMuted: s.bgMuted });
       audio.applyVolumes();
       fxTuning.reduceFlashing = s.reduceFlashing;
       fxTuning.gore = s.gore;
@@ -214,7 +217,12 @@ export async function installEngine(game: Game) {
     if (gpu.integrated) menu?.showNote('igpu', menuText.igpuNote);
   });
 
-  const engine = { audio, post, tod, menu, panel, setTimeOfDay: setHours, get clock() { return clock; } };
+  const engine = { audio, post, tod, menu, panel, setTimeOfDay: setHours, get clock() { return clock; }, get atmosphere() { return atmosphere; },
+    /** Music + ambience. main.ts calls this once the loading screen is gone, so its files never slow the boot. */
+    startAtmosphere() {
+      atmosphere ??= createAtmosphere(game, audio, () => menu?.mode ?? 'title');
+    },
+  };
   (window as unknown as { engine: typeof engine }).engine = engine;
   return engine;
 }

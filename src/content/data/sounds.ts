@@ -70,3 +70,32 @@ export const sounds: Record<string, SoundDef> = {
   ui_open: ui(['kenney/open_001.ogg'], 0.45),
   ui_close: ui(['kenney/close_001.ogg'], 0.45),
 };
+
+/**
+ * Music and ambience (engine/atmosphere.ts). Files are built by tools/audio/build_music.py (seamless loops, loudness
+ * matched); credits in docs/pipeline/asset-credits.md. Levels are 0..1 under the Music / Ambience buses (settings).
+ * Fades are seconds to (almost) reach the new level; nothing ever cuts.
+ */
+export const atmosphere = {
+  music: {
+    explore: 'music/explore_empty_city.ogg',
+    combat: 'music/combat_medium_alert.ogg',
+    exploreLevel: 0.8,
+    combatLevel: 0.75, // the fight loop is denser, so a bit under 1 sits level with explore
+    toCombatS: 2.5, // crossfade into the fight layer
+    toExploreS: 7, // and back out, slower
+    combatAt: 0.5, // danger level (0 calm .. 1 fight, set by gameplay) that starts the fight layer
+    dangerRadius: 25, // m: a zombie that has detected the player inside this = 1, one searching = 0.6
+    hurtDangerS: 6, // taking damage counts as a fight for this long
+    holdS: 8, // fight layer stays this long after danger drops, so it doesn't flicker
+    pausedDuck: 0.45,
+  },
+  amb: {
+    fadeS: 6,
+    wind: { file: 'amb/wind.ogg', level: 0.35, nightBoost: 0.4 },
+    birds: { file: 'amb/birds_day.ogg', level: 0.5 },
+    crickets: { file: 'amb/crickets_night.ogg', level: 0.55 },
+    crows: { files: ['amb/crows.ogg', 'amb/crow_caw.ogg'], level: 0.4, everyS: [25, 70] as [number, number] },
+    groan: { level: 0.3, everyS: [45, 110] as [number, number], lowpassHz: 700 }, // a far-off zombie_groan file
+  },
+};

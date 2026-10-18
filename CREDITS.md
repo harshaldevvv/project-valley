@@ -35,6 +35,13 @@ funding from NSF EIA-0196217.
 | Zombie groans | [Undead Moans](https://opengameart.org/content/undead-moans) | AntumDeluge |
 | Zombie groans | [Zombie moans](https://opengameart.org/content/zombie-moans) | darsycho |
 | Car engine, start, horn, doors | [Car Sound Effects Pack](https://opengameart.org/content/car-sound-effects-pack-low-quality) | ggbotnet |
+| Music while exploring | [EmptyCity: Background Music](https://opengameart.org/content/emptycity-background-music) | yd |
+| Music when zombies close in | [Medium Alert](https://opengameart.org/content/medium-alert) | Sudocolon |
+| Wind | [wind whoosh loop](https://opengameart.org/content/wind-whoosh-loop) | SketchMan3 |
+| Birds by day | [AMB Morning Sounds (Perfect Loop)](https://opengameart.org/content/amb-morning-sounds-perfect-loop) | Kresiek The Furry |
+| Crickets at night | [Crickets Ambient Noise - loopable](https://opengameart.org/content/crickets-ambient-noise-loopable) | Wolfgang_ |
+| Crows | [Crows singing](https://opengameart.org/content/crows-singing) | IgnasD |
+| Crow call | [Crow caw](https://opengameart.org/content/crow-caw) | zeroisnotnull |
 
 CC0 needs no attribution. They are listed here as thanks.
 

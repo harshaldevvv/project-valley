@@ -165,7 +165,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       opts.applySettings(settings);
       saveSettings(settings);
     };
-    const slider = (key: 'fov' | 'sensitivity' | 'shake' | 'renderScale' | 'volume', label: string, min: number, max: number, step: number, fmt: (v: number) => string) => {
+    const slider = (key: 'fov' | 'sensitivity' | 'shake' | 'renderScale' | 'volume' | 'music' | 'ambience', label: string, min: number, max: number, step: number, fmt: (v: number) => string) => {
       const row = document.createElement('label');
       row.className = 'row';
       row.innerHTML = `<span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}"><output></output>`;
@@ -180,7 +180,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       };
       f.append(row);
     };
-    const check = (key: 'shadows' | 'fxaa' | 'reduceFlashing', label: string) => {
+    const check = (key: 'shadows' | 'fxaa' | 'reduceFlashing' | 'bgMuted', label: string) => {
       const row = document.createElement('label');
       row.className = 'row toggle';
       row.innerHTML = `<span>${label}</span><input type="checkbox"><i></i>`;
@@ -199,6 +199,9 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     slider('sensitivity', S.sensitivity, 0.25, 3, 0.05, (v) => `${v.toFixed(2)}×`);
     slider('shake', S.shake, 0, 1, 0.05, pct);
     slider('volume', S.volume, 0, 1, 0.05, pct);
+    slider('music', S.music, 0, 1, 0.05, pct);
+    slider('ambience', S.ambience, 0, 1, 0.05, pct);
+    check('bgMuted', S.bgMuted);
     slider('renderScale', S.renderScale, 0.5, 1, 0.05, pct);
     check('shadows', S.shadows);
     check('fxaa', S.fxaa);
