@@ -86,7 +86,18 @@ docs/         game plan, design principles, art bible, research, QA reports
 
 The long-form design docs are `GAME_PLAN.md` and `docs/design/`.
 
-## Credits and licence
+## Privacy
 
-Code and original art: MIT, see [LICENSE](LICENSE). Animation and audio come from CC BY 4.0 and CC0
-sources, credited in [CREDITS.md](CREDITS.md).
+No accounts, no telemetry, no ads. Saves and settings stay in your browser. Details in [PRIVACY.md](PRIVACY.md).
+
+## License and disclaimer
+
+Project Valley is free, open source software. Code and original art are under the [MIT License](LICENSE).
+Animation and audio come from CC BY 4.0 and CC0 sources, and the code libraries are listed with their licences, in
+[CREDITS.md](CREDITS.md). Contributions welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues
+privately as described in [SECURITY.md](SECURITY.md).
+
+The game is provided as is, without warranty of any kind. It is an independent project, not affiliated with any
+other game or studio.
+
+Made by [harshal.dev](https://harshal.dev). [Play it here](https://harshal.dev/project-valley/).

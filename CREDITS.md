@@ -43,3 +43,13 @@ CC0 needs no attribution. They are listed here as thanks.
 - [three.js](https://threejs.org/) (MIT)
 - [Rapier](https://rapier.rs/) physics (Apache 2.0)
 - [Vite](https://vite.dev/), [Vitest](https://vitest.dev/), [glTF Transform](https://gltf-transform.dev/), [meshoptimizer](https://meshoptimizer.org/) (MIT)
+
+## Code libraries
+
+| Library | Used for | Licence |
+| --- | --- | --- |
+| [three.js](https://threejs.org) | Rendering (WebGPU) | MIT |
+| [Rapier](https://rapier.rs) (`@dimforge/rapier3d-compat`) | Physics | Apache-2.0 |
+
+Build tools (Vite, TypeScript, glTF Transform, meshoptimizer) are used only to build the game and are not shipped
+except for the meshopt decoder that ships with three.js.
