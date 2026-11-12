@@ -17,7 +17,7 @@ await page.mouse.click(640,360); await page.waitForTimeout(500);
 const gp = (f,a)=>page.evaluate(f,a);
 await gp(()=>{window.__gp.ctx.player.godMode=true;});
 await shot('01_spawn');
-const spots = [['02_range',0,-10.5,0],['03_build',-36,42,0.6],['04_animstand',0,24,Math.PI],['05_track',40,-6,0],['06_pen',-40,-30,1]];
+const spots = [['02_range',0,-10.5,0],['03_build',-36,42,0.6],['04_animstand',0,24,Math.PI],['05_track',40,-6,0],['06_pen',-40,-30,1],['15_camp',-17,2,Math.PI],['16_junk',22,2,Math.PI],['17_deadtree',-58,-44,0],['18_camp_close',-18,6,Math.PI*0.85]];
 for (const [n,x,z,yaw] of spots){ await gp(([x,z,yaw])=>{window.__gp.teleport(x,z,yaw);window.__gp.setLook(yaw,-0.05);},[x,z,yaw]); await page.waitForTimeout(1500); await shot(n); }
 await gp(()=>{window.__gp.data.horde.passive=false;window.__gp.teleport(-40,-30,1);window.__gp.spawn(8);}); await page.waitForTimeout(3000); await shot('07_zombies');
 for (let i=0;i<10;i++){ await gp(()=>{window.__gp.faceZombie&&window.__gp.faceZombie(1.4);window.__gp.mouse(0,true);}); await page.waitForTimeout(120); await gp(()=>window.__gp.mouse(0,false)); if(i==3) await shot('08_combat'); }

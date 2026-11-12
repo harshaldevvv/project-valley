@@ -54,3 +54,10 @@ CC0 needs no attribution. They are listed here as thanks.
 
 Build tools (Vite, TypeScript, glTF Transform, meshoptimizer) are used only to build the game and are not shipped
 except for the meshopt decoder that ships with three.js.
+
+## AI-generated assets (made locally, 2026-11-13)
+
+| Asset | Made with | Licence of the model |
+|---|---|---|
+| Detail textures `public/assets/textures/{grass,dirt,concrete,grunge}.png` | z-image-turbo (ComfyUI) | Apache-2.0 |
+| 8 props in `public/assets/models/gen/` (sedan wreck, tent, sandbags, barrels, dead tree, generator, pallets, dumpster): concept picture from z-image-turbo, mesh and texture from Hunyuan3D-2.1, cleaned in Blender (`tools/audit/fit_glb.py`) | z-image-turbo, Hunyuan3D-2.1 | Apache-2.0; Tencent Hunyuan community licence (not valid in the EU, UK and South Korea): owner decision needed, see `docs/progress/2026-11-13-overnight.md` |

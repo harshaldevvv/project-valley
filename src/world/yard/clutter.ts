@@ -1,6 +1,6 @@
 import { BufferAttribute, BufferGeometry, DoubleSide, IcosahedronGeometry, InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three';
 import { MeshStandardNodeMaterial } from 'three/webgpu';
-import { cameraPosition, clamp, float, mix, positionLocal, positionWorld, sin, smoothstep, time, uv, vec3, instanceIndex, fract } from 'three/tsl';
+import { cameraPosition, clamp, float, mix, positionLocal, positionWorld, sin, smoothstep, time, uv, vec3, instanceIndex, fract, transformNormalToView } from 'three/tsl';
 import type { Game } from '../../core/game';
 import { yard } from '../../content/data/yard';
 import { createRng } from '../../engine/rng';
@@ -69,16 +69,17 @@ export function buildClutter(game: Game) {
     .add(vec3(wind.mul(hgt.mul(hgt)).mul(0.07), 0, wind.mul(hgt.mul(hgt)).mul(0.04)));
   const patch = fract(sin(instanceIndex.toFloat().mul(12.9898)).mul(43758.5453));
   const dry = clamp(patch.mul(0.45).add(positionWorld.x.mul(0.013).sin().mul(0.25)), 0, 1);
-  const base = mix(vec3(0.24, 0.34, 0.1), vec3(0.4, 0.37, 0.15), dry);
-  const tip = mix(vec3(0.36, 0.5, 0.15), vec3(0.62, 0.55, 0.26), dry);
+  const base = mix(vec3(0.12, 0.2, 0.06), vec3(0.3, 0.29, 0.11), dry);
+  const tip = mix(vec3(0.24, 0.36, 0.1), vec3(0.5, 0.45, 0.2), dry);
   mat.colorNode = mix(base, tip, hgt);
+  mat.normalNode = transformNormalToView(vec3(0, 1, 0)); // same up-lit shading on both faces of a blade
   const tuft = new InstancedMesh(tuftGeometry(), mat, spots.length);
   tuft.name = 'grass_tufts';
   const m = new Matrix4(), q = new Quaternion(), up = new Vector3(0, 1, 0), sc = new Vector3(), p = new Vector3();
   spots.forEach(([x, z, r], i) => {
     q.setFromAxisAngle(up, r * 6.28);
     const s = 0.8 + r * 0.7;
-    sc.set(s, 0.32 + r * 0.38, s);
+    sc.set(s, 0.24 + r * 0.26, s);
     p.set(x, groundHeight(x, z) - 0.02, z);
     tuft.setMatrixAt(i, m.compose(p, q, sc));
   });
