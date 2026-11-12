@@ -56,6 +56,7 @@ export class Zombie {
   modeT = 0;
   token = false;
   hitstop = 0;
+  flash = 0; // seconds of white hit flash left
   flinch = 0;
   headSnap = 0;
   staggerHits = 0; // light melee: stagger on the 2nd hit within 1 s
@@ -282,6 +283,7 @@ export class Zombies {
         this.ctx.sfx('zombie_hurt', z.curr);
       }
     }
+    z.flash = 0.11; // every hit (bullet or melee) flashes the body white
     if (info.melee) z.hitstop = Math.max(z.hitstop, z.hp <= 0 ? info.melee.hitstop * 2.5 : info.melee.hitstop);
     // Being shot from afar: turn toward the shooter and go looking (anti-sniping cheese), never instant detection.
     if (z.sense.awareness !== 'detected' && !HD.passive) {
@@ -414,6 +416,7 @@ export class Zombies {
       const z = this.list[i];
       z.prev.copy(z.curr);
       z.prevYaw = z.yaw;
+      z.flash = Math.max(0, z.flash - dt);
       if (!z.alive) {
         z.hitstop = Math.max(0, z.hitstop - dt); // a killing blow's hitstop still has to run out
         if (z.fling.lengthSq() > 0) {
@@ -765,6 +768,7 @@ export class Zombies {
     const p = ch.root.position;
     a.crowd.set(a.i, p.x, p.y, p.z, yaw);
     a.crowd.setSpeed(a.i, a.frozen ? 0 : z.hitstop > 0 ? 0.05 : 1);
+    a.crowd.setFlash(a.i, Math.min(1, z.flash * 9));
     const flinch = z.flinch > 0 ? Math.sin(z.flinch * 40) * z.flinch * 0.6 : 0;
     a.crowd.setTilt(a.i, z.alive ? z.headSnap * 0.8 + (z.mode === 'stagger' ? 0.18 : 0) : 0, flinch);
     if (show && z.alive && li < 30) li = this.senseLines(z, li);

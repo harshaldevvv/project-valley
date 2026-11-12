@@ -55,6 +55,8 @@ export interface Crowd {
   set(i: number, x: number, y: number, z: number, yaw: number): void;
   play(i: number, clip: string, opts?: CrowdPlayOpts): void;
   setSpeed(i: number, s: number): void;
+  /** White hit flash 0..1 (emissive pulse, set by gameplay each frame). */
+  setFlash(i: number, f: number): void;
   /** Whole-body tilt about the feet (rad): pitch + = lean back (headshot snap, stagger), roll = sideways flinch. */
   setTilt(i: number, pitch: number, roll?: number): void;
   setVisible(i: number, v: boolean): void;
@@ -169,9 +171,9 @@ export async function createCrowd(
     animArr.push(an);
     geo.setAttribute('crowdXform', new InstancedBufferAttribute(xf, 4));
     geo.setAttribute('crowdAnim', new InstancedBufferAttribute(an, 4));
-    const tl = new Float32Array(max * 2);
+    const tl = new Float32Array(max * 3);
     tiltArr.push(tl);
-    geo.setAttribute('crowdTilt', new InstancedBufferAttribute(tl, 2));
+    geo.setAttribute('crowdTilt', new InstancedBufferAttribute(tl, 3)); // pitch, roll, hit flash
     geo.instanceCount = 0;
 
     // Root-space skinning: pre * Σ w·Bone * post * p, pre/post fold in the mesh node TRS (meshopt dequant) and bind matrix.
@@ -217,7 +219,8 @@ export async function createCrowd(
     const cy = cos(yaw);
     const sy = sin(yaw);
     // whole-body tilt about the feet: pitch around X (+ = lean back), then roll around Z, then yaw
-    const tilt = attribute('crowdTilt', 'vec2');
+    const tiltAttr = attribute('crowdTilt', 'vec3');
+    const tilt = tiltAttr.xy;
     const cp = cos(tilt.x);
     const sp = sin(tilt.x);
     const cr = cos(tilt.y);
@@ -244,6 +247,7 @@ export async function createCrowd(
       const bloodMask = smoothstep(0.5, 0.72, gB).mul(smoothstep(0.7, 1.15, bp.y)).mul(smoothstep(1.95, 1.5, bp.y));
       mat.colorNode = mix(withDirt, vec3(0.2, 0.025, 0.02), bloodMask.mul(0.8));
     }
+    mat.emissiveNode = vec3(1, 0.93, 0.85).mul(tiltAttr.z.mul(0.5));
     mat.positionNode = rot(local).add(xform.xyz); // also used by the shadow pass
     mat.crowdNormal = rot(full.mul(vec4(normalGeometry, 0)).xyz).normalize();
     const mesh = new Mesh(geo, mat);
@@ -261,6 +265,7 @@ export async function createCrowd(
     vis: new Uint8Array(max),
     pos: new Float32Array(max * 4), // x y z yaw
     tilt: new Float32Array(max * 2), // pitch roll
+    flash: new Float32Array(max), // 0..1 white hit flash
     clipA: new Int16Array(max).fill(-1),
     tA: new Float32Array(max),
     loopA: new Uint8Array(max),
@@ -333,8 +338,10 @@ export async function createCrowd(
         const fading = S.fade[i] > 0 && S.clipB[i] >= 0;
         if (fading) rowAt(S.clipB[i], S.tB[i], S.loopB[i] === 1, rb);
         const tl = tiltArr[l];
-        tl[(o >> 1)] = S.tilt[i * 2];
-        tl[(o >> 1) + 1] = S.tilt[i * 2 + 1];
+        const ti = (o >> 2) * 3;
+        tl[ti] = S.tilt[i * 2];
+        tl[ti + 1] = S.tilt[i * 2 + 1];
+        tl[ti + 2] = S.flash[i];
         const an = animArr[l];
         an[o] = ra.row;
         an[o + 1] = ra.frac;
@@ -369,6 +376,7 @@ export async function createCrowd(
       S.clipA[i] = S.clipB[i] = -1;
       S.tA[i] = S.tB[i] = S.fade[i] = 0;
       S.scale[i] = S.speed[i] = 1;
+      S.flash[i] = 0;
       live++;
       return i;
     },
@@ -406,6 +414,7 @@ export async function createCrowd(
       S.tilt[i * 2 + 1] = roll;
     },
     setSpeed: (i, s) => void (S.speed[i] = s),
+    setFlash: (i, f) => void (S.flash[i] = f),
     setVisible: (i, v) => void (S.vis[i] = v ? 1 : 0),
     clip: (i) => clips[S.clipA[i]]?.name ?? '',
     time: (i) => S.tA[i],
