@@ -30,8 +30,8 @@ export const sounds: Record<string, SoundDef> = {
   reload_mag_in: { files: k('impactPlate_light'), volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
   bolt_rack: { files: ['kenney/drawKnife1.ogg', 'kenney/drawKnife2.ogg', 'kenney/drawKnife3.ogg'], volume: 0.7, refDistance: 1, maxDistance: 20, jitter: 0.04, synth: 'click' },
   // hit feedback
-  hit_body: { files: k('impactPunch_medium'), volume: 0.7, refDistance: 2, maxDistance: 40, jitter: 0.06, synth: 'thud' },
-  hit_head: { files: k('impactMining'), volume: 0.8, refDistance: 2, maxDistance: 40, jitter: 0.05, synth: 'thud' },
+  hit_body: { files: [...k('impactPunch_medium'), 'gen/flesh_1.ogg', 'gen/flesh_2.ogg', 'gen/flesh_3.ogg', 'gen/flesh_4.ogg'], volume: 0.7, refDistance: 2, maxDistance: 40, jitter: 0.06, synth: 'thud' },
+  hit_head: { files: [...k('impactMining'), 'gen/head_pop.ogg', 'gen/flesh_2.ogg'], volume: 0.8, refDistance: 2, maxDistance: 40, jitter: 0.05, synth: 'thud' },
   hit_marker: ui(['kenney/tick_001.ogg'], 0.45),
   kill_confirm: { files: k('impactSoft_heavy'), volume: 0.8, refDistance: 1, maxDistance: 1, jitter: 0.03, synth: 'thud' },
   impact_wood: { files: k('impactWood_medium'), volume: 0.6, refDistance: 2, maxDistance: 40, jitter: 0.08, synth: 'thud' },
@@ -51,8 +51,8 @@ export const sounds: Record<string, SoundDef> = {
   zombie_hurt: { files: z(3, 5, 6, 11, 24), volume: 0.75, refDistance: 2, maxDistance: 60, jitter: 0.08, synth: 'hum' },
   zombie_death: { files: z(16, 17, 18, 21), volume: 0.85, refDistance: 2, maxDistance: 60, jitter: 0.05, synth: 'hum' },
   // melee
-  melee_swing: { files: [], volume: 0.5, refDistance: 1, maxDistance: 15, jitter: 0.1, synth: 'whoosh' },
-  melee_hit: { files: k('impactPunch_heavy'), volume: 0.85, refDistance: 2, maxDistance: 30, jitter: 0.06, synth: 'thud' },
+  melee_swing: { files: ['gen/swing_1.ogg', 'gen/swing_2.ogg', 'gen/swing_3.ogg'], volume: 0.5, refDistance: 1, maxDistance: 15, jitter: 0.1, synth: 'whoosh' },
+  melee_hit: { files: [...k('impactPunch_heavy'), 'gen/flesh_3.ogg', 'gen/flesh_1.ogg', 'gen/flesh_4.ogg'], volume: 0.85, refDistance: 2, maxDistance: 30, jitter: 0.06, synth: 'thud' },
   // vehicles
   car_engine_loop: { files: ['car/Car_Engine_Loop.ogg'], volume: 0.6, refDistance: 4, maxDistance: 120, loop: true, synth: 'hum' },
   car_start: { files: ['car/Car_Engine_Start_Up.ogg'], volume: 0.8, refDistance: 4, maxDistance: 120, synth: 'hum' },

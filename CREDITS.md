@@ -64,3 +64,4 @@ except for the meshopt decoder that ships with three.js.
 | Wall decals `public/assets/textures/decals/*.png` (spray paint, stencils, chalk tallies) | z-image-turbo | Apache-2.0 |
 | Ambient look: bloom, grade, clouds, grass, motes | original code | MIT |
 | Survivor and 4 zombie variants `chr_survivor_a.glb`, `zmb_ai_*.glb` (picture, mesh and texture; skinned to the project's own rig in Blender with `tools/audit/retarget_char.py`) | z-image-turbo, Hunyuan3D-2.1 | Apache-2.0; Tencent Hunyuan community licence (not valid in the EU, UK and South Korea) |
+| Sound effects `public/assets/audio/gen/*.ogg` (melee swings, flesh impacts, headshot crack, body fall) | stable-audio3-sfx | Stability AI Community licence (free under about $1M annual revenue): check before a commercial release |
