@@ -31,6 +31,17 @@ export async function paletteMaterial() {
   return shared;
 }
 
+let grungeTex: Promise<Texture | null> | null = null;
+/** The grime detail texture (shared with the world material); null if it fails to load. */
+export function grungeTexture() {
+  return (grungeTex ??= new TextureLoader().loadAsync(assetUrl('assets/textures/grunge.png')).then((t) => {
+    t.wrapS = t.wrapT = RepeatWrapping;
+    t.colorSpace = SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  }).catch(() => null));
+}
+
 let world: MeshStandardNodeMaterial | null = null;
 /**
  * The atlas plus world-space surface detail, for STATIC world geometry only (merged yard mesh, instanced statics):

@@ -11,10 +11,10 @@ import {
   type SkinnedMesh,
 } from 'three';
 import { Frustum, MeshStandardNodeMaterial } from 'three/webgpu';
-import { Fn, If, attribute, cos, float, int, ivec2, mat4, normalGeometry, normalLocal, positionGeometry, sin, textureLoad, uniform, vec3, vec4 } from 'three/tsl';
+import { Fn, If, attribute, clamp, cos, dot, float, mix, smoothstep, texture, uv, vec2, int, ivec2, mat4, normalGeometry, normalLocal, positionGeometry, sin, textureLoad, uniform, vec3, vec4 } from 'three/tsl';
 import type { Game } from '../core/game';
 import { entries, gltfLoader } from './assets';
-import { paletteMaterial } from './palette';
+import { grungeTexture, paletteMaterial } from './palette';
 
 /**
  * GPU-skinned crowds (principles §13: one draw per archetype per LOD, baked bone texture).
@@ -90,9 +90,10 @@ export async function createCrowd(
   const max = opts.max ?? 64;
   const [lod1, lod2] = opts.lodDistances ?? [15, 40];
   const clipSrc = opts.clipsFrom && opts.clipsFrom in entries ? opts.clipsFrom : null;
-  const [gltf, palette, clipGltf] = await Promise.all([
+  const [gltf, palette, grunge, clipGltf] = await Promise.all([
     gltfLoader.loadAsync(entries[modelId].url),
     paletteMaterial(),
+    grungeTexture(),
     clipSrc ? gltfLoader.loadAsync(entries[clipSrc].url) : null,
   ]);
   // Clips bind by bone name, so a mesh+skeleton-only variant can borrow another model's clips (same joint names).
@@ -229,6 +230,20 @@ export async function createCrowd(
 
     const mat = new CrowdMaterial({ map: palette.map, roughness: 0.85, metalness: 0 });
     mat.name = `crowd_${modelId}_LOD${li}`;
+    if (grunge) {
+      // Grime and blood from the bind pose (so it never swims): dirt toward the feet, noisy wear, dried blood on the torso and head.
+      const bp = positionGeometry;
+      const uvA = vec2(bp.x.add(bp.z.mul(0.7)), bp.y).mul(1.25);
+      const uvB = vec2(bp.z.sub(bp.x.mul(0.6)), bp.y).mul(0.55).add(vec2(0.31, 0.17));
+      const gA = dot(texture(grunge, uvA).rgb, vec3(0.2126, 0.7152, 0.0722));
+      const gB = dot(texture(grunge, uvB).rgb, vec3(0.2126, 0.7152, 0.0722));
+      const wear = clamp(gA.sub(0.42).mul(1.6).add(1), 0.55, 1.45);
+      const base = texture(palette.map!, uv()).rgb.mul(wear);
+      const dirt = smoothstep(0.75, 0.0, bp.y).mul(0.5);
+      const withDirt = mix(base, base.mul(vec3(0.55, 0.45, 0.32)), dirt);
+      const bloodMask = smoothstep(0.5, 0.72, gB).mul(smoothstep(0.7, 1.15, bp.y)).mul(smoothstep(1.95, 1.5, bp.y));
+      mat.colorNode = mix(withDirt, vec3(0.2, 0.025, 0.02), bloodMask.mul(0.8));
+    }
     mat.positionNode = rot(local).add(xform.xyz); // also used by the shadow pass
     mat.crowdNormal = rot(full.mul(vec4(normalGeometry, 0)).xyz).normalize();
     const mesh = new Mesh(geo, mat);
