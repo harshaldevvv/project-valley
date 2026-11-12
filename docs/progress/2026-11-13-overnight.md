@@ -13,7 +13,9 @@ Screenshots: `docs/audit/screenshots/before/` and `.../after/` (contact sheets `
 7. **Zombies** (`crowd.ts`): bind-pose grime, dirt toward the feet and dried blood from the AI grime texture. World-space detail is on static geometry only (a first version made zombies render white and swim; caught in review and fixed).
 8. **Zombie hit flash:** a white emissive pulse on every bullet or melee hit (new per-instance flash channel in the crowd renderer).
 9. **Held gear and survivor:** weapons get object-space scratches and glossier dark metal; the survivor gets bind-pose cloth wear, boot mud and dust.
-10. **HUD** (`src/ui/hud/hud.ts`): same type and accent as the menus, glass backing for bars and ammo, bevelled bars.
+10. **Ambient motes** (`motes.ts`): dust and pollen by day, fireflies at night, one instanced draw computed in the vertex shader. Night ambient lifted slightly.
+11. **Wall decals** (`wallDecals.ts`): eleven AI-generated spray-paint, stencil and chalk pieces on the perimeter wall (white becomes transparent in the shader).
+12. **HUD** (`src/ui/hud/hud.ts`): same type and accent as the menus, glass backing for bars and ammo, bevelled bars.
 
 ## Tested
 - `npm test`: 49 pass. `npm run build`: passes.
@@ -35,7 +37,7 @@ This monitor is 60 Hz and vsync-capped, so p50 is 16.67 ms before and after in a
 All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-before.json`, `perf-after.json`.
 
 ## What's left, ranked
-1. **Characters and zombies** still look plain (about 1.9k-triangle flat-colour bodies). Animation is already good. Needs a rigging path: install UniRig (multi-hour Windows CUDA build) or retarget AI meshes with Blender's auto-weights onto the existing rig, then texture. Highest impact left.
+1. **Characters and zombies** still look plain (finding: the shipped GLBs are meshopt-compressed, Blender 4.5 cannot import them; rebuild from `assets/source/zmb/*/build.py` or decompress with `gltf-transform` first. A try at AI body meshes weight-painted to the existing rig with Blender auto-weights is the next experiment) (about 1.9k-triangle flat-colour bodies). Animation is already good. Needs a rigging path: install UniRig (multi-hour Windows CUDA build) or retarget AI meshes with Blender's auto-weights onto the existing rig, then texture. Highest impact left.
 2. **Screen-space AO and sun shafts** (`GTAONode`, `GodraysNode` exist in three). Not tried; measure on a high-refresh display first.
 3. **Zombie hit flash, dust puffs, footstep particles** and more blood variety.
 4. **Retexture the palette-only kit** (house, range, signs) with the same detail pipeline plus wear decals; AI-generated posters and signs.

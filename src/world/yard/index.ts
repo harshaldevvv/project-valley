@@ -4,6 +4,7 @@ import { buildClutter } from './clutter';
 import { buildGenProps } from './genProps';
 import { buildGround } from './ground';
 import { buildMotes } from './motes';
+import { buildWallDecals } from './wallDecals';
 import { placeYardHouse } from './house';
 import { Kit } from './kit';
 import { setupLighting } from './lighting';
@@ -38,6 +39,7 @@ export async function buildYard(game: Game): Promise<void> {
   placeYardHouse(game);
   buildClutter(game);
   buildMotes(game);
+  await buildWallDecals(game);
   buildLampPools(game);
 }
 
