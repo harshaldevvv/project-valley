@@ -49,8 +49,10 @@ export function createAtmosphere(game: Game, audio: EngineAudio, menuMode: () =>
       src.start();
     });
 
-  const explore = layer(A.music.explore, buses.music);
-  const combat = layer(A.music.combat, buses.music);
+  // `?music=ai` plays the locally generated (ACE-Step) scores instead of the stock ones, for A/B listening
+  const ai = typeof location !== 'undefined' && new URLSearchParams(location.search).get('music') === 'ai';
+  const explore = layer(ai ? 'gen/music_explore.ogg' : A.music.explore, buses.music);
+  const combat = layer(ai ? 'gen/music_combat.ogg' : A.music.combat, buses.music);
   const wind = layer(A.amb.wind.file, buses.amb);
   const birds = layer(A.amb.birds.file, buses.amb);
   const crickets = layer(A.amb.crickets.file, buses.amb);
