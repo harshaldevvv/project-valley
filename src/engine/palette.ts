@@ -1,5 +1,5 @@
 import { MeshStandardNodeMaterial } from 'three/webgpu';
-import { texture, uv, positionWorld, normalWorld, abs, mix, float, vec3, vec2, dot, smoothstep, clamp } from 'three/tsl';
+import { texture, uv, positionGeometry, positionWorld, normalWorld, abs, mix, float, vec3, vec2, dot, smoothstep, clamp } from 'three/tsl';
 import { BufferAttribute, BufferGeometry, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from 'three';
 import palette from '../content/data/palette.json';
 import { assetUrl } from './assetUrl';
@@ -40,6 +40,27 @@ export function grungeTexture() {
     t.anisotropy = 4;
     return t;
   }).catch(() => null));
+}
+
+let chars: MeshStandardNodeMaterial | null = null;
+/** Atlas + bind-pose grime for animated characters (position taken from the rest pose, so it never swims). */
+export async function paletteCharacterMaterial() {
+  if (chars) return chars;
+  const [plain, atlasTex, grunge] = [await paletteMaterial(), await paletteAtlas(), await grungeTexture()];
+  if (!grunge) return (chars = plain);
+  const bp = positionGeometry;
+  const lumv = (n: any) => dot(n, vec3(0.2126, 0.7152, 0.0722));
+  const gA = lumv(texture(grunge, vec2(bp.x.add(bp.z.mul(0.7)), bp.y).mul(1.4)).rgb);
+  const gB = lumv(texture(grunge, vec2(bp.z.sub(bp.x.mul(0.6)), bp.y).mul(0.6).add(vec2(0.3, 0.2))).rgb);
+  const wear = clamp(gA.sub(0.42).mul(1.5).add(1), 0.6, 1.4);
+  const base = texture(atlasTex, uv()).rgb.mul(wear);
+  const dirt = smoothstep(0.7, 0.0, bp.y).mul(0.4); // mud on boots and trouser hems
+  const dust = smoothstep(0.55, 0.8, gB).mul(0.18); // pale dusty patches on the cloth
+  const m = new MeshStandardNodeMaterial({ roughness: 0.85, metalness: 0 });
+  m.colorNode = mix(mix(base, base.mul(vec3(0.55, 0.46, 0.34)), dirt), vec3(0.62, 0.58, 0.5), dust);
+  m.map = atlasTex;
+  m.name = 'palette_character';
+  return (chars = m);
 }
 
 let world: MeshStandardNodeMaterial | null = null;
