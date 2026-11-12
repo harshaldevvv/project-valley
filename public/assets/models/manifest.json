@@ -446,5 +446,45 @@
       "item_can_LOD0": 232
     },
     "bytes": 7404
+  },
+  "zmb_ai_civilian_a": {
+    "url": "/assets/models/zmb/zmb_ai_civilian_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_civilian_a_LOD0": 3500,
+      "zmb_ai_civilian_a_LOD1": 1750,
+      "zmb_ai_civilian_a_LOD2": 699
+    },
+    "bytes": 1038664
+  },
+  "zmb_ai_hazmat_a": {
+    "url": "/assets/models/zmb/zmb_ai_hazmat_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_hazmat_a_LOD0": 3500,
+      "zmb_ai_hazmat_a_LOD1": 1750,
+      "zmb_ai_hazmat_a_LOD2": 700
+    },
+    "bytes": 1039032
+  },
+  "zmb_ai_soldier_a": {
+    "url": "/assets/models/zmb/zmb_ai_soldier_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_soldier_a_LOD0": 3500,
+      "zmb_ai_soldier_a_LOD1": 1750,
+      "zmb_ai_soldier_a_LOD2": 700
+    },
+    "bytes": 1064136
+  },
+  "zmb_ai_nurse_f_a": {
+    "url": "/assets/models/zmb/zmb_ai_nurse_f_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_nurse_f_a_LOD0": 3500,
+      "zmb_ai_nurse_f_a_LOD1": 1750,
+      "zmb_ai_nurse_f_a_LOD2": 700
+    },
+    "bytes": 1055296
   }
 }

@@ -11,6 +11,7 @@ import {
   type SkinnedMesh,
 } from 'three';
 import { Frustum, MeshStandardNodeMaterial } from 'three/webgpu';
+import type { Texture } from 'three';
 import { Fn, If, attribute, clamp, cos, dot, float, mix, smoothstep, texture, uv, vec2, int, ivec2, mat4, normalGeometry, normalLocal, positionGeometry, sin, textureLoad, uniform, vec3, vec4 } from 'three/tsl';
 import type { Game } from '../core/game';
 import { entries, gltfLoader } from './assets';
@@ -231,7 +232,10 @@ export async function createCrowd(
       return vec3(v.x.mul(cy).add(v.z.mul(sy)), v.y, v.z.mul(cy).sub(v.x.mul(sy)));
     };
 
-    const mat = new CrowdMaterial({ map: palette.map, roughness: 0.85, metalness: 0 });
+    // AI-made variants carry their own baked texture; palette models have none and use the shared atlas
+    const ownMap = (src.material as { map?: Texture | null }).map ?? null;
+    const atlas = ownMap ?? palette.map!;
+    const mat = new CrowdMaterial({ map: atlas, roughness: 0.85, metalness: 0 });
     mat.name = `crowd_${modelId}_LOD${li}`;
     if (grunge) {
       // Grime and blood from the bind pose (so it never swims): dirt toward the feet, noisy wear, dried blood on the torso and head.
@@ -241,7 +245,7 @@ export async function createCrowd(
       const gA = dot(texture(grunge, uvA).rgb, vec3(0.2126, 0.7152, 0.0722));
       const gB = dot(texture(grunge, uvB).rgb, vec3(0.2126, 0.7152, 0.0722));
       const wear = clamp(gA.sub(0.42).mul(1.6).add(1), 0.55, 1.45);
-      const base = texture(palette.map!, uv()).rgb.mul(wear);
+      const base = texture(atlas, uv()).rgb.mul(ownMap ? wear.mul(0.5).add(0.5) : wear);
       const dirt = smoothstep(0.75, 0.0, bp.y).mul(0.5);
       const withDirt = mix(base, base.mul(vec3(0.55, 0.45, 0.32)), dirt);
       const bloodMask = smoothstep(0.5, 0.72, gB).mul(smoothstep(0.7, 1.15, bp.y)).mul(smoothstep(1.95, 1.5, bp.y));

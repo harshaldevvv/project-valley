@@ -8,7 +8,7 @@ await page.goto('http://localhost:5188/?play');
 await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
 await page.waitForTimeout(2000); await page.mouse.click(640, 360);
 const gp = (f, a) => page.evaluate(f, a);
-await gp(() => { window.__gp.ctx.player.godMode = true; window.__gp.data.horde.passive = true; window.__gp.spawn(6); window.__gp.teleport(40, -2, 0); window.__gp.setLook(0, -0.05); });
+await gp(() => { window.__gp.ctx.player.godMode = true; window.__gp.data.horde.passive = true; window.__gp.spawn(14); window.__gp.teleport(40, -3.2, 0); window.__gp.setLook(0, -0.05); });
 await page.waitForTimeout(2500); await page.screenshot({ path: `${OUT}/20_pen_zombies.png` });
 for (let i = 0; i < 3; i++) {
   await gp((i) => { const g = window.__gp.ctx; const z = g.zombies.list[i]; if (!z) return; const p = z.curr; const cm = g.game.camera;
