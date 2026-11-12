@@ -1,5 +1,6 @@
 import { RenderPipeline } from 'three/webgpu';
 import { pass, renderOutput, uniform, uv, vec3, vec4, float, mix, smoothstep, length, dot, time, fract, sin, clamp } from 'three/tsl';
+import { ao } from 'three/examples/jsm/tsl/display/GTAONode.js';
 import { bloom } from 'three/examples/jsm/tsl/display/BloomNode.js';
 import { fxaa } from 'three/examples/jsm/tsl/display/FXAANode.js';
 import type { Game } from '../core/game';
@@ -23,9 +24,16 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
   const { renderer, scene, camera, sun, perf } = game;
   const scenePass = pass(scene, camera);
   /** Live-tunable grade, fed by gameplay (damage pulse) through post.look. */
-  const look = { vignette: uniform(0.42), saturation: uniform(1.14), contrast: uniform(1.1), grain: uniform(0.03), hurt: uniform(0), bloomMix: uniform(1) };
+  const look = { vignette: uniform(0.42), saturation: uniform(1.14), contrast: uniform(1.1), grain: uniform(0.03), hurt: uniform(0), bloomMix: uniform(1), aoMix: uniform(1) };
   const bloomNode = bloom(scenePass, 0.28, 0.55, 0.92);
-  const hdr = scenePass.add(bloomNode.mul(look.bloomMix));
+  // Ambient occlusion (GTAO from depth, half resolution): grounds props, walls and feet. Multiplies the HDR scene.
+  const aoNode = ao(scenePass.getTextureNode('depth'), null as never, camera);
+  aoNode.resolutionScale = 0.5;
+  aoNode.radius.value = 1.1;
+  aoNode.thickness.value = 1.5;
+  aoNode.samples.value = 8;
+  const occluded = scenePass.mul(mix(float(1), aoNode.getTextureNode().r, look.aoMix));
+  const hdr = occluded.add(bloomNode.mul(look.bloomMix));
   const toned = renderOutput(scenePass);
   const tonedHdr = renderOutput(hdr);
   const graded = (() => {
