@@ -201,3 +201,25 @@
   background: rgba(14, 17, 19, 0.92); border: 1px solid var(--edge); border-radius: 4px; padding: 6px 14px; font-size: 13px;
   transition: opacity 200ms;
 }
+
+/* Visual pass (2026-11-13): match the HUD and menus (condensed display type, amber edge), soft entrance. */
+.inv-root {
+  --display: "Bahnschrift", "DIN Alternate", "Barlow Condensed", "Roboto Condensed", "Arial Narrow", system-ui, sans-serif;
+  animation: inv-fade 0.18s ease-out;
+}
+.inv-col {
+  background: linear-gradient(180deg, rgba(24, 28, 30, 0.9), rgba(12, 15, 16, 0.9));
+  border-top: 2px solid var(--accent);
+  border-radius: 3px;
+  animation: inv-rise 0.26s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.inv-wrap .inv-col:nth-child(2) { animation-delay: 0.04s; }
+.inv-wrap .inv-col:nth-child(3) { animation-delay: 0.08s; }
+.inv-col h2 { font-family: var(--display); font-size: 13px; letter-spacing: 0.26em; }
+.inv-col h3 { font-family: var(--display); letter-spacing: 0.08em; text-transform: uppercase; font-size: 12px; color: #aab3b0; }
+.inv-item { transition: filter 0.12s ease, transform 0.12s ease; }
+.inv-item:hover { filter: brightness(1.18) saturate(1.1); }
+.inv-slot:hover, .inv-hot:hover { border-color: rgba(217, 178, 90, 0.55); }
+@keyframes inv-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes inv-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .inv-root, .inv-col { animation: none; } }
