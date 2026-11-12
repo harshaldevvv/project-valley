@@ -1,6 +1,7 @@
 import { InstancedMesh, Matrix4, Quaternion, Sphere, Vector3, type Mesh } from 'three';
 import type { Game } from '../core/game';
 import { loadAsset } from './assets';
+import { paletteWorldMaterial } from './palette';
 import { Group, groups } from './physics';
 
 /**
@@ -75,9 +76,10 @@ export async function placeStatic(
   sphere.setFromPoints(pts);
   sphere.radius += radius * Math.max(1, ...placements.map((p) => p.scale ?? 1));
 
+  const worldMat = await paletteWorldMaterial();
   const meshes = levels.map((lv, li) => {
     const src = lv.object as Mesh;
-    const inst = new InstancedMesh(src.geometry, src.material, n);
+    const inst = new InstancedMesh(src.geometry, worldMat, n);
     inst.name = `${id}_LOD${li}_x${n}`;
     inst.castShadow = li === 0 && (opts.castShadow ?? true);
     inst.receiveShadow = true;

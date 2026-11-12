@@ -12,7 +12,7 @@ import type { Game } from '../../core/game';
 import { loadAsset } from '../../engine/assets';
 import { placeStatic } from '../../engine/instancing';
 import { loadModel } from '../../engine/models';
-import { paletteMaterial, swatchUV } from '../../engine/palette';
+import { paletteWorldMaterial, swatchUV } from '../../engine/palette';
 import { Group, groups } from '../../engine/physics';
 import { addGroundRegion, assetSurface, surfaceOfSwatch, tagCollider, type Surface } from '../surfaces';
 
@@ -153,7 +153,7 @@ export class Kit {
 
   /** Builds the merged palette mesh and one InstancedMesh per repeated asset. */
   async finish() {
-    const mat = await paletteMaterial();
+    const mat = await paletteWorldMaterial();
     const merged = new Mesh(mergeGeometries(this.geos), mat);
     merged.name = 'yard_static';
     merged.castShadow = merged.receiveShadow = true;

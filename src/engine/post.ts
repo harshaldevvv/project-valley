@@ -67,7 +67,7 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
     pipeline.needsUpdate = true;
     direct = !settings.fxaa && !settings.look && settings.renderScale === 1;
     sun.castShadow = settings.shadows;
-    perf.extra.post = `${settings.fxaa ? 'FXAA' : 'no AA'} x${settings.renderScale.toFixed(2)}${settings.shadows ? '' : ' no-shadows'}`;
+    perf.extra.post = `${settings.fxaa ? 'FXAA' : 'no AA'} x${settings.renderScale.toFixed(2)}${settings.shadows ? '' : ' no-shadows'}${settings.look ? '' : ' no-look'}`;
   };
   apply();
 

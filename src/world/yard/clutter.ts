@@ -6,6 +6,7 @@ import { yard } from '../../content/data/yard';
 import { createRng } from '../../engine/rng';
 import { groundSurfaceAt } from '../surfaces';
 import { fbm, groundHeight } from './ground';
+import { underGenProp } from './genProps';
 
 /**
  * Ground clutter (no colliders, no shadows): wind-swayed grass tufts on every grass patch of the Yard, plus
@@ -44,7 +45,7 @@ export function buildClutter(game: Game) {
   const rng = createRng(2026);
   const half = yard.half;
   const st = Object.values(yard.stations).map((s) => [s.x - s.w / 2 - 1, s.x + s.w / 2 + 1, s.z - s.d / 2 - 1, s.z + s.d / 2 + 1]);
-  const free = (x: number, z: number) => !st.some(([x0, x1, z0, z1]) => x > x0 && x < x1 && z > z0 && z < z1) && Math.hypot(x - yard.spawn.x, z - yard.spawn.z) > 4.5;
+  const free = (x: number, z: number) => !st.some(([x0, x1, z0, z1]) => x > x0 && x < x1 && z > z0 && z < z1) && Math.hypot(x - yard.spawn.x, z - yard.spawn.z) > 4.5 && !underGenProp(x, z);
 
   // --- grass ---
   const spots: [number, number, number][] = [];
@@ -73,19 +74,29 @@ export function buildClutter(game: Game) {
   const tip = mix(vec3(0.24, 0.36, 0.1), vec3(0.5, 0.45, 0.2), dry);
   mat.colorNode = mix(base, tip, hgt);
   mat.normalNode = transformNormalToView(vec3(0, 1, 0)); // same up-lit shading on both faces of a blade
-  const tuft = new InstancedMesh(tuftGeometry(), mat, spots.length);
-  tuft.name = 'grass_tufts';
+  // 50 m chunks so the frustum culls the grass (the vertex shader's distance shrink saves fill, not vertex work)
+  const CH = 50;
+  const cells = new Map<string, [number, number, number][]>();
+  for (const sp of spots) {
+    const k = `${Math.floor(sp[0] / CH)},${Math.floor(sp[1] / CH)}`;
+    (cells.get(k) ?? cells.set(k, []).get(k)!).push(sp);
+  }
+  const geo = tuftGeometry();
   const m = new Matrix4(), q = new Quaternion(), up = new Vector3(0, 1, 0), sc = new Vector3(), p = new Vector3();
-  spots.forEach(([x, z, r], i) => {
-    q.setFromAxisAngle(up, r * 6.28);
-    const s = 0.8 + r * 0.7;
-    sc.set(s, 0.24 + r * 0.26, s);
-    p.set(x, groundHeight(x, z) - 0.02, z);
-    tuft.setMatrixAt(i, m.compose(p, q, sc));
-  });
-  tuft.castShadow = tuft.receiveShadow = false;
-  tuft.frustumCulled = false;
-  game.scene.add(tuft);
+  for (const [k, list] of cells) {
+    const tuft = new InstancedMesh(geo, mat, list.length);
+    tuft.name = `grass_${k}`;
+    list.forEach(([x, z, r], i) => {
+      q.setFromAxisAngle(up, r * 6.28);
+      const s = 0.8 + r * 0.7;
+      sc.set(s, 0.24 + r * 0.26, s);
+      p.set(x, groundHeight(x, z) - 0.02, z);
+      tuft.setMatrixAt(i, m.compose(p, q, sc));
+    });
+    tuft.castShadow = tuft.receiveShadow = false;
+    tuft.computeBoundingSphere();
+    game.scene.add(tuft);
+  }
 
   // --- rocks ---
   const rockSpots: [number, number, number][] = [];

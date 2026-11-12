@@ -11,18 +11,39 @@ import { assetUrl } from './assetUrl';
  */
 let shared: MeshStandardNodeMaterial | null = null;
 
-export async function paletteMaterial() {
-  if (shared) return shared;
+let atlas: Texture | null = null;
+async function paletteAtlas() {
+  if (atlas) return atlas;
   const tex: Texture = await new TextureLoader().loadAsync(assetUrl('assets/textures/palette.png'));
   tex.flipY = false; // glTF UV convention
   tex.colorSpace = SRGBColorSpace;
   tex.generateMipmaps = false;
   tex.minFilter = LinearFilter;
   tex.magFilter = LinearFilter;
-  shared = new MeshStandardNodeMaterial({ roughness: 0.85, metalness: 0 });
-  // World-space detail (AI-generated, see CREDITS.md): luminance-only multipliers so the palette keeps its hues.
-  // Top faces get grass + gravel, side faces get grime + concrete, at two scales to hide tiling; walls darken at the
-  // foot (fake contact AO); a very low-frequency patch tint stops big surfaces looking printed.
+  return (atlas = tex);
+}
+
+/** Plain atlas material: for everything that moves (characters, zombies, weapons, vehicles) and loose pieces. */
+export async function paletteMaterial() {
+  if (shared) return shared;
+  shared = new MeshStandardNodeMaterial({ map: await paletteAtlas(), roughness: 0.85, metalness: 0 });
+  shared.name = 'palette';
+  return shared;
+}
+
+let world: MeshStandardNodeMaterial | null = null;
+/**
+ * The atlas plus world-space surface detail, for STATIC world geometry only (merged yard mesh, instanced statics):
+ * the detail is projected from world position, so it would swim on anything that moves.
+ * AI-generated textures (see CREDITS.md) as luminance-only multipliers so the palette keeps its hues. Top faces get
+ * grass + gravel, side faces grime + concrete, at two scales to hide tiling; walls darken at the foot (fake contact
+ * AO); a very low-frequency patch tint stops big surfaces looking printed. If a texture fails to load, the plain
+ * material is returned instead.
+ */
+export async function paletteWorldMaterial() {
+  if (world) return world;
+  const plain = await paletteMaterial();
+  const tex = await paletteAtlas();
   const load = async (n: string) => {
     const t = await new TextureLoader().loadAsync(assetUrl(`assets/textures/${n}.png`));
     t.wrapS = t.wrapT = RepeatWrapping;
@@ -33,7 +54,15 @@ export async function paletteMaterial() {
     t.generateMipmaps = true;
     return t;
   };
-  const [grass, dirt, concrete, grunge] = await Promise.all([load('grass'), load('dirt'), load('concrete'), load('grunge')]);
+  let tx: Texture[];
+  try {
+    tx = await Promise.all(['grass', 'dirt', 'concrete', 'grunge'].map(load));
+  } catch (e) {
+    console.warn('detail textures failed to load; using the plain palette', e);
+    return (world = plain);
+  }
+  const [grass, dirt, concrete, grunge] = tx;
+  const m = new MeshStandardNodeMaterial({ roughness: 0.85, metalness: 0 });
   const lum = (n: any) => dot(n, vec3(0.2126, 0.7152, 0.0722));
   const wp = positionWorld;
   const top = smoothstep(0.55, 0.85, normalWorld.y);
@@ -49,9 +78,10 @@ export async function paletteMaterial() {
   const foot = float(1).sub(smoothstep(0.9, 0.0, wp.y).mul(float(1).sub(top)).mul(0.35));
   const patch = lum(texture(grunge, xz.mul(0.011)).rgb).mul(0.5).add(0.75);
   const base = texture(tex, uv());
-  shared.colorNode = base.rgb.mul(detail).mul(foot).mul(mix(float(1), patch, top.mul(0.6)));
-  shared.name = 'palette';
-  return shared;
+  m.colorNode = base.rgb.mul(detail).mul(foot).mul(mix(float(1), patch, top.mul(0.6)));
+  m.map = tex;
+  m.name = 'palette_world';
+  return (world = m);
 }
 
 const index = new Map(palette.swatches.map((s, i) => [s.name, i]));
