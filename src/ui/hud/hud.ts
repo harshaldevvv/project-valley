@@ -50,6 +50,21 @@ const CSS = `
 .hud .rl{position:absolute;left:50%;top:calc(50% + 22px);transform:translateX(-50%);width:70px;height:3px;background:#0008;opacity:0}
 .hud .rl b{display:block;height:100%;background:#fff;transform-origin:left}
 .hud .range{position:absolute;right:24px;top:24px;background:#000c;color:#f4f6f2;padding:8px 12px;border-radius:6px;font:600 13px/1.5 ui-monospace,Consolas,monospace;display:none;white-space:pre}
+.hud{--display:"Bahnschrift","DIN Alternate","Barlow Condensed","Roboto Condensed","Arial Narrow",system-ui,sans-serif;--accent:#d9a441;font-family:var(--display)}
+.hud .bars{left:22px;bottom:22px;width:250px;padding:12px 14px 10px;background:linear-gradient(90deg,#0a0d0cd9,#0a0d0c80);border-left:2px solid var(--accent);border-radius:2px;box-shadow:0 8px 28px #0006}
+.hud .lbl{font:600 11px/1 var(--display);letter-spacing:.22em;text-transform:uppercase;color:#cdd3c8;opacity:.85}
+.hud .bar{height:8px;border-radius:1px;background:#050706;box-shadow:inset 0 0 0 1px #ffffff1f;margin-top:5px}
+.hud .bar b{border-radius:0;background-image:linear-gradient(180deg,#ffffff40,#ffffff00 55%,#00000040)}
+.hud .hp b{background-color:#c9382f;box-shadow:0 0 10px #c9382f66}
+.hud .st b{background-color:#d9c98a}
+.hud .ammo{right:26px;bottom:22px;padding:10px 16px;background:linear-gradient(270deg,#0a0d0cd9,#0a0d0c80);border-right:2px solid var(--accent);border-radius:2px}
+.hud .ammo .n{font:700 40px/1 var(--display);letter-spacing:.04em}
+.hud .ammo .w{font:600 12px var(--display);letter-spacing:.24em;color:var(--accent);opacity:1}
+.hud .prompt{background:#0a0d0ccc;border:1px solid #ffffff22;border-radius:2px;font:600 14px var(--display);letter-spacing:.08em}
+.hud .prompt kbd{border-color:var(--accent);color:var(--accent);font-family:var(--display)}
+.hud .toasts div{background:#0a0d0ccc;border-left:2px solid var(--accent);border-radius:2px;font-family:var(--display);letter-spacing:.06em}
+.hud .range{border-radius:2px;border-left:2px solid var(--accent)}
+.hud .vig{background:radial-gradient(ellipse at center,#0000 50%,#8a0000 135%)}
 .hud-help{position:fixed;inset:0;font:600 13px/1.3 system-ui,sans-serif;color:#e8ecef;text-shadow:0 1px 2px #000a;display:none;place-items:center;background:#000a;pointer-events:none}
 .hud-help>div{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:18px 34px;background:#111c;padding:22px 28px;border-radius:10px;max-width:min(860px,94vw)}
 .hud-help h3{margin:0 0 6px;font-size:13px;letter-spacing:1px;text-transform:uppercase;opacity:.8}

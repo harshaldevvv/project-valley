@@ -73,7 +73,14 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
 
   const timing = (renderer.backend as { trackTimestamp?: boolean }).trackTimestamp;
   let frame = 0;
+  let hurt = 0;
+  let last = performance.now();
+  game.events.on('playerDamaged', (e) => { hurt = Math.min(1, hurt + 0.35 + e.amount / 40); });
   game.renderFrame = () => {
+    const now = performance.now();
+    hurt = Math.max(0, hurt - (now - last) / 900);
+    last = now;
+    look.hurt.value = hurt * hurt;
     const t0 = performance.now();
     sceneMs = 0;
     if (direct) renderer.render(scene, camera);

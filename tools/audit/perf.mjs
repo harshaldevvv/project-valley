@@ -1,0 +1,21 @@
+// node tools/audit/perf.mjs <tag> [port]   Frame-time check of fixed scenes (needs a dev server). Writes docs/audit/perf-<tag>.json
+import { writeFileSync } from 'node:fs';
+import { chromium } from 'playwright';
+const tag = process.argv[2] ?? 'a', port = process.argv[3] ?? '5188';
+const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+await page.goto(`http://localhost:${port}/?play`);
+await page.waitForFunction(() => window.__gp && typeof window.__perf === 'function' && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
+await page.waitForTimeout(2500); await page.mouse.click(640, 360);
+const gp = (f, a) => page.evaluate(f, a);
+const measure = async (ms = 4000) => { await gp(() => window.__perfReset()); await page.waitForTimeout(ms); return gp(() => { const p = window.__perf(); const r = (x) => +(+x).toFixed(2); return { p50: r(p.p50), p95: r(p.p95), p99: r(p.p99), hitches: p.hitches, draws: p.drawCalls, tris: p.triangles }; }); };
+const R = {};
+const at = async (n, x, z, yaw) => { await gp(([x, z, yaw]) => { window.__gp.teleport(x, z, yaw); window.__gp.setLook(yaw, -0.05); }, [x, z, yaw]); await page.waitForTimeout(1200); R[n] = await measure(); };
+await gp(() => { window.__gp.ctx.player.godMode = true; window.__gp.sandbox(); });
+await at('spawn', 0, 0, 0); await at('range', 0, -10.5, 0); await at('build_pad', -36, 42, 0.6); await at('track', 40, -6, 0);
+await gp(() => { window.__gp.data.horde.passive = false; window.__gp.teleport(40, -6, 0); window.__gp.setLook(0, -0.1); window.__gp.spawn(30); });
+await page.waitForTimeout(3500); R.zombies30 = await measure();
+await gp(() => { window.__gp.ctx.zombies.clear(); window.engine.setTimeOfDay(23); }); await at('night', 0, 24, Math.PI);
+R.gpu = await gp(async () => (await navigator.gpu?.requestAdapter())?.info?.description ?? 'unknown');
+writeFileSync(`docs/audit/perf-${tag}.json`, JSON.stringify(R, null, 1)); console.log(JSON.stringify(R));
+await browser.close();
