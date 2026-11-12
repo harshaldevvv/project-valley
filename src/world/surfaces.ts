@@ -63,3 +63,9 @@ export const assetSurface: Record<string, Surface> = {
   prop_target_dummy_a: 'wood',
   prop_duffel_bag_a: 'dirt', // soft thud
 };
+
+/** Surface of the ground at x,z (painted pads/paths win over grass). For scatter code. */
+export function groundSurfaceAt(x: number, z: number): Surface {
+  for (let i = regions.length - 1; i >= 0; i--) if (regions[i].test(x, z)) return regions[i].s;
+  return 'grass';
+}

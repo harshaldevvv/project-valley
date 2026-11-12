@@ -1,5 +1,6 @@
 import type { Game } from '../../core/game';
 import { yard } from '../../content/data/yard';
+import { buildClutter } from './clutter';
 import { buildGround } from './ground';
 import { placeYardHouse } from './house';
 import { Kit } from './kit';
@@ -32,6 +33,7 @@ export async function buildYard(game: Game): Promise<void> {
   await kit.finish();
   finishSigns(kit);
   placeYardHouse(game);
+  buildClutter(game);
   buildLampPools(game);
 }
 

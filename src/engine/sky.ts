@@ -1,6 +1,6 @@
 import { BackSide, Color, Fog, Mesh, SphereGeometry, Vector3 } from 'three';
 import { MeshBasicNodeMaterial } from 'three/webgpu';
-import { cameraPosition, dot, float, floor, fract, max, mix, normalize, positionWorld, pow, sin, smoothstep, step, uniform, vec3 } from 'three/tsl';
+import { cameraPosition, dot, float, floor, fract, max, mix, normalize, positionWorld, pow, sin, smoothstep, step, uniform, vec3, vec2, time, mx_fractal_noise_float } from 'three/tsl';
 import type { Game } from '../core/game';
 import type { TimeOfDay } from './timeofday';
 
@@ -33,8 +33,18 @@ export function createSky(game: Game, tod: TimeOfDay) {
   const bright = fract(n.mul(173.13)); // per-star magnitude
   const stars = step(0.9986, n).mul(bright.mul(bright).mul(1.4).add(0.1)).mul(smoothstep(0.6, 1, night)).mul(smoothstep(0.03, 0.3, dir.y));
 
+  // clouds: fractal noise on a flat layer projected from the view direction, drifting with the wind; lit warm on the
+  // sun side, grey-blue underneath; at night they only dim the stars.
+  const cp = vec2(dir.x, dir.z).div(dir.y.max(0.04).add(0.22)).mul(1.1).add(vec2(time.mul(0.006), time.mul(0.002)));
+  const cn = mx_fractal_noise_float(vec3(cp.x, cp.y, time.mul(0.004)), 5, 2.0, 0.5).mul(0.5).add(0.5);
+  const cover = smoothstep(0.5, 0.78, cn).mul(smoothstep(0.0, 0.16, dir.y));
+  const lit = pow(d, 3).mul(0.8).add(0.35);
+  const cloudCol = mix(vec3(0.5, 0.56, 0.66), sunCol.mul(1.15).add(0.25), lit.min(1)).mul(day.mul(0.85).add(0.1));
+  const sky = base.add(glow);
+  const withClouds = mix(sky, cloudCol, cover.mul(0.82));
+
   const mat = new MeshBasicNodeMaterial({ side: BackSide, depthWrite: false, fog: false });
-  mat.colorNode = base.add(glow).add(disc).add(stars);
+  mat.colorNode = withClouds.add(disc.mul(float(1).sub(cover))).add(stars.mul(float(1).sub(cover)));
   mat.name = 'sky';
   const mesh = new Mesh(new SphereGeometry(450, 32, 16), mat);
   mesh.name = 'sky';
