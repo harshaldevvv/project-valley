@@ -301,12 +301,12 @@
     "url": "/assets/models/chr/chr_survivor_a.glb",
     "category": "chr",
     "tris": {
-      "chr_survivor_a_LOD0": 1650,
-      "chr_survivor_a_LOD1": 818,
-      "chr_survivor_a_LOD2": 311,
+      "chr_survivor_a_LOD0": 4499,
+      "chr_survivor_a_LOD1": 2249,
+      "chr_survivor_a_LOD2": 899,
       "chr_survivor_a_BACKPACK": 232
     },
-    "bytes": 834896
+    "bytes": 2219356
   },
   "wpn_knife_a": {
     "url": "/assets/models/wpn/wpn_knife_a.glb",
@@ -453,7 +453,7 @@
     "tris": {
       "zmb_ai_civilian_a_LOD0": 3500,
       "zmb_ai_civilian_a_LOD1": 1750,
-      "zmb_ai_civilian_a_LOD2": 699
+      "zmb_ai_civilian_a_LOD2": 700
     },
     "bytes": 1038664
   },
@@ -475,7 +475,7 @@
       "zmb_ai_soldier_a_LOD1": 1750,
       "zmb_ai_soldier_a_LOD2": 700
     },
-    "bytes": 1064136
+    "bytes": 1064140
   },
   "zmb_ai_nurse_f_a": {
     "url": "/assets/models/zmb/zmb_ai_nurse_f_a.glb",

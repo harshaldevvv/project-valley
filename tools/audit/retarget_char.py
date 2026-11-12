@@ -7,6 +7,8 @@ a = sys.argv[sys.argv.index('--') + 1:]
 rig_glb, ai_glb, out, nid, height = a[0], a[1], a[2], a[3], float(a[4])
 flip = float(a[5]) if len(a) > 5 else 180.0
 tris0 = int(a[6]) if len(a) > 6 else 3500
+keep = a[7] if len(a) > 7 and a[7] != '-' else None   # keep meshes whose name contains this (e.g. BACKPACK)
+anims = len(a) > 8 and a[8] == '1'                       # export the rig's clips too (the player model owns its clips)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=rig_glb)
 scene = bpy.context.scene
@@ -15,7 +17,7 @@ old = next(o for o in scene.objects if o.type == 'MESH' and o.name.endswith('_LO
 root = next(o for o in scene.objects if o.type == 'EMPTY' and o.parent is None)
 col_old = next((o for o in scene.objects if '_COL_' in o.name), None)
 for o in list(scene.objects):
-    if o.type == 'MESH' and o is not old and o is not col_old: bpy.data.objects.remove(o, do_unlink=True)
+    if o.type == 'MESH' and o is not old and o is not col_old and not (keep and keep in o.name): bpy.data.objects.remove(o, do_unlink=True)
 old_h = old.dimensions.z
 before = set(scene.objects)
 bpy.ops.import_scene.gltf(filepath=ai_glb)
@@ -26,10 +28,14 @@ bpy.context.view_layer.objects.active = new_objs[0]
 if len(new_objs) > 1: bpy.ops.object.join()
 nm = bpy.context.view_layer.objects.active
 nm.parent = None
+def only(o):
+    for x in scene.objects: x.select_set(x is o)
+    bpy.context.view_layer.objects.active = o
+only(nm)
 for o in list(scene.objects):  # drop the import's empties/armatures
     if o.type in ('EMPTY',) and o is not root and o not in (nm,): bpy.data.objects.remove(o, do_unlink=True)
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-nm.rotation_euler = (0, 0, math.radians(flip)); bpy.ops.object.transform_apply(rotation=True)
+nm.rotation_mode = 'XYZ'; nm.rotation_euler = (0, 0, math.radians(flip)); only(nm); bpy.ops.object.transform_apply(rotation=True)
 # decimate the AI mesh first (cheaper everything after)
 n = sum(len(p.vertices) - 2 for p in nm.data.polygons)
 if n > tris0:
@@ -40,13 +46,13 @@ def bbox(o):
     return [min(v[i] for v in ws) for i in range(3)], [max(v[i] for v in ws) for i in range(3)]
 lo, hi = bbox(nm)
 s = height / (hi[2] - lo[2])
-nm.scale = (s, s, s); bpy.ops.object.transform_apply(scale=True)
+nm.scale = (s, s, s); only(nm); bpy.ops.object.transform_apply(scale=True)
 lo, hi = bbox(nm); olo, ohi = bbox(old)
 sx = (ohi[0] - olo[0]) / max(hi[0] - lo[0], 1e-6)
 sx = min(1.15, max(0.75, sx))
-nm.scale = (sx, sx, 1); bpy.ops.object.transform_apply(scale=True)
+nm.scale = (sx, sx, 1); only(nm); bpy.ops.object.transform_apply(scale=True)
 lo, hi = bbox(nm)
-nm.location = (-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]); bpy.ops.object.transform_apply(location=True)
+nm.location = (-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]); only(nm); bpy.ops.object.transform_apply(location=True)
 # skin: vertex groups for every bone, weights from the original mesh by nearest surface
 for b in arm.data.bones:
     if b.use_deform and b.name not in nm.vertex_groups: nm.vertex_groups.new(name=b.name)
@@ -76,8 +82,16 @@ l1 = lod(nid + '_LOD1', 0.5); l2 = lod(nid + '_LOD2', 0.2)
 if col_old: col_old.name = nid + '_COL_box'
 root.name = nid; arm.name = nid + '_rig'
 bpy.data.objects.remove(old, do_unlink=True)
-# export without animations (the game borrows clips from zmb_shambler_a by bone name)
-for act in list(bpy.data.actions): bpy.data.actions.remove(act)
-bpy.ops.export_scene.gltf(filepath=out, export_format='GLB', export_image_format='JPEG', export_jpeg_quality=85, export_animations=False, export_apply=False, export_skins=True)
+# zombies export without animations (the game borrows clips from zmb_shambler_a by bone name); the player keeps its own
+if keep:
+    for o in scene.objects:
+        if keep in o.name: o.name = nid + '_' + keep
+if not anims:
+    for act in list(bpy.data.actions): bpy.data.actions.remove(act)
+    bpy.ops.export_scene.gltf(filepath=out, export_format='GLB', export_image_format='JPEG', export_jpeg_quality=85, export_animations=False, export_apply=False, export_skins=True)
+else:
+    for act in bpy.data.actions: act.use_fake_user = True
+    bpy.ops.export_scene.gltf(filepath=out, export_format='GLB', export_image_format='JPEG', export_jpeg_quality=85, export_animations=True, export_animation_mode='ACTIONS', export_apply=False, export_skins=True)
 cnt = lambda o: sum(len(p.vertices) - 2 for p in o.data.polygons)
+print('NODE_XFORM', tuple(round(v,3) for v in nm.matrix_world.translation), tuple(round(v,3) for v in nm.rotation_euler), tuple(round(v,3) for v in nm.scale))
 print('RETARGET', nid, 'tris', cnt(nm), cnt(l1), cnt(l2), 'height', round(nm.dimensions.z, 2))

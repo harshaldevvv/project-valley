@@ -100,7 +100,8 @@ async function fromGltf(id: string): Promise<ModelProto> {
       drop.push(m);
     } else if (/_LOD[1-9]$/.test(m.name)) drop.push(m);
     else {
-      m.material = mat;
+      // AI-made models (e.g. the retargeted survivor) keep their own baked texture; palette models have none
+      if (!(m.material as { map?: unknown }).map) m.material = mat;
       m.castShadow = m.receiveShadow = true;
       if ((m as SkinnedMesh).isSkinnedMesh) m.frustumCulled = false; // bind-pose bounds don't follow the animation
     }

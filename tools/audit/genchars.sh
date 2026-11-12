@@ -6,10 +6,8 @@ STYLE="full body front view, standing straight in a relaxed A-pose with arms sli
 i=0
 while IFS='|' read -r name prompt; do
   i=$((i+1))
-  "$PY" -I D:/AI3D/hub/runners/comfy_image.py --model z-image-turbo --prompt "$prompt, $STYLE" --out "E:/Documents/GitHub/project-valley/assets/gen/chars/$name" --params "{\"width\":768,\"height\":1280,\"steps\":8,\"seed\":$((700+i))}"
+  "$PY" -I D:/AI3D/hub/runners/comfy_image.py --model z-image-turbo --prompt "$prompt, $STYLE" --out "E:/Documents/GitHub/project-valley/assets/gen/chars/$name" --params "{\"width\":768,\"height\":1280,\"steps\":8,\"seed\":$((800+i))}"
 done <<'LIST'
-zombie_civilian|male zombie civilian with grey-green rotting skin, torn dirty plaid shirt and jeans, bare feet, sunken eyes, blood stains
-zombie_hazmat|zombie in a torn yellow hazmat suit with cracked gas mask pushed up, grey skin, stained
-zombie_soldier|zombie soldier in tattered olive camouflage uniform and helmet, pale grey skin, blood on vest
-zombie_nurse|female zombie in a bloodstained torn nurse uniform, pale grey-green skin, messy hair
+survivor_a|male survivor with short dark hair, olive green field jacket, faded blue jeans, brown leather boots, bare hands, no backpack, no weapon, determined calm face
+survivor_b|male survivor with short dark hair and stubble, olive green hooded field jacket, faded dark blue jeans, brown work boots, bare hands, no backpack, no weapon
 LIST

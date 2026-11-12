@@ -15,7 +15,8 @@ Screenshots: `docs/audit/screenshots/before/` and `.../after/` (contact sheets `
 9. **Held gear and survivor:** weapons get object-space scratches and glossier dark metal; the survivor gets bind-pose cloth wear, boot mud and dust.
 10. **Ambient motes** (`motes.ts`): dust and pollen by day, fireflies at night, one instanced draw computed in the vertex shader. Night ambient lifted slightly.
 11. **Wall decals** (`wallDecals.ts`): eleven AI-generated spray-paint, stencil and chalk pieces on the perimeter wall (white becomes transparent in the shader).
-12. **HUD** (`src/ui/hud/hud.ts`): same type and accent as the menus, glass backing for bars and ammo, bevelled bars.
+12. **New characters, rigged and animated (the biggest change):** the player survivor and four new zombie variants (civilian, hazmat, soldier, nurse) are AI-generated and skinned to the game's *existing* rig: z-image-turbo A-pose picture, Hunyuan3D-2.1 textured mesh, then `tools/audit/retarget_char.py` in Blender (fit to the rig, skin weights copied from the original mesh by nearest surface, LOD0/1/2, collision box). The survivor keeps all 40 clips and the backpack node; zombies borrow the shambler clips and render through the GPU crowd renderer with their own baked textures (crowd and model loaders now keep a mesh's own texture). Spawn mix favours the new zombies. 30 zombies still hold 60 fps.
+13. **HUD** (`src/ui/hud/hud.ts`): same type and accent as the menus, glass backing for bars and ammo, bevelled bars.
 
 ## Tested
 - `npm test`: 49 pass. `npm run build`: passes.
@@ -37,7 +38,7 @@ This monitor is 60 Hz and vsync-capped, so p50 is 16.67 ms before and after in a
 All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-before.json`, `perf-after.json`.
 
 ## What's left, ranked
-1. **Characters and zombies** still look plain (finding: the shipped GLBs are meshopt-compressed, Blender 4.5 cannot import them; rebuild from `assets/source/zmb/*/build.py` or decompress with `gltf-transform` first. A try at AI body meshes weight-painted to the existing rig with Blender auto-weights is the next experiment) (about 1.9k-triangle flat-colour bodies). Animation is already good. Needs a rigging path: install UniRig (multi-hour Windows CUDA build) or retarget AI meshes with Blender's auto-weights onto the existing rig, then texture. Highest impact left.
+1. **Characters (first pass done)**: still to do: fix the AI meshes' proportions (big heads), clothing variants for the survivor, first-person arms, worker/shambler replacements, and hit-zone tuning (headshot zone matches the old mesh). Original note: characters looked plain (finding: the shipped GLBs are meshopt-compressed, Blender 4.5 cannot import them; rebuild from `assets/source/zmb/*/build.py` or decompress with `gltf-transform` first. A try at AI body meshes weight-painted to the existing rig with Blender auto-weights is the next experiment) (about 1.9k-triangle flat-colour bodies). Animation is already good. Needs a rigging path: install UniRig (multi-hour Windows CUDA build) or retarget AI meshes with Blender's auto-weights onto the existing rig, then texture. Highest impact left.
 2. **Screen-space AO and sun shafts** (`GTAONode`, `GodraysNode` exist in three). Not tried; measure on a high-refresh display first.
 3. **Zombie hit flash, dust puffs, footstep particles** and more blood variety.
 4. **Retexture the palette-only kit** (house, range, signs) with the same detail pipeline plus wear decals; AI-generated posters and signs.
