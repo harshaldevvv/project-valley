@@ -15,7 +15,7 @@ import {
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { entries, gltfLoader } from './assets';
-import { paletteCharacterMaterial, paletteMaterial } from './palette';
+import { paletteCharacterMaterial, paletteGearMaterial, paletteMaterial } from './palette';
 
 /**
  * Models that are not plain static props: animated characters/zombies, weapons with sockets, vehicles with wheels.
@@ -86,7 +86,7 @@ function proto(id: string, template: Object3D, clips: AnimationClip[], colliders
 }
 
 async function fromGltf(id: string): Promise<ModelProto> {
-  const [gltf, mat] = await Promise.all([gltfLoader.loadAsync(entries[id].url), /^(chr|zmb)_/.test(id) ? paletteCharacterMaterial() : paletteMaterial()]);
+  const [gltf, mat] = await Promise.all([gltfLoader.loadAsync(entries[id].url), /^(chr|zmb)_/.test(id) ? paletteCharacterMaterial() : /^wpn_/.test(id) ? paletteGearMaterial() : paletteMaterial()]);
   const scene = gltf.scene;
   scene.name = id;
   scene.updateMatrixWorld(true);

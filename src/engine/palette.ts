@@ -63,6 +63,26 @@ export async function paletteCharacterMaterial() {
   return (chars = m);
 }
 
+let gear: MeshStandardNodeMaterial | null = null;
+/** Atlas + object-space wear for held gear (weapons, tools): scratches, soot and glossier dark metal. */
+export async function paletteGearMaterial() {
+  if (gear) return gear;
+  const [plain, atlasTex, grunge] = [await paletteMaterial(), await paletteAtlas(), await grungeTexture()];
+  if (!grunge) return (gear = plain);
+  const lp = positionGeometry;
+  const lumv = (n: any) => dot(n, vec3(0.2126, 0.7152, 0.0722));
+  const gA = lumv(texture(grunge, vec2(lp.x.add(lp.z), lp.y.add(lp.z.mul(0.5))).mul(3.2)).rgb);
+  const gB = lumv(texture(grunge, vec2(lp.z.mul(2.1), lp.y.add(lp.x).mul(2.6)).add(vec2(0.4, 0.1))).rgb);
+  const base = texture(atlasTex, uv()).rgb.mul(clamp(gA.sub(0.42).mul(1.7).add(1), 0.55, 1.5));
+  const col = base.add(smoothstep(0.58, 0.8, gB).mul(0.1)); // bright scratches
+  const m = new MeshStandardNodeMaterial({ metalness: 0 });
+  m.colorNode = col;
+  m.roughnessNode = mix(float(0.42), float(0.85), smoothstep(0.08, 0.3, lumv(base)));
+  m.map = atlasTex;
+  m.name = 'palette_gear';
+  return (gear = m);
+}
+
 let world: MeshStandardNodeMaterial | null = null;
 /**
  * The atlas plus world-space surface detail, for STATIC world geometry only (merged yard mesh, instanced statics):
