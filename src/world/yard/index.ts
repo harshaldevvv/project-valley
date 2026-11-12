@@ -3,6 +3,7 @@ import { yard } from '../../content/data/yard';
 import { buildClutter } from './clutter';
 import { buildGenProps } from './genProps';
 import { buildGround } from './ground';
+import { buildMotes } from './motes';
 import { placeYardHouse } from './house';
 import { Kit } from './kit';
 import { setupLighting } from './lighting';
@@ -36,6 +37,7 @@ export async function buildYard(game: Game): Promise<void> {
   finishSigns(kit);
   placeYardHouse(game);
   buildClutter(game);
+  buildMotes(game);
   buildLampPools(game);
 }
 

@@ -19,7 +19,7 @@ interface Key {
   hemiGround: string;
   hemiI: number;
 }
-const NIGHT = { sky: '#151d2d', zenith: '#03060d', night: 1, sun: '#9fb4dc', sunI: 0.6, hemiSky: '#506691', hemiGround: '#20222a', hemiI: 2.0 };
+const NIGHT = { sky: '#151d2d', zenith: '#03060d', night: 1, sun: '#9fb4dc', sunI: 0.6, hemiSky: '#5f78aa', hemiGround: '#2a2d38', hemiI: 2.7 };
 const KEYS: Key[] = [
   { h: 0, ...NIGHT },
   { h: 4.5, ...NIGHT },
