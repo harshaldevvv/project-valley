@@ -1,5 +1,6 @@
 import { MeshStandardNodeMaterial } from 'three/webgpu';
-import { BufferAttribute, BufferGeometry, LinearFilter, SRGBColorSpace, Texture, TextureLoader } from 'three';
+import { texture, uv, positionWorld, normalWorld, abs, mix, float, vec3, vec2, dot, smoothstep, clamp } from 'three/tsl';
+import { BufferAttribute, BufferGeometry, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from 'three';
 import palette from '../content/data/palette.json';
 import { assetUrl } from './assetUrl';
 
@@ -18,7 +19,37 @@ export async function paletteMaterial() {
   tex.generateMipmaps = false;
   tex.minFilter = LinearFilter;
   tex.magFilter = LinearFilter;
-  shared = new MeshStandardNodeMaterial({ map: tex, roughness: 0.85, metalness: 0 });
+  shared = new MeshStandardNodeMaterial({ roughness: 0.85, metalness: 0 });
+  // World-space detail (AI-generated, see CREDITS.md): luminance-only multipliers so the palette keeps its hues.
+  // Top faces get grass + gravel, side faces get grime + concrete, at two scales to hide tiling; walls darken at the
+  // foot (fake contact AO); a very low-frequency patch tint stops big surfaces looking printed.
+  const load = async (n: string) => {
+    const t = await new TextureLoader().loadAsync(assetUrl(`assets/textures/${n}.png`));
+    t.wrapS = t.wrapT = RepeatWrapping;
+    t.colorSpace = SRGBColorSpace;
+    t.minFilter = LinearMipmapLinearFilter;
+    t.magFilter = LinearFilter;
+    t.anisotropy = 4;
+    t.generateMipmaps = true;
+    return t;
+  };
+  const [grass, dirt, concrete, grunge] = await Promise.all([load('grass'), load('dirt'), load('concrete'), load('grunge')]);
+  const lum = (n: any) => dot(n, vec3(0.2126, 0.7152, 0.0722));
+  const wp = positionWorld;
+  const top = smoothstep(0.55, 0.85, normalWorld.y);
+  const xz = vec2(wp.x, wp.z);
+  const tops = lum(texture(grass, xz.mul(0.31)).rgb).mul(0.5).add(lum(texture(grass, xz.mul(0.071).add(vec2(0.37, 0.11)))).mul(0.5))
+    .mul(lum(texture(dirt, xz.mul(0.19)).rgb).mul(0.6).add(0.55));
+  const nx = abs(normalWorld.x), nz = abs(normalWorld.z);
+  const sideA = texture(concrete, vec2(wp.z, wp.y).mul(0.33)).rgb.mul(nx).add(texture(concrete, vec2(wp.x, wp.y).mul(0.33)).rgb.mul(nz)).div(nx.add(nz).max(0.001));
+  const sideB = texture(grunge, vec2(wp.z, wp.y).mul(0.13)).rgb.mul(nx).add(texture(grunge, vec2(wp.x, wp.y).mul(0.13)).rgb.mul(nz)).div(nx.add(nz).max(0.001));
+  const sides = dot(sideA, vec3(0.2126, 0.7152, 0.0722)).mul(0.55).add(dot(sideB, vec3(0.2126, 0.7152, 0.0722)).mul(0.45));
+  const detailRaw = mix(sides, tops, top);
+  const detail = clamp(detailRaw.sub(0.42).mul(1.5).add(1), 0.5, 1.7); // ~1 on average, +/-50% at the extremes
+  const foot = float(1).sub(smoothstep(0.9, 0.0, wp.y).mul(float(1).sub(top)).mul(0.35));
+  const patch = lum(texture(grunge, xz.mul(0.011)).rgb).mul(0.5).add(0.75);
+  const base = texture(tex, uv());
+  shared.colorNode = base.rgb.mul(detail).mul(foot).mul(mix(float(1), patch, top.mul(0.6)));
   shared.name = 'palette';
   return shared;
 }

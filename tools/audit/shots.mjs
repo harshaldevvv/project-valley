@@ -1,0 +1,33 @@
+import { mkdirSync } from 'node:fs';
+import { chromium } from 'playwright';
+const tag = process.argv[2] ?? 'before';
+const OUT = `docs/audit/screenshots/${tag}`; mkdirSync(OUT, { recursive: true });
+const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = [];
+page.on('console', m => (m.type()==='error'||m.type()==='warning') && errs.push(`[${m.type()}] ${m.text()}`));
+page.on('pageerror', e => errs.push('[pageerror] '+String(e.stack||e).split('\n').slice(0,2).join('|')));
+const shot = n => page.screenshot({ path: `${OUT}/${n}.png` });
+await page.goto('http://localhost:5188/');
+await page.waitForTimeout(6000); await shot('00_title');
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
+await page.waitForTimeout(2500);
+await page.mouse.click(640,360); await page.waitForTimeout(500);
+const gp = (f,a)=>page.evaluate(f,a);
+await gp(()=>{window.__gp.ctx.player.godMode=true;});
+await shot('01_spawn');
+const spots = [['02_range',0,-10.5,0],['03_build',-36,42,0.6],['04_animstand',0,24,Math.PI],['05_track',40,-6,0],['06_pen',-40,-30,1]];
+for (const [n,x,z,yaw] of spots){ await gp(([x,z,yaw])=>{window.__gp.teleport(x,z,yaw);window.__gp.setLook(yaw,-0.05);},[x,z,yaw]); await page.waitForTimeout(1500); await shot(n); }
+await gp(()=>{window.__gp.data.horde.passive=false;window.__gp.teleport(-40,-30,1);window.__gp.spawn(8);}); await page.waitForTimeout(3000); await shot('07_zombies');
+for (let i=0;i<10;i++){ await gp(()=>{window.__gp.faceZombie&&window.__gp.faceZombie(1.4);window.__gp.mouse(0,true);}); await page.waitForTimeout(120); await gp(()=>window.__gp.mouse(0,false)); if(i==3) await shot('08_combat'); }
+await shot('09_combat2');
+await gp(()=>window.__gp.ctx.zombies.clear());
+await gp(()=>window.engine.setTimeOfDay(23)); await page.waitForTimeout(1500); await shot('10_night');
+await gp(()=>window.engine.setTimeOfDay(18.5)); await page.waitForTimeout(1500); await shot('11_dusk');
+await gp(()=>window.engine.setTimeOfDay(12));
+await page.keyboard.press('Tab'); await page.waitForTimeout(800); await shot('12_inventory'); await page.keyboard.press('Tab');
+await page.keyboard.press('Escape'); await page.waitForTimeout(600); await shot('13_pause'); await page.keyboard.press('Escape');
+await page.keyboard.press('F1'); await page.waitForTimeout(500); await shot('14_debug');
+console.log(errs.slice(0,20).join('\n'));
+await browser.close();
