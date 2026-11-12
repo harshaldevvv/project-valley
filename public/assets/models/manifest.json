@@ -486,5 +486,45 @@
       "zmb_ai_nurse_f_a_LOD2": 700
     },
     "bytes": 1055296
+  },
+  "zmb_ai_worker_a": {
+    "url": "/assets/models/zmb/zmb_ai_worker_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_worker_a_LOD0": 3500,
+      "zmb_ai_worker_a_LOD1": 1750,
+      "zmb_ai_worker_a_LOD2": 700
+    },
+    "bytes": 1047268
+  },
+  "zmb_ai_police_a": {
+    "url": "/assets/models/zmb/zmb_ai_police_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_police_a_LOD0": 3500,
+      "zmb_ai_police_a_LOD1": 1750,
+      "zmb_ai_police_a_LOD2": 700
+    },
+    "bytes": 1039700
+  },
+  "zmb_ai_hoodie_f_a": {
+    "url": "/assets/models/zmb/zmb_ai_hoodie_f_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_hoodie_f_a_LOD0": 3500,
+      "zmb_ai_hoodie_f_a_LOD1": 1750,
+      "zmb_ai_hoodie_f_a_LOD2": 700
+    },
+    "bytes": 1040260
+  },
+  "zmb_ai_suit_a": {
+    "url": "/assets/models/zmb/zmb_ai_suit_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_suit_a_LOD0": 3500,
+      "zmb_ai_suit_a_LOD1": 1750,
+      "zmb_ai_suit_a_LOD2": 700
+    },
+    "bytes": 1045728
   }
 }

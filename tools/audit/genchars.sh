@@ -6,8 +6,10 @@ STYLE="full body front view, standing straight in a relaxed A-pose with arms sli
 i=0
 while IFS='|' read -r name prompt; do
   i=$((i+1))
-  "$PY" -I D:/AI3D/hub/runners/comfy_image.py --model z-image-turbo --prompt "$prompt, $STYLE" --out "E:/Documents/GitHub/project-valley/assets/gen/chars/$name" --params "{\"width\":768,\"height\":1280,\"steps\":8,\"seed\":$((800+i))}"
+  "$PY" -I D:/AI3D/hub/runners/comfy_image.py --model z-image-turbo --prompt "$prompt, $STYLE" --out "E:/Documents/GitHub/project-valley/assets/gen/chars/$name" --params "{\"width\":768,\"height\":1280,\"steps\":8,\"seed\":$((900+i))}"
 done <<'LIST'
-survivor_a|male survivor with short dark hair, olive green field jacket, faded blue jeans, brown leather boots, bare hands, no backpack, no weapon, determined calm face
-survivor_b|male survivor with short dark hair and stubble, olive green hooded field jacket, faded dark blue jeans, brown work boots, bare hands, no backpack, no weapon
+zombie_worker|zombie construction worker in a torn orange high-visibility vest, dirty white hard hat, dark work pants and boots, grey-green skin, blood stains
+zombie_police|zombie police officer in a torn dark blue uniform shirt with a badge and duty belt, grey skin, blood stains
+zombie_hoodie|female zombie teenager in a torn grey hoodie and ripped jeans and sneakers, grey-green skin, messy hair, blood stains
+zombie_suit|zombie office worker in a torn grey business suit with a loosened red tie and dress shoes, pale grey skin, blood stains
 LIST

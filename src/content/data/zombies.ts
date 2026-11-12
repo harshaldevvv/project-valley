@@ -69,11 +69,15 @@ export const zombieDefs: Record<string, ZombieDef> = {
   ai_hazmat: { ...zombieDefsBase.shambler, id: 'ai_hazmat', model: 'zmb_ai_hazmat_a', clipsFrom: 'zmb_shambler_a', scale: 1.04, hp: 150 },
   ai_soldier: { ...zombieDefsBase.shambler, id: 'ai_soldier', model: 'zmb_ai_soldier_a', clipsFrom: 'zmb_shambler_a', scale: 1.06, hp: 170, legHp: 90, helmetMul: 0.6 },
   ai_nurse: { ...zombieDefsBase.shambler, id: 'ai_nurse', model: 'zmb_ai_nurse_f_a', clipsFrom: 'zmb_shambler_a', scale: 1.0, hp: 105 },
+  ai_worker: { ...zombieDefsBase.shambler, id: 'ai_worker', model: 'zmb_ai_worker_a', clipsFrom: 'zmb_shambler_a', scale: 1.05, hp: 140 },
+  ai_police: { ...zombieDefsBase.shambler, id: 'ai_police', model: 'zmb_ai_police_a', clipsFrom: 'zmb_shambler_a', scale: 1.04, hp: 150 },
+  ai_hoodie: { ...zombieDefsBase.shambler, id: 'ai_hoodie', model: 'zmb_ai_hoodie_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.96, hp: 100 },
+  ai_suit: { ...zombieDefsBase.shambler, id: 'ai_suit', model: 'zmb_ai_suit_a', clipsFrom: 'zmb_shambler_a', scale: 1.03, hp: 115 },
   civilian_f: { ...zombieDefsBase.shambler, id: 'civilian_f', model: 'zmb_civilian_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.93, hp: 110 },
 };
 
 /** Spawn mix (weights, seeded RNG). */
-export const zombieMix: Record<string, number> = { shambler: 0.16, worker: 0.1, civilian_f: 0.08, soldier: 0.06, ai_civilian: 0.2, ai_hazmat: 0.14, ai_soldier: 0.12, ai_nurse: 0.14 };
+export const zombieMix: Record<string, number> = { shambler: 0.1, worker: 0.06, civilian_f: 0.05, soldier: 0.04, ai_civilian: 0.12, ai_hazmat: 0.09, ai_soldier: 0.09, ai_nurse: 0.09, ai_worker: 0.1, ai_police: 0.09, ai_hoodie: 0.09, ai_suit: 0.08 };
 
 export const senses = {
   coneDeg: 80,
