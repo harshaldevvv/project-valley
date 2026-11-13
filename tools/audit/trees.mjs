@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = []; page.on('pageerror', e => errs.push(String(e).slice(0, 200)));
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
+await page.waitForTimeout(2000); await page.mouse.click(640, 360);
+const info = await page.evaluate(() => { const o = window.game.scene.children.filter((c) => /^tree_.*_x\d+/.test(c.name)).map((c) => { const m = new (c.matrix.constructor)(); c.getMatrixAt(0, m); const e = m.elements; return { n: c.name, y: e[13], x: e[12], z: e[14], sc: e[0] }; }); return o; });
+console.log(JSON.stringify(info));
+await page.evaluate(() => { const c = window.game.scene.children.find((c) => /^tree_pine_x/.test(c.name)); const m = new (c.matrix.constructor)(); const n = c.count; let best = null; for (let i = 0; i < n; i++) { c.getMatrixAt(i, m); const x = m.elements[12], z = m.elements[14]; if (Math.max(Math.abs(x), Math.abs(z)) < 98 && (!best || z > best.z) && z < 96) best = { x, z }; } window.__t = best; window.__gp.ctx.player.godMode = true; window.__gp.teleport(best.x, best.z - 12, Math.PI); window.__gp.setLook(Math.PI, 0.05); });
+await page.waitForTimeout(1500); await page.screenshot({ path: 'docs/audit/screenshots/wip/55_tree_inside.png' });
+console.log(JSON.stringify(await page.evaluate(() => window.__t)), errs); await browser.close();

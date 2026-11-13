@@ -141,7 +141,8 @@ function buildTrees(kit: Kit) {
     if (z > 80 && Math.abs(x) < 12) continue; // gate approach
     if (fbm(x * 0.03, z * 0.03 + 5) < 0.45) continue; // clumps, not a hedge
     placed++;
-    tree(x, z, 1.5);
+    nearTreeSpots.push({ x, z, s: rng.range(0.85, 1.15), a: rng.range(0, Math.PI * 2), k: rng.next() }); // AI pine/birch (aiTrees.ts)
+    rng.next(); rng.next(); rng.next(); // keep the random stream of later placements unchanged
     kit.cuboid(0.25, 1.5, 0.25, x, 1.2, z, 0, 'wood');
   }
 }
