@@ -56,15 +56,17 @@ All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-bef
 
 25. **Damage direction indicator:** the existing wedge is now larger and brighter with a glow (checked with an attacker to the right).
 
+26. **Asset compression** (`tools/audit/compress.mjs`): AI GLB textures to WebP (512 px, 768 px for buildings) and meshopt geometry; detail textures, decals and key art to WebP. 27.2 MB -> 9.4 MB. Measured on the dev server at 50 Mbit/s with no cache: 57.0 MB transferred and 15.2 s to ready before, 39.6 MB and 12.2 s after (dev server is unminified, so the production gain is the same 18 MB). Originals kept in `assets/gen/orig` (git-ignored). Decal pools raised to 160 bullet / 96 blood with a 75 s life (they were 64 / 32, 30 s).
+
 ## Cost of all this
-- Download size grew by about 30 MB of public assets (props and buildings 12 MB, characters 11 MB, textures 4.7 MB, audio 2.2 MB). Not yet meshopt/KTX2 compressed; do that before shipping (`gltf-transform optimize`).
+- Download size grew by about 12 MB of public assets after compression (it was about 30 MB); KTX2 textures would shrink GPU memory further.
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).
 
 ## What's left, ranked
 1. **First-person weapon and arm meshes** are still blocky (the rifle is a box kit with a separate magazine and sockets that the reload clips drive). Needs a hand remodel in Blender that keeps the `MAG` node and sockets; AI generation gives one fused mesh. Blocked on the licence answer for Hunyuan; TRELLIS2 needs about 20 GB free RAM.
 2. **Character polish:** the AI bodies have big heads and flat vector-style textures; the survivor has one look (clothing variants need more 3D generation); the original shambler/worker/soldier could be replaced the same way.
 3. **Game feel not done yet:** weapon swap polish, zombie death/ragdoll variety, surface gore decals, visible crows.
-4. **Compress the new assets** (30 MB of GLB, PNG and OGG; `gltf-transform optimize`, KTX2 textures) and test on the laptop GPU.
+4. **Test on the laptop GPU**; KTX2 for GPU memory.
 5. **Retexture the palette-only kit** (house, range, signs) with the same detail pipeline plus wear decals; AI posters and signs; title menu art behind the fly-over.
 6. Music: listen to `?music=ai` and decide.
 
