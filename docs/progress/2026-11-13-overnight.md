@@ -1,5 +1,7 @@
 # Overnight visual overhaul, 2026-11-13
 
+> **Owner verdict after testing (2026-11-13):** the AI-generated characters were worse than the originals (hands, rigging, first/third person). They are reverted (commit `80c8605`). Policy from now: local 3D generation only for simple props (plain walls, blocks, basic environment); characters, vehicles and other complex models come from code/Blender scripts or open-source models (the owner's "Polyfolk Catalog" repo, 3,000+ models, location still to be given). Items 12-14 and 22 below that describe the AI characters are historical.
+
 Branch `overnight/visual-overhaul-2026-11-13` (not pushed, not merged). Audit: `docs/audit/2026-11-13-audit.md`.
 Screenshots: `docs/audit/screenshots/before/` and `.../after/` (contact sheets `before_sheet.png`, `after_sheet.png`) (same camera spots, `tools/audit/shots.mjs`). Contact sheet of the before set: `before_sheet.png`.
 
