@@ -1,0 +1,16 @@
+import { mkdirSync } from 'node:fs';
+import { chromium } from 'playwright';
+const OUT = 'docs/audit/screenshots/wip'; mkdirSync(OUT, { recursive: true });
+const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = []; page.on('pageerror', e => errs.push((e.stack || String(e)).slice(0, 400))); page.on('console', m => m.type() === 'error' && errs.push(m.text().slice(0, 200)));
+await page.goto('http://localhost:5188/?play&gputime');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
+await page.waitForTimeout(2000); await page.mouse.click(640, 360);
+const gp = (f, a) => page.evaluate(f, a);
+await gp(() => { window.__gp.ctx.player.godMode = true; window.engine.setTimeOfDay(18.3); window.__gp.teleport(-20, 12, Math.PI / 2); window.__gp.setLook(Math.PI / 2, 0.0); });
+await page.waitForTimeout(2500);
+const ms = async () => { const v = []; for (let i = 0; i < 8; i++) { v.push(+(await gp(() => window.__gp.ctx.game.perf.extra.gpuMs ?? 0))); await page.waitForTimeout(300); } return +(v.reduce((a, b) => a + b, 0) / v.length).toFixed(2); };
+await page.screenshot({ path: `${OUT}/90_shafts_on.png` }); const on = await ms();
+await gp(() => { window.engine.post.look.shafts.value = 0; }); await page.waitForTimeout(500); await page.screenshot({ path: `${OUT}/91_shafts_off.png`}); const off = await ms();
+console.log('gpuMs on', on, 'off(still computed)', off, 'errors', errs.slice(0, 3)); await browser.close();

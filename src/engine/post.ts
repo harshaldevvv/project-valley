@@ -1,5 +1,6 @@
 import { RenderPipeline } from 'three/webgpu';
 import { pass, renderOutput, uniform, uv, vec3, vec4, float, mix, smoothstep, length, dot, time, fract, sin, clamp } from 'three/tsl';
+import { godrays } from 'three/examples/jsm/tsl/display/GodraysNode.js';
 import { ao } from 'three/examples/jsm/tsl/display/GTAONode.js';
 import { bloom } from 'three/examples/jsm/tsl/display/BloomNode.js';
 import { fxaa } from 'three/examples/jsm/tsl/display/FXAANode.js';
@@ -24,7 +25,7 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
   const { renderer, scene, camera, sun, perf } = game;
   const scenePass = pass(scene, camera);
   /** Live-tunable grade, fed by gameplay (damage pulse) through post.look. */
-  const look = { vignette: uniform(0.42), saturation: uniform(1.14), contrast: uniform(1.1), grain: uniform(0.03), hurt: uniform(0), bloomMix: uniform(1), aoMix: uniform(1) };
+  const look = { vignette: uniform(0.42), saturation: uniform(1.14), contrast: uniform(1.1), grain: uniform(0.03), hurt: uniform(0), bloomMix: uniform(1), aoMix: uniform(1), shafts: uniform(0.18) };
   const bloomNode = bloom(scenePass, 0.28, 0.55, 0.92);
   // Ambient occlusion (GTAO from depth, half resolution): grounds props, walls and feet. Multiplies the HDR scene.
   const aoNode = ao(scenePass.getTextureNode('depth'), null as never, camera);
@@ -33,7 +34,14 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
   aoNode.thickness.value = 1.5;
   aoNode.samples.value = 8;
   const occluded = scenePass.mul(mix(float(1), aoNode.getTextureNode().r, look.aoMix));
-  const hdr = occluded.add(bloomNode.mul(look.bloomMix));
+  // Sun shafts: screen-space raymarch through the sun's shadow map (half res). Warm tint, strongest low sun.
+  const raysNode = godrays(scenePass.getTextureNode('depth'), camera, sun);
+  raysNode.resolutionScale = 0.5;
+  raysNode.raymarchSteps.value = 28;
+  raysNode.density.value = 0.5;
+  raysNode.maxDensity.value = 0.45;
+  const rays = raysNode.getTextureNode().r.mul(vec3(1.0, 0.86, 0.62)).mul(look.shafts);
+  const hdr = occluded.add(bloomNode.mul(look.bloomMix)).add(rays);
   const toned = renderOutput(scenePass);
   const tonedHdr = renderOutput(hdr);
   const graded = (() => {
