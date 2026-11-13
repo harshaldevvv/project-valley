@@ -1,6 +1,7 @@
 import type { Game } from '../../core/game';
 import { yard } from '../../content/data/yard';
 import { buildAiTrees } from './aiTrees';
+import { buildBirds } from './birds';
 import { buildCabin } from './cabin';
 import { buildClutter } from './clutter';
 import { buildGenProps } from './genProps';
@@ -44,6 +45,7 @@ export async function buildYard(game: Game): Promise<void> {
   buildClutter(game);
   buildMotes(game);
   installFlashlight(game);
+  buildBirds(game);
   await buildAiTrees(game);
   await buildWallDecals(game);
   buildLampPools(game);
