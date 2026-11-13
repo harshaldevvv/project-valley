@@ -51,6 +51,14 @@ export class Melee {
       return;
     }
     const def = this.def;
+    // Switching to a non-melee weapon mid-swing (or losing the weapon) used to leave the swing running on a null def and
+    // throw every sim step (TypeError reading 'active'); abort the swing instead.
+    if (!def && (this.phase === 'windup' || this.phase === 'active' || this.phase === 'recovery')) {
+      this.phase = 'idle';
+      this.buffered = null;
+      this.swingVis = 0;
+      p.locked = false;
+    }
     // Input (melee weapon in hand + ready), with a buffer during the end of recovery
     if (def && w.switchPhase === 'none') {
       const want = c.pressed('fire') ? 'light' : c.pressed('aim') ? 'heavy' : null;
