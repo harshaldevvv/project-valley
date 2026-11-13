@@ -64,17 +64,22 @@ All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-bef
 29. **Three enterable interiors with loot** (`cabin.ts`): the cabin now has a food cupboard and a tool crate; a corner shop with a fuel canopy and pumps (66,-62; counter, shelves, food and medical cabinets, a crate) and a farmhouse room (-70,62; table, stove, bed, wardrobe, cupboard, duffel). All searchable through the normal container system (loot tables by type) and solid.
 30. **Reactions:** heavy gun kills blow the corpse back off its feet (short ballistic hop), heavy non-lethal hits shove the zombie a step back, headshots still drop instantly. Reload and draw now have view kicks (magazine seat, bolt slam, weapon settle).
 
+31. **UI micro-interactions:** low-health heartbeat (below 35 %, lub-dub speeding up as health falls, synth sound) with the vignette pulsing in time, toast entrance animation, menu button press, inventory drag glow and tilt.
+32. **Wind gusts** (`engine/wind.ts`): one shared gust value drives the tree sway and the wind loop volume, so a gust is seen and heard together.
+33. Re-audit written into the audit doc, with a re-ranked weak list (night look first).
+
 ## Cost of all this
 - Download size grew by about 12 MB of public assets after compression (it was about 30 MB); KTX2 textures would shrink GPU memory further.
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).
 
 ## What's left, ranked
-1. **First-person weapon and arm meshes** are low-poly and a little blocky (the rifle is a box kit with a separate magazine and sockets that the reload clips drive). Needs a hand remodel in Blender that keeps the `MAG` node and sockets; AI generation gives one fused mesh. Blocked on the licence answer for Hunyuan; TRELLIS2 needs about 20 GB free RAM.
-2. **Character polish:** the AI bodies have big heads and flat vector-style textures; the survivor has one look (clothing variants need more 3D generation); the original shambler/worker/soldier could be replaced the same way.
-3. **Game feel not done yet:** weapon swap polish, zombie death/ragdoll variety, surface gore decals, visible crows.
-4. **Test on the laptop GPU**; KTX2 for GPU memory.
-5. **Retexture the palette-only kit** (house, range, signs) with the same detail pipeline plus wear decals; AI posters and signs; title menu art behind the fly-over.
-6. Music: listen to `?music=ai` and decide.
+1. **Night look:** flat and dark; stronger moon light, rim light and fog tint (see the audit's re-audit section).
+2. **Characters:** flat vector-style textures, big heads, blank faces; survivor clothing variants need more 3D (licence-gated, or TRELLIS2 with 20 GB free RAM).
+3. **Near-field trees inside the walls** still the dark cone kit; replace with the AI trees.
+4. **Ground variety:** paths, worn patches, mud at doors.
+5. **First-person weapon and arm meshes:** blocky; a hand remodel that keeps the `MAG` node and sockets.
+6. **Test on the laptop GPU** (toggles for look, AO and shafts exist in Settings); KTX2 for GPU memory.
+7. Music: listen to `?music=ai` and decide.
 
 ## Needs the owner
 - **Licence:** Hunyuan3D-2.1 (Tencent community licence) excludes the EU, UK and South Korea. The 8 props are in `public/assets/models/gen/`. If the game ships there, regenerate them with TRELLIS2 (MIT), which needs about 20 GB of free RAM for its mesh stage (the hub guard stopped it at 2.3 GB free on this PC), or delete them.
