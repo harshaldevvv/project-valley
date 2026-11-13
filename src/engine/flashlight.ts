@@ -1,4 +1,6 @@
-import { SpotLight, Vector3 } from 'three';
+import { AdditiveBlending, ConeGeometry, DoubleSide, Mesh, SpotLight, Vector3 } from 'three';
+import { MeshBasicNodeMaterial } from 'three/webgpu';
+import { float, positionLocal, pow, smoothstep, uniform, vec3 } from 'three/tsl';
 import type { Game } from '../core/game';
 
 /**
@@ -11,6 +13,20 @@ export function installFlashlight(game: Game) {
   light.castShadow = false;
   game.scene.add(light, light.target);
   const state = { on: false, level: 0 };
+  // Visible beam (fog in the cone): an open cone from the lens, brightest near the source and along the axis, fading to
+  // nothing at the far end and the edges; additive, no depth write, so it reads as lit haze. Cost: one draw.
+  const LEN = 15, RAD = LEN * Math.tan(Math.PI / 6.2) * 0.92;
+  const coneGeo = new ConeGeometry(RAD, LEN, 24, 1, true).translate(0, -LEN / 2, 0).rotateX(-Math.PI / 2); // apex at origin, opens toward -Z... rotated below
+  const beam = uniform(0);
+  const along = positionLocal.z.div(LEN); // 0 at the lens .. 1 at the far end (after the rotation, +Z toward the target)
+  const beamMat = new MeshBasicNodeMaterial({ transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, fog: false });
+  beamMat.colorNode = vec3(1.0, 0.9, 0.7);
+  beamMat.opacityNode = beam.mul(pow(float(1).sub(along.abs().clamp(0, 1)), 1.6)).mul(smoothstep(0.0, 0.08, along.abs()));
+  const cone = new Mesh(coneGeo, beamMat);
+  cone.frustumCulled = false;
+  cone.renderOrder = 5;
+  cone.visible = false;
+  game.scene.add(cone);
   addEventListener('keydown', (e) => {
     if (e.code === 'KeyL' && !e.repeat && !game.input.blocked) state.on = !state.on;
   });
@@ -24,6 +40,7 @@ export function installFlashlight(game: Game) {
       state.level += (goal - state.level) * Math.min(1, dt * 14);
       if (state.level < 0.01) {
         light.intensity = 0;
+        cone.visible = false;
         return;
       }
       const cam = game.camera;
@@ -34,6 +51,11 @@ export function installFlashlight(game: Game) {
       const flicker = 1 + 0.03 * Math.sin(t * 37) * Math.sin(t * 11);
       const dark = 0.35 + 0.65 * game.time.night; // dim by day so it does not look like a second sun
       light.intensity = 420 * state.level * flicker * dark;
+      // beam: positioned at the lens, pointing along the view; stronger at night
+      cone.visible = true;
+      cone.position.copy(light.position);
+      cone.lookAt(light.target.position);
+      beam.value = state.level * (0.02 + 0.07 * game.time.night) * flicker;
     },
   });
   return state;

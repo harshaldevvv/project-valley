@@ -1,4 +1,4 @@
-import { PointLight } from 'three';
+import { DirectionalLight, PointLight } from 'three';
 import type { Game } from '../../core/game';
 
 /** Warm flickering light at the camp fire (always in the scene, intensity follows the night). */
@@ -10,12 +10,21 @@ export function buildFireLights(game: Game, fires: [number, number, number][]) {
     game.scene.add(l);
     return l;
   });
+  // Night rim light: a cool, shadowless directional from the side opposite the moon and low, so figures and props get a
+  // bright edge against the dark ground (contre-jour). One light, always present; zero by day.
+  const rim = new DirectionalLight('#7f9fe8', 0);
+  rim.castShadow = false;
+  game.scene.add(rim, rim.target);
   let t = 0;
   game.addSystem({
     name: 'fires',
     render(_a, dt) {
       t += dt;
       const night = Math.min(1, game.time.night * 1.2 + 0.1);
+      const sd = game.sunDir;
+      rim.position.set(-sd.x * 40, 14, -sd.z * 40).add(game.camera.position);
+      rim.target.position.copy(game.camera.position);
+      rim.intensity = 1.1 * Math.max(0, (game.time.night - 0.35) / 0.65);
       lights.forEach((l, i) => {
         const f = 0.8 + 0.2 * Math.sin(t * 9.1 + i) * Math.sin(t * 5.3 + i * 2) + 0.1 * Math.sin(t * 23);
         l.intensity = 38 * night * f;

@@ -30,26 +30,44 @@ export async function buildWornGround(game: Game) {
   // trampled round doors and the camp fire
   for (const [dx, dz] of [[cabin.x + 4.4, cabin.z + 2.8], [shop.x - 1, shop.z + 4.2], [farm.x, farm.z + 3.6], [-15.5, 11.5], [-20, 13]]) for (let k = 0; k < 5; k++) add(dx + rng.range(-1.5, 1.5), dz + rng.range(-1.5, 1.5), rng.range(1.2, 2.4));
   const grunge = await grungeTexture();
-  const mat = new MeshStandardNodeMaterial({ transparent: true, depthWrite: false, roughness: 1, metalness: 0, side: DoubleSide });
-  mat.polygonOffset = true;
-  mat.polygonOffsetFactor = -3;
-  const q = uv().sub(0.5).mul(2);
-  const wob = grunge ? dot(texture(grunge, positionWorld.xz.mul(0.35)).rgb, vec3(0.33, 0.33, 0.34)) : float(0.5);
-  const edge = smoothstep(1.0, 0.25, length(q).add(wob.sub(0.5).mul(0.9)));
-  const tone = grunge ? dot(texture(grunge, positionWorld.xz.mul(0.8)).rgb, vec3(0.33, 0.33, 0.34)) : float(0.5);
-  mat.colorNode = mix(vec3(0.27, 0.2, 0.12), vec3(0.4, 0.31, 0.2), tone);
-  mat.opacityNode = edge.mul(0.78);
-  const mesh = new InstancedMesh(new PlaneGeometry(1, 1).rotateX(-Math.PI / 2), mat, spots.length);
-  mesh.name = 'worn_ground';
-  const m = new Matrix4(), qq = new Quaternion(), up = new Vector3(0, 1, 0), p = new Vector3(), sc = new Vector3();
-  spots.forEach((s, i) => {
-    qq.setFromAxisAngle(up, s.a);
-    sc.set(s.r * 2.1, 1, s.r * 1.5 * (0.8 + s.k * 0.5));
-    p.set(s.x, groundHeight(s.x, s.z) + 0.035, s.z);
-    mesh.setMatrixAt(i, m.compose(p, qq, sc));
-  });
-  mesh.receiveShadow = true;
-  mesh.castShadow = false;
-  mesh.computeBoundingSphere();
-  game.scene.add(mesh);
+  // soft gravel scatter on both sides of every path so the strip edge melts into the lawn
+  const edgeSpots: typeof spots = [];
+  for (const [ex, ez] of ends) {
+    const len = Math.hypot(ex - sx, ez - sz), n = Math.ceil(len / 1.5);
+    const nx = -(ez - sz) / len, nz = (ex - sx) / len;
+    for (let i = 1; i < n; i++) {
+      const t = i / n;
+      for (const side of [-1, 1]) {
+        const off = side * (1.7 + rng.range(-0.2, 0.5));
+        edgeSpots.push({ x: sx + (ex - sx) * t + nx * off, z: sz + (ez - sz) * t + nz * off, r: rng.range(0.6, 1.1), a: rng.range(0, Math.PI * 2), k: rng.next() });
+      }
+    }
+  }
+  const make = (list: typeof spots, name: string, cA: [number, number, number], cB: [number, number, number], opacity: number, lift: number) => {
+    const mat = new MeshStandardNodeMaterial({ transparent: true, depthWrite: false, roughness: 1, metalness: 0, side: DoubleSide });
+    mat.polygonOffset = true;
+    mat.polygonOffsetFactor = -3;
+    const q = uv().sub(0.5).mul(2);
+    const wob = grunge ? dot(texture(grunge, positionWorld.xz.mul(0.35)).rgb, vec3(0.33, 0.33, 0.34)) : float(0.5);
+    const edge = smoothstep(1.0, 0.25, length(q).add(wob.sub(0.5).mul(0.9)));
+    const tone = grunge ? dot(texture(grunge, positionWorld.xz.mul(0.8)).rgb, vec3(0.33, 0.33, 0.34)) : float(0.5);
+    mat.colorNode = mix(vec3(...cA), vec3(...cB), tone);
+    mat.opacityNode = edge.mul(opacity);
+    const mesh = new InstancedMesh(new PlaneGeometry(1, 1).rotateX(-Math.PI / 2), mat, list.length);
+    mesh.name = name;
+    const m = new Matrix4(), qq = new Quaternion(), up = new Vector3(0, 1, 0), p = new Vector3(), sc = new Vector3();
+    list.forEach((s, i) => {
+      qq.setFromAxisAngle(up, s.a);
+      sc.set(s.r * 2.1, 1, s.r * 1.5 * (0.8 + s.k * 0.5));
+      p.set(s.x, groundHeight(s.x, s.z) + lift, s.z);
+      mesh.setMatrixAt(i, m.compose(p, qq, sc));
+    });
+    mesh.receiveShadow = true;
+    mesh.castShadow = false;
+    mesh.computeBoundingSphere();
+    game.scene.add(mesh);
+
+  };
+  make(spots, 'worn_ground', [0.27, 0.2, 0.12], [0.4, 0.31, 0.2], 0.78, 0.035);
+  make(edgeSpots, 'path_edges', [0.3, 0.29, 0.26], [0.42, 0.4, 0.35], 0.5, 0.03);
 }
