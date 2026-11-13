@@ -95,6 +95,12 @@ GPU time per frame on the 4090 with every effect on: about 1.5 ms (`gpums2.mjs`,
 
 Frame rate after pass 8 (vsync-capped; p50 16.67 ms in all six scenes, 0 hitches): draws 118-144, triangles 632k-880k. GPU about 1.65 ms with everything on (about 1.3 ms with the look chain off), 4090.
 
+44. **Headshots, deterministic** (`tools/audit/headtest2.mjs`, synchronous rays on every variant, two directions, heights 1.0-1.7 m): the body capsule was shadowing the lower head ball, so head shots at 1.3-1.4 m returned body. Capsule hits within the head's height band now count as head. Result: AI variants return head for 1.3-1.5 m and body for 1.2 m and below, 100 % in this test; the old shambler, worker, civilian_f and soldier models return head from about 1.5 m. Heads above about 1.55 m miss (hair/hat tips only).
+45. **Night fill:** lighter cool hemisphere and ground tint; ground and walls now read a dark blue-green away from lamps.
+46. **Character detail overlay:** fabric/skin micro detail and grime from the grime texture, in UV space, on the survivor and all AI zombies (`characterDetail` in `palette.ts`).
+47. **FP arms smoothing: second try also failed** (re-assigning flat swatch UVs per child face still leaves the checkered sleeve, my child-face ordering assumption is wrong). Shipped arms unchanged. A bake-to-texture approach would be the real fix.
+48. **Scripted playtest** (`tools/audit/playtest.mjs`, no god mode): a 14-zombie wave killed with 0 damage taken and no errors, then dusk. It is an aimbot, so it only proves nothing breaks and that the wave is too easy for a perfect shooter; it cannot tell what feels bad to a human. **Please play it.** I made no feel changes from it.
+
 ## Cost of all this
 - Download size grew by about 12 MB of public assets after compression (it was about 30 MB); KTX2 textures would shrink GPU memory further.
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).

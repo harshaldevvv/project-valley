@@ -8,7 +8,7 @@ await page.goto('http://localhost:5188/?play');
 await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
 await page.waitForTimeout(2000); await page.mouse.click(640, 360);
 const gp = (f, a) => page.evaluate(f, a);
-await gp(() => { const g = window.__gp; g.ctx.player.godMode = true; g.data.horde.passive = false; g.spawn(16); g.teleport(40, 2, 0); g.setLook(0, -0.02); });
+await gp(() => { const g = window.__gp; g.ctx.player.godMode = true; g.data.horde.passive = false; g.spawn(40); g.teleport(40, 2, 0); g.setLook(0, -0.02); });
 await page.waitForTimeout(2500);
 const found = await gp((id) => { const g = window.__gp.ctx; const i = g.zombies.list.findIndex((z) => z.def.id === id); window.__zi = i; return i; }, id);
 console.log('found', found);
