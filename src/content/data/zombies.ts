@@ -79,7 +79,7 @@ export const zombieDefs: Record<string, ZombieDef> = {
 };
 
 /** Spawn mix (weights, seeded RNG). */
-export const zombieMix: Record<string, number> = { shambler: 0.1, worker: 0.06, civilian_f: 0.05, soldier: 0.04, ai_civilian: 0.12, ai_hazmat: 0.09, ai_soldier: 0.09, ai_nurse: 0.09, ai_worker: 0.1, ai_police: 0.09, ai_hoodie: 0.09, ai_suit: 0.08 };
+export const zombieMix: Record<string, number> = { shambler: 0.4, worker: 0.25, civilian_f: 0.2, soldier: 0.15 }; // the AI-made ai_* variants stay defined but are not spawned (dropped 2026-11-13, see progress log)
 
 export const senses = {
   coneDeg: 80,
