@@ -39,6 +39,7 @@ export async function installGameplay(game: Game): Promise<void> {
   ctx.melee = new Melee(ctx);
   ctx.interact = new Interact(ctx);
   ctx.zombies = new Zombies(ctx);
+  await ctx.zombies.warmCrowds();
   ctx.vehicles = new Vehicles(ctx);
   ctx.targets = new Targets(ctx);
   ctx.animStand = new AnimStand(ctx);

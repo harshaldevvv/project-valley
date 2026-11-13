@@ -742,6 +742,12 @@ export class Zombies {
     this.ctx.sfx('zombie_groan', z.curr, { volume: 0.8 });
   }
 
+  /** Builds every spawnable variant's crowd up front (clip bake, buffers) so the first horde does not stall a frame for ~100 ms. */
+  async warmCrowds() {
+    const ids = Object.keys(zombieMix).filter((k) => zombieDefs[k]);
+    await Promise.all(ids.map((k) => this.crowdFor(zombieDefs[k])));
+  }
+
   private crowds = new Map<string, Promise<Crowd | null>>();
   /** One engine crowd per variant model; null (fallback path) if not built or the bake has no clips yet. */
   private crowdFor(def: ZombieDef): Promise<Crowd | null> {
