@@ -6,12 +6,8 @@ STYLE="single building centered, three-quarter view from slightly above, isolate
 i=0
 while IFS='|' read -r name prompt; do
   i=$((i+1))
-  "$PY" -I D:/AI3D/hub/runners/comfy_image.py --model z-image-turbo --prompt "$prompt, $STYLE" --out "E:/Documents/GitHub/project-valley/assets/gen/props/$name" --params "{\"width\":1024,\"height\":1024,\"steps\":8,\"seed\":$((600+i))}"
+  "$PY" -I D:/AI3D/hub/runners/comfy_image.py --model z-image-turbo --prompt "$prompt, $STYLE" --out "E:/Documents/GitHub/project-valley/assets/gen/props/$name" --params "{\"width\":1024,\"height\":1024,\"steps\":8,\"seed\":$((750+i))}"
 done <<'LIST'
-ruined_house|abandoned two story suburban house with broken windows, partially collapsed roof, peeling paint and overgrown vines
-barn|old weathered red wooden barn with a sagging gambrel roof and missing planks
-gas_station|abandoned roadside gas station with a flat canopy over two pumps and a small shop, faded and rusted
-water_tower|tall rusty steel water tower on four legs with a round tank
-farm_silo|old corrugated metal grain silo with a conical rusty roof and a small shed beside it
-small_church|small white wooden country church with a steeple, peeling paint and broken windows
+tree_oak|single large broadleaf oak tree with a thick trunk and a full rounded green leafy crown, only the tree, no ground, no base, no building, no platform
+tree_autumn|single broadleaf maple tree with a thick trunk and a full crown of orange and yellow autumn leaves, only the tree, no ground, no base, no building, no platform
 LIST

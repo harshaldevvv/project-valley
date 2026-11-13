@@ -49,6 +49,10 @@ function groundSwatch(x: number, z: number) {
   return n > (inside ? 0.66 : 0.6) ? 'grass_dry' : 'grass';
 }
 
+/** Hill trees closer than this are drawn as AI-made instanced models (aiTrees.ts) instead of the cone/blob kit. */
+export const AI_TREE_RANGE = 150;
+export const nearTreeSpots: { x: number; z: number; s: number; a: number; k: number }[] = [];
+
 export function buildGround(kit: Kit) {
   const n = (EXTENT * 2) / CELL;
   const row = n + 1;
@@ -121,6 +125,10 @@ function buildTrees(kit: Kit) {
     if (d < yard.half + 14) continue;
     if (fbm(x * 0.012 + 11, z * 0.012) < 0.42 - (d - 120) * 0.0012) continue; // clustered forest stands
     placed++;
+    if (d < AI_TREE_RANGE) {
+      nearTreeSpots.push({ x, z, s: rng.range(0.8, 1.35), a: rng.range(0, Math.PI * 2), k: rng.next() });
+      continue;
+    }
     tree(x, z);
   }
 
