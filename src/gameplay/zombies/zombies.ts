@@ -300,10 +300,18 @@ export class Zombies {
         this.ctx.fx.impact(info.point, _o.copy(info.dir).negate().setY(0.6).normalize(), 'flesh', info.dir, fxTuning.headPopScale);
         z.headKill = true;
       }
+      // Death reactions: a heavy body or leg hit from a gun blows the corpse backwards off its feet (short ballistic hop,
+      // the same ragdoll-lite as car hits); headshots just drop (instant, no hop).
+      if (!info.melee && !z.headKill && info.damage >= 30 && info.distance < 14 && this.ctx.rand() < 0.75) {
+        z.fling.set(info.dir.x, 0, info.dir.z).setLength(2.6 + this.ctx.rand() * 1.6);
+        z.fling.y = 1.6 + this.ctx.rand() * 1.0;
+      }
       this.die(z, info.dir, !!info.melee);
       return { damage: dmg, kill: true, zone: info.zone };
     }
     this.ctx.sfx('zombie_hurt', z.curr, { pitchJitter: 0.1, volume: 0.7 });
+    // A heavy bullet that does not kill still shoves the zombie back a step
+    if (!info.melee && info.damage >= 30) z.push.copy(info.dir).setY(0).normalize().multiplyScalar(5 + this.ctx.rand() * 3);
     // Stagger ladder: 30 % max HP within 1.5 s, or melee stagger rule
     let recent = 0;
     for (const d of z.dmgLog) if (this.time - d.t <= z.def.staggerWindow) recent += d.amt;
