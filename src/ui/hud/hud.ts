@@ -43,7 +43,7 @@ const CSS = `
 .hud .prompt svg{width:24px;height:24px}
 .hud .prompt kbd{font:700 12px system-ui;border:1px solid #fff8;border-radius:3px;padding:1px 6px}
 .hud .wedge{position:absolute;left:50%;top:50%;width:0;height:0;opacity:0}
-.hud .wedge i{position:absolute;left:-60px;top:-190px;width:120px;height:40px;background:radial-gradient(ellipse at 50% 100%,#ff2010cc,#ff201000 70%);border-radius:50% 50% 0 0}
+.hud .wedge i{position:absolute;left:-110px;top:-215px;width:220px;height:64px;background:radial-gradient(ellipse at 50% 100%,#ff3018f0,#ff301800 72%);border-radius:50% 50% 0 0;filter:drop-shadow(0 0 10px #ff2010aa)}
 .hud .vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,#0000 55%,#7a0000 130%);opacity:0}
 .hud .toasts{position:absolute;left:50%;top:70px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px}
 .hud .toasts div{background:#000a;padding:5px 12px;border-radius:5px;transition:opacity .4s}

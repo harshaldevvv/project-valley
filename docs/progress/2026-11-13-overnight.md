@@ -54,6 +54,8 @@ All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-bef
 
 24. **Weather** (`engine/weather.ts`): rain showers on a deterministic per-day schedule (about one day in three, 2-5 game hours), eased in and out over about 12 s: shader-driven streaks (one instanced draw), tighter fog, softer grade and exposure, a stable-audio3-sfx rain loop, more wind, fewer birds. F1 > Weather has Rain on / off / Follow schedule. AI trees now sway in the wind.
 
+25. **Damage direction indicator:** the existing wedge is now larger and brighter with a glow (checked with an attacker to the right).
+
 ## Cost of all this
 - Download size grew by about 30 MB of public assets (props and buildings 12 MB, characters 11 MB, textures 4.7 MB, audio 2.2 MB). Not yet meshopt/KTX2 compressed; do that before shipping (`gltf-transform optimize`).
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).
@@ -61,7 +63,7 @@ All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-bef
 ## What's left, ranked
 1. **First-person weapon and arm meshes** are still blocky (the rifle is a box kit with a separate magazine and sockets that the reload clips drive). Needs a hand remodel in Blender that keeps the `MAG` node and sockets; AI generation gives one fused mesh. Blocked on the licence answer for Hunyuan; TRELLIS2 needs about 20 GB free RAM.
 2. **Character polish:** the AI bodies have big heads and flat vector-style textures; the survivor has one look (clothing variants need more 3D generation); the original shambler/worker/soldier could be replaced the same way.
-3. **Game feel not done yet:** weapon sway and swap polish, zombie death/ragdoll variety, surface gore decals, rain or fog weather, crows and wind in foliage as visible life, a directional damage indicator in the HUD.
+3. **Game feel not done yet:** weapon swap polish, zombie death/ragdoll variety, surface gore decals, visible crows.
 4. **Compress the new assets** (30 MB of GLB, PNG and OGG; `gltf-transform optimize`, KTX2 textures) and test on the laptop GPU.
 5. **Retexture the palette-only kit** (house, range, signs) with the same detail pipeline plus wear decals; AI posters and signs; title menu art behind the fly-over.
 6. Music: listen to `?music=ai` and decide.
