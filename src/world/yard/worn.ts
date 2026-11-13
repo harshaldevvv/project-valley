@@ -5,6 +5,9 @@ import type { Game } from '../../core/game';
 import { yard } from '../../content/data/yard';
 import { createRng } from '../../engine/rng';
 import { grungeTexture } from '../../engine/palette';
+import { groundSurfaceAt } from '../surfaces';
+import { underDress } from './dress';
+import { underGenProp } from './genProps';
 import { cabin, farm, shop } from './cabin';
 import { groundHeight } from './ground';
 
@@ -43,7 +46,10 @@ export async function buildWornGround(game: Game) {
       }
     }
   }
-  const make = (list: typeof spots, name: string, cA: [number, number, number], cB: [number, number, number], opacity: number, lift: number) => {
+  // never stain a concrete platform: drop patches inside a station footprint or on the spawn hub (path ends sit on the edges)
+  const onPlatform = (x: number, z: number) => Math.hypot(x - sx, z - sz) < 7 || Object.values(st).some((a) => Math.abs(x - a.x) < a.w / 2 - 0.5 && Math.abs(z - a.z) < a.d / 2 - 0.5);
+  const make = (all: typeof spots, name: string, cA: [number, number, number], cB: [number, number, number], opacity: number, lift: number) => {
+    const list = all.filter((q) => !onPlatform(q.x, q.z) || name.startsWith('lawn_'));
     const mat = new MeshStandardNodeMaterial({ transparent: true, depthWrite: false, roughness: 1, metalness: 0, side: DoubleSide });
     mat.polygonOffset = true;
     mat.polygonOffsetFactor = -3;
@@ -70,4 +76,25 @@ export async function buildWornGround(game: Game) {
   };
   make(spots, 'worn_ground', [0.27, 0.2, 0.12], [0.4, 0.31, 0.2], 0.78, 0.035);
   make(edgeSpots, 'path_edges', [0.3, 0.29, 0.26], [0.42, 0.4, 0.35], 0.5, 0.03);
+
+  // Lawn variety: big soft tint patches on open grass (dry straw, dark clover, bare soil, fresh green), a few hundred
+  // quads in four draws, so the lawn between stations stops reading as one flat green.
+  const half = yard.half - 3;
+  const scatter = (n: number, rmin: number, rmax: number, seedOff: number) => {
+    const out: typeof spots = [];
+    for (let tries = 0; out.length < n && tries < n * 12; tries++) {
+      const x = rng.range(-half, half), z = rng.range(-half, half);
+      const r = rng.range(rmin, rmax) * 0.55; // quad half-extent is about 1.05 r, so keep every sample under it on open grass
+      const open = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [0.7, 0.7], [-0.7, -0.7]].every(([dx, dz]) => groundSurfaceAt(x + dx * r * 1.1, z + dz * r * 1.1) === 'grass');
+      const inStation = Object.values(st).some((a) => Math.abs(x - a.x) < a.w / 2 + 3 + r && Math.abs(z - a.z) < a.d / 2 + 3 + r); // platforms there are not all ground regions
+      if (!open || inStation || underGenProp(x, z, 1.5 + r) || underDress(x, z, 2 + r)) continue;
+      if (Math.hypot(x - sx, z - sz) < 6 + r) continue;
+      out.push({ x, z, r, a: rng.range(0, Math.PI * 2) + seedOff, k: rng.next() });
+    }
+    return out;
+  };
+  make(scatter(150, 3.5, 8, 0), 'lawn_dry', [0.5, 0.45, 0.2], [0.62, 0.56, 0.3], 0.5, 0.012);
+  make(scatter(120, 3, 7, 1), 'lawn_clover', [0.1, 0.22, 0.07], [0.16, 0.3, 0.1], 0.55, 0.013);
+  make(scatter(70, 1.5, 3.4, 2), 'lawn_soil', [0.3, 0.22, 0.14], [0.4, 0.3, 0.2], 0.6, 0.014);
+  make(scatter(90, 4, 9, 3), 'lawn_fresh', [0.2, 0.36, 0.1], [0.3, 0.46, 0.16], 0.4, 0.011);
 }
