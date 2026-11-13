@@ -1,0 +1,10 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ channel: 'chrome', headless: false });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+page.on('pageerror', e => console.log('PAGEERR', String(e).slice(0, 160)));
+page.on('console', m => m.type() === 'error' && console.log('CONSOLE', m.text().slice(0, 200)));
+page.on('response', r => r.status() >= 400 && console.log('HTTP', r.status(), r.url()));
+page.on('requestfailed', r => console.log('FAILED', r.url()));
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
+await page.waitForTimeout(2500); await browser.close();

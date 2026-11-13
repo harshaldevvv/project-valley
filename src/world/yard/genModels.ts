@@ -1,28 +1,5 @@
-/** AI-made models in public/assets/models/gen (id, bytes). Listed so the boot screen can prefetch them with real progress. */
-export const genModels: [string, number][] = [
-  ['barn', 353776],
-  ['barrels', 188940],
-  ['burned_van', 280628],
-  ['bush_overgrown', 201320],
-  ['campfire', 210424],
-  ['crate_stack', 165328],
-  ['dead_tree', 232684],
-  ['dumpster', 173416],
-  ['farm_silo', 329688],
-  ['gas_station', 315764],
-  ['generator', 166952],
-  ['pallet_stack', 222364],
-  ['ruined_house', 446932],
-  ['sandbag_wall', 161764],
-  ['shipping_container', 160256],
-  ['small_church', 349156],
-  ['sofa_junk', 153964],
-  ['tent_military', 156684],
-  ['tire_pile', 151712],
-  ['tree_birch', 87920],
-  ['tree_pine', 83912],
-  ['watchtower', 193704],
-  ['water_tower', 257860],
-  ['wreck_sedan', 284188],
-];
-export const genModelPath = (id: string) => `assets/models/gen/${id}.glb`;
+import { PF, pfFiles } from './pfModels';
+/** Polyfork models in public/assets/models/pf (file, bytes unknown: sizes are small), so the boot screen can prefetch them. */
+export const genModels: [string, number][] = [...new Set(pfFiles)].map((f) => [f, 120_000]);
+export const genModelPath = (file: string) => `assets/models/pf/${file}.glb`;
+void PF;

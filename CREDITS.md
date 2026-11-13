@@ -60,12 +60,42 @@ except for the meshopt decoder that ships with three.js.
 | Asset | Made with | Licence of the model |
 |---|---|---|
 | Detail textures `public/assets/textures/{grass,dirt,concrete,grunge}.png` | z-image-turbo (ComfyUI) | Apache-2.0 |
-| 8 props in `public/assets/models/gen/` (sedan wreck, tent, sandbags, barrels, dead tree, generator, pallets, dumpster): concept picture from z-image-turbo, mesh and texture from Hunyuan3D-2.1, cleaned in Blender (`tools/audit/fit_glb.py`) | z-image-turbo, Hunyuan3D-2.1 | Apache-2.0; Tencent Hunyuan community licence (not valid in the EU, UK and South Korea): owner decision needed, see `docs/progress/2026-11-13-overnight.md` |
-| Distant buildings (barn, ruined houses, gas station, church, water tower, silo) in `public/assets/models/gen/` | z-image-turbo, Hunyuan3D-2.1 | Apache-2.0; Tencent Hunyuan community licence (not valid in the EU, UK and South Korea) |
 | Wall decals `public/assets/textures/decals/*.png` (spray paint, stencils, chalk tallies) | z-image-turbo | Apache-2.0 |
 | Ambient look: bloom, grade, clouds, grass, motes | original code | MIT |
-| Survivor and 4 zombie variants `chr_survivor_a.glb`, `zmb_ai_*.glb` (picture, mesh and texture; skinned to the project's own rig in Blender with `tools/audit/retarget_char.py`) | z-image-turbo, Hunyuan3D-2.1 | Apache-2.0; Tencent Hunyuan community licence (not valid in the EU, UK and South Korea) |
 | Sound effects `public/assets/audio/gen/*.ogg` (melee swings, flesh impacts, headshot crack, body fall) | stable-audio3-sfx | Stability AI Community licence (free under about $1M annual revenue): check before a commercial release |
 | Optional scores `public/assets/audio/gen/music_*.ogg` (play with `?music=ai`; loop points crossfaded) | ACE-Step 1.5 XL | Apache-2.0; not yet listened to by the author of this change |
 | Loading screen key art `public/assets/art/keyart.jpg` | z-image-turbo | Apache-2.0 |
 | Rain loop `public/assets/audio/gen/rain_loop.ogg` | stable-audio3-sfx | Stability AI Community licence |
+
+## Polyfork catalog models (CC BY 4.0)
+
+Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork catalog, https://polyfork.dev
+(index: https://github.com/lucas-martinic/polyfork-catalog), used under the CC BY 4.0 option of their licence
+(https://polyfork.dev/licensing). Changes: rescaled to the in-game height, instanced or merged, wind sway on trees. Credit format: *Name by Polyfork (page URL), CC BY 4.0*.
+
+| Model | Page |
+|---|---|
+| Alpine Hay Barn by Polyfork | https://polyfork.dev/asset/alpine-hay-barn-3965e5 |
+| Ammo Crate by Polyfork | https://polyfork.dev/asset/ammo-crate-ee3ec0 |
+| Birch Tree by Polyfork | https://polyfork.dev/asset/birch-tree-181b33 |
+| Boxy-sedan-70s by Polyfork | https://polyfork.dev/asset/boxy-sedan-70s-7d55f7 |
+| Brass water tower by Polyfork | https://polyfork.dev/asset/brass-water-tower-b0c6d9 |
+| Bush by Polyfork | https://polyfork.dev/asset/bush-8bb596 |
+| Camp Tent by Polyfork | https://polyfork.dev/asset/camp-tent-3c5c89 |
+| Campfire by Polyfork | https://polyfork.dev/asset/campfire-4390aa |
+| Cargo Container by Polyfork | https://polyfork.dev/asset/cargo-container-fd73bc |
+| Clapboard Church by Polyfork | https://polyfork.dev/asset/clapboard-church-03a6f5 |
+| Construction Dumpster by Polyfork | https://polyfork.dev/asset/construction-dumpster-2de7ae |
+| Dead Tree by Polyfork | https://polyfork.dev/asset/dead-tree-6795fa |
+| Delivery Truck by Polyfork | https://polyfork.dev/asset/delivery-truck-a9537e |
+| Fire Lookout Tower by Polyfork | https://polyfork.dev/asset/fire-lookout-tower-714fa1 |
+| Fuel Depot by Polyfork | https://polyfork.dev/asset/fuel-depot-e57cdc |
+| Fuel Drum by Polyfork | https://polyfork.dev/asset/fuel-drum-d65fa4 |
+| Gabled Farmhouse by Polyfork | https://polyfork.dev/asset/gabled-farmhouse-c7534f |
+| Grain Silo by Polyfork | https://polyfork.dev/asset/grain-silo-58ca67 |
+| Oak Tree by Polyfork | https://polyfork.dev/asset/oak-tree-50ee7c |
+| Site Generator by Polyfork | https://polyfork.dev/asset/site-generator-298792 |
+| Sofa by Polyfork | https://polyfork.dev/asset/sofa-9c0e7e |
+| Tall Pine Tree by Polyfork | https://polyfork.dev/asset/tall-pine-tree-ab4108 |
+| Tyre Stack by Polyfork | https://polyfork.dev/asset/tyre-stack-ad4692 |
+| Young Pine by Polyfork | https://polyfork.dev/asset/young-pine-0d7695 |

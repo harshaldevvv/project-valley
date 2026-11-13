@@ -1,14 +1,13 @@
-import { Box3, Mesh, MeshStandardMaterial, Vector3 } from 'three';
-import { gltfLoader } from '../../engine/assets';
-import { assetUrl } from '../../engine/assetUrl';
+import { Box3, Object3D, Mesh, Vector3 } from 'three';
+import { loadPf } from './pfModels';
 import type { Surface } from '../surfaces';
 import { groundHeight } from './ground';
 import type { Kit } from './kit';
 
 /**
- * Textured props made with local AI (z-image-turbo picture -> TRELLIS2 mesh -> Blender fit, see
- * tools/audit/ and docs/progress/2026-11-13-overnight.md). Unlike palette models they keep their own baked texture.
- * Each is a unique object with one box collider from its bounding box. A missing file is skipped, never fatal.
+ * Props and buildings from the Polyfork catalog (CC BY 4.0, credited in CREDITS.md; see pfModels.ts). The old local-AI-generated
+ * ones were dropped on 2026-11-13. Each is a unique object with one box collider from its bounding box.
+ * A missing file is skipped, never fatal.
  */
 interface Prop { id: string; x: number; z: number; yaw: number; surface: Surface; solid?: boolean; shrink?: number; r?: number; noCollide?: boolean }
 export const genProps: Prop[] = [
@@ -53,23 +52,20 @@ export const genProps: Prop[] = [
 export const underGenProp = (x: number, z: number, pad = 0.4) => genProps.some((p) => Math.hypot(x - p.x, z - p.z) < (p.r ?? (p.solid ? 2.4 : 0.6)) + pad);
 
 export async function buildGenProps(kit: Kit) {
-  const cache = new Map<string, Promise<{ scene: import('three').Group } | null>>();
+  const cache = new Map<string, Promise<Object3D | null>>();
   const load = (id: string) => {
     let p = cache.get(id);
-    if (!p) cache.set(id, (p = gltfLoader.loadAsync(assetUrl(`assets/models/gen/${id}.glb`)).catch(() => { console.warn(`gen prop ${id} missing`); return null; })));
+    if (!p) cache.set(id, (p = loadPf(id)));
     return p;
   };
   await Promise.all([...new Set(genProps.map((p) => p.id))].map(load)); // fetch all models in parallel, place them in order below
   for (const p of genProps) {
     const g = await load(p.id);
     if (!g) continue;
-    const o = g.scene.clone(true);
+    const o = g.clone(true);
     o.traverse((m) => {
       const mesh = m as Mesh;
-      if (!mesh.isMesh) return;
-      const mat = mesh.material as MeshStandardMaterial;
-      mat.roughness = 0.88; mat.metalness = 0; mat.side = 0; // FrontSide
-      mesh.castShadow = mesh.receiveShadow = true;
+      if (mesh.isMesh) mesh.castShadow = mesh.receiveShadow = true;
     });
     o.updateMatrixWorld(true);
     const local = new Box3().setFromObject(o); // un-rotated, at the origin
