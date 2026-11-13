@@ -80,7 +80,7 @@ am = nm.modifiers.new('Armature', 'ARMATURE'); am.object = arm
 nm.parent = arm
 # UVs untouched; texture shrunk
 for img in bpy.data.images:
-    if img.size[0] > 512: img.scale(512, 512)
+    if img.size[0] > 1024: img.scale(1024, 1024)
 for mat in bpy.data.materials: mat.use_backface_culling = True
 # LODs
 def lod(name, ratio):

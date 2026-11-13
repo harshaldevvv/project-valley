@@ -17,7 +17,7 @@ for (const [dir, only] of dirs) {
     const p = `${dir}/${f}`; if (!existsSync(`${orig}/${f}`)) copyFileSync(p, `${orig}/${f}`);
     const src = `${orig}/${f}`; before += statSync(src).size;
     const doc = await io.read(src);
-    const size = BUILDINGS.test(f) ? 768 : 512;
+    const size = /^(zmb_ai_|chr_)/.test(f) ? 1024 : BUILDINGS.test(f) ? 768 : 512; // characters keep 1024: the face is a few hundred pixels of the sheet
     await doc.transform(dedup(), prune({ keepAttributes: true, keepLeaves: true }),
       textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [size, size], quality: 78 }),
       meshopt({ encoder: MeshoptEncoder, level: 'medium' }));
