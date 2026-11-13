@@ -50,6 +50,7 @@ export const sounds: Record<string, SoundDef> = {
   zombie_attack: { files: z(7, 13, 14, 22, 23), volume: 0.85, refDistance: 2, maxDistance: 60, jitter: 0.06, synth: 'hum' },
   zombie_hurt: { files: z(3, 5, 6, 11, 24), volume: 0.75, refDistance: 2, maxDistance: 60, jitter: 0.08, synth: 'hum' },
   zombie_death: { files: z(16, 17, 18, 21), volume: 0.85, refDistance: 2, maxDistance: 60, jitter: 0.05, synth: 'hum' },
+  heartbeat: { files: [], volume: 0.7, refDistance: 1, maxDistance: 1, jitter: 0.03, synth: 'thud' },
   // melee
   melee_swing: { files: ['gen/swing_1.ogg', 'gen/swing_2.ogg', 'gen/swing_3.ogg'], volume: 0.5, refDistance: 1, maxDistance: 15, jitter: 0.1, synth: 'whoosh' },
   melee_hit: { files: [...k('impactPunch_heavy'), 'gen/flesh_3.ogg', 'gen/flesh_1.ogg', 'gen/flesh_4.ogg'], volume: 0.85, refDistance: 2, maxDistance: 30, jitter: 0.06, synth: 'thud' },

@@ -62,7 +62,8 @@ const CSS = `
 .hud .ammo .w{font:600 12px var(--display);letter-spacing:.24em;color:var(--accent);opacity:1}
 .hud .prompt{background:#0a0d0ccc;border:1px solid #ffffff22;border-radius:2px;font:600 14px var(--display);letter-spacing:.08em}
 .hud .prompt kbd{border-color:var(--accent);color:var(--accent);font-family:var(--display)}
-.hud .toasts div{background:#0a0d0ccc;border-left:2px solid var(--accent);border-radius:2px;font-family:var(--display);letter-spacing:.06em}
+.hud .toasts div{background:#0a0d0ccc;border-left:2px solid var(--accent);border-radius:2px;font-family:var(--display);letter-spacing:.06em;animation:hud-toast .28s cubic-bezier(.2,.8,.2,1) both}
+@keyframes hud-toast{from{opacity:0;transform:translateY(-8px) scale(.96)}to{opacity:1;transform:none}}
 .hud .range{border-radius:2px;border-left:2px solid var(--accent)}
 .hud .vig{background:radial-gradient(ellipse at center,#0000 50%,#8a0000 135%)}
 .hud div.dead{font:700 clamp(54px,8vw,104px)/1 var(--display);letter-spacing:.32em;text-indent:.32em;color:#c93a2e;text-shadow:0 0 40px #000c,0 4px 0 #000a;
@@ -108,6 +109,7 @@ export class Hud {
   private ring: SVGCircleElement;
   private wedge: HTMLElement;
   private wedgeT = 0;
+  private beatT = 0; // low-health heartbeat clock (s)
   private wedgeFrom: { x: number; z: number } | null = null;
   private vig: HTMLElement;
   private toasts: HTMLElement;
@@ -294,7 +296,19 @@ export class Hud {
     this.set('hp', this.hpB, 'transform', `scaleX(${(p.hp / HD.max).toFixed(3)})`);
     this.set('st', this.stB, 'transform', `scaleX(${(p.stamina.value / SD.max).toFixed(3)})`);
     this.set('stc', this.st, 'class', 'bar st' + (p.stamina.exhausted ? ' ex' : ''));
-    this.set('vig', this.vig, 'opacity', (Math.max(0, 1 - p.hp / HD.max) * 0.9 + this.wedgeT * 0.25).toFixed(2));
+    // Low-health heartbeat (below 35 %): lub-dub that speeds up as health falls, with the vignette pulsing in time
+    const frac = p.hp / HD.max;
+    let pulse = 0;
+    if (!p.dead && frac < 0.35) {
+      const rate = 1.0 + (0.35 - frac) * 3.2; // beats per second, 1.0 .. ~2.1
+      const before = this.beatT;
+      this.beatT += dt * rate;
+      if (Math.floor(before) !== Math.floor(this.beatT)) this.ctx.sfx('heartbeat', undefined, { volume: 0.5 + (0.35 - frac), pitchJitter: 0.03 });
+      if (Math.floor(before * 2 + 0.5) !== Math.floor(this.beatT * 2 + 0.5) && this.beatT % 1 > 0.2) this.ctx.sfx('heartbeat', undefined, { volume: 0.32 + (0.35 - frac) * 0.6, pitchJitter: 0.03 });
+      const ph = this.beatT % 1;
+      pulse = Math.max(0, 1 - ph * 3.2) * (0.35 - frac) * 1.6;
+    }
+    this.set('vig', this.vig, 'opacity', Math.min(1, Math.max(0, 1 - frac) * 0.9 + this.wedgeT * 0.25 + pulse).toFixed(2));
 
     // Damage wedge points toward the attacker (relative to the view yaw)
     this.wedgeT = Math.max(0, this.wedgeT - dt);

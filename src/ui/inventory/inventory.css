@@ -223,3 +223,8 @@
 @keyframes inv-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes inv-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .inv-root, .inv-col { animation: none; } }
+
+/* Drag feedback (2026-11-13): the lifted item tilts and glows amber; valid/invalid drop cells already tint green/red. */
+.inv-ghost { transform: rotate(-2.5deg) scale(1.06); filter: drop-shadow(0 0 8px rgba(217, 178, 90, 0.55)) brightness(1.1); transition: transform 0.12s ease; }
+.inv-item.dragging { filter: grayscale(0.7); }
+.inv-slot, .inv-hot { transition: border-color 0.12s ease, background-color 0.12s ease; }

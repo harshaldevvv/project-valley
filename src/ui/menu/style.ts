@@ -28,6 +28,7 @@ export const MENU_CSS = `
  transition:width .22s cubic-bezier(.2,.7,.2,1)}
 #menu .mn-btn:hover,#menu .mn-btn:focus-visible,#menu .mn-btn.active{color:var(--ink);padding-left:30px;outline:none}
 #menu .mn-btn:hover::before,#menu .mn-btn:focus-visible::before,#menu .mn-btn.active::before{width:18px}
+#menu .mn-btn:active{transform:scale(.97);transition:transform .06s ease}
 #menu .mn-btn.primary{color:var(--ink);font-size:30px;margin-bottom:6px}
 #menu .mn-btn.primary::after{content:"";position:absolute;left:0;right:0;bottom:4px;height:1px;background:linear-gradient(90deg,var(--accent),transparent);opacity:.6}
 #menu .mn-btn.quiet{font-size:16px;color:var(--faint);margin-top:14px}

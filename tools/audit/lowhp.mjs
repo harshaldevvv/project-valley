@@ -1,0 +1,11 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = []; page.on('pageerror', e => errs.push((e.stack || String(e)).slice(0, 300))); page.on('console', m => m.type() === 'error' && errs.push(m.text().slice(0, 200)));
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
+await page.waitForTimeout(2000); await page.mouse.click(640, 360);
+await page.evaluate(() => { const p = window.__gp.ctx.player; p.godMode = false; p.damage(Math.max(1, p.hp - 22), null); });
+await page.waitForTimeout(400); await page.screenshot({ path: 'docs/audit/screenshots/wip/52_lowhp.png' });
+await page.waitForTimeout(1500);
+console.log('errors', errs); await browser.close();
