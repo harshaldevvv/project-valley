@@ -1,5 +1,5 @@
 import { MeshStandardNodeMaterial } from 'three/webgpu';
-import { texture, uv, positionGeometry, positionWorld, normalWorld, abs, mix, float, vec3, vec2, dot, smoothstep, clamp } from 'three/tsl';
+import { sin, texture, uv, positionGeometry, positionWorld, normalWorld, abs, mix, float, vec3, vec2, dot, smoothstep, clamp } from 'three/tsl';
 import { BufferAttribute, BufferGeometry, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from 'three';
 import palette from '../content/data/palette.json';
 import { assetUrl } from './assetUrl';
@@ -63,6 +63,28 @@ export async function paletteCharacterMaterial() {
   return (chars = m);
 }
 
+let arms: MeshStandardNodeMaterial | null = null;
+/** First-person arms: the atlas skin swatch is a saturated orange; shift skin pixels to a natural tone and add cloth wear. */
+export async function paletteArmsMaterial() {
+  if (arms) return arms;
+  const [plain, atlasTex, grunge] = [await paletteMaterial(), await paletteAtlas(), await grungeTexture()];
+  const c = texture(atlasTex, uv()).rgb;
+  const skin = smoothstep(0.18, 0.36, c.x.sub(c.z)).mul(smoothstep(0.0, 0.08, c.x.sub(c.y))); // strongly orange-red pixels
+  const l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+  const natural = vec3(0.36, 0.2, 0.14).mul(l.mul(1.5).add(0.35));
+  let col: any = mix(c, natural, skin.mul(0.85));
+  if (grunge) {
+    const lp = positionGeometry;
+    const g = dot(texture(grunge, vec2(lp.x.add(lp.z), lp.y).mul(4)).rgb, vec3(0.2126, 0.7152, 0.0722));
+    col = col.mul(clamp(g.sub(0.42).mul(1.2).add(1), 0.7, 1.3));
+  }
+  const m = new MeshStandardNodeMaterial({ roughness: 0.8, metalness: 0 });
+  m.colorNode = col;
+  m.map = atlasTex;
+  m.name = 'palette_arms';
+  return (arms = grunge || atlasTex ? m : plain);
+}
+
 let gear: MeshStandardNodeMaterial | null = null;
 /** Atlas + object-space wear for held gear (weapons, tools): scratches, soot and glossier dark metal. */
 export async function paletteGearMaterial() {
@@ -74,7 +96,11 @@ export async function paletteGearMaterial() {
   const gA = lumv(texture(grunge, vec2(lp.x.add(lp.z), lp.y.add(lp.z.mul(0.5))).mul(3.2)).rgb);
   const gB = lumv(texture(grunge, vec2(lp.z.mul(2.1), lp.y.add(lp.x).mul(2.6)).add(vec2(0.4, 0.1))).rgb);
   const base = texture(atlasTex, uv()).rgb.mul(clamp(gA.sub(0.42).mul(1.7).add(1), 0.55, 1.5));
-  const col = base.add(smoothstep(0.58, 0.8, gB).mul(0.1)); // bright scratches
+  // wood (the saturated orange-brown swatches): darker, less orange, with grain along the barrel axis
+  const woodMask = smoothstep(0.2, 0.34, base.x.sub(base.z)).mul(smoothstep(0.02, 0.1, base.x.sub(base.y)));
+  const grain = sin(lp.z.mul(70).add(gA.mul(7)).add(lp.y.mul(25))).mul(0.5).add(0.5);
+  const woodCol = vec3(0.16, 0.075, 0.035).mul(grain.mul(0.35).add(0.75)).mul(lumv(base).mul(0.9).add(0.5));
+  const col = mix(base, woodCol, woodMask.mul(0.8)).add(smoothstep(0.58, 0.8, gB).mul(0.1)); // bright scratches
   const m = new MeshStandardNodeMaterial({ metalness: 0 });
   m.colorNode = col;
   m.roughnessNode = mix(float(0.42), float(0.85), smoothstep(0.08, 0.3, lumv(base)));
