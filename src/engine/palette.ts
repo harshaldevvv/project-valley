@@ -1,5 +1,5 @@
 import { MeshStandardNodeMaterial } from 'three/webgpu';
-import { sin, texture, uv, positionGeometry, positionWorld, normalWorld, abs, mix, float, vec3, vec2, dot, smoothstep, clamp } from 'three/tsl';
+import { vertexColor, sin, texture, uv, positionGeometry, positionWorld, normalWorld, abs, mix, float, vec3, vec2, dot, smoothstep, clamp } from 'three/tsl';
 import { BufferAttribute, BufferGeometry, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from 'three';
 import palette from '../content/data/palette.json';
 import { assetUrl } from './assetUrl';
@@ -131,6 +131,27 @@ export async function paletteGearMaterial() {
 }
 
 let world: MeshStandardNodeMaterial | null = null;
+let detailFactor: any = null; // TSL node: the world-space surface detail multiplier (built with the world material)
+let pfMat: MeshStandardNodeMaterial | null = null;
+
+/**
+ * World-detail material for vertex-coloured static models (Polyfork props, buildings, trees): their own colours times the
+ * same grass/dirt/concrete/grime detail as the palette world, plus a slight desaturation toward the lawn so hand-made
+ * models and AI-textured ground read as one art style. Static objects only (world-space projection).
+ */
+export async function pfWorldMaterial() {
+  if (pfMat) return pfMat;
+  await paletteWorldMaterial();
+  const m = new MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.9, metalness: 0 });
+  if (detailFactor) {
+    const c = vertexColor().rgb;
+    const l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    const soft = mix(vec3(l), c, 0.88).mul(vec3(0.96, 0.97, 0.93)); // 12 % desaturated, a touch warmer
+    m.colorNode = soft.mul(mix(float(1), detailFactor, 0.8));
+  }
+  m.name = 'pf_world';
+  return (pfMat = m);
+}
 /**
  * The atlas plus world-space surface detail, for STATIC world geometry only (merged yard mesh, instanced statics):
  * the detail is projected from world position, so it would swim on anything that moves.
@@ -177,7 +198,8 @@ export async function paletteWorldMaterial() {
   const foot = float(1).sub(smoothstep(0.9, 0.0, wp.y).mul(float(1).sub(top)).mul(0.35));
   const patch = lum(texture(grunge, xz.mul(0.011)).rgb).mul(0.5).add(0.75);
   const base = texture(tex, uv());
-  m.colorNode = base.rgb.mul(detail).mul(foot).mul(mix(float(1), patch, top.mul(0.6)));
+  detailFactor = detail.mul(foot).mul(mix(float(1), patch, top.mul(0.6)));
+  m.colorNode = base.rgb.mul(detailFactor);
   m.map = tex;
   m.name = 'palette_world';
   return (world = m);

@@ -1,4 +1,5 @@
 import { Box3, Object3D, Mesh, Vector3 } from 'three';
+import { pfWorldMaterial } from '../../engine/palette';
 import { loadPf } from './pfModels';
 import type { Surface } from '../surfaces';
 import { groundHeight } from './ground';
@@ -58,6 +59,7 @@ export async function buildGenProps(kit: Kit) {
     if (!p) cache.set(id, (p = loadPf(id)));
     return p;
   };
+  const detailMat = await pfWorldMaterial();
   await Promise.all([...new Set(genProps.map((p) => p.id))].map(load)); // fetch all models in parallel, place them in order below
   for (const p of genProps) {
     const g = await load(p.id);
@@ -65,7 +67,9 @@ export async function buildGenProps(kit: Kit) {
     const o = g.clone(true);
     o.traverse((m) => {
       const mesh = m as Mesh;
-      if (mesh.isMesh) mesh.castShadow = mesh.receiveShadow = true;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = mesh.receiveShadow = true;
+      if ((mesh.material as { vertexColors?: boolean }).vertexColors) mesh.material = detailMat;
     });
     o.updateMatrixWorld(true);
     const local = new Box3().setFromObject(o); // un-rotated, at the origin

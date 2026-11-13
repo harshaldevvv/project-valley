@@ -3,6 +3,7 @@ import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { fract, instanceIndex, positionLocal, sin, time, vec3 } from 'three/tsl';
 import type { Game } from '../../core/game';
 import { windGust } from '../../engine/wind';
+import { pfWorldMaterial } from '../../engine/palette';
 import { groundHeight, nearTreeSpots } from './ground';
 import { loadPfGeometry, PF } from './pfModels';
 
@@ -30,7 +31,7 @@ export async function buildAiTrees(game: Game) {
   const m = new Matrix4(), q = new Quaternion(), up = new Vector3(0, 1, 0), p = new Vector3(), sc = new Vector3();
   for (const b of buckets) {
     if (!b.spots.length) continue;
-    const mat = new MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
+    const mat = (await pfWorldMaterial()).clone() as MeshStandardNodeMaterial; // same detail look; own clone for the sway
     const phase = fract(sin(instanceIndex.toFloat().mul(12.9898)).mul(43758.5453)).mul(6.28);
     const h = positionLocal.y.div(PF[b.sp.id].h).max(0);
     const sway = sin(time.mul(1.1).add(phase)).add(sin(time.mul(2.3).add(phase.mul(1.7))).mul(0.35)).mul(h.mul(h)).mul(windGust.mul(0.2).add(0.1));
