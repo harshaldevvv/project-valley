@@ -9,7 +9,7 @@
       html, body { margin: 0; height: 100%; background: #0b0d0c; overflow: hidden; }
       canvas { display: block; width: 100%; height: 100%; }
       /* Boot loading screen (driven by src/ui/loading/loading.ts). Inline so it paints before any script loads. */
-      #boot { position: fixed; inset: 0; z-index: 30; background: #0b0d0c; color: #eef0ea; display: flex; flex-direction: column;
+      #boot { position: fixed; inset: 0; z-index: 30; background: linear-gradient(90deg, rgba(8,10,9,.94) 0%, rgba(8,10,9,.78) 34%, rgba(8,10,9,.25) 70%, rgba(8,10,9,.5) 100%), url('%BASE_URL%assets/art/keyart.jpg') center 60% / cover no-repeat, #0b0d0c; color: #eef0ea; display: flex; flex-direction: column;
         justify-content: center; padding: 0 clamp(24px, 7vw, 120px); font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
         transition: opacity .45s ease; user-select: none; }
       #boot.bt-done { opacity: 0; pointer-events: none; }
