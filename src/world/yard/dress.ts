@@ -27,10 +27,10 @@ const DRESS: Record<string, { surface: Surface; solid: boolean; at: Spot[] }> = 
   stump: { surface: 'wood', solid: true, at: [{ x: -58, z: -46, yaw: 0.5 }, { x: 62, z: 78, yaw: 2 }, { x: -34, z: 80, yaw: 1 }] },
   trolley: { surface: 'metal', solid: false, at: [{ x: 70, z: -66, yaw: 1 }, { x: 62, z: -57, yaw: 2.5 }] },
   mailbox: { surface: 'metal', solid: true, at: [{ x: -66, z: 74, yaw: 0 }] },
-  bus_shelter: { surface: 'metal', solid: true, at: [{ x: 8, z: 98, yaw: 3.14 }] },
+  bus_shelter: { surface: 'metal', solid: true, at: [{ x: -20, z: 98, yaw: 3.14 }] },
   rubble: { surface: 'concrete', solid: false, at: [{ x: -80, z: 40, yaw: 0.3 }, { x: 52, z: 72, yaw: 2.4 }, { x: 90, z: -28, yaw: 1.1 }] },
   grave: { surface: 'dirt', solid: false, at: [{ x: -80, z: -30, yaw: 0 }, { x: -78.5, z: -30.5, yaw: 0.15 }, { x: -77, z: -30, yaw: -0.1 }, { x: -75.5, z: -30.6, yaw: 0.05 }] },
-  trash_can: { surface: 'metal', solid: false, at: [{ x: 11, z: 98, yaw: 0 }, { x: 62, z: -70, yaw: 0 }] },
+  trash_can: { surface: 'metal', solid: false, at: [{ x: -16, z: 98, yaw: 0 }, { x: 62, z: -70, yaw: 0 }] },
 };
 /** Straight fence runs: key, from x,z, to x,z. The model's own length sets the spacing. */
 const RUNS: [string, number, number, number, number][] = [
