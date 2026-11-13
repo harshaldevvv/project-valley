@@ -200,7 +200,7 @@ export class Zombies {
     const body = world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(at.x, at.y + capY, at.z));
     const capsule = world.createCollider(R.ColliderDesc.capsule(CAPSULE_HH * s, CAPSULE_R).setCollisionGroups(groups(Group.ZOMBIE, 0xffff & ~Group.VEHICLE)), body); // cars plough through; Vehicles.contacts() deals the damage
     const head = world.createCollider(
-      R.ColliderDesc.ball(0.15 * s).setTranslation(0, HEAD_Y * s - capY, 0).setSensor(true).setCollisionGroups(groups(Group.ZOMBIE, 0xffff)),
+      R.ColliderDesc.ball(0.15 * s).setTranslation(0, (def.headY ?? HEAD_Y) * s - capY, 0).setSensor(true).setCollisionGroups(groups(Group.ZOMBIE, 0xffff)),
       body,
     );
     const z = new Zombie(this.nextId++, def, ch, body, capsule, head, HD.groanMin + this.ctx.rand() * (HD.groanMax - HD.groanMin));

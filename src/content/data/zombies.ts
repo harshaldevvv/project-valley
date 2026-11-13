@@ -12,6 +12,8 @@ export interface ZombieDef {
   chase: number; // m/s
   crawl: number;
   turnRate: number; // rad/s
+  /** Head hit-ball centre height at scale 1 (m). Default 1.62 fits the original shambler mesh; the shorter AI-made bodies use 1.46. */
+  headY?: number;
   zoneMul: { body: number; limb: number }; // head uses the weapon's headMul
   attackRange: number;
   attackWindup: number; // s, telegraph (sound plays at start)
@@ -65,14 +67,14 @@ export const zombieDefs: Record<string, ZombieDef> = {
   ...zombieDefsBase,
   worker: { ...zombieDefsBase.shambler, id: 'worker', model: 'zmb_worker_a', clipsFrom: 'zmb_shambler_a', scale: 1.02, hp: 130 },
   soldier: { ...zombieDefsBase.shambler, id: 'soldier', model: 'zmb_soldier_a', clipsFrom: 'zmb_shambler_a', scale: 1.05, hp: 160, legHp: 90, helmetMul: 0.6 } /* tougher: kit + helmet = 2 rifle headshots */,
-  ai_civilian: { ...zombieDefsBase.shambler, id: 'ai_civilian', model: 'zmb_ai_civilian_a', clipsFrom: 'zmb_shambler_a', scale: 1.04, hp: 120 },
-  ai_hazmat: { ...zombieDefsBase.shambler, id: 'ai_hazmat', model: 'zmb_ai_hazmat_a', clipsFrom: 'zmb_shambler_a', scale: 1.04, hp: 150 },
-  ai_soldier: { ...zombieDefsBase.shambler, id: 'ai_soldier', model: 'zmb_ai_soldier_a', clipsFrom: 'zmb_shambler_a', scale: 1.06, hp: 170, legHp: 90, helmetMul: 0.6 },
-  ai_nurse: { ...zombieDefsBase.shambler, id: 'ai_nurse', model: 'zmb_ai_nurse_f_a', clipsFrom: 'zmb_shambler_a', scale: 1.0, hp: 105 },
-  ai_worker: { ...zombieDefsBase.shambler, id: 'ai_worker', model: 'zmb_ai_worker_a', clipsFrom: 'zmb_shambler_a', scale: 1.05, hp: 140 },
-  ai_police: { ...zombieDefsBase.shambler, id: 'ai_police', model: 'zmb_ai_police_a', clipsFrom: 'zmb_shambler_a', scale: 1.04, hp: 150 },
-  ai_hoodie: { ...zombieDefsBase.shambler, id: 'ai_hoodie', model: 'zmb_ai_hoodie_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.96, hp: 100 },
-  ai_suit: { ...zombieDefsBase.shambler, id: 'ai_suit', model: 'zmb_ai_suit_a', clipsFrom: 'zmb_shambler_a', scale: 1.03, hp: 115 },
+  ai_civilian: { ...zombieDefsBase.shambler, id: 'ai_civilian', headY: 1.46, model: 'zmb_ai_civilian_a', clipsFrom: 'zmb_shambler_a', scale: 1.04, hp: 120 },
+  ai_hazmat: { ...zombieDefsBase.shambler, id: 'ai_hazmat', headY: 1.46, model: 'zmb_ai_hazmat_a', clipsFrom: 'zmb_shambler_a', scale: 1.04, hp: 150 },
+  ai_soldier: { ...zombieDefsBase.shambler, id: 'ai_soldier', headY: 1.46, model: 'zmb_ai_soldier_a', clipsFrom: 'zmb_shambler_a', scale: 1.06, hp: 170, legHp: 90, helmetMul: 0.6 },
+  ai_nurse: { ...zombieDefsBase.shambler, id: 'ai_nurse', headY: 1.46, model: 'zmb_ai_nurse_f_a', clipsFrom: 'zmb_shambler_a', scale: 1.0, hp: 105 },
+  ai_worker: { ...zombieDefsBase.shambler, id: 'ai_worker', headY: 1.46, model: 'zmb_ai_worker_a', clipsFrom: 'zmb_shambler_a', scale: 1.05, hp: 140 },
+  ai_police: { ...zombieDefsBase.shambler, id: 'ai_police', headY: 1.46, model: 'zmb_ai_police_a', clipsFrom: 'zmb_shambler_a', scale: 1.04, hp: 150 },
+  ai_hoodie: { ...zombieDefsBase.shambler, id: 'ai_hoodie', headY: 1.46, model: 'zmb_ai_hoodie_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.96, hp: 100 },
+  ai_suit: { ...zombieDefsBase.shambler, id: 'ai_suit', headY: 1.46, model: 'zmb_ai_suit_a', clipsFrom: 'zmb_shambler_a', scale: 1.03, hp: 115 },
   civilian_f: { ...zombieDefsBase.shambler, id: 'civilian_f', model: 'zmb_civilian_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.93, hp: 110 },
 };
 
