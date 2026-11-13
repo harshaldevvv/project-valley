@@ -61,6 +61,9 @@ All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-bef
 27. **Crows** (`birds.ts`): nine flapping silhouettes circling over the yard by day, fading out at night; one instanced draw, motion in the vertex shader. Zombie deaths play at varied speeds.
 28. **Decision, not done:** I did not remodel the first-person rifle. It is already a scripted AK (`assets/source/wpn/wpn_rifle_a/build.py`, with the separate `MAG` node and sockets the reload clips need); the stock problem was the rig offset (fixed in pass 4), not the mesh. A better-looking hand remodel would be a large Blender job with unclear return.
 
+29. **Three enterable interiors with loot** (`cabin.ts`): the cabin now has a food cupboard and a tool crate; a corner shop with a fuel canopy and pumps (66,-62; counter, shelves, food and medical cabinets, a crate) and a farmhouse room (-70,62; table, stove, bed, wardrobe, cupboard, duffel). All searchable through the normal container system (loot tables by type) and solid.
+30. **Reactions:** heavy gun kills blow the corpse back off its feet (short ballistic hop), heavy non-lethal hits shove the zombie a step back, headshots still drop instantly. Reload and draw now have view kicks (magazine seat, bolt slam, weapon settle).
+
 ## Cost of all this
 - Download size grew by about 12 MB of public assets after compression (it was about 30 MB); KTX2 textures would shrink GPU memory further.
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).

@@ -45,7 +45,7 @@ export const genProps: Prop[] = [
   { id: 'barrels', x: -74.3, z: -38.0, yaw: 0.2, surface: 'metal', solid: true, r: 1.2 },
   // lone dead trees on open lawn
   { id: 'dead_tree', x: -58, z: -52, yaw: 0, surface: 'wood', shrink: 0.4 },
-  { id: 'dead_tree', x: 62, z: -62, yaw: 2, surface: 'wood', shrink: 0.4 },
+  { id: 'dead_tree', x: 84, z: -76, yaw: 2, surface: 'wood', shrink: 0.4 },
   { id: 'dead_tree', x: -8, z: 62, yaw: 4, surface: 'wood', shrink: 0.4 },
 ];
 
