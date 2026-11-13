@@ -40,10 +40,14 @@ This monitor is 60 Hz and vsync-capped, so p50 is 16.67 ms before and after in a
 
 All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-before.json`, `perf-after.json`.
 
+## Cost of all this
+- Download size grew by about 30 MB of public assets (props and buildings 12 MB, characters 11 MB, textures 4.7 MB, audio 2.2 MB). Not yet meshopt/KTX2 compressed; do that before shipping (`gltf-transform optimize`).
+- Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU cost of bloom + AO + grade about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).
+
 ## What's left, ranked
 1. **Characters (first pass done)**: still to do: fix the AI meshes' proportions (big heads), clothing variants for the survivor, first-person arms, worker/shambler replacements, and hit-zone tuning (headshot zone matches the old mesh). Original note: characters looked plain (finding: the shipped GLBs are meshopt-compressed, Blender 4.5 cannot import them; rebuild from `assets/source/zmb/*/build.py` or decompress with `gltf-transform` first. A try at AI body meshes weight-painted to the existing rig with Blender auto-weights is the next experiment) (about 1.9k-triangle flat-colour bodies). Animation is already good. Needs a rigging path: install UniRig (multi-hour Windows CUDA build) or retarget AI meshes with Blender's auto-weights onto the existing rig, then texture. Highest impact left.
-2. **Screen-space AO and sun shafts** (`GTAONode`, `GodraysNode` exist in three). Not tried; measure on a high-refresh display first.
-3. **Zombie hit flash, dust puffs, footstep particles** and more blood variety.
+2. **Sun shafts** (`GodraysNode`); AO is done. Also compress the new GLBs and textures, and test on the laptop GPU.
+3. **Dust puffs, footstep particles** and more blood variety (hit flash is done).
 4. **Retexture the palette-only kit** (house, range, signs) with the same detail pipeline plus wear decals; AI-generated posters and signs.
 5. **Title key art and UI textures** (z-image-turbo) behind the menu.
 6. **SFX gaps** with stable-audio3-sfx (not attempted).
