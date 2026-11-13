@@ -1,6 +1,7 @@
 import { Cache, FileLoader } from 'three';
 import manifest from '../../../public/assets/models/manifest.json';
 import { assetUrl } from '../../engine/assetUrl';
+import { genModelPath, genModels } from '../../world/yard/genModels';
 
 /**
  * Boot loading screen. Markup and CSS live in index.html so it paints before any script runs; this module drives it.
@@ -28,7 +29,10 @@ const mb = (b: number) => (b / 1048576).toFixed(1);
 /** Downloads every model in parallel (bar 0-85%). Resolves when all are in THREE.Cache or failed. */
 export function prefetchModels(): Promise<void> {
   Cache.enabled = true;
-  const list = Object.values(manifest as Record<string, { url: string; bytes?: number }>);
+  const list = [
+    ...Object.values(manifest as Record<string, { url: string; bytes?: number }>),
+    ...genModels.map(([id, bytes]) => ({ url: genModelPath(id), bytes })),
+  ];
   const total = list.reduce((a, e) => a + (e.bytes ?? 0), 0) || 1;
   const got = new Map<string, number>();
   let done = 0;

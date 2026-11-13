@@ -55,6 +55,7 @@ export async function buildGenProps(kit: Kit) {
     if (!p) cache.set(id, (p = gltfLoader.loadAsync(assetUrl(`assets/models/gen/${id}.glb`)).catch(() => { console.warn(`gen prop ${id} missing`); return null; })));
     return p;
   };
+  await Promise.all([...new Set(genProps.map((p) => p.id))].map(load)); // fetch all models in parallel, place them in order below
   for (const p of genProps) {
     const g = await load(p.id);
     if (!g) continue;

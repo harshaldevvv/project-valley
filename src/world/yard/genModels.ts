@@ -1,0 +1,28 @@
+/** AI-made models in public/assets/models/gen (id, bytes). Listed so the boot screen can prefetch them with real progress. */
+export const genModels: [string, number][] = [
+  ['barn', 898464],
+  ['barrels', 400416],
+  ['burned_van', 690320],
+  ['bush_overgrown', 405552],
+  ['campfire', 455780],
+  ['crate_stack', 412352],
+  ['dead_tree', 572696],
+  ['dumpster', 419568],
+  ['farm_silo', 804780],
+  ['gas_station', 840292],
+  ['generator', 377412],
+  ['pallet_stack', 498948],
+  ['ruined_house', 1074136],
+  ['sandbag_wall', 367600],
+  ['shipping_container', 343284],
+  ['small_church', 932932],
+  ['sofa_junk', 396072],
+  ['tent_military', 365212],
+  ['tire_pile', 375864],
+  ['tree_birch', 192732],
+  ['tree_pine', 196344],
+  ['watchtower', 500028],
+  ['water_tower', 600620],
+  ['wreck_sedan', 702488],
+];
+export const genModelPath = (id: string) => `assets/models/gen/${id}.glb`;
