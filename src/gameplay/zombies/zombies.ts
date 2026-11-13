@@ -238,7 +238,12 @@ export class Zombies {
     const hittable: Hittable = {
       kind: 'zombie',
       surface: 'flesh',
-      zone: (c: Collider, p: Vector3): Zone => (c === z.head ? 'head' : p.y - z.curr.y < (z.crawler ? 0.3 : 0.85 * s) ? 'limb' : 'body'),
+      zone: (c: Collider, p: Vector3): Zone => {
+        if (c === z.head) return 'head';
+        // The body capsule overlaps and shadows the lower half of the head ball: a capsule hit within the head's height band is a head hit
+        if (z.alive && Math.abs(p.y - (z.curr.y + (def.headY ?? HEAD_Y) * s)) <= 0.14 * s) return 'head'; // the capsule is wider than the head: judge by height
+        return p.y - z.curr.y < (z.crawler ? 0.3 : 0.85 * s) ? 'limb' : 'body';
+      },
       hit: (info) => this.damage(z, info),
     };
     this.ctx.hits.set(capsule.handle, hittable);
