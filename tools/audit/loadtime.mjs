@@ -1,0 +1,11 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ channel: 'chrome', headless: false });
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+const page = await ctx.newPage();
+const cdp = await ctx.newCDPSession(page);
+await cdp.send('Network.enable'); await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 20, downloadThroughput: (50 * 1e6) / 8, uploadThroughput: (10 * 1e6) / 8 });
+await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
+const t0 = Date.now(); let bytes = 0; cdp.on('Network.loadingFinished', (e) => (bytes += e.encodedDataLength));
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 180000 });
+console.log('ready in', ((Date.now() - t0) / 1000).toFixed(1), 's, transferred', (bytes / 1048576).toFixed(1), 'MB (50 Mbit/s, no cache)'); await browser.close();

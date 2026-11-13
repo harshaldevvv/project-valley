@@ -32,7 +32,7 @@ export async function buildWallDecals(game: Game) {
     if (cache.has(key)) return cache.get(key)!;
     let m: MeshStandardNodeMaterial | null = null;
     try {
-      const t = await loader.loadAsync(assetUrl(`assets/textures/decals/${name}.png`));
+      const t = await loader.loadAsync(assetUrl(`assets/textures/decals/${name}.webp`));
       t.colorSpace = SRGBColorSpace;
       t.anisotropy = 4;
       const px = texture(t, uv());

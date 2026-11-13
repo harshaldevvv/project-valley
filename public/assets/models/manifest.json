@@ -306,7 +306,7 @@
       "chr_survivor_a_LOD2": 899,
       "chr_survivor_a_BACKPACK": 232
     },
-    "bytes": 2219356
+    "bytes": 1177184
   },
   "wpn_knife_a": {
     "url": "/assets/models/wpn/wpn_knife_a.glb",
@@ -455,7 +455,7 @@
       "zmb_ai_civilian_a_LOD1": 1750,
       "zmb_ai_civilian_a_LOD2": 700
     },
-    "bytes": 1038664
+    "bytes": 331484
   },
   "zmb_ai_hazmat_a": {
     "url": "/assets/models/zmb/zmb_ai_hazmat_a.glb",
@@ -465,7 +465,7 @@
       "zmb_ai_hazmat_a_LOD1": 1750,
       "zmb_ai_hazmat_a_LOD2": 700
     },
-    "bytes": 1039032
+    "bytes": 335628
   },
   "zmb_ai_soldier_a": {
     "url": "/assets/models/zmb/zmb_ai_soldier_a.glb",
@@ -475,7 +475,7 @@
       "zmb_ai_soldier_a_LOD1": 1750,
       "zmb_ai_soldier_a_LOD2": 700
     },
-    "bytes": 1064140
+    "bytes": 359596
   },
   "zmb_ai_nurse_f_a": {
     "url": "/assets/models/zmb/zmb_ai_nurse_f_a.glb",
@@ -485,7 +485,7 @@
       "zmb_ai_nurse_f_a_LOD1": 1750,
       "zmb_ai_nurse_f_a_LOD2": 700
     },
-    "bytes": 1055296
+    "bytes": 350836
   },
   "zmb_ai_worker_a": {
     "url": "/assets/models/zmb/zmb_ai_worker_a.glb",
@@ -495,7 +495,7 @@
       "zmb_ai_worker_a_LOD1": 1750,
       "zmb_ai_worker_a_LOD2": 700
     },
-    "bytes": 1047268
+    "bytes": 345940
   },
   "zmb_ai_police_a": {
     "url": "/assets/models/zmb/zmb_ai_police_a.glb",
@@ -505,7 +505,7 @@
       "zmb_ai_police_a_LOD1": 1750,
       "zmb_ai_police_a_LOD2": 700
     },
-    "bytes": 1039700
+    "bytes": 336480
   },
   "zmb_ai_hoodie_f_a": {
     "url": "/assets/models/zmb/zmb_ai_hoodie_f_a.glb",
@@ -515,7 +515,7 @@
       "zmb_ai_hoodie_f_a_LOD1": 1750,
       "zmb_ai_hoodie_f_a_LOD2": 700
     },
-    "bytes": 1040260
+    "bytes": 337976
   },
   "zmb_ai_suit_a": {
     "url": "/assets/models/zmb/zmb_ai_suit_a.glb",
@@ -525,6 +525,6 @@
       "zmb_ai_suit_a_LOD1": 1750,
       "zmb_ai_suit_a_LOD2": 700
     },
-    "bytes": 1045728
+    "bytes": 386528
   }
 }

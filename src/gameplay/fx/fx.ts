@@ -31,8 +31,8 @@ import { fxTuning as T, impacts, type BurstDef, type FxSurface } from '../../con
  */
 const CHIPS = 256;
 const SMOKE = 48;
-const DECALS = 64;
-const BLOOD = 32;
+const DECALS = 160;
+const BLOOD = 96;
 const TRACERS = 16;
 const CASINGS = 32;
 const STARS = 8;

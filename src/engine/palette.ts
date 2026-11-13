@@ -34,7 +34,7 @@ export async function paletteMaterial() {
 let grungeTex: Promise<Texture | null> | null = null;
 /** The grime detail texture (shared with the world material); null if it fails to load. */
 export function grungeTexture() {
-  return (grungeTex ??= new TextureLoader().loadAsync(assetUrl('assets/textures/grunge.png')).then((t) => {
+  return (grungeTex ??= new TextureLoader().loadAsync(assetUrl('assets/textures/grunge.webp')).then((t) => {
     t.wrapS = t.wrapT = RepeatWrapping;
     t.colorSpace = SRGBColorSpace;
     t.anisotropy = 4;
@@ -123,7 +123,7 @@ export async function paletteWorldMaterial() {
   const plain = await paletteMaterial();
   const tex = await paletteAtlas();
   const load = async (n: string) => {
-    const t = await new TextureLoader().loadAsync(assetUrl(`assets/textures/${n}.png`));
+    const t = await new TextureLoader().loadAsync(assetUrl(`assets/textures/${n}.webp`));
     t.wrapS = t.wrapT = RepeatWrapping;
     t.colorSpace = SRGBColorSpace;
     t.minFilter = LinearMipmapLinearFilter;

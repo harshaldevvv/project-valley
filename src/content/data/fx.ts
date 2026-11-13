@@ -116,7 +116,7 @@ export const fxTuning = {
   casingVolume: 1, // level is set in the sound table
   casingCooldown: 0.08,
   // Decals
-  decalLife: 30,
+  decalLife: 75,
   decalFade: 2,
   // Blood pools under corpses
   poolMax: 12,
