@@ -65,6 +65,9 @@ const CSS = `
 .hud .toasts div{background:#0a0d0ccc;border-left:2px solid var(--accent);border-radius:2px;font-family:var(--display);letter-spacing:.06em}
 .hud .range{border-radius:2px;border-left:2px solid var(--accent)}
 .hud .vig{background:radial-gradient(ellipse at center,#0000 50%,#8a0000 135%)}
+.hud div.dead{font:700 clamp(54px,8vw,104px)/1 var(--display);letter-spacing:.32em;text-indent:.32em;color:#c93a2e;text-shadow:0 0 40px #000c,0 4px 0 #000a;
+ background:radial-gradient(ellipse at center,#1a050599 0%,#000000bb 100%);backdrop-filter:grayscale(.9);animation:hud-died 1.6s ease-out both}
+@keyframes hud-died{from{opacity:0;letter-spacing:.8em}to{opacity:1;letter-spacing:.32em}}
 .hud-help{position:fixed;inset:0;font:600 13px/1.3 system-ui,sans-serif;color:#e8ecef;text-shadow:0 1px 2px #000a;display:none;place-items:center;background:#000a;pointer-events:none}
 .hud-help>div{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:18px 34px;background:#111c;padding:22px 28px;border-radius:10px;max-width:min(860px,94vw)}
 .hud-help h3{margin:0 0 6px;font-size:13px;letter-spacing:1px;text-transform:uppercase;opacity:.8}
