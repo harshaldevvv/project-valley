@@ -63,6 +63,19 @@ bpy.context.view_layer.objects.active = nm
 bpy.ops.object.modifier_apply(modifier=dt.name)
 bpy.ops.object.vertex_group_limit_total(group_select_mode='ALL', limit=4)
 bpy.ops.object.vertex_group_normalize_all(group_select_mode='ALL', lock_active=False)
+# AI bodies come with oversized heads: shrink everything mostly weighted to the head bone about the neck joint
+import os
+hs = float(os.environ.get('HEAD_SCALE', '0.84'))
+if hs != 1.0 and 'head' in nm.vertex_groups:
+    gi = nm.vertex_groups['head'].index
+    pivot = arm.matrix_world @ arm.data.bones['head'].head_local
+    inv = nm.matrix_world.inverted()
+    pl = inv @ pivot
+    for v in nm.data.vertices:
+        w = next((g.weight for g in v.groups if g.group == gi), 0.0)
+        if w > 0.15:
+            k = 1 + (hs - 1) * min(1.0, w * 1.4)
+            v.co = pl + (v.co - pl) * k
 am = nm.modifiers.new('Armature', 'ARMATURE'); am.object = arm
 nm.parent = arm
 # UVs untouched; texture shrunk

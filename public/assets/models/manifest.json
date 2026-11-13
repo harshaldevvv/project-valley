@@ -301,12 +301,12 @@
     "url": "/assets/models/chr/chr_survivor_a.glb",
     "category": "chr",
     "tris": {
-      "chr_survivor_a_LOD0": 4499,
-      "chr_survivor_a_LOD1": 2249,
-      "chr_survivor_a_LOD2": 899,
+      "chr_survivor_a_LOD0": 4500,
+      "chr_survivor_a_LOD1": 2250,
+      "chr_survivor_a_LOD2": 900,
       "chr_survivor_a_BACKPACK": 232
     },
-    "bytes": 1177184
+    "bytes": 1177204
   },
   "wpn_knife_a": {
     "url": "/assets/models/wpn/wpn_knife_a.glb",
@@ -455,7 +455,7 @@
       "zmb_ai_civilian_a_LOD1": 1750,
       "zmb_ai_civilian_a_LOD2": 700
     },
-    "bytes": 331484
+    "bytes": 331524
   },
   "zmb_ai_hazmat_a": {
     "url": "/assets/models/zmb/zmb_ai_hazmat_a.glb",
@@ -465,7 +465,7 @@
       "zmb_ai_hazmat_a_LOD1": 1750,
       "zmb_ai_hazmat_a_LOD2": 700
     },
-    "bytes": 335628
+    "bytes": 335528
   },
   "zmb_ai_soldier_a": {
     "url": "/assets/models/zmb/zmb_ai_soldier_a.glb",
@@ -475,17 +475,17 @@
       "zmb_ai_soldier_a_LOD1": 1750,
       "zmb_ai_soldier_a_LOD2": 700
     },
-    "bytes": 359596
+    "bytes": 379940
   },
   "zmb_ai_nurse_f_a": {
     "url": "/assets/models/zmb/zmb_ai_nurse_f_a.glb",
     "category": "zmb",
     "tris": {
-      "zmb_ai_nurse_f_a_LOD0": 3500,
-      "zmb_ai_nurse_f_a_LOD1": 1750,
-      "zmb_ai_nurse_f_a_LOD2": 700
+      "zmb_ai_nurse_f_a_LOD0": 3499,
+      "zmb_ai_nurse_f_a_LOD1": 1749,
+      "zmb_ai_nurse_f_a_LOD2": 699
     },
-    "bytes": 350836
+    "bytes": 350932
   },
   "zmb_ai_worker_a": {
     "url": "/assets/models/zmb/zmb_ai_worker_a.glb",
@@ -495,7 +495,7 @@
       "zmb_ai_worker_a_LOD1": 1750,
       "zmb_ai_worker_a_LOD2": 700
     },
-    "bytes": 345940
+    "bytes": 345852
   },
   "zmb_ai_police_a": {
     "url": "/assets/models/zmb/zmb_ai_police_a.glb",
@@ -505,7 +505,7 @@
       "zmb_ai_police_a_LOD1": 1750,
       "zmb_ai_police_a_LOD2": 700
     },
-    "bytes": 336480
+    "bytes": 336344
   },
   "zmb_ai_hoodie_f_a": {
     "url": "/assets/models/zmb/zmb_ai_hoodie_f_a.glb",
@@ -515,7 +515,7 @@
       "zmb_ai_hoodie_f_a_LOD1": 1750,
       "zmb_ai_hoodie_f_a_LOD2": 700
     },
-    "bytes": 337976
+    "bytes": 337888
   },
   "zmb_ai_suit_a": {
     "url": "/assets/models/zmb/zmb_ai_suit_a.glb",
@@ -525,6 +525,6 @@
       "zmb_ai_suit_a_LOD1": 1750,
       "zmb_ai_suit_a_LOD2": 700
     },
-    "bytes": 386528
+    "bytes": 386664
   }
 }
