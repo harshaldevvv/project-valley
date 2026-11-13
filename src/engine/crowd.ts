@@ -15,7 +15,7 @@ import type { Texture } from 'three';
 import { Fn, If, attribute, clamp, cos, dot, float, mix, smoothstep, texture, uv, vec2, int, ivec2, mat4, normalGeometry, normalLocal, positionGeometry, sin, textureLoad, uniform, vec3, vec4 } from 'three/tsl';
 import type { Game } from '../core/game';
 import { entries, gltfLoader } from './assets';
-import { grungeTexture, paletteMaterial } from './palette';
+import { characterDetail, grungeTexture, paletteMaterial } from './palette';
 
 /**
  * GPU-skinned crowds (principles §13: one draw per archetype per LOD, baked bone texture).
@@ -245,7 +245,7 @@ export async function createCrowd(
       const gA = dot(texture(grunge, uvA).rgb, vec3(0.2126, 0.7152, 0.0722));
       const gB = dot(texture(grunge, uvB).rgb, vec3(0.2126, 0.7152, 0.0722));
       const wear = clamp(gA.sub(0.42).mul(1.6).add(1), 0.55, 1.45);
-      const base = texture(atlas, uv()).rgb.mul(ownMap ? wear.mul(0.5).add(0.5) : wear);
+      const base = (ownMap ? characterDetail(atlas, grunge) : texture(atlas, uv()).rgb).mul(ownMap ? wear.mul(0.5).add(0.5) : wear);
       const dirt = smoothstep(0.75, 0.0, bp.y).mul(0.5);
       const withDirt = mix(base, base.mul(vec3(0.55, 0.45, 0.32)), dirt);
       const bloodMask = smoothstep(0.5, 0.72, gB).mul(smoothstep(0.7, 1.15, bp.y)).mul(smoothstep(1.95, 1.5, bp.y));

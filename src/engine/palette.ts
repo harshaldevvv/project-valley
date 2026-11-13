@@ -81,6 +81,31 @@ export async function paletteArmsMaterial() {
   return (arms = grunge || atlasTex ? m : plain);
 }
 
+/** Colour-node snippet shared by AI-made characters: fabric/skin micro detail and grime from the grime texture, sampled in
+ *  UV space (stable under skinning and meshopt quantisation): +-18 % luminance at two scales plus darkened creases. */
+export function characterDetail(map: Texture, grunge: Texture | null) {
+  const base = texture(map, uv()).rgb;
+  if (!grunge) return base;
+  const lumv = (n: any) => dot(n, vec3(0.2126, 0.7152, 0.0722));
+  const fine = lumv(texture(grunge, uv().mul(9)).rgb);
+  const coarse = lumv(texture(grunge, uv().mul(2.3).add(vec2(0.37, 0.11))).rgb);
+  const k = clamp(fine.sub(0.45).mul(0.9).add(1), 0.78, 1.2).mul(clamp(coarse.sub(0.4).mul(0.7).add(1), 0.85, 1.12));
+  return base.mul(k);
+}
+const detailMats = new Map<Texture, MeshStandardNodeMaterial>();
+/** Material for a mesh that carries its own baked texture (AI characters): that texture plus the detail overlay. */
+export async function characterDetailMaterial(map: Texture) {
+  let m = detailMats.get(map);
+  if (m) return m;
+  const grunge = await grungeTexture();
+  m = new MeshStandardNodeMaterial({ roughness: 0.82, metalness: 0 });
+  m.colorNode = characterDetail(map, grunge);
+  m.map = map;
+  m.name = 'character_detail';
+  detailMats.set(map, m);
+  return m;
+}
+
 let gear: MeshStandardNodeMaterial | null = null;
 /** Atlas + object-space wear for held gear (weapons, tools): scratches, soot and glossier dark metal. */
 export async function paletteGearMaterial() {

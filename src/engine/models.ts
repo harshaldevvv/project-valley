@@ -15,7 +15,7 @@ import {
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { entries, gltfLoader } from './assets';
-import { paletteArmsMaterial, paletteCharacterMaterial, paletteGearMaterial, paletteMaterial } from './palette';
+import { characterDetailMaterial, paletteArmsMaterial, paletteCharacterMaterial, paletteGearMaterial, paletteMaterial } from './palette';
 
 /**
  * Models that are not plain static props: animated characters/zombies, weapons with sockets, vehicles with wheels.
@@ -89,6 +89,13 @@ async function fromGltf(id: string): Promise<ModelProto> {
   const [gltf, mat] = await Promise.all([gltfLoader.loadAsync(entries[id].url), id === 'chr_arms_fp' ? paletteArmsMaterial() : /^(chr|zmb)_/.test(id) ? paletteCharacterMaterial() : /^wpn_/.test(id) ? paletteGearMaterial() : paletteMaterial()]);
   const scene = gltf.scene;
   scene.name = id;
+  // AI-made characters carry their own texture: give them the shared detail overlay (cached per texture)
+  const own: Mesh[] = [];
+  scene.traverse((o) => {
+    const mm = o as Mesh;
+    if (mm.isMesh && (mm.material as { map?: unknown }).map && /^(chr|zmb)_/.test(id) && id !== 'chr_arms_fp') own.push(mm);
+  });
+  for (const mm of own) mm.material = await characterDetailMaterial((mm.material as unknown as { map: import('three').Texture }).map);
   scene.updateMatrixWorld(true);
   const colliders: Box3[] = [];
   const drop: Object3D[] = [];
