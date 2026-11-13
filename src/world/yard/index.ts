@@ -2,6 +2,7 @@ import type { Game } from '../../core/game';
 import { yard } from '../../content/data/yard';
 import { buildClutter } from './clutter';
 import { buildGenProps } from './genProps';
+import { installFlashlight } from '../../engine/flashlight';
 import { buildGround } from './ground';
 import { buildMotes } from './motes';
 import { buildWallDecals } from './wallDecals';
@@ -39,6 +40,7 @@ export async function buildYard(game: Game): Promise<void> {
   placeYardHouse(game);
   buildClutter(game);
   buildMotes(game);
+  installFlashlight(game);
   await buildWallDecals(game);
   buildLampPools(game);
 }

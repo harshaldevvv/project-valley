@@ -8,6 +8,7 @@ export const controlsHelp: { group: string; rows: [keys: string, action: string]
       ['C', 'Crouch'],
       ['Space', 'Jump / vault'],
       ['T', 'Switch camera'],
+      ['L', 'Flashlight'],
       ['Q', 'Swap shoulder'],
     ],
   },
