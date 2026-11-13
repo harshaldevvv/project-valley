@@ -39,6 +39,10 @@ export const genProps: Prop[] = [
   { id: 'small_church', x: -128, z: -125, yaw: 0.8, surface: 'wood', noCollide: true, r: 0 },
   { id: 'water_tower', x: 128, z: 138, yaw: 0.3, surface: 'metal', noCollide: true, r: 0 },
   { id: 'farm_silo', x: -158, z: -28, yaw: 1.1, surface: 'metal', noCollide: true, r: 0 },
+  // inside the ruined cabin (cabin.ts)
+  { id: 'sofa_junk', x: -74.2, z: -34.4, yaw: 1.7, surface: 'wood', solid: true, r: 1.6 },
+  { id: 'crate_stack', x: -69.2, z: -37.6, yaw: 0.4, surface: 'wood', solid: true, r: 1.0 },
+  { id: 'barrels', x: -74.3, z: -38.0, yaw: 0.2, surface: 'metal', solid: true, r: 1.2 },
   // lone dead trees on open lawn
   { id: 'dead_tree', x: -58, z: -52, yaw: 0, surface: 'wood', shrink: 0.4 },
   { id: 'dead_tree', x: 62, z: -62, yaw: 2, surface: 'wood', shrink: 0.4 },

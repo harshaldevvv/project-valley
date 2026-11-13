@@ -1,6 +1,7 @@
 import type { Game } from '../../core/game';
 import { yard } from '../../content/data/yard';
 import { buildAiTrees } from './aiTrees';
+import { buildCabin } from './cabin';
 import { buildClutter } from './clutter';
 import { buildGenProps } from './genProps';
 import { installFlashlight } from '../../engine/flashlight';
@@ -34,6 +35,7 @@ export async function buildYard(game: Game): Promise<void> {
   buildBuildPad(kit);
   await buildAnim(kit);
   buildTrack(kit);
+  buildCabin(kit);
   await buildGenProps(kit);
   for (const p of lightPoles) kit.place(p);
   await kit.finish();
