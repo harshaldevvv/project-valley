@@ -1,4 +1,4 @@
-import { Box3, BufferGeometry, Mesh, Object3D, Vector3 } from 'three';
+import { Box3, BufferAttribute, BufferGeometry, Mesh, Object3D, Vector3 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { gltfLoader } from '../../engine/assets';
 import { assetUrl } from '../../engine/assetUrl';
@@ -37,6 +37,27 @@ export const PF: Record<string, { file: string; h: number }> = {
   tree_pine_young: { file: 'young-pine-0d7695', h: 6 },
   tree_birch: { file: 'birch-tree-181b33', h: 7.5 },
   tree_oak: { file: 'oak-tree-50ee7c', h: 8 },
+  // set dressing (dress.ts)
+  car_hatch: { file: 'compact-hatchback-386417', h: 1.5 },
+  car_pickup: { file: 'marigold-pickup-f4b6f9', h: 1.9 },
+  car_jeep: { file: 'scout-jeep-c02efe', h: 1.8 },
+  car_cruiser: { file: 'police-cruiser-a2d25e', h: 1.5 },
+  barricade_police: { file: 'police-barricade-0bbf37', h: 1.0 },
+  barrier_jersey: { file: 'skated-jersey-barrier-7f0a04', h: 0.9 },
+  barricade_field: { file: 'field-barricade-a646b9', h: 1.0 },
+  cone: { file: 'traffic-cone-247748', h: 0.7 },
+  firewood: { file: 'firewood-stack-810f49', h: 1.0 },
+  hay_bale: { file: 'hay-bale-079e8c', h: 1.2 },
+  utility_pole: { file: 'timber-utility-pole-a93693', h: 8 },
+  stump: { file: 'tree-stump-00f3bf', h: 0.5 },
+  trolley: { file: 'abandoned-shopping-trolley-3de6cb', h: 1.0 },
+  mailbox: { file: 'mailbox-8e36e8', h: 1.2 },
+  bus_shelter: { file: 'bus-shelter-f786b4', h: 2.6 },
+  rubble: { file: 'collapse-rubble-mound-4fbfed', h: 1.2 },
+  grave: { file: 'field-grave-marker-15380b', h: 1.0 },
+  trash_can: { file: 'metal-trash-can-f57043', h: 1.0 },
+  fence_board: { file: 'board-privacy-fence-run-319bef', h: 1.8 },
+  fence_barbed: { file: 'barbed-wire-fence-section-a01906', h: 1.6 },
 };
 export const pfUrl = (file: string) => assetUrl(`assets/models/pf/${file}.glb`);
 export const pfFiles = Object.values(PF).map((p) => p.file);
@@ -76,6 +97,13 @@ export async function loadPfGeometry(key: string): Promise<{ geo: BufferGeometry
     if (!m.isMesh) return;
     first ??= m;
     const g = m.geometry.clone().applyMatrix4(m.matrixWorld);
+    if (!g.getAttribute('color')) {
+      // not vertex-coloured: bake the material colour so every part has the attribute the shared material needs
+      const col = (m.material as { color?: { r: number; g: number; b: number } }).color ?? { r: 0.6, g: 0.6, b: 0.6 };
+      const n = g.getAttribute('position').count, arr = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { arr[i * 3] = col.r; arr[i * 3 + 1] = col.g; arr[i * 3 + 2] = col.b; }
+      g.setAttribute('color', new BufferAttribute(arr, 3));
+    }
     for (const n of Object.keys(g.attributes)) if (!['position', 'normal', 'color', 'uv'].includes(n)) g.deleteAttribute(n);
     if (g.index) { const ni = g.toNonIndexed(); g.dispose(); geos.push(ni); } else geos.push(g);
   });

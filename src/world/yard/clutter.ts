@@ -7,6 +7,7 @@ import { createRng } from '../../engine/rng';
 import { groundSurfaceAt } from '../surfaces';
 import { fbm, groundHeight } from './ground';
 import { underGenProp } from './genProps';
+import { underDress } from './dress';
 
 /**
  * Ground clutter (no colliders, no shadows): wind-swayed grass tufts on every grass patch of the Yard, plus
@@ -45,7 +46,7 @@ export function buildClutter(game: Game) {
   const rng = createRng(2026);
   const half = yard.half;
   const st = Object.values(yard.stations).map((s) => [s.x - s.w / 2 - 1, s.x + s.w / 2 + 1, s.z - s.d / 2 - 1, s.z + s.d / 2 + 1]);
-  const free = (x: number, z: number) => !st.some(([x0, x1, z0, z1]) => x > x0 && x < x1 && z > z0 && z < z1) && Math.hypot(x - yard.spawn.x, z - yard.spawn.z) > 4.5 && !underGenProp(x, z);
+  const free = (x: number, z: number) => !st.some(([x0, x1, z0, z1]) => x > x0 && x < x1 && z > z0 && z < z1) && Math.hypot(x - yard.spawn.x, z - yard.spawn.z) > 4.5 && !underGenProp(x, z) && !underDress(x, z);
 
   // --- grass ---
   const spots: [number, number, number][] = [];

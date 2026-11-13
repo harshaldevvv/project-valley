@@ -6,6 +6,7 @@ import { buildFireLights } from './fires';
 import { buildWornGround } from './worn';
 import { buildCabin, buildCabinLoot, buildFarm, buildShop } from './cabin';
 import { buildClutter } from './clutter';
+import { buildDress } from './dress';
 import { buildGenProps } from './genProps';
 import { installFlashlight } from '../../engine/flashlight';
 import { buildGround } from './ground';
@@ -43,6 +44,7 @@ export async function buildYard(game: Game): Promise<void> {
   await buildShop(kit);
   await buildFarm(kit);
   await buildGenProps(kit);
+  await buildDress(game, kit);
   for (const p of lightPoles) kit.place(p);
   await kit.finish();
   finishSigns(kit);

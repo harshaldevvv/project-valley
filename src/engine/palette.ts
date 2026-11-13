@@ -147,7 +147,7 @@ export async function pfWorldMaterial() {
     const c = vertexColor().rgb;
     const l = dot(c, vec3(0.2126, 0.7152, 0.0722));
     const soft = mix(vec3(l), c, 0.88).mul(vec3(0.96, 0.97, 0.93)); // 12 % desaturated, a touch warmer
-    m.colorNode = soft.mul(mix(float(1), detailFactor, 0.8));
+    m.colorNode = soft.mul(0.92).add(0.035).mul(mix(float(1), detailFactor, 0.8)); // lift near-black vertex colours a little
   }
   m.name = 'pf_world';
   return (pfMat = m);
