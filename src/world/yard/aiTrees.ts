@@ -1,4 +1,6 @@
 import { InstancedMesh, Matrix4, Mesh, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
+import { MeshStandardNodeMaterial } from 'three/webgpu';
+import { fract, instanceIndex, positionLocal, sin, time, vec3 } from 'three/tsl';
 import type { Game } from '../../core/game';
 import { gltfLoader } from '../../engine/assets';
 import { assetUrl } from '../../engine/assetUrl';
@@ -32,8 +34,14 @@ export async function buildAiTrees(game: Game) {
     b.g.scene.traverse((o) => { if (!mesh && (o as Mesh).isMesh) mesh = o as Mesh; });
     if (!mesh || !b.spots.length) continue;
     const src = mesh as Mesh;
-    const mat = src.material as MeshStandardMaterial;
-    mat.roughness = 0.9; mat.metalness = 0; mat.color.setRGB(0.66, 0.74, 0.66); mat.side = 2; // DoubleSide: thin leaf cards and open crowns
+    const base = src.material as MeshStandardMaterial;
+    // Node material so the crown can sway in the wind (vertex shader, per-tree phase, grows with height squared)
+    const mat = new MeshStandardNodeMaterial({ map: base.map, roughness: 0.9, metalness: 0, side: 2 }); // DoubleSide: open crowns
+    mat.color.setRGB(0.66, 0.74, 0.66);
+    const phase = fract(sin(instanceIndex.toFloat().mul(12.9898)).mul(43758.5453)).mul(6.28);
+    const h = positionLocal.y.div(b.sp.height).max(0);
+    const sway = sin(time.mul(1.1).add(phase)).add(sin(time.mul(2.3).add(phase.mul(1.7))).mul(0.35)).mul(h.mul(h)).mul(0.22);
+    mat.positionNode = positionLocal.add(vec3(sway, 0, sway.mul(0.45)));
     const inst = new InstancedMesh(src.geometry, mat, b.spots.length);
     inst.name = `${b.sp.id}_x${b.spots.length}`;
     b.spots.forEach((t, i) => {
