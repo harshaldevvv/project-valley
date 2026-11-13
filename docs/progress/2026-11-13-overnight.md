@@ -87,13 +87,21 @@ All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-bef
 
 GPU time per frame on the 4090 with every effect on: about 1.5 ms (`gpums2.mjs`, noisy by about 0.3 ms between runs).
 
+39. **Character faces:** finding: the faces were already in the AI textures (eyes, mouth, wounds visible in a flat front render, `tools/audit/render_front.py`); they looked blank because I had cut character textures to 512 px. They now keep 1024 px (about +0.3 MB each), and the faces read in game. No repaint with Qwen-Image-Edit was needed; no extra GPU job ran for this.
+40. **Night:** a cool shadowless rim light opposite the moon (edges on figures and props), and a visible flashlight beam (an additive cone, one draw) that reads as fog in the light.
+41. **Path edges** softened with a gravel scatter on both sides of every path (`worn.ts`).
+42. **FP arms smoothing: tried, not shipped.** `tools/audit/smooth_arms.py` subdivides the skinned arms in Blender, but with the palette-swatch UVs the subdivided faces produce a camo pattern on the sleeve; the original arms are unchanged and the script is kept as a tool.
+43. **Regression sweep** (all scripts in `tools/audit/`, run after the last change, zero console errors): reload and weapon swap, melee swap mid-swing, rain, interiors and loot (opened a shop cupboard through the real container UI), headshot zones (noisy, see notes), death flings (corpses land flat), inventory drag, settings, WebGL2 fallback, night, low health, combat, sprint dust, crows.
+
+Frame rate after pass 8 (vsync-capped; p50 16.67 ms in all six scenes, 0 hitches): draws 118-144, triangles 632k-880k. GPU about 1.65 ms with everything on (about 1.3 ms with the look chain off), 4090.
+
 ## Cost of all this
 - Download size grew by about 12 MB of public assets after compression (it was about 30 MB); KTX2 textures would shrink GPU memory further.
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).
 
 ## What's left, ranked
-1. **Night:** improved; could still use a real rim light and fog in the flashlight cone.
-2. **Characters:** flat vector-style textures and blank faces (heads shrunk); survivor clothing variants need more 3D (licence-gated, or TRELLIS2 with 20 GB free RAM).
+1. **Night:** rim light and flashlight beam done; ground and walls still fall to blue-black far from lamps.
+2. **Characters:** vector-style textures (heads shrunk, faces readable at 1024 px); smoother arms need UVs that survive subdivision; survivor clothing variants need more 3D (licence-gated, or TRELLIS2 with 20 GB free RAM).
 3. Ground: worn patches done; terrain splat blending at path edges still hard-edged in places.
 5. **First-person weapon and arm meshes:** blocky; a hand remodel that keeps the `MAG` node and sockets.
 6. **Test on the laptop GPU** (toggles for look, AO and shafts exist in Settings); KTX2 for GPU memory.
