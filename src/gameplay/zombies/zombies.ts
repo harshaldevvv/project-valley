@@ -368,7 +368,7 @@ export class Zombies {
     this.ctx.hits.delete(z.head.handle);
     if (!quiet) this.ctx.sfx('zombie_death', z.curr, { pitchJitter: 0.1 });
     if (z.fling.lengthSq() === 0) this.groundPool(this.torso(z, _o)); // under the torso, not the feet
-    z.anim?.oneshot('z_death', z.headKill ? 0.04 : 0.1, true, z.def.deathHoldAt, z.headKill ? fxTuning.headKillDeathSpeed : 1);
+    z.anim?.oneshot('z_death', z.headKill ? 0.04 : 0.1, true, z.def.deathHoldAt, (z.headKill ? fxTuning.headKillDeathSpeed : 1) * (0.8 + this.ctx.rand() * 0.55)); // each fall plays at its own speed
     if (melee) this.ctx.game.events.emit('noise', { position: z.curr.clone(), radius: 5, source: 'melee_kill' });
   }
 
