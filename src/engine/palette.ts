@@ -73,11 +73,7 @@ export async function paletteArmsMaterial() {
   const l = dot(c, vec3(0.2126, 0.7152, 0.0722));
   const natural = vec3(0.36, 0.2, 0.14).mul(l.mul(1.5).add(0.35));
   let col: any = mix(c, natural, skin.mul(0.85));
-  if (grunge) {
-    const lp = positionGeometry;
-    const g = dot(texture(grunge, vec2(lp.x.add(lp.z), lp.y).mul(4)).rgb, vec3(0.2126, 0.7152, 0.0722));
-    col = col.mul(clamp(g.sub(0.42).mul(1.2).add(1), 0.7, 1.3));
-  }
+  void grunge; // no object-space wear on the arms: their positions are normalised int16, so the pattern scale is arbitrary
   const m = new MeshStandardNodeMaterial({ roughness: 0.8, metalness: 0 });
   m.colorNode = col;
   m.map = atlasTex;
