@@ -295,6 +295,7 @@ export class Player implements PlayerView {
     const vol = this.gait === 'crouch' ? 0.25 : this.gait === 'sprint' ? 0.9 : 0.55;
     this.ctx.sfx(this.surfaceBelow() === 'grass' ? 'footstep_grass' : 'footstep_concrete', this.curr, { volume: vol, pitchJitter: 0.08 });
     this.ctx.game.events.emit('noise', { position: this.curr.clone(), radius, source: 'footstep' });
+    if (this.gait === 'sprint' || this.gait === 'jog') this.ctx.fx.footDust(this.curr, this.gait === 'sprint' ? 1 : 0.5, this.surfaceBelow() === 'grass');
   }
 
   private land(speed: number) {
@@ -302,6 +303,7 @@ export class Player implements PlayerView {
     this.landed = Math.min(1, speed / 12);
     if (speed > 4) this.ctx.playerAnim?.oneshot('land', 0.05);
     this.ctx.sfx('jump_land', this.curr, { volume: Math.min(1, 0.3 + speed / 12) });
+    if (speed > 3) this.ctx.fx.footDust(this.curr, Math.min(1, speed / 8), this.surfaceBelow() === 'grass');
     if (speed > M.hardLandSpeed) this.ctx.game.events.emit('noise', { position: this.curr.clone(), radius: M.landNoise, source: 'land' });
   }
 

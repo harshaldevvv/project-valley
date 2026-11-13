@@ -254,6 +254,14 @@ export class Fx {
     }
   }
 
+  /** Small dust puff (and a few crumbs when hard) at a foot or landing: jog, sprint and hard landings. */
+  footDust(p: Vector3, strength: number, grass: boolean) {
+    _n.set(0, 1, 0);
+    const col = grass ? ['#7f8a5a', '#8c8466'] : ['#b8b0a0', '#a39c8e'];
+    this.burst({ pool: 'smoke', count: [1, strength > 0.7 ? 3 : 2], color: col, size: [0.07, 0.13], speed: [0.3, 0.8], cone: 70, gravity: -0.15, life: [0.45, 0.75], upBias: 0.6 }, p, _n, null, 1);
+    if (strength > 0.7) this.burst({ pool: 'chips', count: [2, 4], color: col, size: [0.02, 0.035], speed: [1.2, 2.2], cone: 60, gravity: 9, life: [0.3, 0.45], upBias: 0.5 }, p, _n, null, 1);
+  }
+
   /** Layered impact by surface (data/fx.ts impacts): chips/sparks, puff, optional star, decal. */
   impact(p: Vector3, n: Vector3, surface: FxSurface, shotDir: Vector3 | null = null, scale = 1) {
     let def = impacts[surface];
