@@ -20,10 +20,11 @@ Screenshots: `docs/audit/screenshots/before/` and `.../after/` (contact sheets `
 14. **AI hill trees** (`aiTrees.ts`): pines and birches within 150 m of the walls are instanced AI models (1.4-1.6k tris) instead of cone trees; farther ones stay in the cheap kit. An autumn variant is shipped but unused (it decimates to a dark blob).
 15. **Loading screen key art** (z-image-turbo): the survivor facing the wall and the horde on the hill; boot screen now prefetches the AI models with real progress and loads them in parallel.
 16. **Death screen:** display type, slow letter-spacing fade-in, desaturated veil.
-17. **Audio:** stable-audio3-sfx made melee swings (the game had no file for them), flesh impacts, a headshot crack and a body fall, mixed into the existing hit sounds. ACE-Step made an explore and a combat score, loop-crossfaded; they are opt-in with `?music=ai` because I could not listen to them. **Please listen and decide.**
-18. **New characters, rigged and animated (the biggest change):** the player survivor and eight new zombie variants (civilian, hazmat, soldier, nurse, worker, police, hoodie, suit) are AI-generated and skinned to the game's *existing* rig: z-image-turbo A-pose picture, Hunyuan3D-2.1 textured mesh, then `tools/audit/retarget_char.py` in Blender (fit to the rig, skin weights copied from the original mesh by nearest surface, LOD0/1/2, collision box). The survivor keeps all 40 clips and the backpack node; zombies borrow the shambler clips and render through the GPU crowd renderer with their own baked textures (crowd and model loaders now keep a mesh's own texture). Spawn mix favours the new zombies. 30 zombies still hold 60 fps.
-19. **Inventory:** display type, amber edge, soft entrance, hover feedback.
-20. **HUD** (`src/ui/hud/hud.ts`): same type and accent as the menus, glass backing for bars and ammo, bevelled bars.
+17. **Pass 3 small items:** per-def head hit ball so headshots land on the shorter AI bodies (checked by shooting at 1.38 m and 1.55 m), footstep dust on jog/sprint and dust on landings, sun shafts (half-res godrays, about 0.2 ms, subtle), natural skin tone and cloth wear on the first-person arms.
+18. **Audio:** stable-audio3-sfx made melee swings (the game had no file for them), flesh impacts, a headshot crack and a body fall, mixed into the existing hit sounds. ACE-Step made an explore and a combat score, loop-crossfaded; they are opt-in with `?music=ai` because I could not listen to them. **Please listen and decide.**
+19. **New characters, rigged and animated (the biggest change):** the player survivor and eight new zombie variants (civilian, hazmat, soldier, nurse, worker, police, hoodie, suit) are AI-generated and skinned to the game's *existing* rig: z-image-turbo A-pose picture, Hunyuan3D-2.1 textured mesh, then `tools/audit/retarget_char.py` in Blender (fit to the rig, skin weights copied from the original mesh by nearest surface, LOD0/1/2, collision box). The survivor keeps all 40 clips and the backpack node; zombies borrow the shambler clips and render through the GPU crowd renderer with their own baked textures (crowd and model loaders now keep a mesh's own texture). Spawn mix favours the new zombies. 30 zombies still hold 60 fps.
+20. **Inventory:** display type, amber edge, soft entrance, hover feedback.
+21. **HUD** (`src/ui/hud/hud.ts`): same type and accent as the menus, glass backing for bars and ammo, bevelled bars.
 
 ## Incident
 Removing my temporary comparison worktree (it linked `node_modules` by junction) deleted part of the real `node_modules` (`.bin` was gone). Restored with `npm ci` from the lockfile; tests and build pass. Nothing in the repo was affected.
@@ -31,7 +32,8 @@ Removing my temporary comparison worktree (it linked `node_modules` by junction)
 ## Tested
 - `npm test`: 49 pass. `npm run build`: passes.
 - Played in Chrome (WebGPU, RTX 4090) with Playwright through 19 camera spots, inventory, pause, debug panel, day and night. Console: only the two known warnings, no errors.
-- Not tested: a real fight with the red pulse (the event hook is wired but I did not take damage in the script), WebGL fallback (`?webgl`), the production build in a browser.
+- WebGL2 fallback (`?webgl`) boots and renders with the full look chain, no errors. Death and respawn, flashlight, combat and sprint were played in the browser.
+- Not tested: the production build in a browser, a high-refresh or laptop GPU.
 
 ## Frame rate (`tools/audit/perf.mjs`, 4 s per scene, 1280×720)
 This monitor is 60 Hz and vsync-capped, so p50 is 16.67 ms before and after in all six scenes, 0 hitches, p99 under 17.1 ms. That proves no regression at 60 fps; it does not show the remaining headroom. Cost went up in triangles, not draw calls.
@@ -55,7 +57,7 @@ All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-bef
 1. **Characters (first pass done)**: still to do: fix the AI meshes' proportions (big heads), clothing variants for the survivor, first-person arms, worker/shambler replacements, and hit-zone tuning (headshot zone matches the old mesh). Original note: characters looked plain (finding: the shipped GLBs are meshopt-compressed, Blender 4.5 cannot import them; rebuild from `assets/source/zmb/*/build.py` or decompress with `gltf-transform` first. A try at AI body meshes weight-painted to the existing rig with Blender auto-weights is the next experiment) (about 1.9k-triangle flat-colour bodies). Animation is already good. Needs a rigging path: install UniRig (multi-hour Windows CUDA build) or retarget AI meshes with Blender's auto-weights onto the existing rig, then texture. Highest impact left.
 2. **Sun shafts** (`GodraysNode`); AO is done. Also compress the new GLBs and textures, and test on the laptop GPU.
 3. **Dust puffs, footstep particles** and more blood variety (hit flash is done).
-4. **Retexture the palette-only kit** (house, range, signs) with the same detail pipeline plus wear decals; AI-generated posters and signs.
+4. **Blocked until the licence answer:** more AI 3D (survivor clothing variants, FP weapon models, interiors). TRELLIS2 (MIT) needs about 20 GB free RAM; the first-person rifle stock and blocky arm meshes need a real remodel (hand-made in Blender). Retexture the palette-only kit (house, range, signs) with the same detail pipeline plus wear decals; AI-generated posters and signs.
 5. **Title key art and UI textures** (z-image-turbo) behind the menu.
 6. **SFX gaps** with stable-audio3-sfx (not attempted).
 7. Grass: tufts are flat-shaded; add colour variation by patch and clear them where zombies and cars drive.
