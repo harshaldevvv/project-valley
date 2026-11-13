@@ -10,6 +10,9 @@ export interface Settings {
   renderScale: number; // 0.5..1
   shadows: boolean;
   fxaa: boolean;
+  look: boolean; // bloom, grade, vignette, grain
+  ao: boolean; // ambient occlusion
+  shafts: boolean; // sun shafts
   volume: number; // master 0..1
   music: number; // background music 0..1
   ambience: number; // wind, birds, crickets, distant sounds 0..1
@@ -19,7 +22,7 @@ export interface Settings {
 }
 
 const KEY = 'pv.settings.v1';
-export const DEFAULT_SETTINGS: Settings = { fov: 70, sensitivity: 1, shake: 0.7, renderScale: 1, shadows: true, fxaa: true, volume: 0.8, music: 0.4, ambience: 0.6, bgMuted: false, reduceFlashing: false, gore: 'full' };
+export const DEFAULT_SETTINGS: Settings = { fov: 70, sensitivity: 1, shake: 0.7, renderScale: 1, shadows: true, fxaa: true, look: true, ao: true, shafts: true, volume: 0.8, music: 0.4, ambience: 0.6, bgMuted: false, reduceFlashing: false, gore: 'full' };
 
 export function loadSettings(): Settings {
   try {

@@ -19,9 +19,12 @@ export interface PostSettings {
   shadows: boolean;
   /** Look: bloom on HDR highlights, vignette, split-tone grade and film grain (cheap, no extra scene passes). */
   look: boolean;
+  /** Ambient occlusion and sun shafts (each a half-res pass; only built into the graph when on). */
+  ao: boolean;
+  shafts: boolean;
 }
 
-export function installPost(game: Game, settings: PostSettings = { fxaa: true, renderScale: 1, shadows: true, look: true }) {
+export function installPost(game: Game, settings: PostSettings = { fxaa: true, renderScale: 1, shadows: true, look: true, ao: true, shafts: true }) {
   const { renderer, scene, camera, sun, perf } = game;
   const scenePass = pass(scene, camera);
   /** Live-tunable grade, fed by gameplay (damage pulse) through post.look. */
@@ -41,10 +44,13 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
   raysNode.density.value = 0.5;
   raysNode.maxDensity.value = 0.45;
   const rays = raysNode.getTextureNode().r.mul(vec3(1.0, 0.86, 0.62)).mul(look.shafts);
-  const hdr = occluded.add(bloomNode.mul(look.bloomMix)).add(rays);
   const toned = renderOutput(scenePass);
-  const tonedHdr = renderOutput(hdr);
-  const graded = (() => {
+  /** Look chain graph for the current settings: passes that are off are left out, so they cost nothing. */
+  const buildGraded = () => {
+    let hdr: typeof scenePass | typeof occluded = settings.ao ? occluded : scenePass;
+    hdr = hdr.add(bloomNode.mul(look.bloomMix));
+    if (settings.shafts && settings.shadows) hdr = hdr.add(rays);
+    const tonedHdr = renderOutput(hdr);
     const c = tonedHdr.rgb;
     const luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
     // contrast around mid-grey, saturation, warm highlights / cool shadows
@@ -61,7 +67,7 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
     const n = fract(sin(dot(uv().add(fract(time)), vec3(12.9898, 78.233, 0).xy)).mul(43758.5453));
     g = g.add(n.sub(0.5).mul(look.grain));
     return vec4(clamp(g, 0, 1), 1);
-  })();
+  };
   const pipeline = new RenderPipeline(renderer);
   // Time the scene (+ shadow) pass separately from the post chain: render = r.scene + r.post.
   let sceneMs = 0;
@@ -78,12 +84,12 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
   const apply = () => {
     settings.renderScale = Math.min(1, Math.max(0.5, settings.renderScale));
     scenePass.setResolutionScale(settings.renderScale);
-    const finalNode = settings.look ? graded : toned;
+    const finalNode = settings.look ? buildGraded() : toned;
     pipeline.outputNode = settings.fxaa ? fxaa(finalNode) : finalNode;
     pipeline.needsUpdate = true;
     direct = !settings.fxaa && !settings.look && settings.renderScale === 1;
     sun.castShadow = settings.shadows;
-    perf.extra.post = `${settings.fxaa ? 'FXAA' : 'no AA'} x${settings.renderScale.toFixed(2)}${settings.shadows ? '' : ' no-shadows'}${settings.look ? '' : ' no-look'}`;
+    perf.extra.post = `${settings.fxaa ? 'FXAA' : 'no AA'} x${settings.renderScale.toFixed(2)}${settings.shadows ? '' : ' no-shadows'}${settings.look ? '' : ' no-look'}${settings.look && !settings.ao ? ' no-ao' : ''}${settings.look && !settings.shafts ? ' no-shafts' : ''}`;
   };
   apply();
 

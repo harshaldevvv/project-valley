@@ -180,7 +180,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       };
       f.append(row);
     };
-    const check = (key: 'shadows' | 'fxaa' | 'reduceFlashing' | 'bgMuted', label: string) => {
+    const check = (key: 'shadows' | 'fxaa' | 'look' | 'ao' | 'shafts' | 'reduceFlashing' | 'bgMuted', label: string) => {
       const row = document.createElement('label');
       row.className = 'row toggle';
       row.innerHTML = `<span>${label}</span><input type="checkbox"><i></i>`;
@@ -205,6 +205,9 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     slider('renderScale', S.renderScale, 0.5, 1, 0.05, pct);
     check('shadows', S.shadows);
     check('fxaa', S.fxaa);
+    check('look', S.look);
+    check('ao', S.ao);
+    check('shafts', S.shafts);
     check('reduceFlashing', S.reduceFlashing);
     {
       // segmented control (QA-048): native radios, styled; arrow keys work as usual

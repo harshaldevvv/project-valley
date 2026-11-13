@@ -184,7 +184,7 @@ export async function installEngine(game: Game) {
       cameraFeel.fovHip = s.fov;
       look.sensitivity = BASE_SENSITIVITY * s.sensitivity;
       cameraFeel.shake = s.shake;
-      Object.assign(post.settings, { fxaa: s.fxaa, renderScale: s.renderScale, shadows: s.shadows });
+      Object.assign(post.settings, { fxaa: s.fxaa, renderScale: s.renderScale, shadows: s.shadows, look: s.look, ao: s.ao, shafts: s.shafts });
       post.apply();
       audio.settings.master = s.volume;
       Object.assign(audio.settings, { music: s.music, ambience: s.ambience, bgMuted: s.bgMuted });

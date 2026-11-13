@@ -74,7 +74,7 @@ export const menuText = {
   nav: { play: 'Play', resume: 'Resume', stations: 'Jump to station', controls: 'Controls', settings: 'Settings', difficulty: 'Difficulty', quit: 'Quit to title' },
   settings: {
     fov: 'Field of view', sensitivity: 'Mouse sensitivity', shake: 'Camera shake', volume: 'Master volume', music: 'Music', ambience: 'Ambience', bgMuted: 'Mute music and ambience', renderScale: 'Render scale',
-    shadows: 'Shadows', fxaa: 'Anti-aliasing (FXAA)', reduceFlashing: 'Reduce flashing',
+    shadows: 'Shadows', fxaa: 'Anti-aliasing (FXAA)', look: 'Cinematic look (bloom, grade)', ao: 'Ambient occlusion', shafts: 'Sun shafts', reduceFlashing: 'Reduce flashing',
     gore: 'Gore', goreFull: 'Full', goreReduced: 'Reduced', goreOff: 'Off', reset: 'Reset to defaults',
   },
   difficulty: {
