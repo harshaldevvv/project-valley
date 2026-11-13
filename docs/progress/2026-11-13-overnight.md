@@ -68,15 +68,33 @@ All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-bef
 32. **Wind gusts** (`engine/wind.ts`): one shared gust value drives the tree sway and the wind loop volume, so a gust is seen and heard together.
 33. Re-audit written into the audit doc, with a re-ranked weak list (night look first).
 
+34. **Night look:** brighter cool moonlight and ambient, lighter fog tint, a flickering camp-fire point light (`fires.ts`).
+35. **AI trees fixed and extended:** the pine and birch instances were rendering at about a quarter size (meshopt keeps the real size in a node scale; instancing the raw geometry lost it). They now bake the transform into float positions and are full size. The trees inside the walls are AI pines and birches too, replacing the dark cone kit.
+36. **Worn ground** (`worn.ts`): trampled dirt patches along every spawn-to-station path, at the interior doors and round the fire; one instanced draw.
+37. **Characters:** the oversized AI heads are shrunk about the neck joint (weights from the head bone) in `retarget_char.py` (`HEAD_SCALE`, default 0.84); all nine models re-skinned and recompressed. I did not repaint face textures (no UV-aware painting path tried).
+38. **Camera kicks and inventory drag, checked:** a recorded reload measured fov kick 0.25 and punch 0.17 degrees (too faint to feel), so the kicks are about 1.6x stronger now (0.4 / 0.29). The inventory drag shows the lifted item glowing and tilted (screenshot `56_drag.png`).
+
+**Frame rate, before and after pass 7** (`tools/audit/perf.mjs`, vsync-capped 60 Hz so p50 is 16.67 ms in every scene, 0 hitches, p99 under 17 ms both times):
+
+| Scene | Draws before / after | Triangles before / after |
+|---|---|---|
+| Spawn | 131 / 133 | 725k / 766k |
+| Range | 122 / 124 | 689k / 731k |
+| Build pad | 139 / 141 | 724k / 766k |
+| Track | 114 / 116 | 694k / 735k |
+| 30 zombies | 141 / 140 | 836k / 872k |
+| Night | 116 / 118 | 588k / 629k |
+
+GPU time per frame on the 4090 with every effect on: about 1.5 ms (`gpums2.mjs`, noisy by about 0.3 ms between runs).
+
 ## Cost of all this
 - Download size grew by about 12 MB of public assets after compression (it was about 30 MB); KTX2 textures would shrink GPU memory further.
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).
 
 ## What's left, ranked
-1. **Night look:** flat and dark; stronger moon light, rim light and fog tint (see the audit's re-audit section).
-2. **Characters:** flat vector-style textures, big heads, blank faces; survivor clothing variants need more 3D (licence-gated, or TRELLIS2 with 20 GB free RAM).
-3. **Near-field trees inside the walls** still the dark cone kit; replace with the AI trees.
-4. **Ground variety:** paths, worn patches, mud at doors.
+1. **Night:** improved; could still use a real rim light and fog in the flashlight cone.
+2. **Characters:** flat vector-style textures and blank faces (heads shrunk); survivor clothing variants need more 3D (licence-gated, or TRELLIS2 with 20 GB free RAM).
+3. Ground: worn patches done; terrain splat blending at path edges still hard-edged in places.
 5. **First-person weapon and arm meshes:** blocky; a hand remodel that keeps the `MAG` node and sockets.
 6. **Test on the laptop GPU** (toggles for look, AO and shafts exist in Settings); KTX2 for GPU memory.
 7. Music: listen to `?music=ai` and decide.

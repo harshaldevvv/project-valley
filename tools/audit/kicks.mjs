@@ -1,0 +1,22 @@
+// Records fov kick and view punch over a reload (rifle) and an inventory drag; prints peak values.
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = []; page.on('pageerror', e => errs.push(String(e).slice(0, 200)));
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
+await page.waitForTimeout(2000); await page.mouse.click(640, 360);
+await page.evaluate(() => { window.__gp.sandbox(); window.__samples = []; const r = window.__gp.ctx.rig; setInterval(() => window.__samples.push([+performance.now().toFixed(0), +r.fovKick.toFixed(3), +r.punch.toFixed(3)]), 16); });
+await page.keyboard.press('Digit1'); await page.waitForTimeout(1500);
+await page.evaluate(() => { window.__samples.length = 0; const w = window.__gp.ctx.weapons; if (w.item) w.item.rounds = 3; });
+await page.keyboard.press('KeyR'); await page.waitForTimeout(3200);
+const s = await page.evaluate(() => window.__samples);
+const peak = (i) => Math.max(...s.map((x) => Math.abs(x[i])));
+console.log('reload peaks: fovKick', peak(1), 'punch', peak(2), 'samples', s.length);
+await page.keyboard.press('Tab'); await page.waitForTimeout(700);
+const item = page.locator('.inv-item').first();
+const bb = await item.boundingBox();
+await page.mouse.move(bb.x + 10, bb.y + 10); await page.mouse.down(); await page.mouse.move(bb.x + 120, bb.y + 90, { steps: 6 }); await page.waitForTimeout(200);
+await page.screenshot({ path: 'docs/audit/screenshots/wip/56_drag.png' });
+await page.mouse.up(); await page.keyboard.press('Tab');
+console.log('errors', errs); await browser.close();

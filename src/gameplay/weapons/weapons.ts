@@ -293,7 +293,7 @@ export class Weapons {
           this.ctx.sfx('bolt_rack', undefined, { volume: 0.35, pitchJitter: 0.1 });
         } else {
           this.switchPhase = 'none';
-          if (this.def) this.ctx.rig.kick(0.15, 0.22); // weapon settles after the draw
+          if (this.def) this.ctx.rig.kick(0.25, 0.4); // weapon settles after the draw
         }
       }
     }
@@ -423,7 +423,7 @@ export class Weapons {
     if (!r.inPlayed && k > (ev ? ev.magIn / ev.dur : 0.6)) {
       r.inPlayed = true;
       this.ctx.sfx('reload_mag_in', this.ctx.player.curr);
-      this.ctx.rig.kick(0.25, -0.35); // the magazine seats: a small jolt of the view
+      this.ctx.rig.kick(0.4, -0.6); // the magazine seats: a small jolt of the view
     }
     if (!r.committed && k >= B.magCommitAt) {
       r.committed = true;
@@ -438,7 +438,7 @@ export class Weapons {
         it.mag.rounds!--;
         it.rounds = 1;
         this.ctx.sfx('bolt_rack', this.ctx.player.curr);
-        this.ctx.rig.kick(0.2, 0.3); // bolt slam
+        this.ctx.rig.kick(0.35, 0.55); // bolt slam
       }
       this.reload = null;
     }
