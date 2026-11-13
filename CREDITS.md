@@ -76,10 +76,17 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Model | Page |
 |---|---|
 | Abandoned Shopping Trolley by Polyfork | https://polyfork.dev/asset/abandoned-shopping-trolley-3de6cb |
+| Alcove Bookcase by Polyfork | https://polyfork.dev/asset/alcove-bookcase-83894d |
 | Alpine Hay Barn by Polyfork | https://polyfork.dev/asset/alpine-hay-barn-3965e5 |
 | Ammo Crate by Polyfork | https://polyfork.dev/asset/ammo-crate-ee3ec0 |
+| Arc Floor Lamp by Polyfork | https://polyfork.dev/asset/arc-floor-lamp-fa0b5f |
+| Area Rug by Polyfork | https://polyfork.dev/asset/area-rug-5c56e2 |
+| Back Bar Shelf Unit by Polyfork | https://polyfork.dev/asset/back-bar-shelf-unit-11ab89 |
 | Barbed Wire Fence Section by Polyfork | https://polyfork.dev/asset/barbed-wire-fence-section-a01906 |
+| Bed by Polyfork | https://polyfork.dev/asset/bed-6e10e8 |
+| Bedside Table by Polyfork | https://polyfork.dev/asset/bedside-table-3f2b80 |
 | Birch Tree by Polyfork | https://polyfork.dev/asset/birch-tree-181b33 |
+| Bistro Table by Polyfork | https://polyfork.dev/asset/bistro-table-877a6d |
 | Board Privacy Fence Run by Polyfork | https://polyfork.dev/asset/board-privacy-fence-run-319bef |
 | Boxy-sedan-70s by Polyfork | https://polyfork.dev/asset/boxy-sedan-70s-7d55f7 |
 | Brass water tower by Polyfork | https://polyfork.dev/asset/brass-water-tower-b0c6d9 |
@@ -87,6 +94,7 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Bush by Polyfork | https://polyfork.dev/asset/bush-8bb596 |
 | Camp Tent by Polyfork | https://polyfork.dev/asset/camp-tent-3c5c89 |
 | Campfire by Polyfork | https://polyfork.dev/asset/campfire-4390aa |
+| Cardboard Delivery Box by Polyfork | https://polyfork.dev/asset/cardboard-delivery-box-59cc68 |
 | Cargo Container by Polyfork | https://polyfork.dev/asset/cargo-container-fd73bc |
 | Clapboard Church by Polyfork | https://polyfork.dev/asset/clapboard-church-03a6f5 |
 | Collapse Rubble Mound by Polyfork | https://polyfork.dev/asset/collapse-rubble-mound-4fbfed |
@@ -94,13 +102,18 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Construction Dumpster by Polyfork | https://polyfork.dev/asset/construction-dumpster-2de7ae |
 | Dead Tree by Polyfork | https://polyfork.dev/asset/dead-tree-6795fa |
 | Delivery Truck by Polyfork | https://polyfork.dev/asset/delivery-truck-a9537e |
+| Dining Chair by Polyfork | https://polyfork.dev/asset/dining-chair-530532 |
+| Dorm Wardrobe by Polyfork | https://polyfork.dev/asset/dorm-wardrobe-b10546 |
 | Field Barricade by Polyfork | https://polyfork.dev/asset/field-barricade-a646b9 |
 | Field Grave Marker by Polyfork | https://polyfork.dev/asset/field-grave-marker-15380b |
+| Filing Cabinet by Polyfork | https://polyfork.dev/asset/filing-cabinet-f8a251 |
 | Fire Lookout Tower by Polyfork | https://polyfork.dev/asset/fire-lookout-tower-714fa1 |
 | Firewood Stack by Polyfork | https://polyfork.dev/asset/firewood-stack-810f49 |
+| Fridge Freezer by Polyfork | https://polyfork.dev/asset/fridge-freezer-fb9b5a |
 | Fuel Depot by Polyfork | https://polyfork.dev/asset/fuel-depot-e57cdc |
 | Fuel Drum by Polyfork | https://polyfork.dev/asset/fuel-drum-d65fa4 |
 | Gabled Farmhouse by Polyfork | https://polyfork.dev/asset/gabled-farmhouse-c7534f |
+| Glass-Door Drinks Fridge by Polyfork | https://polyfork.dev/asset/glass-door-drinks-fridge-21f077 |
 | Grain Silo by Polyfork | https://polyfork.dev/asset/grain-silo-58ca67 |
 | Hay Bale by Polyfork | https://polyfork.dev/asset/hay-bale-079e8c |
 | Mailbox by Polyfork | https://polyfork.dev/asset/mailbox-8e36e8 |

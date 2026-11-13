@@ -54,7 +54,7 @@ export async function buildYard(game: Game): Promise<void> {
   installFlashlight(game);
   buildBirds(game);
   await buildWornGround(game);
-  buildFireLights(game, [[-15.5, 0.7, 11.5]]);
+  buildFireLights(game, [[-15.5, 0.7, 11.5]], [[-69.0, 1.9, -33.8], [62.2, 1.9, -59.4], [-67.2, 1.9, 64.2]]);
   await buildAiTrees(game);
   await buildWallDecals(game);
   buildLampPools(game);

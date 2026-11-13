@@ -58,6 +58,20 @@ export const PF: Record<string, { file: string; h: number }> = {
   trash_can: { file: 'metal-trash-can-f57043', h: 1.0 },
   fence_board: { file: 'board-privacy-fence-run-319bef', h: 1.8 },
   fence_barbed: { file: 'barbed-wire-fence-section-a01906', h: 1.6 },
+  // interiors (dress.ts)
+  bed: { file: 'bed-6e10e8', h: 0.7 },
+  wardrobe: { file: 'dorm-wardrobe-b10546', h: 1.8 },
+  bookcase: { file: 'alcove-bookcase-83894d', h: 1.9 },
+  chair: { file: 'dining-chair-530532', h: 0.9 },
+  table_small: { file: 'bistro-table-877a6d', h: 0.75 },
+  fridge: { file: 'fridge-freezer-fb9b5a', h: 1.7 },
+  floor_lamp: { file: 'arc-floor-lamp-fa0b5f', h: 1.7 },
+  carton: { file: 'cardboard-delivery-box-59cc68', h: 0.35 },
+  rug: { file: 'area-rug-5c56e2', h: 0.03 },
+  shop_shelf: { file: 'back-bar-shelf-unit-11ab89', h: 1.9 },
+  drinks_fridge: { file: 'glass-door-drinks-fridge-21f077', h: 1.9 },
+  filing: { file: 'filing-cabinet-f8a251', h: 1.3 },
+  bedside: { file: 'bedside-table-3f2b80', h: 0.5 },
 };
 export const pfUrl = (file: string) => assetUrl(`assets/models/pf/${file}.glb`);
 export const pfFiles = Object.values(PF).map((p) => p.file);

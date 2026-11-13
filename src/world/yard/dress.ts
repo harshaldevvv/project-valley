@@ -31,6 +31,20 @@ const DRESS: Record<string, { surface: Surface; solid: boolean; at: Spot[] }> = 
   rubble: { surface: 'concrete', solid: false, at: [{ x: -80, z: 40, yaw: 0.3 }, { x: 52, z: 72, yaw: 2.4 }, { x: 90, z: -28, yaw: 1.1 }] },
   grave: { surface: 'dirt', solid: false, at: [{ x: -80, z: -30, yaw: 0 }, { x: -78.5, z: -30.5, yaw: 0.15 }, { x: -77, z: -30, yaw: -0.1 }, { x: -75.5, z: -30.6, yaw: 0.05 }] },
   bush_overgrown: { surface: 'grass', solid: false, at: [{ x: -9, z: 11, yaw: 5.7, s: 1.0 }, { x: 1, z: 16, yaw: 1.1, s: 1.1 }, { x: 24, z: 54, yaw: 0.6, s: 0.9 }, { x: -75, z: 57, yaw: 4.3, s: 0.7 }, { x: 89, z: 86, yaw: 4.1, s: 1.1 }, { x: -63, z: -89, yaw: 3.3, s: 0.7 }, { x: -57, z: -47, yaw: 0.2, s: 1.0 }, { x: -11, z: 63, yaw: 3.2, s: 1.1 }, { x: 0, z: 30, yaw: 2.8, s: 0.9 }, { x: 92, z: 91, yaw: 5.2, s: 1.2 }, { x: -34, z: -50, yaw: 1.8, s: 0.7 }, { x: 49, z: -18, yaw: 5.2, s: 1.0 }, { x: 84, z: 64, yaw: 0.0, s: 0.8 }, { x: 75, z: -6, yaw: 6.1, s: 1.0 }, { x: -79, z: 24, yaw: 4.8, s: 0.9 }, { x: -76, z: -31, yaw: 6.0, s: 1.2 }, { x: -70, z: -47, yaw: 0.6, s: 0.7 }, { x: 55, z: -59, yaw: 3.5, s: 1.0 }, { x: -57, z: 43, yaw: 0.8, s: 1.2 }, { x: -71, z: -15, yaw: 1.3, s: 0.9 }, { x: 87, z: 56, yaw: 1.9, s: 1.3 }, { x: -53, z: -19, yaw: 5.3, s: 1.1 }, { x: -74, z: 90, yaw: 1.3, s: 0.9 }, { x: 50, z: -31, yaw: 1.8, s: 0.8 }, { x: -75, z: 15, yaw: 1.5, s: 1.1 }, { x: -24, z: -9, yaw: 5.9, s: 1.0 }, { x: 14, z: 67, yaw: 1.1, s: 0.8 }, { x: 75, z: 58, yaw: 1.5, s: 0.8 }, { x: 44, z: 81, yaw: 1.2, s: 1.4 }, { x: 70, z: 19, yaw: 2.6, s: 0.8 }, { x: -85, z: 85, yaw: 1.5, s: 1.2 }, { x: -45, z: 60, yaw: 3.7, s: 0.9 }, { x: -60, z: 41, yaw: 0.4, s: 0.9 }, { x: 11, z: 65, yaw: 3.8, s: 0.9 }, { x: 77, z: -54, yaw: 0.1, s: 0.9 }, { x: -10, z: -81, yaw: 1.1, s: 1.0 }, { x: 13, z: -68, yaw: 2.2, s: 1.3 }, { x: 88, z: 29, yaw: 4.3, s: 1.1 }, { x: -66, z: -86, yaw: 0.1, s: 1.3 }, { x: 37, z: 85, yaw: 0.1, s: 1.1 }] },
+  // cabin (-72,-36), shop (66,-62), farmhouse (-70,62): furniture kept clear of the doors and windows
+  bed: { surface: 'wood', solid: true, at: [{ x: -71.5, z: -38.2, yaw: 0 }, { x: -67.6, z: 59.9, yaw: 3.14 }] },
+  bedside: { surface: 'wood', solid: false, at: [{ x: -69.7, z: -38.5, yaw: 0 }, { x: -66.9, z: 60.3, yaw: 3.14 }] },
+  wardrobe: { surface: 'wood', solid: true, at: [{ x: -75.4, z: -37.6, yaw: 1.57 }] },
+  bookcase: { surface: 'wood', solid: true, at: [{ x: -66.8, z: 63.8, yaw: -1.57 }] },
+  chair: { surface: 'wood', solid: false, at: [{ x: -72.5, z: -35.0, yaw: 1.2 }, { x: -70.0, z: -34.8, yaw: -1.9 }, { x: -70.4, z: 60.9, yaw: 3.14 }, { x: -69.2, z: 63.0, yaw: 0.3 }] },
+  table_small: { surface: 'wood', solid: true, at: [{ x: -74.0, z: -36.0, yaw: 0 }] },
+  fridge: { surface: 'metal', solid: true, at: [{ x: -73.0, z: 61.6, yaw: 1.57 }] },
+  floor_lamp: { surface: 'metal', solid: false, at: [{ x: -69.0, z: -33.8, yaw: 0 }, { x: 62.2, z: -59.4, yaw: 0 }, { x: -67.2, z: 64.2, yaw: 0 }] },
+  carton: { surface: 'wood', solid: false, at: [{ x: 68.2, z: -60.0, yaw: 0.3 }, { x: 69.0, z: -59.6, yaw: 1.1 }, { x: 68.6, z: -59.9, yaw: 0.7, s: 1 }, { x: -72.7, z: 64.2, yaw: 0.5 }, { x: -73.0, z: 63.3, yaw: 1.4 }] },
+  rug: { surface: 'wood', solid: false, at: [{ x: -71.2, z: -35.2, yaw: 0 }, { x: -70.0, z: 62.0, yaw: 0.1 }] },
+  shop_shelf: { surface: 'metal', solid: true, at: [{ x: 62.4, z: -62.0, yaw: 1.57 }, { x: 62.4, z: -60.2, yaw: 1.57 }] },
+  drinks_fridge: { surface: 'metal', solid: true, at: [{ x: 69.7, z: -64.7, yaw: 3.14 }] },
+  filing: { surface: 'metal', solid: true, at: [{ x: 66.2, z: -59.5, yaw: 3.14 }] },
   trash_can: { surface: 'metal', solid: false, at: [{ x: -16, z: 98, yaw: 0 }, { x: 62, z: -70, yaw: 0 }] },
 };
 /** Straight fence runs: key, from x,z, to x,z. The model's own length sets the spacing. */
