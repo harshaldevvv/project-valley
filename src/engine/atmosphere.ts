@@ -1,6 +1,7 @@
 import { atmosphere as A, sounds } from '../content/data/sounds';
 import type { Game } from '../core/game';
 import type { EngineAudio } from './audio';
+import { weather } from './weather';
 
 export type MenuMode = 'title' | 'playing' | 'paused';
 
@@ -56,6 +57,7 @@ export function createAtmosphere(game: Game, audio: EngineAudio, menuMode: () =>
   const wind = layer(A.amb.wind.file, buses.amb);
   const birds = layer(A.amb.birds.file, buses.amb);
   const crickets = layer(A.amb.crickets.file, buses.amb);
+  const rain = layer('gen/rain_loop.ogg', buses.amb);
 
   const rand = ([a, b]: [number, number]) => a + Math.random() * (b - a);
   const pick = <T>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
@@ -81,8 +83,10 @@ export function createAtmosphere(game: Game, audio: EngineAudio, menuMode: () =>
       state.music = mode === 'title' ? 'off' : fight ? 'combat' : 'explore';
       state.night = night;
 
-      wind(A.amb.wind.level * (1 + A.amb.wind.nightBoost * night), A.amb.fadeS);
-      birds(A.amb.birds.level * (1 - night) ** 2, A.amb.fadeS);
+      const wet = weather.rain;
+      wind(A.amb.wind.level * (1 + A.amb.wind.nightBoost * night + 0.5 * wet), A.amb.fadeS);
+      rain(0.55 * wet, 3);
+      birds(A.amb.birds.level * (1 - night) ** 2 * (1 - 0.85 * wet), A.amb.fadeS);
       crickets(A.amb.crickets.level * night, A.amb.fadeS);
 
       if (now > nextCrow) {

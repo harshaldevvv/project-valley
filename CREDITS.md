@@ -68,3 +68,4 @@ except for the meshopt decoder that ships with three.js.
 | Sound effects `public/assets/audio/gen/*.ogg` (melee swings, flesh impacts, headshot crack, body fall) | stable-audio3-sfx | Stability AI Community licence (free under about $1M annual revenue): check before a commercial release |
 | Optional scores `public/assets/audio/gen/music_*.ogg` (play with `?music=ai`; loop points crossfaded) | ACE-Step 1.5 XL | Apache-2.0; not yet listened to by the author of this change |
 | Loading screen key art `public/assets/art/keyart.jpg` | z-image-turbo | Apache-2.0 |
+| Rain loop `public/assets/audio/gen/rain_loop.ogg` | stable-audio3-sfx | Stability AI Community licence |

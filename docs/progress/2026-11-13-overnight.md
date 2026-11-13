@@ -52,6 +52,8 @@ This monitor is 60 Hz and vsync-capped, so p50 is 16.67 ms before and after in a
 
 All under the 1.5M triangle and 400 draw-call budgets. Raw: `docs/audit/perf-before.json`, `perf-after.json`.
 
+24. **Weather** (`engine/weather.ts`): rain showers on a deterministic per-day schedule (about one day in three, 2-5 game hours), eased in and out over about 12 s: shader-driven streaks (one instanced draw), tighter fog, softer grade and exposure, a stable-audio3-sfx rain loop, more wind, fewer birds. F1 > Weather has Rain on / off / Follow schedule. AI trees now sway in the wind.
+
 ## Cost of all this
 - Download size grew by about 30 MB of public assets (props and buildings 12 MB, characters 11 MB, textures 4.7 MB, audio 2.2 MB). Not yet meshopt/KTX2 compressed; do that before shipping (`gltf-transform optimize`).
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).

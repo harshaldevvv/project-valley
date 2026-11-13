@@ -11,6 +11,7 @@ import { installMenu } from '../ui/menu/menu';
 import { createAtmosphere } from './atmosphere';
 import { createAudio } from './audio';
 import { installPost, type Post } from './post';
+import { installWeather, weather } from './weather';
 import { createTimeOfDay, TIME_PRESETS } from './timeofday';
 import { createSky } from './sky';
 import { detectGpu } from './gpuinfo';
@@ -56,6 +57,10 @@ export async function installEngine(game: Game) {
 
   // --- post + time of day ------------------------------------------------------------------
   const post = installPost(game);
+  installWeather(game, post);
+  game.debug.action('Weather', 'Rain on', () => (weather.override = true));
+  game.debug.action('Weather', 'Rain off', () => (weather.override = false));
+  game.debug.action('Weather', 'Follow schedule', () => (weather.override = null));
   const tod = createTimeOfDay(game);
   // game.time is live from install; the running clock (clock.ts) is created at start, once the world and saves exist.
   let clock: Clock | null = null;
