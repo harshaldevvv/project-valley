@@ -1,6 +1,7 @@
 import { InstancedMesh, Matrix4, Mesh, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { fract, instanceIndex, positionLocal, sin, time, vec3 } from 'three/tsl';
+import { windGust } from '../../engine/wind';
 import type { Game } from '../../core/game';
 import { gltfLoader } from '../../engine/assets';
 import { assetUrl } from '../../engine/assetUrl';
@@ -40,7 +41,7 @@ export async function buildAiTrees(game: Game) {
     mat.color.setRGB(0.66, 0.74, 0.66);
     const phase = fract(sin(instanceIndex.toFloat().mul(12.9898)).mul(43758.5453)).mul(6.28);
     const h = positionLocal.y.div(b.sp.height).max(0);
-    const sway = sin(time.mul(1.1).add(phase)).add(sin(time.mul(2.3).add(phase.mul(1.7))).mul(0.35)).mul(h.mul(h)).mul(0.22);
+    const sway = sin(time.mul(1.1).add(phase)).add(sin(time.mul(2.3).add(phase.mul(1.7))).mul(0.35)).mul(h.mul(h)).mul(windGust.mul(0.2).add(0.1));
     mat.positionNode = positionLocal.add(vec3(sway, 0, sway.mul(0.45)));
     const inst = new InstancedMesh(src.geometry, mat, b.spots.length);
     inst.name = `${b.sp.id}_x${b.spots.length}`;

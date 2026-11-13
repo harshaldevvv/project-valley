@@ -2,6 +2,7 @@ import { atmosphere as A, sounds } from '../content/data/sounds';
 import type { Game } from '../core/game';
 import type { EngineAudio } from './audio';
 import { weather } from './weather';
+import { updateWind, wind as windState } from './wind';
 
 export type MenuMode = 'title' | 'playing' | 'paused';
 
@@ -84,7 +85,8 @@ export function createAtmosphere(game: Game, audio: EngineAudio, menuMode: () =>
       state.night = night;
 
       const wet = weather.rain;
-      wind(A.amb.wind.level * (1 + A.amb.wind.nightBoost * night + 0.5 * wet), A.amb.fadeS);
+      updateWind(now);
+      wind(A.amb.wind.level * (1 + A.amb.wind.nightBoost * night + 0.5 * wet) * (0.7 + 0.6 * windState.gust), 1.2); // gusts swell and fade with the tree sway
       rain(0.55 * wet, 3);
       birds(A.amb.birds.level * (1 - night) ** 2 * (1 - 0.85 * wet), A.amb.fadeS);
       crickets(A.amb.crickets.level * night, A.amb.fadeS);
