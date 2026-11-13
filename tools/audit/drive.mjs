@@ -1,0 +1,21 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = []; page.on('pageerror', e => errs.push((e.stack || String(e)).slice(0, 300))); page.on('console', m => (m.type() === 'error' || /failed to load/.test(m.text())) && errs.push(m.text().slice(0, 200)));
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
+await page.waitForTimeout(2000); await page.mouse.click(640, 360);
+const gp = (f, a) => page.evaluate(f, a);
+await gp(() => { const g = window.__gp.ctx; g.player.godMode = true; const v = g.vehicles.list[0]; g.player.teleport(v.doorPos.clone().setY(v.currPos.y + 0.1), 0); });
+await page.waitForTimeout(800);
+await page.screenshot({ path: 'docs/audit/screenshots/wip/70_truck_outside.png' });
+await page.keyboard.press('KeyF'); await page.waitForTimeout(800);
+await page.keyboard.down('KeyW'); let top = 0, headings = []; for (let i = 0; i < 12; i++) { await page.waitForTimeout(250); const q = await gp(() => { const v = window.__gp.ctx.vehicles.list[0]; const f = { x: 0, y: 0, z: -1 }; const o = v.currQuat; const x = 2 * (o.x * -o.z) ; return [+(v.speed * 3.6).toFixed(0), +v.currPos.z.toFixed(1), +v.currPos.x.toFixed(1)]; }); top = Math.max(top, q[0]); headings.push(q); }
+console.log('top kmh', top, JSON.stringify(headings.slice(0, 12)));
+await page.keyboard.down('KeyD'); await page.waitForTimeout(900); await page.screenshot({ path: 'docs/audit/screenshots/wip/71_truck_driving.png' });
+await page.keyboard.up('KeyD'); await page.waitForTimeout(1200);
+const st = await gp(() => { const v = window.__gp.ctx.vehicles.list[0]; return { speed: +(v.speed * 3.6).toFixed(0), inVehicle: window.__gp.ctx.player.inVehicle, y: +v.currPos.y.toFixed(2), tipped: v.tipped, wheelsAt: [0, 1, 2, 3].map((k) => +v.vc.wheelSuspensionLength(k).toFixed(2)) }; });
+await page.keyboard.up('KeyW'); await page.keyboard.down('Space'); await page.waitForTimeout(1500); await page.keyboard.up('Space');
+await page.keyboard.press('KeyT'); await page.waitForTimeout(600); await page.screenshot({ path: 'docs/audit/screenshots/wip/72_truck_fp.png' });
+await page.keyboard.press('KeyF'); await page.waitForTimeout(600);
+console.log(JSON.stringify(st), 'errors', errs); await browser.close();

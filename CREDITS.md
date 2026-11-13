@@ -93,9 +93,14 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Fuel Drum by Polyfork | https://polyfork.dev/asset/fuel-drum-d65fa4 |
 | Gabled Farmhouse by Polyfork | https://polyfork.dev/asset/gabled-farmhouse-c7534f |
 | Grain Silo by Polyfork | https://polyfork.dev/asset/grain-silo-58ca67 |
+| Material Pallet by Polyfork | https://polyfork.dev/asset/material-pallet-6af263 |
 | Oak Tree by Polyfork | https://polyfork.dev/asset/oak-tree-50ee7c |
+| Sandbag Wall Section by Polyfork | https://polyfork.dev/asset/sandbag-wall-section-7075ee |
 | Site Generator by Polyfork | https://polyfork.dev/asset/site-generator-298792 |
 | Sofa by Polyfork | https://polyfork.dev/asset/sofa-9c0e7e |
 | Tall Pine Tree by Polyfork | https://polyfork.dev/asset/tall-pine-tree-ab4108 |
 | Tyre Stack by Polyfork | https://polyfork.dev/asset/tyre-stack-ad4692 |
 | Young Pine by Polyfork | https://polyfork.dev/asset/young-pine-0d7695 |
+| Pickup Truck by Polyfork | https://polyfork.dev/asset/pickup-truck-a34bf2 |
+
+(The drivable truck `veh_pickup_pf.glb` is the Pickup Truck above, converted with `tools/audit/pf_vehicle.mjs`: rotated to this game's front axis and re-pivoted wheels.)

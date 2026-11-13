@@ -108,7 +108,9 @@ async function fromGltf(id: string): Promise<ModelProto> {
     } else if (/_LOD[1-9]$/.test(m.name)) drop.push(m);
     else {
       // AI-made models (e.g. the retargeted survivor) keep their own baked texture; palette models have none
-      if (!(m.material as { map?: unknown }).map) m.material = mat;
+      // (Polyfork models are vertex-coloured, also kept)
+      const own = m.material as { map?: unknown; vertexColors?: boolean };
+      if (!own.map && !own.vertexColors) m.material = mat;
       m.castShadow = m.receiveShadow = true;
       if ((m as SkinnedMesh).isSkinnedMesh) m.frustumCulled = false; // bind-pose bounds don't follow the animation
     }

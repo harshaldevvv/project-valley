@@ -446,5 +446,13 @@
       "item_can_LOD0": 232
     },
     "bytes": 7404
+  },
+  "veh_pickup_pf": {
+    "url": "/assets/models/veh/veh_pickup_pf.glb",
+    "category": "veh",
+    "tris": {
+      "veh_pickup_pf_LOD0": 3400
+    },
+    "bytes": 85176
   }
 }

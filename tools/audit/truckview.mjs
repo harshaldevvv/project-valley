@@ -1,0 +1,10 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
+await page.waitForTimeout(2500); await page.mouse.click(640, 360);
+await page.evaluate(() => { const g = window.__gp.ctx; const v = g.vehicles.list[0]; const cm = g.game.camera; const p = v.currPos;
+  g.rig.override = () => { cm.position.set(p.x, p.y + 3, p.z + 9); cm.lookAt(p.x, p.y + 0.8, p.z); return true; }; });
+await page.waitForTimeout(600); await page.screenshot({ path: 'docs/audit/screenshots/wip/73_truck_from_plusZ.png' });
+await browser.close();

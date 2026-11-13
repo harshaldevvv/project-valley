@@ -40,10 +40,10 @@ export interface VehicleFeel {
 export const vehicles: Record<string, VehicleDef & VehicleFeel> = {
   pickup_a: {
     id: 'pickup_a',
-    model: 'veh_pickup_a',
+    model: 'veh_pickup_pf', // Polyfork pickup (CC BY 4.0, CREDITS.md); the original procedural truck is still in public/assets/models/veh/veh_pickup_a.glb
     massKg: 1600,
-    halfExtents: [0.95, 0.55, 2.5],
-    wheelRadius: 0.38,
+    halfExtents: [0.95, 0.55, 2.4],
+    wheelRadius: 0.34,
     suspensionRest: 0.35,
     suspensionStiffness: 30,
     suspensionDamping: 4.4,
