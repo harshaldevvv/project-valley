@@ -2,6 +2,7 @@ import { Box3, Mesh, MeshStandardMaterial, Vector3 } from 'three';
 import { gltfLoader } from '../../engine/assets';
 import { assetUrl } from '../../engine/assetUrl';
 import type { Surface } from '../surfaces';
+import { groundHeight } from './ground';
 import type { Kit } from './kit';
 
 /**
@@ -30,6 +31,14 @@ export const genProps: Prop[] = [
   { id: 'shipping_container', x: 82, z: -12, yaw: 0.1, surface: 'metal', solid: true, r: 4.2 },
   { id: 'watchtower', x: -78, z: -62, yaw: 0.4, surface: 'wood', solid: true, shrink: 0.45, r: 2.2 },
   ...[[-91, -35], [-88, 52], [-60, 91], [30, 92], [91, 8], [88, -55], [-30, -91], [44, -90], [-91, 20], [60, 91], [-6, 88], [74, 35]].map(([x, z], i): Prop => ({ id: 'bush_overgrown', x, z, yaw: i * 1.7, surface: 'grass', noCollide: true, r: 1.4 })),
+  // distant points of interest on the hills outside the walls (no colliders; they sit on the terrain)
+  { id: 'barn', x: 150, z: -70, yaw: 2.2, surface: 'wood', noCollide: true, r: 0 },
+  { id: 'ruined_house', x: -140, z: 78, yaw: -0.9, surface: 'wood', noCollide: true, r: 0 },
+  { id: 'ruined_house', x: 168, z: 52, yaw: 1.9, surface: 'wood', noCollide: true, r: 0 },
+  { id: 'gas_station', x: -22, z: 142, yaw: Math.PI, surface: 'concrete', noCollide: true, r: 0 },
+  { id: 'small_church', x: -128, z: -125, yaw: 0.8, surface: 'wood', noCollide: true, r: 0 },
+  { id: 'water_tower', x: 128, z: 138, yaw: 0.3, surface: 'metal', noCollide: true, r: 0 },
+  { id: 'farm_silo', x: -158, z: -28, yaw: 1.1, surface: 'metal', noCollide: true, r: 0 },
   // lone dead trees on open lawn
   { id: 'dead_tree', x: -58, z: -52, yaw: 0, surface: 'wood', shrink: 0.4 },
   { id: 'dead_tree', x: 62, z: -62, yaw: 2, surface: 'wood', shrink: 0.4 },
@@ -59,7 +68,7 @@ export async function buildGenProps(kit: Kit) {
     });
     o.updateMatrixWorld(true);
     const local = new Box3().setFromObject(o); // un-rotated, at the origin
-    o.position.set(p.x, 0, p.z);
+    o.position.set(p.x, p.noCollide && Math.max(Math.abs(p.x), Math.abs(p.z)) > 105 ? groundHeight(p.x, p.z) - 0.2 : 0, p.z);
     o.rotation.y = p.yaw;
     kit.game.scene.add(o);
     if (p.solid) {
