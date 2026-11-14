@@ -6,6 +6,7 @@ const page = await browser.newPage({ viewport: { width: 1100, height: 760 } });
 const errs = []; page.on('pageerror', e => errs.push(String(e).slice(0, 200))); page.on('console', m => m.type() === 'error' && errs.push(m.text().slice(0, 200)));
 await page.goto(`http://localhost:5188/viewer.html?model=${model}`);
 await page.waitForFunction(() => window.__viewer?.ready, null, { timeout: 90000 });
+if (process.env.HOLD) { await page.evaluate((h) => window.__viewer.attach('hand_R', h), process.env.HOLD); await page.waitForTimeout(800); }
 const out = [];
 for (const c of clipsArg.split(',')) {
   await page.evaluate(([c, v]) => { window.__viewer.cam(v); window.__viewer.play(c, 0); }, [c, view]);

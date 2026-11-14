@@ -171,3 +171,8 @@ Frame rate after pass 8 (vsync-capped; p50 16.67 ms in all six scenes, 0 hitches
 - **Design:** the survivor camp and junk corner are in the open lawn east and west of spawn. Move or remove them if they clash with the yard's intent as a clean test sandbox.
 - **Docs:** `CLAUDE.md` says Blender 5.2.2 is installed; only Blender 4.5 is at `C:\Program Files\Blender Foundation\Blender 4.5`.
 - Raw AI pictures are in `assets/gen/` (git-excluded locally, not in the branch).
+
+## 2026-11-14 main character
+- Poster hero -> front/side/back/T-pose views -> Hunyuan3D-2.1 textured mesh -> Blender fit (1.80 m, 16k tris) -> Mixamo-named rig, custom weights -> 42 survivor clips retargeted (`tools/audit/rebuild_hero.sh` redoes all of it).
+- Viewer: `/viewer.html?model=chr_hero_a` (all clips, held items, camera presets). Headless screenshots: `node tools/audit/viewer.mjs`.
+- Known: face is faceted with dark eye sockets, small texture specks on hand tips. Outfit system not started.

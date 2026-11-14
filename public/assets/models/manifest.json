@@ -614,5 +614,15 @@
       "zmb_pf_worker_a_LOD2": 700
     },
     "bytes": 804840
+  },
+  "chr_hero_a": {
+    "url": "/assets/models/chr/chr_hero_a.glb",
+    "category": "chr",
+    "tris": {
+      "chr_hero_a_LOD0": 16000,
+      "chr_hero_a_LOD1": 8000,
+      "chr_hero_a_LOD2": 3200
+    },
+    "bytes": 2845112
   }
 }

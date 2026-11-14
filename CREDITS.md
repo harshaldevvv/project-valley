@@ -149,3 +149,6 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 ## Local AI zombie variants (optional, `?chars=ai`)
 
 `public/assets/models/zmb/zmb_ai_*.glb`: z-image-turbo picture, Hunyuan3D-2.1 mesh and texture, skinned to our zombie rig in Blender (`tools/audit/retarget_char.py`). Hunyuan3D-2.1 is under the Tencent Hunyuan community licence (not valid in the EU, UK and South Korea): owner decision needed before shipping them.
+
+### Main character (chr_hero_a)
+`public/assets/models/chr/chr_hero_a.glb`: loading-screen poster art (z-image-turbo), front/side/back/T-pose views by qwen-image-edit-2511 (Apache-2.0), mesh and texture by Hunyuan3D-2.1 (Tencent community licence, not valid in the EU, UK and South Korea: owner decision needed before shipping), then fitted, rigged and skinned in Blender (`tools/audit/build_hero.py`, `retarget_hero.py`); animation clips retargeted from our own survivor rig.

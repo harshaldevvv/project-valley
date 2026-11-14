@@ -34,5 +34,5 @@ Visual layer to add (`src/gameplay/outfit/`):
 
 ## Status
 - [x] Viewer page (`/viewer.html`): model picker, every clip, held items, camera presets, headless screenshot driver.
-- [ ] Step 1 views (blocked on the GPU: a ComfyUI server owned by another session holds VRAM; asked the parent session).
+- [x] Steps 1-5 done for chr_hero_a (views, mesh, fit, rig, 42 clips retargeted); see progress doc.
 - [ ] Steps 2-6, then the outfit system.

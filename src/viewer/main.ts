@@ -173,7 +173,7 @@ function cam(view: string) {
   const face = view === 'face';
   const d = face ? 0.9 : 3.6;
   const y = face ? t.y * 1.78 : t.y;
-  const dirs: Record<string, [number, number]> = { front: [0, 1], side: [1, 0], back: [0, -1], three: [0.7, 0.7], face: [0.3, 1] };
+  const dirs: Record<string, [number, number]> = { front: [0, -1], side: [1, 0], back: [0, 1], three: [0.7, -0.7], face: [0.3, -1] }; // characters face -Z
   const [x, z] = dirs[view] ?? dirs.three;
   camera.position.set(t.x + x * d, y + (view === 'three' ? 0.5 : 0), t.z + z * d);
   controls.target.set(t.x, y, t.z);
