@@ -123,7 +123,7 @@ def build_mesh(b):
                 dict(c=A(UA + FA - 0.018), r=(0.047, 0.045), w={fo: 1}, sw=TRIM),
                 dict(c=A(UA + FA - 0.018), r=(0.03, 0.025), w={fo: 0.85, ha: 0.15}, sw=SKIN),
                 dict(c=A(UA + FA + 0.006), r=(0.028, 0.022), w={fo: 0.4, ha: 0.6})],
-               n=10, side=(1, 0, 0), fwd=(0, 0, 1), sw=JACKET, sq=2.3, cap1=False)
+               n=18, side=(1, 0, 0), fwd=(0, 0, 1), sw=JACKET, sq=2.3, cap1=False)
         hand(b, X)
 
 
@@ -138,12 +138,12 @@ def hand(b, X):
     b.loft([dict(c=P(-0.012, 0, 0), r=(0.027, 0.018, 0.018), w={ha: 0.6, f"forearm_{X}": 0.4}),
             dict(c=P(0.02, 0.003, 0.0), r=(0.036, 0.016, 0.016)), dict(c=P(0.058, 0.0, 0.002), r=(0.042, 0.015, 0.014)),
             dict(c=P(0.09, -0.002, 0.003), r=(0.04, 0.0135, 0.013))],
-           n=8, fwd=p, side=t, sw=SKIN, w={ha: 1}, sq=3.2, cap1=True)
+           n=14, fwd=p, side=t, sw=SKIN, w={ha: 1}, sq=3.2, cap1=True)
     # thenar pad + 2-segment thumb (rigid on thumb_X), modelled wrapped around the grip
     b.loft([dict(c=P(0.008, 0.02, 0.004), r=0.016), dict(c=P(0.045, 0.032, 0.014), r=0.0145)],
-           n=6, fwd=p, side=t, sw=SKIN, w={ha: 1}, cap0=0.006, cap1=0.004)
+           n=10, fwd=p, side=t, sw=SKIN, w={ha: 1}, cap0=0.006, cap1=0.004)
     b.loft([dict(c=P(0.04, 0.032, 0.013), r=0.0125), dict(c=P(0.068, 0.04, 0.031), r=0.0115),
-            dict(c=P(0.093, 0.044, 0.047), r=0.0102)], n=6, fwd=p, side=t, sw=SKIN, w={th: 1}, cap1=0.007)
+            dict(c=P(0.093, 0.044, 0.047), r=0.0102)], n=10, fwd=p, side=t, sw=SKIN, w={th: 1}, cap1=0.007)
     # four separate fingers (QA-041: the single mitt read as a crumpled clump). Proximal phalanx on fingers_X,
     # middle + distal phalanx (fixed 28 deg bend) on fingertips_X; index on the thumb side (+t), staggered lengths.
     K, J, T = REST[fi][0], REST[fi][1], REST[ft][1]
@@ -157,10 +157,10 @@ def hand(b, X):
         m0 = j0 + d2 * l2
         b.loft([dict(c=tuple(k0 - d1 * 0.012), r=(r, r * 1.05)), dict(c=tuple(k0 + d1 * 0.004), r=(r * 1.08, r * 1.12)),
                 dict(c=tuple(j0 + d1 * 0.003), r=(r * 0.95, r * 0.95))],
-               n=6, fwd=p, side=t, sw=SKIN, w={fi: 1}, sq=2.4, cap1=0.003)
+               n=10, fwd=p, side=t, sw=SKIN, w={fi: 1}, sq=2.4, cap1=0.003)
         b.loft([dict(c=tuple(j0 - d2 * 0.006), r=(r * 0.94, r * 0.92)), dict(c=tuple(m0), r=(r * 0.88, r * 0.85)),
                 dict(c=tuple(m0 + d3 * l3), r=(r * 0.78, r * 0.72))],
-               n=6, fwd=p, side=t, sw=SKIN, w={ft: 1}, sq=2.4, cap0=0.003, cap1=0.005)
+               n=10, fwd=p, side=t, sw=SKIN, w={ft: 1}, sq=2.4, cap0=0.003, cap1=0.005)
 
 
 # --------------------------------------------------------------------------------------- rig object
@@ -307,7 +307,7 @@ class Arms:
 
 
 # =============================================================================== weapons (read sockets from the GLBs)
-WPN_DIR = os.path.join(vlib.ROOT, "public", "assets", "models", "wpn")
+WPN_DIR = os.path.join(vlib.ROOT, "assets", "gen", "wpn_dec") if os.path.isdir(os.path.join(vlib.ROOT, "assets", "gen", "wpn_dec")) else os.path.join(vlib.ROOT, "public", "assets", "models", "wpn")  # decoded copies: Blender 4.5 cannot read meshopt
 
 
 def import_weapon(wid):
