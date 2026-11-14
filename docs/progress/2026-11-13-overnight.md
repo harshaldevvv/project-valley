@@ -133,6 +133,9 @@ Frame rate after pass 8 (vsync-capped; p50 16.67 ms in all six scenes, 0 hitches
 
 64. **Loot feedback:** pickup toasts now read `+ Item ×n` with a green edge, and a full pack shows `✕ No room` in red (`systems/index.ts`, `hud.ts`); verified with a screenshot (`85_toasts.png`) and a container-open run. Not done: item icons in toasts, rarity colours.
 
+65. **Polyfork firearms, decided against:** viewed the rifle, pistol and scattergun side-on: all three are sci-fi (cyan glow panels, scopes, purple trim). The bolt-action rifle lies along X and is the only grounded one; using it would turn the auto rifle into a bolt action, a gameplay change, so it is not wired. The existing AK keeps its separate magazine node for the reload clips.
+66. **Fresh re-audit** (screenshots in `docs/audit/screenshots/after/`, section appended to the audit doc).
+
 ## Cost of all this
 - Download size grew by about 12 MB of public assets after compression (it was about 30 MB); KTX2 textures would shrink GPU memory further.
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).
