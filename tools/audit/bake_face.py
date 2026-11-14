@@ -9,6 +9,7 @@ S = float(a[3]) if len(a) > 3 else 712.0
 CX = float(a[4]) if len(a) > 4 else 348.0
 TOP = float(a[5]) if len(a) > 5 else 88.0
 ZMIN = 1.50
+EYES = tuple(float(v) for v in os.environ['EYES'].split(',')) if os.environ.get('EYES') else None   # eye centre x (m), z (m), iris radius (m)
 NOFACE = bool(os.environ.get('NOFACE'))   # a texture that is already clean (TRELLIS.2): only the smooth shading + export run
 if NOFACE: ZMIN = 99.0
 bpy.ops.wm.open_mainfile(filepath=blend)
@@ -57,6 +58,17 @@ for t in mesh.loop_triangles:
             if al <= done[y, x]: continue
             c = sample(p)
             if c[:3].min() > 0.45 and c[:3].max() - c[:3].min() < 0.06: continue   # reference background
+            if EYES:
+                for sx in (-1, 1):
+                    dx, dz = (p.x - sx * EYES[0]) / EYES[2], (p.z - EYES[1]) / EYES[2]
+                    r2 = dx * dx + dz * dz
+                    ex_ = (p.x - sx * EYES[0]) / (EYES[2] * 1.95); ez_ = (p.z - EYES[1] - 0.001) / (EYES[2] * 0.85)
+                    if ex_ * ex_ + ez_ * ez_ < 1.0 and r2 >= 1.0 and p.y > 0.05: c = np.array([0.62, 0.60, 0.58, 1.0], dtype=np.float32)   # sclera
+                    if r2 < 1.0 and p.y > 0.05:   # iris with a darker rim, pupil and a catch-light (the picture's eyes are a few pixels wide)
+                        if r2 > 0.55: c = c * 0 + np.array([0.02, 0.012, 0.008, 1.0], dtype=np.float32)
+                        elif r2 > 0.12: c = np.array([0.10, 0.05, 0.028, 1.0], dtype=np.float32)
+                        else: c = np.array([0.006, 0.004, 0.003, 1.0], dtype=np.float32)
+                        if abs(dx - 0.35) < 0.18 and abs(dz - 0.35) < 0.18: c = np.array([0.9, 0.9, 0.9, 1.0], dtype=np.float32)
             newtex[y, x, :3] = tex[y, x, :3] * (1-al) + c[:3] * al
             done[y, x] = al; n += 1
 # red specks the generator left on hand tips: saturated bright red texels become skin tone
@@ -67,9 +79,9 @@ for t in mesh.loop_triangles:
     if all(abs(mesh.vertices[i].co.x) > 0.55 for i in t.vertices):
         us = [uv[l].uv for l in t.loops]
         hand[max(int(min(u.y for u in us) * H) - 2, 0):int(max(u.y for u in us) * H) + 3, max(int(min(u.x for u in us) * W) - 2, 0):int(max(u.x for u in us) * W) + 3] = True
-if not NOFACE: red |= hand & (r > 0.08) & (g < 0.42 * r) & (b < 0.42 * r)
+if not NOFACE and not os.environ.get('NORED'): red |= hand & (r > 0.08) & (g < 0.42 * r) & (b < 0.42 * r)
 print('RED_SPECKS', int(red.sum()))
-if NOFACE: red[:] = False
+if NOFACE or os.environ.get('NORED'): red[:] = False
 newtex[red, 0] = 0.62; newtex[red, 1] = 0.34; newtex[red, 2] = 0.24
 img.pixels = newtex.ravel().tolist()
 img.pack()

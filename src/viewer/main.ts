@@ -126,7 +126,7 @@ function build(id: string) {
   }).join('');
   const holds = ['none', 'wpn_rifle_a', 'wpn_pistol_a', 'wpn_knife_a', 'wpn_crowbar_a', 'wpn_hammer_a'];
   side.innerHTML = `<h1>Character viewer</h1>${g('Model')}<select id="model">${ids.map((i) => `<option ${i === id ? 'selected' : ''}>${i}</option>`).join('')}</select>
-  ${g('Camera')}<div class="grid">${['front', 'side', 'back', 'three', 'face', 'hand', 'handL'].map((c) => `<button data-cam="${c}">${c}</button>`).join('')}</div>
+  ${g('Camera')}<div class="grid">${['front', 'side', 'back', 'three', 'face', 'facefront', 'facethree', 'faceside', 'faceback', 'hand', 'handL'].map((c) => `<button data-cam="${c}">${c}</button>`).join('')}</div>
   ${g('Playback')}<label>speed <input id="speed" type="range" min="0.1" max="2" step="0.05" value="${speed}"><span id="sv">${speed}x</span></label>
   <label><input id="loop" type="checkbox" ${loop ? 'checked' : ''}> loop</label><label><input id="skel" type="checkbox"> skeleton</label><label><input id="wire" type="checkbox"> wireframe</label>
   ${g('Hold (right hand)')}<div class="grid">${holds.map((w) => `<button data-hold="${w}">${w.replace('wpn_', '').replace('_a', '')}</button>`).join('')}</div>
@@ -214,10 +214,10 @@ function cam(view: string) {
     }
   }
   const t = controls.target;
-  const face = view === 'face';
+  const face = view.startsWith('face');
   const d = face ? 0.9 : 3.6;
   const y = face ? t.y * 1.78 : t.y;
-  const dirs: Record<string, [number, number]> = { front: [0, -1], side: [1, 0], back: [0, 1], three: [0.7, -0.7], face: [0.3, -1] }; // characters face -Z
+  const dirs: Record<string, [number, number]> = { front: [0, -1], side: [1, 0], back: [0, 1], three: [0.7, -0.7], face: [0.3, -1], facefront: [0, -1], faceside: [1, 0], faceback: [0, 1], facethree: [0.7, -0.7] }; // characters face -Z
   const [x, z] = dirs[view] ?? dirs.three;
   camera.position.set(t.x + x * d, y + (view === 'three' ? 0.5 : 0), t.z + z * d);
   controls.target.set(t.x, y, t.z);
