@@ -149,6 +149,8 @@ Frame rate after pass 8 (vsync-capped; p50 16.67 ms in all six scenes, 0 hitches
 73. **Survivor rebuilt smoother from its own script** (`assets/source/chr/chr_survivor_a/build.py`, headless Blender 4.5, about 90 s, mocap files present): torso, hips, arms and legs get 14-16 segments instead of 8-10 (1650 -> 2266 LOD0 triangles); the same rig, backpack node, sockets and all 40 clips (the animation JSON came out byte-identical). Checked in the browser: anim stand, sprinting third person, combat, reload, no errors (`89_survivor_smooth.png`). The change is modest (rounder limbs and torso); clothing detail and a better palette were not attempted. Rollback: `git checkout 70652d4 -- public/assets/models/chr/chr_survivor_a.glb`.
 74. **Hands:** not done beyond the arm rebuild (palm 14 and finger 10 segments); no knuckle or fingertip detail pass.
 
+75. **Door nudge fixed:** a swinging leaf no longer collides (collider off while it moves, back on when it rests, and held off if the player is standing where the leaf would land, so closing never traps anyone). `tools/audit/doornudge.mjs`: pressing E at 0.3 m from the cabin door leaves the player in place; walking in works; closing it with the player in the doorway lets them walk through.
+
 ## Cost of all this
 - Download size grew by about 12 MB of public assets after compression (it was about 30 MB); KTX2 textures would shrink GPU memory further.
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).

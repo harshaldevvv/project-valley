@@ -59,6 +59,14 @@ export function buildDoors(kit: Kit) {
     );
     tagCollider(col.handle, 'wood');
 
+    // player standing on the leaf's footprint (segment from the hinge, thickness + capsule radius)?
+    const inLeaf = (yaw: number) => {
+      const p = game.player.position;
+      const lx = Math.cos(yaw), lz = -Math.sin(yaw);
+      const rx = p.x - d.hx, rz = p.z - d.hz;
+      const t = Math.min(d.w, Math.max(0, rx * lx + rz * lz));
+      return Math.hypot(rx - lx * t, rz - lz * t) < 0.45;
+    };
     let open = false, angle = 0;
     const q = new Quaternion();
     const mid = new Vector3(d.hx + d.dx * d.w * 0.5, 1.1, d.hz + d.dz * d.w * 0.5);
@@ -76,7 +84,12 @@ export function buildDoors(kit: Kit) {
       name: 'door',
       step(dt) {
         const target = open ? s * OPEN : 0;
-        if (angle === target) return;
+        if (angle === target) {
+          // at rest: solid again, unless the player is standing where the leaf is (closing onto them): wait until clear
+          if (!col.isEnabled() && !inLeaf(yaw0 + angle)) col.setEnabled(true);
+          return;
+        }
+        col.setEnabled(false); // a swinging leaf never shoves the player or traps them against the wall
         angle = target > angle ? Math.min(target, angle + 3 * dt) : Math.max(target, angle - 3 * dt);
         body.setNextKinematicRotation(q.setFromAxisAngle(up, yaw0 + angle));
       },
