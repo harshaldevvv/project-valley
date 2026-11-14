@@ -15,7 +15,7 @@ import {
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { entries, gltfLoader } from './assets';
-import { characterDetailMaterial, paletteArmsMaterial, paletteCharacterMaterial, paletteGearMaterial, paletteMaterial } from './palette';
+import { armsVertexMaterial, characterDetailMaterial, paletteArmsMaterial, paletteCharacterMaterial, paletteGearMaterial, paletteMaterial } from './palette';
 
 /**
  * Models that are not plain static props: animated characters/zombies, weapons with sockets, vehicles with wheels.
@@ -110,7 +110,9 @@ async function fromGltf(id: string): Promise<ModelProto> {
       // AI-made models (e.g. the retargeted survivor) keep their own baked texture; palette models have none
       // (Polyfork models are vertex-coloured, also kept)
       const own = m.material as { map?: unknown; vertexColors?: boolean };
-      if (!own.map && !own.vertexColors) m.material = mat;
+      const hasCol = !!(m as Mesh).geometry.getAttribute('color');
+      if (hasCol && id === 'chr_arms_fp') m.material = armsVertexMaterial(); // baked colours (smooth arms): no atlas, no UVs
+      else if (!own.map && !own.vertexColors) m.material = mat;
       m.castShadow = m.receiveShadow = true;
       if ((m as SkinnedMesh).isSkinnedMesh) m.frustumCulled = false; // bind-pose bounds don't follow the animation
     }

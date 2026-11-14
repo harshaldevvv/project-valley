@@ -106,6 +106,16 @@ export async function characterDetailMaterial(map: Texture) {
   return m;
 }
 
+let armsVc: MeshStandardNodeMaterial | null = null;
+/** First-person arms with baked vertex colours (smooth subdivided mesh, no UVs). */
+export function armsVertexMaterial() {
+  return (armsVc ??= (() => {
+    const m = new MeshStandardNodeMaterial({ vertexColors: true, roughness: 0.8, metalness: 0 });
+    m.name = 'arms_vc';
+    return m;
+  })());
+}
+
 let gear: MeshStandardNodeMaterial | null = null;
 /** Atlas + object-space wear for held gear (weapons, tools): scratches, soot and glossier dark metal. */
 export async function paletteGearMaterial() {
