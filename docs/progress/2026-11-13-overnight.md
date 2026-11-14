@@ -180,3 +180,4 @@ Frame rate after pass 8 (vsync-capped; p50 16.67 ms in all six scenes, 0 hitches
 - Outfit presets (Scavenger, Soldier, Drifter, Medic) in the viewer's Looks row; tint swatches recolour every part.
 - Outfit in the game: `?hero=1` plays as chr_hero_a; worn inventory items map to parts (`ITEM_PARTS` in outfit.ts) via `src/gameplay/outfit/bind.ts` on inventoryChanged/respawn, so the look follows the saved loadout. Default player is still the original survivor. `__gp.give(defId)` and `tools/audit/herogame.mjs` for testing.
 - First person: the arms mesh is split into sleeve and hand draw groups (`Viewmodel.setLook`); with `?hero=1` the sleeve takes the worn jacket's colour and the hands take the glove colour. Default survivor unchanged.
+- Parts polish: jacket, vest, trousers and boots now have clean cut hems (plane cuts, no ragged edges); backpack rebuilt as a rucksack (main bag, front and side pockets, flap, bedroll, shoulder and chest straps).

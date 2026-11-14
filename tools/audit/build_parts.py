@@ -18,6 +18,10 @@ def dom(v):
     return w
 BONES_OF = {}
 for v in body.data.vertices: BONES_OF[v.index] = dom(v)
+WR = abs(arm.data.bones['RightForeArm'].tail_local.x)
+print('WRIST x', round(WR, 3))
+_t = [v.co for v in body.data.vertices if abs(v.co.z - 1.28) < 0.02 and abs(v.co.x) < 0.2]
+TY0, TY1 = min(c.y for c in _t), max(c.y for c in _t); print('TORSO y', round(TY0, 3), round(TY1, 3))
 hv = [v.co for v in body.data.vertices if v.co.z > 1.55]
 hx = max(abs(c.x) for c in hv); hy0 = min(c.y for c in hv); hy1 = max(c.y for c in hv)
 print('HEAD x', round(hx, 3), 'y', round(hy0, 3), round(hy1, 3), 'top', round(max(c.z for c in hv), 3))
@@ -28,7 +32,7 @@ def mat(name, rgb, rough=0.8, metal=0.0):
     b.inputs['Base Color'].default_value = (*rgb, 1); b.inputs['Roughness'].default_value = rough; b.inputs['Metallic'].default_value = metal
     return m
 
-def shell(pid, bones, zr, push, rgb, xmax=9, minw=0.55):
+def shell(pid, bones, zr, push, rgb, xmax=9, minw=0.55, cuts=()):
     me = body.data.copy(); ob = body.copy(); ob.data = me; ob.name = 'part_' + pid; sc.collection.objects.link(ob)
     keep = set()
     for v in body.data.vertices:
@@ -42,6 +46,9 @@ def shell(pid, bones, zr, push, rgb, xmax=9, minw=0.55):
     bmesh.ops.delete(bm, geom=drop, context='FACES')
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)   # weld UV-seam duplicates so the push does not open cracks
     bm.normal_update(); bm.verts.ensure_lookup_table()
+    # clean hems: cut along planes (co, normal); geometry on the far side of the normal is removed
+    for co, no in cuts:
+        bmesh.ops.bisect_plane(bm, geom=list(bm.verts) + list(bm.edges) + list(bm.faces), plane_co=Vector(co), plane_no=Vector(no), clear_inner=True)
     for v in bm.verts: v.co += v.normal * push
     bm.to_mesh(me); bm.free()
     me.materials.clear(); me.materials.append(mat('m_' + pid, rgb))
@@ -82,15 +89,26 @@ face = [v.co for v in body.data.vertices if abs(v.co.z - 1.645) < 0.012 and abs(
 FY = max(c.y for c in face); print('FACE_FRONT_Y', round(FY, 3))
 HY = (min(c.y for c in hv) + FY) / 2 - 0.01   # head centre y
 parts = [
-    shell('jacket', {'Spine', 'Spine1', 'Spine2', 'LeftShoulder', 'RightShoulder', 'LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm', 'Hips'}, (0.90, 1.50), 0.024, (0.30, 0.34, 0.22)),
-    shell('vest', {'Spine', 'Spine1', 'Spine2'}, (1.02, 1.46), 0.040, (0.16, 0.18, 0.2), xmax=0.19, minw=0.5),
-    shell('pants', {'Hips', 'LeftUpLeg', 'RightUpLeg', 'LeftLeg', 'RightLeg'}, (0.30, 1.04), 0.018, (0.42, 0.35, 0.24)),
-    shell('boots', {'LeftFoot', 'RightFoot', 'LeftToeBase', 'RightToeBase', 'LeftLeg', 'RightLeg'}, (0.0, 0.26), 0.014, (0.28, 0.2, 0.14), minw=0.5),
+    shell('jacket', {'Spine', 'Spine1', 'Spine2', 'LeftShoulder', 'RightShoulder', 'LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm', 'Hips'}, (0.90, 1.50), 0.024, (0.30, 0.34, 0.22), cuts=[((0, 0, 0.96), (0, 0, 1)), ((0, 0, 1.47), (0, 0, -1)), ((WR - 0.01, 0, 0), (-1, 0, 0)), ((-(WR - 0.01), 0, 0), (1, 0, 0))]),
+    shell('vest', {'Spine', 'Spine1', 'Spine2'}, (1.02, 1.46), 0.040, (0.16, 0.18, 0.2), xmax=0.19, minw=0.5, cuts=[((0, 0, 1.06), (0, 0, 1)), ((0, 0, 1.43), (0, 0, -1))]),
+    shell('pants', {'Hips', 'LeftUpLeg', 'RightUpLeg', 'LeftLeg', 'RightLeg'}, (0.30, 1.04), 0.018, (0.42, 0.35, 0.24), cuts=[((0, 0, 0.99), (0, 0, -1)), ((0, 0, 0.27), (0, 0, 1))]),
+    shell('boots', {'LeftFoot', 'RightFoot', 'LeftToeBase', 'RightToeBase', 'LeftLeg', 'RightLeg'}, (0.0, 0.26), 0.014, (0.28, 0.2, 0.14), minw=0.5, cuts=[((0, 0, 0.26), (0, 0, -1))]),
     shell('gloves', {'LeftHand', 'RightHand'}, (0.0, 3.0), 0.010, (0.13, 0.13, 0.13)),
     rigid('cap', 'Head', lambda bm: sph(bm, (0, HY, HZ + 0.02), hx * 1.1, 1, 1.15, 0.85, cut=HZ + 0.06), (0.2, 0.24, 0.32)),
     rigid('helmet', 'Head', lambda bm: sph(bm, (0, HY, HZ + 0.015), hx * 1.22, 1, 1.22, 0.95, cut=HZ - 0.02), (0.25, 0.3, 0.2), 0.5, 0.2),
     rigid('glasses', 'Head', lambda bm: (tube(bm, (-0.036, FY + 0.004, 1.645), 0.026, 0.008, 'Y'), tube(bm, (0.036, FY + 0.004, 1.645), 0.026, 0.008, 'Y'), box(bm, (0, FY + 0.004, 1.65), (0.05, 0.008, 0.008)), box(bm, (-0.062, FY - 0.05, 1.65), (0.008, 0.11, 0.008)), box(bm, (0.062, FY - 0.05, 1.65), (0.008, 0.11, 0.008))), (0.04, 0.04, 0.05), 0.2, 0.3),
-    rigid('backpack', 'Spine2', lambda bm: (box(bm, (0, -0.16, 1.26), (0.30, 0.15, 0.38)), box(bm, (0, -0.19, 1.14), (0.22, 0.12, 0.2)), box(bm, (-0.1, -0.02, 1.34), (0.035, 0.06, 0.04)), box(bm, (0.1, -0.02, 1.34), (0.035, 0.06, 0.04))), (0.24, 0.3, 0.2), 0.9, bevel=0.018),
+    rigid('backpack', 'Spine2', lambda bm: (
+        box(bm, (0, TY0 - 0.095, 1.25), (0.32, 0.16, 0.42)),                    # main bag
+        box(bm, (0, TY0 - 0.19, 1.15), (0.24, 0.07, 0.24)),                     # front pocket
+        box(bm, (-0.18, TY0 - 0.09, 1.17), (0.07, 0.12, 0.24)),                 # side pockets
+        box(bm, (0.18, TY0 - 0.09, 1.17), (0.07, 0.12, 0.24)),
+        box(bm, (0, TY0 - 0.095, 1.49), (0.30, 0.15, 0.07)),                    # top flap
+        tube(bm, (0, TY0 - 0.095, 1.545), 0.055, 0.34, 'X'),                    # bedroll
+        box(bm, (-0.115, (TY0 + TY1) / 2, 1.43), (0.06, TY1 - TY0 + 0.07, 0.03)),  # shoulder straps
+        box(bm, (0.115, (TY0 + TY1) / 2, 1.43), (0.06, TY1 - TY0 + 0.07, 0.03)),
+        box(bm, (-0.115, TY1 + 0.012, 1.30), (0.06, 0.02, 0.26)),               # front straps
+        box(bm, (0.115, TY1 + 0.012, 1.30), (0.06, 0.02, 0.26)),
+    ), (0.24, 0.3, 0.2), 0.9, bevel=0.016),
     rigid('pouch', 'Hips', lambda bm: (box(bm, (0.17, 0.0, 0.97), (0.08, 0.1, 0.12)), box(bm, (-0.17, 0.0, 0.97), (0.08, 0.1, 0.12))), (0.3, 0.26, 0.2), 0.9, bevel=0.012),
 ]
 for o in sc.objects: o.select_set(False)
