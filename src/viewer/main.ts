@@ -6,6 +6,9 @@ import manifest from '../../public/assets/models/manifest.json';
 import { gltfLoader } from '../engine/assets';
 import { paletteCharacterMaterial, paletteMaterial } from '../engine/palette';
 import { assetUrl } from '../engine/assetUrl';
+import { createOutfit, type Outfit } from '../gameplay/outfit/outfit';
+import { OUTFIT_PARTS, OUTFIT_SLOTS } from '../content/data/outfit';
+import { OUTFIT_PART_NAMES, OUTFIT_SLOT_NAMES } from '../content/text/outfit';
 
 /**
  * Character viewer (dev tool, /viewer.html): pick a model, play any of its clips with crossfade, hold items in the right
@@ -14,7 +17,8 @@ import { assetUrl } from '../engine/assetUrl';
  */
 type Entry = { url: string };
 const M = manifest as Record<string, Entry>;
-const ids = Object.keys(M).filter((k) => /^(chr_survivor|chr_hero|zmb_)/.test(k));
+const ids = Object.keys(M).filter((k) => /^(chr_survivor|chr_hero|zmb_)/.test(k) && !k.endsWith('_parts'));
+let outfit: Outfit | null = null;
 const q = new URLSearchParams(location.search);
 const side = document.getElementById('side')!;
 const stage = document.getElementById('stage')!;
@@ -81,6 +85,9 @@ async function load(id: string) {
   scene.add(helper);
   const box = new Box3().setFromObject(model);
   controls.target.set(0, (box.max.y - box.min.y) * 0.5, 0);
+  outfit?.dispose();
+  outfit = null;
+  if (id === 'chr_hero_a') outfit = createOutfit(model, (await gltfLoader.loadAsync(assetUrl(M.chr_hero_a_parts.url))).scene);
   build(id);
   const idle = clips.find((c) => /^(idle|z_idle)$/.test(c.name)) ?? clips[0];
   if (idle) play(idle.name);
@@ -123,10 +130,12 @@ function build(id: string) {
   ${g('Playback')}<label>speed <input id="speed" type="range" min="0.1" max="2" step="0.05" value="${speed}"><span id="sv">${speed}x</span></label>
   <label><input id="loop" type="checkbox" ${loop ? 'checked' : ''}> loop</label><label><input id="skel" type="checkbox"> skeleton</label><label><input id="wire" type="checkbox"> wireframe</label>
   ${g('Hold (right hand)')}<div class="grid">${holds.map((w) => `<button data-hold="${w}">${w.replace('wpn_', '').replace('_a', '')}</button>`).join('')}</div>
+  ${outfit ? wardrobe() : ''}
   ${groups}${g('All clips')}<div class="grid">${clips.map(btn).join('')}</div>`;
   (side.querySelector('#model') as HTMLSelectElement).onchange = (e) => void load((e.target as HTMLSelectElement).value);
   side.querySelectorAll('[data-clip]').forEach((b) => ((b as HTMLElement).onclick = () => play((b as HTMLElement).dataset.clip!)));
   side.querySelectorAll('[data-cam]').forEach((b) => ((b as HTMLElement).onclick = () => cam((b as HTMLElement).dataset.cam!)));
+  side.querySelectorAll('[data-wear]').forEach((b) => ((b as HTMLElement).onclick = () => wear((b as HTMLElement).dataset.wear!)));
   side.querySelectorAll('[data-hold]').forEach((b) => ((b as HTMLElement).onclick = () => void attach('hand_R', (b as HTMLElement).dataset.hold!)));
   const sp = side.querySelector('#speed') as HTMLInputElement;
   sp.oninput = () => {
@@ -146,6 +155,24 @@ function build(id: string) {
       const m = (o as Mesh).material as { wireframe?: boolean } | undefined;
       if (m && 'wireframe' in m) m.wireframe = (e.target as HTMLInputElement).checked;
     });
+}
+
+const slotName = (id: string) => OUTFIT_PARTS.find((p) => p.id === id)!.slot;
+function wardrobe() {
+  return `<h2>Wardrobe</h2>` + OUTFIT_SLOTS.map((sl) => {
+    const parts = OUTFIT_PARTS.filter((p) => p.slot === sl);
+    if (!parts.length) return '';
+    const row = parts.map((p) => `<button data-wear="${p.id}:0">${OUTFIT_PART_NAMES[p.id]}</button>`).join('');
+    const tints = parts.map((p) => p.tints.map((c, i) => `<button data-wear="${p.id}:${i}" title="${p.id}" style="background:${c};width:18px;height:18px;padding:0"></button>`).join('')).join('');
+    return `<h2>${OUTFIT_SLOT_NAMES[sl]}</h2><div class="grid">${row}<button data-wear="${sl}:none">none</button></div><div class="grid">${tints}</div>`;
+  }).join('') + `<div class="grid"><button data-wear="all:none">strip all</button></div>`;
+}
+function wear(spec: string) {
+  if (!outfit) return;
+  const [id, arg] = spec.split(':');
+  if (id === 'all') return outfit.setState({});
+  if (arg === 'none') return outfit.equip(id as never, null);
+  outfit.equip(slotName(id), id, +arg);
 }
 
 async function attach(slot: string, wid: string) {
@@ -186,6 +213,10 @@ const api = {
   play,
   cam,
   attach,
+  wear,
+  get outfit() {
+    return outfit?.state;
+  },
   setTime: (s: number) => {
     if (action) {
       action.paused = true;
