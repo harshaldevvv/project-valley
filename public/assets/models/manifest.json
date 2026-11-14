@@ -619,11 +619,11 @@
     "url": "/assets/models/chr/chr_hero_a.glb",
     "category": "chr",
     "tris": {
-      "chr_hero_a_LOD0": 16000,
-      "chr_hero_a_LOD1": 8000,
-      "chr_hero_a_LOD2": 3200
+      "chr_hero_a_LOD0": 20000,
+      "chr_hero_a_LOD1": 10000,
+      "chr_hero_a_LOD2": 4000
     },
-    "bytes": 1673636
+    "bytes": 1534644
   },
   "chr_hero_a_parts": {
     "url": "/assets/models/chr/chr_hero_a_parts.glb",
@@ -633,6 +633,6 @@
       "chr_hero_a_parts_LOD1": 0,
       "chr_hero_a_parts_LOD2": 0
     },
-    "bytes": 194868
+    "bytes": 298004
   }
 }

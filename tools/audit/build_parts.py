@@ -89,9 +89,9 @@ face = [v.co for v in body.data.vertices if abs(v.co.z - 1.645) < 0.012 and abs(
 FY = max(c.y for c in face); print('FACE_FRONT_Y', round(FY, 3))
 HY = (min(c.y for c in hv) + FY) / 2 - 0.01   # head centre y
 parts = [
-    shell('jacket', {'Spine', 'Spine1', 'Spine2', 'LeftShoulder', 'RightShoulder', 'LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm', 'Hips'}, (0.90, 1.50), 0.024, (0.30, 0.34, 0.22), cuts=[((0, 0, 0.96), (0, 0, 1)), ((0, 0, 1.47), (0, 0, -1)), ((WR - 0.01, 0, 0), (-1, 0, 0)), ((-(WR - 0.01), 0, 0), (1, 0, 0))]),
-    shell('vest', {'Spine', 'Spine1', 'Spine2'}, (1.02, 1.46), 0.040, (0.16, 0.18, 0.2), xmax=0.19, minw=0.5, cuts=[((0, 0, 1.06), (0, 0, 1)), ((0, 0, 1.43), (0, 0, -1))]),
-    shell('pants', {'Hips', 'LeftUpLeg', 'RightUpLeg', 'LeftLeg', 'RightLeg'}, (0.30, 1.04), 0.018, (0.42, 0.35, 0.24), cuts=[((0, 0, 0.99), (0, 0, -1)), ((0, 0, 0.27), (0, 0, 1))]),
+    shell('jacket', {'Spine', 'Spine1', 'Spine2', 'LeftShoulder', 'RightShoulder', 'LeftArm', 'RightArm', 'LeftForeArm', 'RightForeArm', 'Hips'}, (0.90, 1.50), 0.034, (0.30, 0.34, 0.22), cuts=[((0, 0, 0.96), (0, 0, 1)), ((0, 0, 1.47), (0, 0, -1)), ((WR - 0.01, 0, 0), (-1, 0, 0)), ((-(WR - 0.01), 0, 0), (1, 0, 0))]),
+    shell('vest', {'Spine', 'Spine1', 'Spine2'}, (1.02, 1.46), 0.052, (0.16, 0.18, 0.2), xmax=0.19, minw=0.5, cuts=[((0, 0, 1.06), (0, 0, 1)), ((0, 0, 1.43), (0, 0, -1))]),
+    shell('pants', {'Hips', 'LeftUpLeg', 'RightUpLeg', 'LeftLeg', 'RightLeg'}, (0.30, 1.04), 0.026, (0.42, 0.35, 0.24), cuts=[((0, 0, 0.99), (0, 0, -1)), ((0, 0, 0.27), (0, 0, 1))]),
     shell('boots', {'LeftFoot', 'RightFoot', 'LeftToeBase', 'RightToeBase', 'LeftLeg', 'RightLeg'}, (0.0, 0.26), 0.014, (0.28, 0.2, 0.14), minw=0.5, cuts=[((0, 0, 0.26), (0, 0, -1))]),
     shell('gloves', {'LeftHand', 'RightHand'}, (0.0, 3.0), 0.010, (0.13, 0.13, 0.13)),
     rigid('cap', 'Head', lambda bm: sph(bm, (0, HY, HZ + 0.02), hx * 1.1, 1, 1.15, 0.85, cut=HZ + 0.06), (0.2, 0.24, 0.32)),

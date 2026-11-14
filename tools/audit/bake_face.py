@@ -9,6 +9,8 @@ S = float(a[3]) if len(a) > 3 else 712.0
 CX = float(a[4]) if len(a) > 4 else 348.0
 TOP = float(a[5]) if len(a) > 5 else 88.0
 ZMIN = 1.50
+NOFACE = bool(os.environ.get('NOFACE'))   # a texture that is already clean (TRELLIS.2): only the smooth shading + export run
+if NOFACE: ZMIN = 99.0
 bpy.ops.wm.open_mainfile(filepath=blend)
 body = next(o for o in bpy.data.objects if o.type == 'MESH')
 mesh = body.data
@@ -65,8 +67,9 @@ for t in mesh.loop_triangles:
     if all(abs(mesh.vertices[i].co.x) > 0.55 for i in t.vertices):
         us = [uv[l].uv for l in t.loops]
         hand[max(int(min(u.y for u in us) * H) - 2, 0):int(max(u.y for u in us) * H) + 3, max(int(min(u.x for u in us) * W) - 2, 0):int(max(u.x for u in us) * W) + 3] = True
-red |= hand & (r > 0.08) & (g < 0.42 * r) & (b < 0.42 * r)
+if not NOFACE: red |= hand & (r > 0.08) & (g < 0.42 * r) & (b < 0.42 * r)
 print('RED_SPECKS', int(red.sum()))
+if NOFACE: red[:] = False
 newtex[red, 0] = 0.62; newtex[red, 1] = 0.34; newtex[red, 2] = 0.24
 img.pixels = newtex.ravel().tolist()
 img.pack()
