@@ -136,7 +136,7 @@ parts = [
     shell('boots', {'LeftFoot', 'RightFoot', 'LeftToeBase', 'RightToeBase', 'LeftLeg', 'RightLeg'}, (0.0, 0.28), 0.020, (0.28, 0.2, 0.14), xr=(0.0, 0.4), cuts=[((0, 0, 0.28), (0, 0, -1))]),
     shell('gloves', HANDB, (0.0, 3.0), 0.012, (0.13, 0.13, 0.13), xr=(WR - 0.005, 2.0)),
     fit('cap', gen('cap'), 'Head', width=HW * 1.08, center=(0, HCY + 0.025, HTOP - 0.045), yaw=YAW_GEN, anchor='center'),
-    fit('helmet_steel', L + 'steel-helmet-f5aa7d.glb', 'Head', width=HW * 1.12, center=(0, HCY, EYEZ + 0.05), yaw=YAW_LIB, anchor='bottom'),
+    fit('helmet_steel', L + 'steel-helmet-f5aa7d.glb', 'Head', width=HW * 1.12, center=(0, HCY, EYEZ + 0.0), yaw=YAW_LIB, anchor='bottom'),
     fit('gasmask', gen('gasmask'), 'Head', width=HW * 0.95, center=(0, FY - 0.02, EYEZ - 0.05), yaw=YAW_GEN, anchor='center'),
     fit('glasses', gen('glasses'), 'Head', width=0.158, center=(0, FY + 0.01, EYEZ + 0.008), yaw=YAW_GEN, anchor='center'),
     fit('goggles', gen('goggles'), 'Head', width=0.2, center=(0, FY - 0.025, EYEZ + 0.008), yaw=YAW_GEN, anchor='center'),

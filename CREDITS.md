@@ -152,3 +152,6 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 
 ### Main character (chr_hero_a)
 `public/assets/models/chr/chr_hero_a.glb`: loading-screen poster art (z-image-turbo), front/side/back/T-pose views by qwen-image-edit-2511 (Apache-2.0), mesh and texture by TRELLIS.2-4B (Microsoft; MIT licence, per the model card: re-check before shipping; the earlier Hunyuan3D-2.1 version is kept out of the build in assets/gen), then fitted, rigged and skinned in Blender (`tools/audit/build_hero.py`, `retarget_hero.py`); animation clips retargeted from our own survivor rig.
+
+### Base body and wearables (chr_body_a, chr_body_a_parts)
+Underwear base body: picture by qwen-image-edit-2511 (Apache-2.0) from the hero T-pose, mesh by TRELLIS.2-4B (MIT per the model card, re-check before shipping), rigged with fingers in Blender (`tools/audit/build_body.py`). Garments (jacket, vest, trousers, boots, gloves) are cut from a remeshed copy of the body. Rigid gear: Steel Helmet, Adventurer's Backpack, Pupil Backpack, Kit Bag and Leather Belt Satchel from the Polyfork catalog (https://polyfork.dev, CC BY 4.0, credit format *Name by Polyfork*); cap, sunglasses and goggles generated locally (SDXL base 1.0 picture, TRELLIS.2 mesh).
