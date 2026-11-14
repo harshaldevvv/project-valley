@@ -3,6 +3,7 @@ import { yard } from '../../content/data/yard';
 import { buildAiTrees } from './aiTrees';
 import { buildBirds } from './birds';
 import { buildFireLights } from './fires';
+import { buildTracks } from './tracks';
 import { buildWornGround } from './worn';
 import { buildCabin, buildCabinLoot, buildFarm, buildShop } from './cabin';
 import { buildClutter } from './clutter';
@@ -54,6 +55,7 @@ export async function buildYard(game: Game): Promise<void> {
   installFlashlight(game);
   buildBirds(game);
   await buildWornGround(game);
+  await buildTracks(game);
   buildFireLights(game, [[-15.5, 0.7, 11.5]], [[-69.0, 1.9, -33.8], [62.2, 1.9, -59.4], [-67.2, 1.9, 64.2]]);
   await buildAiTrees(game);
   await buildWallDecals(game);
