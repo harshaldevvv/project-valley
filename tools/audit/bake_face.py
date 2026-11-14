@@ -57,6 +57,17 @@ for t in mesh.loop_triangles:
             if c[:3].min() > 0.45 and c[:3].max() - c[:3].min() < 0.06: continue   # reference background
             newtex[y, x, :3] = tex[y, x, :3] * (1-al) + c[:3] * al
             done[y, x] = al; n += 1
+# red specks the generator left on hand tips: saturated bright red texels become skin tone
+r, g, b = newtex[...,0], newtex[...,1], newtex[...,2]
+red = (r > 0.3) & (g < 0.22 * r) & (b < 0.3 * r)
+hand = np.zeros((H, W), dtype=bool)   # uv boxes of the hand triangles (T-pose: hands are the far-out |x| > 0.55)
+for t in mesh.loop_triangles:
+    if all(abs(mesh.vertices[i].co.x) > 0.55 for i in t.vertices):
+        us = [uv[l].uv for l in t.loops]
+        hand[max(int(min(u.y for u in us) * H) - 2, 0):int(max(u.y for u in us) * H) + 3, max(int(min(u.x for u in us) * W) - 2, 0):int(max(u.x for u in us) * W) + 3] = True
+red |= hand & (r > 0.08) & (g < 0.42 * r) & (b < 0.42 * r)
+print('RED_SPECKS', int(red.sum()))
+newtex[red, 0] = 0.62; newtex[red, 1] = 0.34; newtex[red, 2] = 0.24
 img.pixels = newtex.ravel().tolist()
 img.pack()
 os.makedirs(out, exist_ok=True)
