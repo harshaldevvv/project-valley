@@ -101,6 +101,7 @@ def fit(pid, path, bone, width=None, height=None, depth=None, center=(0, 0, 0), 
     if len(meshes) > 1: bpy.ops.object.join()
     ob = bpy.context.view_layer.objects.active
     ob.name = 'part_' + pid; ob.data.name = 'part_' + pid
+    ob.rotation_mode = 'XYZ'   # glTF imports use quaternions; euler writes are ignored otherwise
     ob.rotation_euler = (0, 0, math.radians(yaw)); bpy.ops.object.transform_apply(rotation=True)
     def bb():
         ws = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
@@ -135,11 +136,11 @@ parts = [
     shell('pants', {'Hips', 'LeftUpLeg', 'RightUpLeg', 'LeftLeg', 'RightLeg'}, (0.27, 1.04), 0.024, (0.42, 0.35, 0.24), xr=(0.0, 0.4), cuts=[((0, 0, 0.99), (0, 0, -1)), ((0, 0, 0.27), (0, 0, 1))]),
     shell('boots', {'LeftFoot', 'RightFoot', 'LeftToeBase', 'RightToeBase', 'LeftLeg', 'RightLeg'}, (0.0, 0.28), 0.020, (0.28, 0.2, 0.14), xr=(0.0, 0.4), cuts=[((0, 0, 0.28), (0, 0, -1))]),
     shell('gloves', HANDB, (0.0, 3.0), 0.012, (0.13, 0.13, 0.13), xr=(WR - 0.005, 2.0)),
-    fit('cap', gen('cap'), 'Head', width=HW * 1.08, center=(0, HCY + 0.025, HTOP - 0.045), yaw=YAW_GEN, anchor='center'),
+    fit('cap', gen('cap'), 'Head', width=HW * 1.2, center=(0, HCY + 0.012, HTOP - 0.04), yaw=float(os.environ.get('YAW_CAP', 180)), anchor='center'),
     fit('helmet_steel', L + 'steel-helmet-f5aa7d.glb', 'Head', width=HW * 1.12, center=(0, HCY, EYEZ + 0.0), yaw=YAW_LIB, anchor='bottom'),
     fit('gasmask', gen('gasmask'), 'Head', width=HW * 0.95, center=(0, FY - 0.02, EYEZ - 0.05), yaw=YAW_GEN, anchor='center'),
-    fit('glasses', gen('glasses'), 'Head', width=0.158, center=(0, FY + 0.01, EYEZ + 0.008), yaw=YAW_GEN, anchor='center'),
-    fit('goggles', gen('goggles'), 'Head', width=0.2, center=(0, FY - 0.025, EYEZ + 0.008), yaw=YAW_GEN, anchor='center'),
+    fit('glasses', gen('glasses'), 'Head', width=0.158, center=(0, FY + 0.006, EYEZ - 0.014), yaw=float(os.environ.get('YAW_GL', 180)), anchor='front'),
+    fit('goggles', gen('goggles'), 'Head', width=0.2, center=(0, FY + 0.0, EYEZ - 0.012), yaw=YAW_GEN, anchor='front'),
     fit('backpack_hiking', L + 'adventurer-s-backpack-b1365c.glb', 'Spine2', height=0.62, center=(0, TY0 + 0.01, 1.22), yaw=YAW_LIB, anchor='front'),
     fit('backpack_school', L + 'pupil-backpack-d9b5fb.glb', 'Spine2', height=0.46, center=(0, TY0 + 0.01, 1.22), yaw=YAW_LIB, anchor='front'),
     fit('backpack_kit', L + 'kit-bag-7d617f.glb', 'Spine2', width=0.42, center=(0, TY0 + 0.01, 1.2), yaw=YAW_LIB, anchor='front'),

@@ -14,6 +14,8 @@ export interface OutfitPart {
   rough: number;
   metal?: number;
   hides?: BodyRegion[];
+  /** Tinted lenses: the whole part is drawn see-through by this much (1 = solid). */
+  opacity?: number;
 }
 
 export const OUTFIT_SLOTS: OutfitSlot[] = ['head', 'face', 'eyes', 'jacket', 'armor', 'legs', 'feet', 'hands', 'pack', 'pouch'];
@@ -25,8 +27,8 @@ export const OUTFIT_PARTS: OutfitPart[] = [
   { id: 'cap', slot: 'head', tints: TEX, rough: 0.9 },
   { id: 'helmet_steel', slot: 'head', tints: TEX, rough: 0.5, metal: 0.2 },
   { id: 'gasmask', slot: 'face', tints: TEX, rough: 0.6 },
-  { id: 'glasses', slot: 'eyes', tints: TEX, rough: 0.3 },
-  { id: 'goggles', slot: 'eyes', tints: TEX, rough: 0.4 },
+  { id: 'glasses', slot: 'eyes', tints: TEX, rough: 0.3, opacity: 0.88 },
+  { id: 'goggles', slot: 'eyes', tints: TEX, rough: 0.4, opacity: 0.72 },
   { id: 'jacket', slot: 'jacket', tints: CLOTH, rough: 0.9, hides: ['torso', 'arms'] },
   { id: 'vest', slot: 'armor', tints: ['#2a2d30', '#4a5238', '#3a3f4a'], rough: 0.8 },
   { id: 'pants', slot: 'legs', tints: ['#6b5a3c', '#3a3f4a', '#4d5638', '#1d1f22'], rough: 0.9, hides: ['legs'] },

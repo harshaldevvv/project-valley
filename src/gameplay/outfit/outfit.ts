@@ -115,6 +115,11 @@ export function createOutfit(character: Object3D, parts: Group): Outfit {
         const textured = !!own.map || !!s.geometry.attributes.color;
         const mat = textured ? own.clone() : new MeshStandardMaterial({ roughness: part.rough, metalness: part.metal ?? 0 });
         mat.color = new Color(part.tints[tint % part.tints.length]);
+        if (part.opacity !== undefined && part.opacity < 1) {
+          mat.transparent = true;
+          mat.opacity = part.opacity;
+          mat.depthWrite = false;
+        }
         if (textured) (mat as MeshStandardMaterial).vertexColors = !!s.geometry.attributes.color;
         const m = new SkinnedMesh(s.geometry, mat);
         m.name = 'outfit_' + id;
