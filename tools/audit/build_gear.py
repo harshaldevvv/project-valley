@@ -123,6 +123,41 @@ def fit(pid, path, bone, width=None, height=None, depth=None, center=(0, 0, 0), 
     for p in ob.data.polygons: p.use_smooth = True
     return ob
 
+
+def rbox(bm, c, sz, bevel=0.0):
+    r_ = bmesh.ops.create_cube(bm, size=1.0)
+    for v in r_['verts']: v.co = Vector((c[0] + v.co.x * sz[0], c[1] + v.co.y * sz[1], c[2] + v.co.z * sz[2]))
+    if bevel: bmesh.ops.bevel(bm, geom=[e for e in bm.edges if all(v in r_['verts'] for v in e.verts)], offset=bevel, segments=3, affect='EDGES')
+    return r_['verts']
+
+def procedural(pid, bone, build, mats_):
+    """small hand-modelled part: build(bm) fills the mesh; faces carry material indices set by build via bm.faces.layers"""
+    me = bpy.data.meshes.new('part_' + pid); bm = bmesh.new(); build(bm)
+    bm.to_mesh(me); bm.free()
+    for m in mats_: me.materials.append(m)
+    for p in me.polygons: p.use_smooth = True
+    ob = bpy.data.objects.new('part_' + pid, me); sc.collection.objects.link(ob)
+    ob.vertex_groups.new(name=bone).add(list(range(len(me.vertices))), 1.0, 'REPLACE')
+    return ob
+
+def sunglasses(bm):
+    z = EYEZ - 0.010; y = FY + 0.007
+    for sx in (-1, 1):
+        lens = rbox(bm, (sx * 0.036, y, z), (0.058, 0.004, 0.040), 0.010)
+        frame = rbox(bm, (sx * 0.036, y - 0.002, z), (0.066, 0.007, 0.047), 0.011)
+        for v in lens: pass
+        # temple arm: from the frame corner back to the ear
+        rbox(bm, (sx * 0.0735, y - 0.055, z + 0.009), (0.006, 0.112, 0.008))
+    rbox(bm, (0, y, z + 0.008), (0.020, 0.006, 0.007))
+
+def goggles(bm):
+    z = EYEZ - 0.004; y = FY + 0.010
+    rbox(bm, (0, y - 0.006, z), (0.170, 0.026, 0.060), 0.016)                 # foam body
+    rbox(bm, (0, y + 0.008, z), (0.150, 0.006, 0.046), 0.015)                  # lens
+    cone = bmesh.ops.create_cone(bm, cap_ends=False, segments=28, radius1=1.0, radius2=1.0, depth=0.034)
+    for v in cone['verts']: v.co = Vector((v.co.x * 0.108, v.co.z * 0.12 + HCY + 0.004, v.co.y * 0.034 + z))
+    bmesh.ops.solidify(bm, geom=list(bm.faces)[-len(cone['verts']):], thickness=0.004) if False else None
+
 G = ROOT + '/assets/gen/gear/'; L = ROOT + '/assets/gen/polyfork/gear/'
 def gen(n):
     d = G + n + '_3d/'; fs = sorted(f for f in os.listdir(d) if f.endswith('.glb')) if os.path.isdir(d) else []
@@ -136,11 +171,11 @@ parts = [
     shell('pants', {'Hips', 'LeftUpLeg', 'RightUpLeg', 'LeftLeg', 'RightLeg'}, (0.27, 1.04), 0.024, (0.42, 0.35, 0.24), xr=(0.0, 0.4), cuts=[((0, 0, 0.99), (0, 0, -1)), ((0, 0, 0.27), (0, 0, 1))]),
     shell('boots', {'LeftFoot', 'RightFoot', 'LeftToeBase', 'RightToeBase', 'LeftLeg', 'RightLeg'}, (0.0, 0.28), 0.020, (0.28, 0.2, 0.14), xr=(0.0, 0.4), cuts=[((0, 0, 0.28), (0, 0, -1))]),
     shell('gloves', HANDB, (0.0, 3.0), 0.012, (0.13, 0.13, 0.13), xr=(WR - 0.005, 2.0)),
-    fit('cap', gen('cap'), 'Head', width=HW * 1.2, center=(0, HCY + 0.012, HTOP - 0.04), yaw=float(os.environ.get('YAW_CAP', 180)), anchor='center'),
+    fit('cap', gen('cap'), 'Head', width=HW * 1.27, center=(0, HCY + 0.012, HTOP - 0.028), yaw=float(os.environ.get('YAW_CAP', 180)), anchor='center'),
     fit('helmet_steel', L + 'steel-helmet-f5aa7d.glb', 'Head', width=HW * 1.12, center=(0, HCY, EYEZ + 0.0), yaw=YAW_LIB, anchor='bottom'),
     fit('gasmask', gen('gasmask'), 'Head', width=HW * 0.95, center=(0, FY - 0.02, EYEZ - 0.05), yaw=YAW_GEN, anchor='center'),
-    fit('glasses', gen('glasses'), 'Head', width=0.158, center=(0, FY + 0.006, EYEZ - 0.014), yaw=float(os.environ.get('YAW_GL', 180)), anchor='front'),
-    fit('goggles', gen('goggles'), 'Head', width=0.2, center=(0, FY + 0.0, EYEZ - 0.012), yaw=YAW_GEN, anchor='front'),
+    procedural('glasses', 'Head', sunglasses, [mat('m_frame', (0.015, 0.015, 0.017), 0.35)]),
+    procedural('goggles', 'Head', goggles, [mat('m_goggle', (0.05, 0.06, 0.07), 0.3)]),
     fit('backpack_hiking', L + 'adventurer-s-backpack-b1365c.glb', 'Spine2', height=0.62, center=(0, TY0 + 0.01, 1.22), yaw=YAW_LIB, anchor='front'),
     fit('backpack_school', L + 'pupil-backpack-d9b5fb.glb', 'Spine2', height=0.46, center=(0, TY0 + 0.01, 1.22), yaw=YAW_LIB, anchor='front'),
     fit('backpack_kit', L + 'kit-bag-7d617f.glb', 'Spine2', width=0.42, center=(0, TY0 + 0.01, 1.2), yaw=YAW_LIB, anchor='front'),
