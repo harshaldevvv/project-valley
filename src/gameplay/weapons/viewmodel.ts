@@ -1,4 +1,4 @@
-import { AnimationAction, AnimationClip, LoopOnce, LoopRepeat, Matrix4, Object3D, type AnimationMixer } from 'three';
+import { AnimationAction, AnimationClip, BufferAttribute, Color, LoopOnce, LoopRepeat, Material, Matrix4, MeshStandardMaterial, Object3D, type AnimationMixer, type SkinnedMesh } from 'three';
 import { hasAsset } from '../../engine/assets';
 import { loadModel } from '../../engine/models';
 import { fpArms as F } from '../../content/data/weapons';
@@ -49,6 +49,7 @@ export class Viewmodel {
       o.castShadow = false;
       o.frustumCulled = false;
     });
+    this.splitHands(m.root);
     this.pivot.add(m.root);
     this.mixer = m.mixer;
     for (const c of proto.clips) {
@@ -57,6 +58,47 @@ export class Viewmodel {
     }
     for (const [k, v] of m.sockets) this.sockets.set(k, v);
     this.ready = true;
+  }
+
+  private armMesh: SkinnedMesh | null = null;
+  private armMat: Material | null = null;
+  private look: Material[] = [];
+  /** Two draw groups on the arms mesh: 0 = forearm/sleeve, 1 = hand and fingers, so sleeves and gloves can be recoloured. */
+  private splitHands(root: Object3D) {
+    root.traverse((o) => {
+      const mesh = o as SkinnedMesh;
+      if (this.armMesh || !mesh.isSkinnedMesh || !mesh.geometry.index) return;
+      const g = mesh.geometry;
+      const handBone = mesh.skeleton.bones.map((b) => /hand|finger|thumb/.test(b.name));
+      const si = g.attributes.skinIndex, sw = g.attributes.skinWeight;
+      const handness = (v: number) => {
+        let h = 0;
+        for (let k = 0; k < 4; k++) if (handBone[si.getComponent(v, k)]) h += sw.getComponent(v, k);
+        return h;
+      };
+      const idx = g.index!.array, arm: number[] = [], hand: number[] = [];
+      for (let i = 0; i < idx.length; i += 3) {
+        const h = (handness(idx[i]) + handness(idx[i + 1]) + handness(idx[i + 2])) / 3;
+        (h > 0.5 ? hand : arm).push(idx[i], idx[i + 1], idx[i + 2]);
+      }
+      g.setIndex(new BufferAttribute(idx instanceof Uint32Array ? new Uint32Array([...arm, ...hand]) : new Uint16Array([...arm, ...hand]), 1));
+      g.clearGroups();
+      g.addGroup(0, arm.length, 0);
+      g.addGroup(arm.length, hand.length, 1);
+      this.armMesh = mesh;
+      this.armMat = mesh.material as Material;
+      mesh.material = this.look = [this.armMat, this.armMat];
+    });
+  }
+  /** Recolour the sleeve and/or the hands (css colours); null restores the original look. */
+  setLook(sleeve: string | null, glove: string | null) {
+    if (!this.armMesh || !this.armMat) return;
+    const mk = (c: string | null, old: Material | undefined) => {
+      if (old && old !== this.armMat) old.dispose();
+      return c ? new MeshStandardMaterial({ color: new Color(c), roughness: 0.9 }) : this.armMat!;
+    };
+    this.look = [mk(sleeve, this.look[0]), mk(glove, this.look[1])];
+    this.armMesh.material = this.look;
   }
 
   /** Parent a first-person weapon model into the right hand (identity) and prepare its held-magazine double. */

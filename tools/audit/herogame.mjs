@@ -12,6 +12,6 @@ for (const i of items.split(',').filter(Boolean)) await page.evaluate((i) => win
 await page.waitForTimeout(1500);
 const sh = async (n) => page.screenshot({ path: `docs/audit/screenshots/wip/${tag}_${n}.png` });
 await sh('tp');
-await page.evaluate(() => { const c = window.__gp.ctx; c.rig.setMode?.('first'); }); await page.waitForTimeout(300);
-await page.keyboard.press('v'); await page.waitForTimeout(1200); await sh('fp');
+await page.evaluate(() => { window.__gp.ctx.rig.mode = 'fp'; }); await page.keyboard.press('2'); await page.waitForTimeout(1800); await sh('fp');
+await page.mouse.click(640, 360, { button: 'right' }); await page.waitForTimeout(100);
 console.log('errors', errs.slice(0, 5)); await browser.close();

@@ -59,7 +59,6 @@ export async function installGameplay(game: Game): Promise<void> {
   ctx.playerAnim = bodyAnim;
   const post = bodyAnim ? new BodyPost(ctx, body.root, bodyAnim) : null;
   // Backpack mesh follows the backpack slot (asset node chr_survivor_a_BACKPACK)
-  if (hero) await bindOutfit(game, body.root);
   const pack = body.root.getObjectByName('chr_survivor_a_BACKPACK');
   const syncPack = () => {
     const lo = probe(game, 'loadout', 'equipped');
@@ -92,6 +91,7 @@ export async function installGameplay(game: Game): Promise<void> {
   }
   let faded = false;
   await ctx.weapons.init(body.hand);
+  if (hero) await bindOutfit(game, body.root, ctx.weapons.vm);
   await Promise.all([ctx.targets.init(), ctx.vehicles.init(), ctx.animStand.init()]);
 
   const perf = game.perf;
