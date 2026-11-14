@@ -1,0 +1,10 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = []; page.on('pageerror', e => errs.push(String(e).slice(0, 200)));
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
+await page.waitForTimeout(2000); await page.mouse.click(640, 360);
+await page.evaluate(() => { const e = window.game.events; e.emit('toast', { text: '+ Canned Beans ×2' }); e.emit('toast', { text: '+ Bandage' }); e.emit('toast', { text: '✕ No room' }); });
+await page.waitForTimeout(500); await page.screenshot({ path: 'docs/audit/screenshots/wip/85_toasts.png', clip: { x: 340, y: 40, width: 600, height: 220 } });
+console.log('errors', errs); await browser.close();

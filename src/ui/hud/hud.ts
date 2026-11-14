@@ -63,6 +63,10 @@ const CSS = `
 .hud .prompt{background:#0a0d0ccc;border:1px solid #ffffff22;border-radius:2px;font:600 14px var(--display);letter-spacing:.08em}
 .hud .prompt kbd{border-color:var(--accent);color:var(--accent);font-family:var(--display)}
 .hud .toasts div{background:#0a0d0ccc;border-left:2px solid var(--accent);border-radius:2px;font-family:var(--display);letter-spacing:.06em;animation:hud-toast .28s cubic-bezier(.2,.8,.2,1) both}
+/* loot feedback: green edge and a short pop for pickups, red for refusals */
+.hud .toasts div.gain{border-left-color:#8fd18a;color:#e9f6e6}
+.hud .toasts div.gain::first-letter{color:#8fd18a;font-weight:700}
+.hud .toasts div.deny{border-left-color:#e0574a;color:#f6d8d4}
 @keyframes hud-toast{from{opacity:0;transform:translateY(-8px) scale(.96)}to{opacity:1;transform:none}}
 .hud .range{border-radius:2px;border-left:2px solid var(--accent)}
 .hud .vig{background:radial-gradient(ellipse at center,#0000 50%,#8a0000 135%)}
@@ -215,6 +219,8 @@ export class Hud {
     }
     const d = el('', this.toasts) as HTMLElement & { _t?: number[] };
     d.textContent = text;
+    if (text.startsWith('+ ')) d.classList.add('gain');
+    else if (text.startsWith('✕ ')) d.classList.add('deny');
     while (this.toasts.children.length > 4) this.toasts.firstElementChild!.remove();
     d._t = [setTimeout(() => (d.style.opacity = '0'), 1800), setTimeout(() => d.remove(), 2300)] as unknown as number[];
   }

@@ -131,6 +131,8 @@ Frame rate after pass 8 (vsync-capped; p50 16.67 ms in all six scenes, 0 hitches
 
 63. **Audio mix balance** (measured, not by ear): integrated loudness of every shipped sound (`ffmpeg ebur128`) against its table volume. Outliers: the car horn was about 13 dB hotter than anything else (effective -6.6 LUFS), car start -10, shotgun 8 dB over the rifle, bolt rack and dry-fire click near-inaudible (-37 / -32). Volumes in `content/data/sounds.ts` changed: horn 0.9 to 0.35, start 0.8 to 0.5, engine 0.6 to 0.45, shotgun 1.0 to 0.62, bolt 0.7 to 1.6, dry fire 0.6 to 1.0. Short gunshots read low in integrated LUFS by nature, so treat the gun-vs-ambient balance as unverified until someone listens.
 
+64. **Loot feedback:** pickup toasts now read `+ Item ×n` with a green edge, and a full pack shows `✕ No room` in red (`systems/index.ts`, `hud.ts`); verified with a screenshot (`85_toasts.png`) and a container-open run. Not done: item icons in toasts, rarity colours.
+
 ## Cost of all this
 - Download size grew by about 12 MB of public assets after compression (it was about 30 MB); KTX2 textures would shrink GPU memory further.
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).

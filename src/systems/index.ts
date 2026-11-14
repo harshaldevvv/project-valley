@@ -64,7 +64,7 @@ export async function installSystems(game: Game): Promise<void> {
 
   const pickups = createPickupView(game, lo, (item, ok) => {
     sfx(ok ? 'item_pickup' : 'build_invalid');
-    toast(ok ? itemName(item.defId) : T.full);
+    toast(ok ? `+ ${itemName(item.defId)}${(item.count ?? 1) > 1 ? ` ×${item.count}` : ''}` : `✕ ${T.full}`); // + gain / ✕ refusal: the HUD tints them
   });
   game.events.on('inventoryChanged', () => {
     pickups.sync();
