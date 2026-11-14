@@ -31,3 +31,11 @@ export const OUTFIT_PARTS: OutfitPart[] = [
 ];
 
 export const partsById = (id: string) => OUTFIT_PARTS.find((p) => p.id === id);
+
+/** Ready-made looks: slot -> [part id, tint index]. */
+export const OUTFIT_PRESETS: Record<string, Partial<Record<OutfitSlot, [string, number]>>> = {
+  scavenger: { jacket: ['jacket', 0], legs: ['pants', 0], feet: ['boots', 0], hands: ['gloves', 0], pack: ['backpack', 0], head: ['cap', 1] },
+  soldier: { head: ['helmet', 0], eyes: ['glasses', 0], jacket: ['jacket', 0], armor: ['vest', 0], legs: ['pants', 2], feet: ['boots', 1], hands: ['gloves', 0], pouch: ['pouch', 1], pack: ['backpack', 0] },
+  drifter: { jacket: ['jacket', 2], legs: ['pants', 1], feet: ['boots', 2], eyes: ['glasses', 2], head: ['cap', 2] },
+  medic: { jacket: ['jacket', 4], legs: ['pants', 3], feet: ['boots', 1], hands: ['gloves', 1], pack: ['backpack', 2], head: ['cap', 0] },
+};

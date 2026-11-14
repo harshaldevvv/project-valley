@@ -7,8 +7,8 @@ import { gltfLoader } from '../engine/assets';
 import { paletteCharacterMaterial, paletteMaterial } from '../engine/palette';
 import { assetUrl } from '../engine/assetUrl';
 import { createOutfit, type Outfit } from '../gameplay/outfit/outfit';
-import { OUTFIT_PARTS, OUTFIT_SLOTS } from '../content/data/outfit';
-import { OUTFIT_PART_NAMES, OUTFIT_SLOT_NAMES } from '../content/text/outfit';
+import { OUTFIT_PARTS, OUTFIT_PRESETS, OUTFIT_SLOTS } from '../content/data/outfit';
+import { OUTFIT_PART_NAMES, OUTFIT_PRESET_NAMES, OUTFIT_SLOT_NAMES } from '../content/text/outfit';
 
 /**
  * Character viewer (dev tool, /viewer.html): pick a model, play any of its clips with crossfade, hold items in the right
@@ -159,7 +159,7 @@ function build(id: string) {
 
 const slotName = (id: string) => OUTFIT_PARTS.find((p) => p.id === id)!.slot;
 function wardrobe() {
-  return `<h2>Wardrobe</h2>` + OUTFIT_SLOTS.map((sl) => {
+  return `<h2>Wardrobe</h2><h2>Looks</h2><div class="grid">${Object.keys(OUTFIT_PRESETS).map((k) => `<button data-wear="look:${k}">${OUTFIT_PRESET_NAMES[k]}</button>`).join('')}</div>` + OUTFIT_SLOTS.map((sl) => {
     const parts = OUTFIT_PARTS.filter((p) => p.slot === sl);
     if (!parts.length) return '';
     const row = parts.map((p) => `<button data-wear="${p.id}:0">${OUTFIT_PART_NAMES[p.id]}</button>`).join('');
@@ -171,6 +171,11 @@ function wear(spec: string) {
   if (!outfit) return;
   const [id, arg] = spec.split(':');
   if (id === 'all') return outfit.setState({});
+  if (id === 'look') {
+    const st: Record<string, { id: string; tint: number }> = {};
+    for (const [sl, [pid, tint]] of Object.entries(OUTFIT_PRESETS[arg])) st[sl] = { id: pid, tint };
+    return outfit.setState(st);
+  }
   if (arg === 'none') return outfit.equip(id as never, null);
   outfit.equip(slotName(id), id, +arg);
 }
