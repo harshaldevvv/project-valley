@@ -41,7 +41,13 @@ cy = (min(v.y for v in torso) + max(v.y for v in torso)) / 2
 body.location = (-(lo.x + hi.x) / 2, -cy, -lo.z); bpy.ops.object.transform_apply(location=True)
 n = sum(len(p.vertices) - 2 for p in body.data.polygons)
 if n > tris:
-    m = body.modifiers.new('d', 'DECIMATE'); m.ratio = tris / n; bpy.ops.object.modifier_apply(modifier=m.name)
+    # keep detail where it shows: face/head and hands lose fewer triangles than the legs and torso
+    vgk = body.vertex_groups.new(name='keepdetail')
+    vgk.add([v.index for v in body.data.vertices if v.co.z > 1.50 or abs(v.co.x) > 0.62], 1.0, 'REPLACE')
+    m = body.modifiers.new('d', 'DECIMATE'); m.ratio = tris / n
+    m.vertex_group = 'keepdetail'; m.invert_vertex_group = True; m.vertex_group_factor = float(os.environ.get('KEEP', 6.0))
+    bpy.ops.object.modifier_apply(modifier=m.name)
+    body.vertex_groups.remove(body.vertex_groups['keepdetail'])
 
 # ---- armature: joints in metres (right side +X), T-pose; arm and leg joints measured from the fitted mesh itself
 vs = [v.co.copy() for v in body.data.vertices]

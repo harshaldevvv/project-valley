@@ -22,6 +22,7 @@ export async function bindOutfit(game: Game, character: Object3D, vm?: Viewmodel
       const part = it && ITEM_PARTS[it.defId];
       if (part) next[slot as OutfitSlot] = { id: part[0], tint: part[1] };
     }
+    if (!next.legs) next.legs = { id: 'pants', tint: 1 };   // cosmetic default: the hero never walks around in underwear
     for (const slot of OUTFIT_SLOTS) {
       const want = next[slot], have = outfit.state[slot];
       if (want?.id !== have?.id || want?.tint !== have?.tint) outfit.equip(slot, want?.id ?? null, want?.tint ?? 0);
