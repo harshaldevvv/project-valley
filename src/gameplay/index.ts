@@ -12,6 +12,8 @@ import { surfaceOf } from '../world/surfaces';
 import { vehicles as vehicleDefs } from '../content/data/vehicles';
 import { Hud } from '../ui/hud/hud';
 import { applyPose, makeCharacter } from './animstand/character';
+import { bindOutfit } from './outfit/bind';
+import { newItem } from '../systems/inventory';
 import { PlayerAnimator } from './animstand/locomotion';
 import { BodyPost } from './player/bodyPost';
 import { AnimStand } from './animstand/stand';
@@ -48,13 +50,16 @@ export async function installGameplay(game: Game): Promise<void> {
   ctx.hud = new Hud(ctx);
 
   // Player body (third person)
-  const body = await makeCharacter('survivor', 'chr_survivor_a');
+  // `?hero=1`: the generated main character (chr_hero_a) with the wearable outfit system; default stays the original survivor.
+  const hero = new URLSearchParams(location.search).get('hero') === '1';
+  const body = await makeCharacter('survivor', hero ? 'chr_hero_a' : 'chr_survivor_a', 'chr_survivor_a');
   ctx.playerChar = body;
   game.scene.add(body.root);
   const bodyAnim = body.skinned ? new PlayerAnimator(body) : null;
   ctx.playerAnim = bodyAnim;
   const post = bodyAnim ? new BodyPost(ctx, body.root, bodyAnim) : null;
   // Backpack mesh follows the backpack slot (asset node chr_survivor_a_BACKPACK)
+  if (hero) await bindOutfit(game, body.root);
   const pack = body.root.getObjectByName('chr_survivor_a_BACKPACK');
   const syncPack = () => {
     const lo = probe(game, 'loadout', 'equipped');
@@ -214,6 +219,8 @@ export async function installGameplay(game: Game): Promise<void> {
     look: (dx: number, dy: number) => ((ctx.controls.lookDx += dx), (ctx.controls.lookDy += dy)),
     mouse: (button: 0 | 2, held: boolean) => ctx.controls.press('Mouse' + button, held),
     spawn: (n: number) => ctx.zombies.spawnInPen(n),
+    /** Give an item by def id (wearables go straight into their empty slot). */
+    give: (defId: string) => game.loadout.give(newItem(defId)),
     sandbox: () => {
       ctx.weapons.loadout = sandboxLoadout();
       ctx.weapons.sandbox = true;

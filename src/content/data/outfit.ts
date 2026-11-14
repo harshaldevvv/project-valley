@@ -39,3 +39,16 @@ export const OUTFIT_PRESETS: Record<string, Partial<Record<OutfitSlot, [string, 
   drifter: { jacket: ['jacket', 2], legs: ['pants', 1], feet: ['boots', 2], eyes: ['glasses', 2], head: ['cap', 2] },
   medic: { jacket: ['jacket', 4], legs: ['pants', 3], feet: ['boots', 1], hands: ['gloves', 1], pack: ['backpack', 2], head: ['cap', 0] },
 };
+
+/** Inventory slot -> outfit slot, and which part (and tint) each worn item shows. Items missing here show nothing extra. */
+export const SLOT_TO_OUTFIT: Record<string, OutfitSlot> = {
+  head: 'head', eyes: 'eyes', torso: 'jacket', armor: 'armor', legs: 'legs', feet: 'feet', gloves: 'hands', backpack: 'pack', pouch: 'pouch',
+};
+export const ITEM_PARTS: Record<string, [string, number]> = {
+  jacket_field: ['jacket', 0], hoodie: ['jacket', 1], military_jacket: ['jacket', 0],
+  cargo_pants: ['pants', 0], tactical_vest: ['vest', 0],
+  beanie: ['cap', 1], cap: ['cap', 0], helmet_military: ['helmet', 0], glasses: ['glasses', 0],
+  secure_pouch: ['pouch', 0],
+  backpack_small: ['backpack', 1], school_bag: ['backpack', 1], hiking_pack: ['backpack', 2], military_pack: ['backpack', 0],
+  alice_pack: ['backpack', 0], large_hiking_pack: ['backpack', 3], laboratory_pack: ['backpack', 1],
+};
