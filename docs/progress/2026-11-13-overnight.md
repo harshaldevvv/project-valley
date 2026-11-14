@@ -175,4 +175,4 @@ Frame rate after pass 8 (vsync-capped; p50 16.67 ms in all six scenes, 0 hitches
 ## 2026-11-14 main character
 - Poster hero -> front/side/back/T-pose views -> Hunyuan3D-2.1 textured mesh -> Blender fit (1.80 m, 16k tris) -> Mixamo-named rig, custom weights -> 42 survivor clips retargeted (`tools/audit/rebuild_hero.sh` redoes all of it).
 - Viewer: `/viewer.html?model=chr_hero_a` (all clips, held items, camera presets). Headless screenshots: `node tools/audit/viewer.mjs`.
-- Known: face is faceted with dark eye sockets, small texture specks on hand tips. Outfit system not started.
+- Face: clean reference face projected onto the texture (`tools/audit/bake_face.py`); eyes and brows now read. Geometry is still low-poly. Small specks remain on hand tips. Outfit system not started.
