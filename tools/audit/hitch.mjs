@@ -1,6 +1,6 @@
 // Records frames over 25 ms in the 30-zombie scene (aggressive horde, shooting) with the per-system timings at that moment.
-import { chromium } from 'playwright';
-const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+import { launch } from './browser.mjs';
+const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 await page.goto('http://localhost:5188/?play');
 await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });

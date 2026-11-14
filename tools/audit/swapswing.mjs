@@ -1,6 +1,6 @@
 // Starts a knife swing and swaps to the rifle in the same instant: used to throw "reading 'active'" every sim step.
-import { chromium } from 'playwright';
-const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+import { launch } from './browser.mjs';
+const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const errs = []; page.on('pageerror', e => errs.push((e.message || String(e)).slice(0, 120)));
 await page.goto('http://localhost:5188/?play');

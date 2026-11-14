@@ -1,5 +1,5 @@
-import { chromium } from 'playwright';
-const browser = await chromium.launch({ channel: 'chrome', headless: false });
+import { launch } from './browser.mjs';
+const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 page.on('pageerror', e => console.log('PAGEERR', String(e).slice(0, 160)));
 page.on('console', m => m.type() === 'error' && console.log('CONSOLE', m.text().slice(0, 200)));

@@ -1,8 +1,8 @@
 // node tools/audit/perf.mjs <tag> [port]   Frame-time check of fixed scenes (needs a dev server). Writes docs/audit/perf-<tag>.json
 import { writeFileSync } from 'node:fs';
-import { chromium } from 'playwright';
+import { launch } from './browser.mjs';
 const tag = process.argv[2] ?? 'a', port = process.argv[3] ?? '5188';
-const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 await page.goto(`http://localhost:${port}/?play` + (process.env.CHARS ? '&chars=' + process.env.CHARS : ''));
 await page.waitForFunction(() => window.__gp && typeof window.__perf === 'function' && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });

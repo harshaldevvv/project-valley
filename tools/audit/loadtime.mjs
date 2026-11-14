@@ -1,5 +1,5 @@
-import { chromium } from 'playwright';
-const browser = await chromium.launch({ channel: 'chrome', headless: false });
+import { launch } from './browser.mjs';
+const browser = await launch();
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
 const page = await ctx.newPage();
 const cdp = await ctx.newCDPSession(page);

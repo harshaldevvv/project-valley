@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
-import { chromium } from 'playwright';
+import { launch } from './browser.mjs';
 const tag = process.argv[2] ?? 'wip', OUT = `docs/audit/screenshots/${tag}`; mkdirSync(OUT, { recursive: true });
-const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 page.on('pageerror', e => console.log('PAGEERR', String(e).slice(0, 200)));
 await page.goto('http://localhost:5188/?play' + (process.env.CHARS ? '&chars=' + process.env.CHARS : ''));

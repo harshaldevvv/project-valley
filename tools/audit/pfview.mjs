@@ -1,5 +1,5 @@
-import { chromium } from 'playwright';
-const browser = await chromium.launch({ channel: 'chrome', headless: false });
+import { launch } from './browser.mjs';
+const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1800, height: 600 } });
 page.on('pageerror', e => console.log('ERR', String(e).slice(0, 200)));
 await page.goto('http://localhost:5188/assets/gen/polyfork/view.html');

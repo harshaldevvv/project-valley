@@ -1,8 +1,8 @@
 // Deterministic headshot test: all zombies are put in their pen in one synchronous evaluate (no frames in between, so
 // nothing moves), and rays are cast with the weapon's own collision groups from 4 m in front at fixed heights.
 // Reports, per variant, the zone returned for aim heights relative to the variant's real head (bbox top of the mesh).
-import { chromium } from 'playwright';
-const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+import { launch } from './browser.mjs';
+const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 await page.goto('http://localhost:5188/?play' + (process.env.CHARS ? '&chars=' + process.env.CHARS : ''));
 await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
