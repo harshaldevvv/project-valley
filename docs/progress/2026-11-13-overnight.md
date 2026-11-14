@@ -151,6 +151,9 @@ Frame rate after pass 8 (vsync-capped; p50 16.67 ms in all six scenes, 0 hitches
 
 75. **Door nudge fixed:** a swinging leaf no longer collides (collider off while it moves, back on when it rests, and held off if the player is standing where the leaf would land, so closing never traps anyone). `tools/audit/doornudge.mjs`: pressing E at 0.3 m from the cabin door leaves the player in place; walking in works; closing it with the player in the doorway lets them walk through.
 
+76. **Survivor palette pass (small):** darker boots (`wood_dark`) and a belt band added in the build script (2326 triangles, rig and clips unchanged). The belt is mostly hidden by the jacket hem, so the visible change is the boots; the jacket and jeans colours were left as they are, and no pouch was added. Front/back screenshot: `89_survivor_front_back.png`. Track ribbons also got a softer edge (they looked hard-edged next to the survivor).
+77. **Hands detail pass:** skipped as not cheap (it needs new finger geometry and rest-pose rework in the 875-line arms script).
+
 ## Cost of all this
 - Download size grew by about 12 MB of public assets after compression (it was about 30 MB); KTX2 textures would shrink GPU memory further.
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).

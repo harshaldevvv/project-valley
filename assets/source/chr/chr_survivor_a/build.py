@@ -11,7 +11,7 @@ import vrig  # noqa: E402
 from vrig import blend, smooth  # noqa: E402
 
 ID = "chr_survivor_a"
-SKIN, JACKET, JEANS, BOOT, SOLE, HAIR = "skin_3", "cloth_olive", "cloth_denim", "leather_brown", "rubber_black", "hair_dark"
+SKIN, JACKET, JEANS, BOOT, SOLE, HAIR = "skin_3", "cloth_olive", "cloth_denim", "wood_dark", "rubber_black", "hair_dark"  # darker boots (was leather_brown)
 PACK, STRAP, TRIM = "cloth_khaki", "cloth_black", "military_olive"
 
 ch = vrig.Character(ID)
@@ -37,6 +37,8 @@ b.loft([R(0.84, 0.10, 0.07, 0.075, JEANS), R(0.92, 0.165, 0.10, 0.115, JEANS), R
         R(1.35, 0.185, 0.122, 0.108, JACKET), R(1.44, 0.182, 0.105, 0.098, JACKET), R(1.50, 0.13, 0.078, 0.08, JACKET),
         R(1.535, 0.08, 0.062, 0.062, JACKET)], n=16, sq=2.6, w=torso_w)
 # collar + neck + head
+# belt: a thin dark band over the jacket hem / jeans waist, moves with the hips like the torso there
+b.loft([R(0.965, 0.173, 0.113, 0.121, STRAP), R(1.0, 0.174, 0.114, 0.122, STRAP)], n=16, sq=2.6, w=torso_w, cap0=True, cap1=True)
 b.loft([R(1.5, 0.088, 0.07, 0.07, JACKET, y=-0.005), R(1.575, 0.078, 0.06, 0.068, JACKET, y=-0.01)], n=12, cap0=False, cap1=False,
        w=lambda c: blend(c.z, [(1.5, dict(chest=1)), (1.58, dict(chest=0.4, neck=0.6))]))
 b.loft([dict(c=(0, 0, 1.49), r=0.052), dict(c=(0, 0.012, 1.63), r=0.05)], n=12, sw=SKIN, cap0=False, cap1=False,

@@ -301,12 +301,12 @@
     "url": "/assets/models/chr/chr_survivor_a.glb",
     "category": "chr",
     "tris": {
-      "chr_survivor_a_LOD0": 2266,
-      "chr_survivor_a_LOD1": 1133,
-      "chr_survivor_a_LOD2": 452,
+      "chr_survivor_a_LOD0": 2326,
+      "chr_survivor_a_LOD1": 1163,
+      "chr_survivor_a_LOD2": 465,
       "chr_survivor_a_BACKPACK": 232
     },
-    "bytes": 860160
+    "bytes": 861912
   },
   "wpn_knife_a": {
     "url": "/assets/models/wpn/wpn_knife_a.glb",

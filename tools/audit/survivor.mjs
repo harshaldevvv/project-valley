@@ -1,0 +1,13 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = []; page.on('pageerror', e => errs.push(String(e).slice(0, 200)));
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
+await page.waitForTimeout(2000); await page.mouse.click(640, 360);
+await page.evaluate(() => { const g = window.__gp.ctx; g.player.godMode = true; window.__gp.teleport(-40, 90, 0); window.__gp.setLook(0, 0); const cm = g.game.camera; const p = g.player.curr;
+  g.rig.override = () => { cm.position.set(p.x + 1.4, p.y + 1.3, p.z - 2.2); cm.lookAt(p.x, p.y + 0.95, p.z); return true; }; });
+await page.waitForTimeout(800); await page.screenshot({ path: 'docs/audit/screenshots/wip/98_survivor_front.png', clip: { x: 390, y: 60, width: 500, height: 600 } });
+await page.evaluate(() => { const g = window.__gp.ctx; const cm = g.game.camera; const p = g.player.curr; g.rig.override = () => { cm.position.set(p.x - 1.6, p.y + 1.3, p.z + 2.4); cm.lookAt(p.x, p.y + 0.95, p.z); return true; }; });
+await page.waitForTimeout(600); await page.screenshot({ path: 'docs/audit/screenshots/wip/99_survivor_back.png', clip: { x: 390, y: 60, width: 500, height: 600 } });
+console.log('errors', errs); await browser.close();

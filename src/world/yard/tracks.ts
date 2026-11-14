@@ -81,7 +81,7 @@ export async function buildTracks(game: Game) {
   const wob = grunge ? dot(texture(grunge, positionWorld.xz.mul(0.4)).rgb, vec3(0.33, 0.33, 0.34)) : float(0.5);
   const tone = grunge ? dot(texture(grunge, positionWorld.xz.mul(1.1)).rgb, vec3(0.33, 0.33, 0.34)) : float(0.5);
   mat.colorNode = mix(vec3(0.3, 0.22, 0.14), vec3(0.44, 0.34, 0.22), tone).mul(float(1).sub(across.mul(0.25)));
-  mat.opacityNode = smoothstep(1.0, 0.45, across.add(wob.sub(0.5).mul(0.7))).mul(0.85);
+  mat.opacityNode = smoothstep(1.0, 0.12, across.add(wob.sub(0.5).mul(0.9))).mul(0.75);
   const mesh = new Mesh(geo, mat);
   mesh.name = 'tracks';
   mesh.frustumCulled = false;
