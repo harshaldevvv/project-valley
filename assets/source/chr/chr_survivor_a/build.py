@@ -35,16 +35,16 @@ R = lambda z, rx, rf, rb, sw, y=0.0, **kw: dict(c=(0, y, z), r=(rx, rf, rb), sw=
 b.loft([R(0.84, 0.10, 0.07, 0.075, JEANS), R(0.92, 0.165, 0.10, 0.115, JEANS), R(0.99, 0.155, 0.095, 0.105, JACKET),
         R(0.99, 0.172, 0.112, 0.12, JACKET), R(1.09, 0.163, 0.108, 0.11, JACKET), R(1.23, 0.175, 0.118, 0.112, JACKET),
         R(1.35, 0.185, 0.122, 0.108, JACKET), R(1.44, 0.182, 0.105, 0.098, JACKET), R(1.50, 0.13, 0.078, 0.08, JACKET),
-        R(1.535, 0.08, 0.062, 0.062, JACKET)], n=10, sq=2.6, w=torso_w)
+        R(1.535, 0.08, 0.062, 0.062, JACKET)], n=16, sq=2.6, w=torso_w)
 # collar + neck + head
-b.loft([R(1.5, 0.088, 0.07, 0.07, JACKET, y=-0.005), R(1.575, 0.078, 0.06, 0.068, JACKET, y=-0.01)], n=8, cap0=False, cap1=False,
+b.loft([R(1.5, 0.088, 0.07, 0.07, JACKET, y=-0.005), R(1.575, 0.078, 0.06, 0.068, JACKET, y=-0.01)], n=12, cap0=False, cap1=False,
        w=lambda c: blend(c.z, [(1.5, dict(chest=1)), (1.58, dict(chest=0.4, neck=0.6))]))
-b.loft([dict(c=(0, 0, 1.49), r=0.052), dict(c=(0, 0.012, 1.63), r=0.05)], n=8, sw=SKIN, cap0=False, cap1=False,
+b.loft([dict(c=(0, 0, 1.49), r=0.052), dict(c=(0, 0.012, 1.63), r=0.05)], n=12, sw=SKIN, cap0=False, cap1=False,
        w=lambda c: blend(c.z, [(1.52, dict(chest=0.5, neck=0.5)), (1.6, dict(neck=1)), (1.63, dict(neck=0.4, head=0.6))]))
 HW = dict(head=1)
 b.loft([R(1.585, 0.042, 0.03, 0.03, SKIN, y=0.05), R(1.62, 0.066, 0.068, 0.06, SKIN, y=0.03), R(1.665, 0.077, 0.092, 0.085, SKIN, y=0.015),
         R(1.705, 0.081, 0.098, 0.095, SKIN, y=0.01), R(1.75, 0.08, 0.096, 0.1, SKIN, y=0.004), R(1.787, 0.063, 0.072, 0.084, SKIN, y=-0.006)],
-       n=10, sq=2.3, w=HW, cap1=0.018)
+       n=16, sq=2.3, w=HW, cap1=0.018)
 b.box((0, 0.112, 1.683), (0.026, 0.028, 0.045), SKIN, HW, bevel=0.006)  # nose
 for s in (1, -1):
     b.box((s * 0.083, -0.005, 1.69), (0.016, 0.034, 0.05), SKIN, HW, bevel=0.005)  # ears
@@ -60,7 +60,7 @@ for X, s in vrig.SIDES:
     b.loft([dict(c=P(-0.05), r=0.06, w={shd: 0.5, up: 0.5}), dict(c=P(0.03), r=0.063, w={up: 1}), dict(c=P(0.16), r=0.054, w={up: 1}),
             dict(c=P(0.27), r=0.05, w={up: 0.7, fo: 0.3}), dict(c=P(0.30), r=0.049, w={up: 0.4, fo: 0.6}), dict(c=P(0.35), r=0.047, w={fo: 1}),
             dict(c=P(0.50), r=0.046, w={fo: 1}, sw=TRIM), dict(c=P(0.535), r=0.046, w={fo: 1}, sw=SKIN), dict(c=P(0.535), r=0.028, w={fo: 0.7, ha: 0.3}),
-            dict(c=P(0.555), r=0.027, w={fo: 0.4, ha: 0.6})], n=8, sw=JACKET, cap1=False)
+            dict(c=P(0.555), r=0.027, w={fo: 0.4, ha: 0.6})], n=14, sw=JACKET, cap1=False)
     vrig.hand(b, s, SKIN)
 
     # legs (jeans over boot tops) + boots
@@ -70,7 +70,7 @@ for X, s in vrig.SIDES:
             dict(c=(x, 0.0, 0.70), r=(0.072, 0.072, 0.07), w={th: 1}), dict(c=(x, 0.006, 0.555), r=0.059, w={th: 0.75, sn: 0.25}),
             dict(c=(x, 0.008, 0.505), r=0.058, w={th: 0.5, sn: 0.5}), dict(c=(x, 0.004, 0.45), r=0.056, w={sn: 1}),
             dict(c=(x, -0.004, 0.33), r=(0.056, 0.05, 0.063), w={sn: 1}), dict(c=(x, 0, 0.19), r=0.064, w={sn: 1})],
-           n=8, sw=JEANS, cap1=False)
+           n=14, sw=JEANS, cap1=False)
     vrig.boot(b, s, BOOT, SOLE, top=0.25, r_top=0.056)
 
 # ---------------- backpack (separate skinned node chr_survivor_a_BACKPACK: hidden when no pack is equipped),
