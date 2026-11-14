@@ -9,9 +9,10 @@ await page.waitForFunction(() => window.__viewer?.ready, null, { timeout: 90000 
 if (process.env.HOLD) { await page.evaluate((h) => window.__viewer.attach('hand_R', h), process.env.HOLD); await page.waitForTimeout(800); }
 const out = [];
 for (const c of clipsArg.split(',')) {
-  await page.evaluate(([c, v]) => { window.__viewer.cam(v); window.__viewer.play(c, 0); }, [c, view]);
-  await page.waitForTimeout(700);
-  const t = await page.evaluate(() => 0.5); await page.evaluate((t) => window.__viewer.setTime(t), t); await page.waitForTimeout(250);
+  await page.evaluate(([c]) => { window.__viewer.play(c, 0); }, [c]);
+  await page.waitForTimeout(500);
+  const t = await page.evaluate(() => 0.5); await page.evaluate((t) => window.__viewer.setTime(t), t); await page.waitForTimeout(200);
+  await page.evaluate(([v]) => window.__viewer.cam(v), [view]); await page.waitForTimeout(250);
   const f = `docs/audit/screenshots/wip/${tag}_${c}.png`; await page.screenshot({ path: f, clip: { x: 300, y: 0, width: 800, height: 760 } }); out.push(f);
 }
 console.log(JSON.stringify(await page.evaluate(() => window.__viewer.clips)).slice(0, 400)); console.log('errors', errs); await browser.close();

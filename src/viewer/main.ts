@@ -1,4 +1,4 @@
-import { AnimationMixer, Box3, Color, DirectionalLight, GridHelper, Group, HemisphereLight, LoopOnce, LoopRepeat, PerspectiveCamera, Scene, SkeletonHelper, type AnimationAction, type AnimationClip, type Mesh, type Object3D } from 'three';
+import { AnimationMixer, Box3, Vector3, Color, DirectionalLight, GridHelper, Group, HemisphereLight, LoopOnce, LoopRepeat, PerspectiveCamera, Scene, SkeletonHelper, type AnimationAction, type AnimationClip, type Mesh, type Object3D } from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
@@ -17,7 +17,7 @@ import { OUTFIT_PART_NAMES, OUTFIT_PRESET_NAMES, OUTFIT_SLOT_NAMES } from '../co
  */
 type Entry = { url: string };
 const M = manifest as Record<string, Entry>;
-const ids = Object.keys(M).filter((k) => /^(chr_survivor|chr_hero|zmb_)/.test(k) && !k.endsWith('_parts'));
+const ids = Object.keys(M).filter((k) => /^(chr_survivor|chr_hero|chr_body|zmb_)/.test(k) && !k.endsWith('_parts'));
 let outfit: Outfit | null = null;
 const q = new URLSearchParams(location.search);
 const side = document.getElementById('side')!;
@@ -126,7 +126,7 @@ function build(id: string) {
   }).join('');
   const holds = ['none', 'wpn_rifle_a', 'wpn_pistol_a', 'wpn_knife_a', 'wpn_crowbar_a', 'wpn_hammer_a'];
   side.innerHTML = `<h1>Character viewer</h1>${g('Model')}<select id="model">${ids.map((i) => `<option ${i === id ? 'selected' : ''}>${i}</option>`).join('')}</select>
-  ${g('Camera')}<div class="grid">${['front', 'side', 'back', 'three', 'face'].map((c) => `<button data-cam="${c}">${c}</button>`).join('')}</div>
+  ${g('Camera')}<div class="grid">${['front', 'side', 'back', 'three', 'face', 'hand', 'handL'].map((c) => `<button data-cam="${c}">${c}</button>`).join('')}</div>
   ${g('Playback')}<label>speed <input id="speed" type="range" min="0.1" max="2" step="0.05" value="${speed}"><span id="sv">${speed}x</span></label>
   <label><input id="loop" type="checkbox" ${loop ? 'checked' : ''}> loop</label><label><input id="skel" type="checkbox"> skeleton</label><label><input id="wire" type="checkbox"> wireframe</label>
   ${g('Hold (right hand)')}<div class="grid">${holds.map((w) => `<button data-hold="${w}">${w.replace('wpn_', '').replace('_a', '')}</button>`).join('')}</div>
@@ -201,6 +201,18 @@ async function attach(slot: string, wid: string) {
 }
 
 function cam(view: string) {
+  if (view === 'hand' || view === 'handL') {
+    // close-up of a hand (from the front-right of the character, slightly above) for checking grips
+    const sock = model?.getObjectByName(view === 'hand' ? 'SOCKET_hand_R' : 'SOCKET_hand_L');
+    if (sock) {
+      sock.updateWorldMatrix(true, false);
+      const p = new Vector3().setFromMatrixPosition(sock.matrixWorld);
+      controls.target.copy(p);
+      camera.position.set(p.x + (view === 'hand' ? 0.45 : -0.45), p.y + 0.18, p.z - 0.45);
+      controls.update();
+      return;
+    }
+  }
   const t = controls.target;
   const face = view === 'face';
   const d = face ? 0.9 : 3.6;
