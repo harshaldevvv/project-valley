@@ -58,6 +58,8 @@ export const useText = {
 export const worldText = {
   gateOpen: 'Open gate',
   gateClose: 'Close gate',
+  doorOpen: 'Open door',
+  doorClose: 'Close door',
 };
 
 /** Title / pause menu (engine-builder's src/ui/menu; narrative may reword). */

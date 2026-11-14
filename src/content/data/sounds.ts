@@ -60,6 +60,7 @@ export const sounds: Record<string, SoundDef> = {
   car_horn: { files: ['car/Car_Horn.ogg'], volume: 0.35, refDistance: 6, maxDistance: 250, synth: 'beep' },
   car_door: { files: ['car/Car_Door_Close.ogg', 'car/Car_Door_Open.ogg'], volume: 0.7, refDistance: 2, maxDistance: 40, jitter: 0.04, synth: 'thud' },
   // looting / inventory / building
+  door_creak: { files: ['kenney/creak1.ogg', 'kenney/creak2.ogg', 'kenney/creak3.ogg'], volume: 0.7, refDistance: 3, maxDistance: 30, jitter: 0.08, synth: 'thud' },
   crate_open: { files: ['kenney/creak1.ogg', 'kenney/creak2.ogg', 'kenney/creak3.ogg'], volume: 0.6, refDistance: 2, maxDistance: 20, jitter: 0.05, synth: 'thud' },
   search_rustle: { files: ['kenney/cloth1.ogg', 'kenney/cloth2.ogg', 'kenney/cloth3.ogg', 'kenney/cloth4.ogg'], volume: 0.5, refDistance: 1.5, maxDistance: 15, jitter: 0.08, synth: 'noise' },
   item_pickup: ui(['kenney/handleSmallLeather.ogg', 'kenney/handleSmallLeather2.ogg', 'kenney/beltHandle1.ogg'], 0.6),

@@ -7,6 +7,7 @@ import { buildTracks } from './tracks';
 import { buildWornGround } from './worn';
 import { buildCabin, buildCabinLoot, buildFarm, buildShop } from './cabin';
 import { buildClutter } from './clutter';
+import { buildDoors } from './doors';
 import { buildDress } from './dress';
 import { buildGenProps } from './genProps';
 import { installFlashlight } from '../../engine/flashlight';
@@ -44,6 +45,7 @@ export async function buildYard(game: Game): Promise<void> {
   await buildCabinLoot(kit);
   await buildShop(kit);
   await buildFarm(kit);
+  buildDoors(kit);
   await buildGenProps(kit);
   await buildDress(game, kit);
   for (const p of lightPoles) kit.place(p);
