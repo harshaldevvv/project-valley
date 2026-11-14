@@ -71,6 +71,9 @@ newtex[red, 0] = 0.62; newtex[red, 1] = 0.34; newtex[red, 2] = 0.24
 img.pixels = newtex.ravel().tolist()
 img.pack()
 os.makedirs(out, exist_ok=True)
+# smooth shading: the decimated generated mesh is faceted; keep creases only past 55 degrees
+bpy.ops.object.select_all(action='DESELECT'); body.select_set(True); bpy.context.view_layer.objects.active = body
+bpy.ops.object.shade_smooth_by_angle(angle=math.radians(55))
 bpy.ops.object.select_all(action='DESELECT')
 arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
 body.select_set(True); arm.select_set(True)
