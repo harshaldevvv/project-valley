@@ -6,6 +6,11 @@ import { probe, type Ctx } from '../../gameplay/ctx';
 import { vehicleText } from '../../content/text/vehicles';
 import { hudText } from '../../content/text/hud';
 import { SurvivalHud } from './survivalHud';
+import { ITEMS } from '../../content/data/items';
+import iconIndex from '../../../public/assets/icons/index.json';
+import { assetUrl } from '../../engine/assetUrl';
+
+const ICON_IDS = new Set(iconIndex.ids);
 
 /**
  * Gameplay HUD (DOM over the canvas): crosshair (spread + blocked), hit markers, ammo + fire mode, health/stamina,
@@ -63,6 +68,9 @@ const CSS = `
 .hud .prompt{background:#0a0d0ccc;border:1px solid #ffffff22;border-radius:2px;font:600 14px var(--display);letter-spacing:.08em}
 .hud .prompt kbd{border-color:var(--accent);color:var(--accent);font-family:var(--display)}
 .hud .toasts div{background:#0a0d0ccc;border-left:2px solid var(--accent);border-radius:2px;font-family:var(--display);letter-spacing:.06em;animation:hud-toast .28s cubic-bezier(.2,.8,.2,1) both}
+/* pickup icon and rarity */
+.hud .toasts div img{width:26px;height:26px;object-fit:contain;vertical-align:middle;margin:-4px 8px -4px -4px;filter:drop-shadow(0 1px 2px #000a)}
+.hud .toasts div.gain[data-rarity=uncommon]{border-left-color:#62b36a}.hud .toasts div.gain[data-rarity=rare]{border-left-color:#4f8fe0}.hud .toasts div.gain[data-rarity=epic]{border-left-color:#a064d8}.hud .toasts div.gain[data-rarity=legendary]{border-left-color:#e0b040}
 /* loot feedback: green edge and a short pop for pickups, red for refusals */
 .hud .toasts div.gain{border-left-color:#8fd18a;color:#e9f6e6}
 .hud .toasts div.gain::first-letter{color:#8fd18a;font-weight:700}
@@ -178,7 +186,7 @@ export class Hud {
       }
     }
 
-    ctx.game.events.on('toast', ({ text }) => this.toast(text));
+    ctx.game.events.on('toast', ({ text, icon }) => this.toast(text, icon));
     ctx.game.events.on('playerDied', () => (this.helpOpen = false));
     // Hidden behind the title/pause menu (QA-017)
     ctx.game.events.on('uiScreen', ({ name, open }) => {
@@ -207,7 +215,7 @@ export class Hud {
     this.hmT = head && kill ? 0.35 : kill ? 0.22 : 0.13;
   }
 
-  toast(text: string) {
+  toast(text: string, icon?: string) {
     // Same text already showing: restart it instead of stacking duplicates
     for (const c of this.toasts.children) {
       const t = c as HTMLElement & { _t?: number[] };
@@ -219,6 +227,14 @@ export class Hud {
     }
     const d = el('', this.toasts) as HTMLElement & { _t?: number[] };
     d.textContent = text;
+    if (icon && ICON_IDS.has(icon)) {
+      const im = document.createElement('img');
+      im.src = assetUrl(`assets/icons/${icon}.png`);
+      im.alt = '';
+      d.prepend(im);
+      const r = ITEMS[icon]?.rarity;
+      if (r && r !== 'common') d.dataset.rarity = r;
+    }
     if (text.startsWith('+ ')) d.classList.add('gain');
     else if (text.startsWith('✕ ')) d.classList.add('deny');
     while (this.toasts.children.length > 4) this.toasts.firstElementChild!.remove();

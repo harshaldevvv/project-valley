@@ -27,7 +27,7 @@ export async function installSystems(game: Game): Promise<void> {
       /* audio not installed */
     }
   };
-  const toast = (text: string) => game.events.emit('toast', { text });
+  const toast = (text: string, icon?: string) => game.events.emit('toast', { text, icon });
   const feet = () => {
     try {
       const p = game.player.position;
@@ -64,7 +64,7 @@ export async function installSystems(game: Game): Promise<void> {
 
   const pickups = createPickupView(game, lo, (item, ok) => {
     sfx(ok ? 'item_pickup' : 'build_invalid');
-    toast(ok ? `+ ${itemName(item.defId)}${(item.count ?? 1) > 1 ? ` ×${item.count}` : ''}` : `✕ ${T.full}`); // + gain / ✕ refusal: the HUD tints them
+    toast(ok ? `+ ${itemName(item.defId)}${(item.count ?? 1) > 1 ? ` ×${item.count}` : ''}` : `✕ ${T.full}`, ok ? item.defId : undefined); // + gain / ✕ refusal: the HUD tints them
   });
   game.events.on('inventoryChanged', () => {
     pickups.sync();

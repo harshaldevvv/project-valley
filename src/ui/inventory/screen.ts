@@ -338,6 +338,7 @@ export class InventoryScreen {
     const d = defOf(defId);
     const t = h('div', d.w === 1 ? 'inv-item narrow' : 'inv-item');
     t.style.setProperty('--sw', d.iconSwatch ?? '#555');
+    if (d.rarity && d.rarity !== 'common') t.dataset.rarity = d.rarity; // art-bible rarity colours (inventory.css)
     const img = iconImg(defId);
     if (img) {
       t.classList.add('has-icon');

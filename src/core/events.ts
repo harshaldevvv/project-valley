@@ -31,7 +31,8 @@ export interface GameEvents {
   saved: { slot: string };
   loaded: { slot: string };
   /** Free-form toast message for the HUD. */
-  toast: { text: string };
+  /** `icon` = an item def id: the HUD shows its inventory icon beside the text (and tints by rarity). */
+  toast: { text: string; icon?: string };
   /** The world clock passed midnight (engine clock.ts). `day` = days survived, starting at 1. */
   newDay: { day: number };
 }
