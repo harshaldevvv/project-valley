@@ -72,6 +72,8 @@ const list: ItemDef[] = [
     pockets: [{ w: 1, h: 2, accepts: ['magazine'] }, { w: 1, h: 2, accepts: ['magazine'] }, { w: 1, h: 2, accepts: ['magazine'] }, { w: 1, h: 2, accepts: ['magazine'] }, { w: 2, h: 2 }],
     iconSwatch: '#3f4a32', value: 380 },
   // Headwear, face, eyes (worn; stats later except armour).
+  { id: 'boots_work', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['feet'], iconSwatch: '#47321f', value: 70 },
+  { id: 'gloves_work', kind: 'clothing', w: 2, h: 1, stack: 1, slots: ['gloves'], iconSwatch: '#26211c', value: 25 },
   { id: 'beanie', kind: 'clothing', w: 2, h: 1, stack: 1, slots: ['head'], iconSwatch: '#7a2f2a', value: 12 },
   { id: 'cap', kind: 'clothing', w: 2, h: 1, stack: 1, slots: ['head'], iconSwatch: '#2f4a6b', value: 10 },
   { id: 'helmet_military', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['head'], armour: 3, rarity: 'rare', iconSwatch: '#4a5238', value: 300 },
@@ -125,7 +127,7 @@ export const INVENTORY = {
 
 /** M1 starting kit (worn items are equipped, the rest auto-placed). */
 export const STARTING_KIT = {
-  equip: { torso: 'jacket_field', backpack: 'backpack_small', melee: 'knife_a', pouch: 'secure_pouch' } as Record<string, string>,
+  equip: { torso: 'jacket_field', backpack: 'backpack_small', melee: 'knife_a', pouch: 'secure_pouch', feet: 'boots_work', gloves: 'gloves_work' } as Record<string, string>,
   items: [
     { item: 'bandage', count: 3 },
     { item: 'canned_beans', count: 2 },

@@ -255,6 +255,16 @@ export const itemText: Record<string, { name: string; short: string; description
     short: "Vest",
     description: "Plate carrier with four magazine pouches and an admin pocket. Pouches take magazines only.",
   },
+  boots_work: {
+    name: "Work Boots",
+    short: "Boots",
+    description: "Scuffed leather boots with a good tread.",
+  },
+  gloves_work: {
+    name: "Work Gloves",
+    short: "Gloves",
+    description: "Fingerless leather gloves. Better than bare knuckles.",
+  },
   beanie: {
     name: "Beanie",
     short: "Beanie",
