@@ -11,7 +11,7 @@ import { createOutfit, type OutfitState } from './outfit';
 
 /** Hero only (`?hero=1`): the worn inventory items drive the visible outfit. The loadout is saved already, so the look is too. */
 export async function bindOutfit(game: Game, character: Object3D, vm?: Viewmodel) {
-  const url = (manifest as Record<string, { url: string }>).chr_hero_a_parts.url;
+  const url = (manifest as Record<string, { url: string }>).chr_body_a_parts.url;
   const outfit = createOutfit(character, (await gltfLoader.loadAsync(assetUrl(url))).scene);
   const sync = () => {
     const lo = probe(game, 'loadout', 'equipped');

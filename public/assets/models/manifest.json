@@ -644,5 +644,15 @@
       "chr_body_a_LOD2": 6000
     },
     "bytes": 2718900
+  },
+  "chr_body_a_parts": {
+    "url": "/assets/models/chr/chr_body_a_parts.glb",
+    "category": "chr",
+    "tris": {
+      "chr_body_a_parts_LOD0": 0,
+      "chr_body_a_parts_LOD1": 0,
+      "chr_body_a_parts_LOD2": 0
+    },
+    "bytes": 1095332
   }
 }

@@ -50,9 +50,9 @@ export async function installGameplay(game: Game): Promise<void> {
   ctx.hud = new Hud(ctx);
 
   // Player body (third person)
-  // `?hero=1`: the generated main character (chr_hero_a) with the wearable outfit system; default stays the original survivor.
+  // `?hero=1`: the generated main character (chr_body_a) with the wearable outfit system; default stays the original survivor.
   const hero = new URLSearchParams(location.search).get('hero') === '1';
-  const body = await makeCharacter('survivor', hero ? 'chr_hero_a' : 'chr_survivor_a', 'chr_survivor_a');
+  const body = await makeCharacter('survivor', hero ? 'chr_body_a' : 'chr_survivor_a', 'chr_survivor_a');
   ctx.playerChar = body;
   game.scene.add(body.root);
   const bodyAnim = body.skinned ? new PlayerAnimator(body) : null;

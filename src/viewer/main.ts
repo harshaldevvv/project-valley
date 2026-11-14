@@ -87,7 +87,7 @@ async function load(id: string) {
   controls.target.set(0, (box.max.y - box.min.y) * 0.5, 0);
   outfit?.dispose();
   outfit = null;
-  if (id === 'chr_hero_a') outfit = createOutfit(model, (await gltfLoader.loadAsync(assetUrl(M.chr_hero_a_parts.url))).scene);
+  if (id === 'chr_body_a') outfit = createOutfit(model, (await gltfLoader.loadAsync(assetUrl(M.chr_body_a_parts.url))).scene);
   build(id);
   const idle = clips.find((c) => /^(idle|z_idle)$/.test(c.name)) ?? clips[0];
   if (idle) play(idle.name);
