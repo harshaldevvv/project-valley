@@ -4,7 +4,7 @@
 import { chromium } from 'playwright';
 const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-await page.goto('http://localhost:5188/?play');
+await page.goto('http://localhost:5188/?play' + (process.env.CHARS ? '&chars=' + process.env.CHARS : ''));
 await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
 await page.waitForTimeout(2000); await page.mouse.click(640, 360);
 await page.evaluate(() => { const g = window.__gp; g.ctx.player.godMode = true; g.data.horde.passive = true; g.spawn(40); g.teleport(0, 60, 0); });

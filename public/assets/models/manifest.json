@@ -454,5 +454,165 @@
       "veh_pickup_pf_LOD0": 3400
     },
     "bytes": 85176
+  },
+  "zmb_ai_civilian_a": {
+    "url": "/assets/models/zmb/zmb_ai_civilian_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_civilian_a_LOD0": 3500,
+      "zmb_ai_civilian_a_LOD1": 1750,
+      "zmb_ai_civilian_a_LOD2": 700
+    },
+    "bytes": 1143896
+  },
+  "zmb_ai_hazmat_a": {
+    "url": "/assets/models/zmb/zmb_ai_hazmat_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_hazmat_a_LOD0": 3500,
+      "zmb_ai_hazmat_a_LOD1": 1750,
+      "zmb_ai_hazmat_a_LOD2": 700
+    },
+    "bytes": 1139680
+  },
+  "zmb_ai_hoodie_f_a": {
+    "url": "/assets/models/zmb/zmb_ai_hoodie_f_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_hoodie_f_a_LOD0": 3500,
+      "zmb_ai_hoodie_f_a_LOD1": 1750,
+      "zmb_ai_hoodie_f_a_LOD2": 700
+    },
+    "bytes": 1145496
+  },
+  "zmb_ai_nurse_f_a": {
+    "url": "/assets/models/zmb/zmb_ai_nurse_f_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_nurse_f_a_LOD0": 3500,
+      "zmb_ai_nurse_f_a_LOD1": 1750,
+      "zmb_ai_nurse_f_a_LOD2": 700
+    },
+    "bytes": 1176444
+  },
+  "zmb_ai_police_a": {
+    "url": "/assets/models/zmb/zmb_ai_police_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_police_a_LOD0": 3500,
+      "zmb_ai_police_a_LOD1": 1750,
+      "zmb_ai_police_a_LOD2": 700
+    },
+    "bytes": 1136760
+  },
+  "zmb_ai_soldier_a": {
+    "url": "/assets/models/zmb/zmb_ai_soldier_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_soldier_a_LOD0": 3500,
+      "zmb_ai_soldier_a_LOD1": 1750,
+      "zmb_ai_soldier_a_LOD2": 700
+    },
+    "bytes": 1200956
+  },
+  "zmb_ai_suit_a": {
+    "url": "/assets/models/zmb/zmb_ai_suit_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_suit_a_LOD0": 3500,
+      "zmb_ai_suit_a_LOD1": 1750,
+      "zmb_ai_suit_a_LOD2": 700
+    },
+    "bytes": 1152220
+  },
+  "zmb_ai_worker_a": {
+    "url": "/assets/models/zmb/zmb_ai_worker_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_ai_worker_a_LOD0": 3500,
+      "zmb_ai_worker_a_LOD1": 1750,
+      "zmb_ai_worker_a_LOD2": 700
+    },
+    "bytes": 1160624
+  },
+  "zmb_pf_farmer_a": {
+    "url": "/assets/models/zmb/zmb_pf_farmer_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pf_farmer_a_LOD0": 3500,
+      "zmb_pf_farmer_a_LOD1": 1750,
+      "zmb_pf_farmer_a_LOD2": 700
+    },
+    "bytes": 852936
+  },
+  "zmb_pf_ghoul_a": {
+    "url": "/assets/models/zmb/zmb_pf_ghoul_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pf_ghoul_a_LOD0": 3500,
+      "zmb_pf_ghoul_a_LOD1": 1750,
+      "zmb_pf_ghoul_a_LOD2": 700
+    },
+    "bytes": 792688
+  },
+  "zmb_pf_ground_a": {
+    "url": "/assets/models/zmb/zmb_pf_ground_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pf_ground_a_LOD0": 3500,
+      "zmb_pf_ground_a_LOD1": 1750,
+      "zmb_pf_ground_a_LOD2": 700
+    },
+    "bytes": 846564
+  },
+  "zmb_pf_police_a": {
+    "url": "/assets/models/zmb/zmb_pf_police_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pf_police_a_LOD0": 3500,
+      "zmb_pf_police_a_LOD1": 1750,
+      "zmb_pf_police_a_LOD2": 700
+    },
+    "bytes": 785296
+  },
+  "zmb_pf_scientist_a": {
+    "url": "/assets/models/zmb/zmb_pf_scientist_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pf_scientist_a_LOD0": 3500,
+      "zmb_pf_scientist_a_LOD1": 1750,
+      "zmb_pf_scientist_a_LOD2": 700
+    },
+    "bytes": 818428
+  },
+  "zmb_pf_soldier_a": {
+    "url": "/assets/models/zmb/zmb_pf_soldier_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pf_soldier_a_LOD0": 3500,
+      "zmb_pf_soldier_a_LOD1": 1750,
+      "zmb_pf_soldier_a_LOD2": 700
+    },
+    "bytes": 794156
+  },
+  "zmb_pf_teen_a": {
+    "url": "/assets/models/zmb/zmb_pf_teen_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pf_teen_a_LOD0": 3500,
+      "zmb_pf_teen_a_LOD1": 1750,
+      "zmb_pf_teen_a_LOD2": 700
+    },
+    "bytes": 858460
+  },
+  "zmb_pf_worker_a": {
+    "url": "/assets/models/zmb/zmb_pf_worker_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pf_worker_a_LOD0": 3500,
+      "zmb_pf_worker_a_LOD1": 1750,
+      "zmb_pf_worker_a_LOD2": 700
+    },
+    "bytes": 804840
   }
 }

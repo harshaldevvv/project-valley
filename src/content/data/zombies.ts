@@ -67,11 +67,34 @@ export const zombieDefs: Record<string, ZombieDef> = {
   ...zombieDefsBase,
   worker: { ...zombieDefsBase.shambler, id: 'worker', model: 'zmb_worker_a', clipsFrom: 'zmb_shambler_a', scale: 1.02, hp: 130 },
   soldier: { ...zombieDefsBase.shambler, id: 'soldier', model: 'zmb_soldier_a', clipsFrom: 'zmb_shambler_a', scale: 1.05, hp: 160, legHp: 90, helmetMul: 0.6 } /* tougher: kit + helmet = 2 rifle headshots */,
+  ai_civilian: { ...zombieDefsBase.shambler, id: 'ai_civilian', headY: 1.4, model: 'zmb_ai_civilian_a', clipsFrom: 'zmb_shambler_a', scale: 1.04, hp: 120 },
+  ai_hazmat: { ...zombieDefsBase.shambler, id: 'ai_hazmat', headY: 1.4, model: 'zmb_ai_hazmat_a', clipsFrom: 'zmb_shambler_a', scale: 1.04, hp: 150 },
+  ai_soldier: { ...zombieDefsBase.shambler, id: 'ai_soldier', headY: 1.4, model: 'zmb_ai_soldier_a', clipsFrom: 'zmb_shambler_a', scale: 1.06, hp: 170, legHp: 90, helmetMul: 0.6 },
+  ai_nurse: { ...zombieDefsBase.shambler, id: 'ai_nurse', headY: 1.4, model: 'zmb_ai_nurse_f_a', clipsFrom: 'zmb_shambler_a', scale: 1.0, hp: 105 },
+  ai_worker: { ...zombieDefsBase.shambler, id: 'ai_worker', headY: 1.4, model: 'zmb_ai_worker_a', clipsFrom: 'zmb_shambler_a', scale: 1.05, hp: 140 },
+  ai_police: { ...zombieDefsBase.shambler, id: 'ai_police', headY: 1.4, model: 'zmb_ai_police_a', clipsFrom: 'zmb_shambler_a', scale: 1.04, hp: 150 },
+  ai_hoodie: { ...zombieDefsBase.shambler, id: 'ai_hoodie', headY: 1.4, model: 'zmb_ai_hoodie_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.96, hp: 100 },
+  ai_suit: { ...zombieDefsBase.shambler, id: 'ai_suit', headY: 1.4, model: 'zmb_ai_suit_a', clipsFrom: 'zmb_shambler_a', scale: 1.03, hp: 115 },
+  pf_teen: { ...zombieDefsBase.shambler, id: 'pf_teen', headY: 1.38, model: 'zmb_pf_teen_a', scale: 1.1, hp: 100 },
+  pf_ghoul: { ...zombieDefsBase.shambler, id: 'pf_ghoul', headY: 1.38, model: 'zmb_pf_ghoul_a', scale: 1.08, hp: 110 },
+  pf_police: { ...zombieDefsBase.shambler, id: 'pf_police', headY: 1.38, model: 'zmb_pf_police_a', scale: 1.0, hp: 150 },
+  pf_worker: { ...zombieDefsBase.shambler, id: 'pf_worker', headY: 1.38, model: 'zmb_pf_worker_a', scale: 1.0, hp: 140 },
+  pf_farmer: { ...zombieDefsBase.shambler, id: 'pf_farmer', headY: 1.38, model: 'zmb_pf_farmer_a', scale: 0.98, hp: 120 },
+  pf_scientist: { ...zombieDefsBase.shambler, id: 'pf_scientist', headY: 1.38, model: 'zmb_pf_scientist_a', scale: 1.03, hp: 105 },
+  pf_soldier: { ...zombieDefsBase.shambler, id: 'pf_soldier', headY: 1.38, model: 'zmb_pf_soldier_a', scale: 1.0, hp: 170, legHp: 90, helmetMul: 0.6 },
+  pf_ground: { ...zombieDefsBase.shambler, id: 'pf_ground', headY: 1.38, model: 'zmb_pf_ground_a', scale: 1.0, hp: 130 },
   civilian_f: { ...zombieDefsBase.shambler, id: 'civilian_f', model: 'zmb_civilian_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.93, hp: 110 },
 };
 
-/** Spawn mix (weights, seeded RNG). */
-export const zombieMix: Record<string, number> = { shambler: 0.4, worker: 0.25, civilian_f: 0.2, soldier: 0.15 }; // the AI-made ai_* variants stay defined but are not spawned (dropped 2026-11-13, see progress log)
+const MIXES: Record<string, Record<string, number>> = {
+  orig: { shambler: 0.4, worker: 0.25, civilian_f: 0.2, soldier: 0.15 },
+  ai: { ai_civilian: 0.14, ai_hazmat: 0.12, ai_soldier: 0.12, ai_nurse: 0.12, ai_worker: 0.12, ai_police: 0.12, ai_hoodie: 0.13, ai_suit: 0.13 },
+  pf: { pf_teen: 0.14, pf_ghoul: 0.12, pf_police: 0.12, pf_worker: 0.12, pf_farmer: 0.12, pf_scientist: 0.12, pf_soldier: 0.13, pf_ground: 0.13 },
+};
+/** Which zombie set spawns: `?chars=orig` (default, the procedural originals), `?chars=ai` (local AI models) or `?chars=pf` (Polyfork catalog characters with our clips retargeted). */
+export const charSet = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('chars')) || 'orig';
+/** Spawn mix (weights, seeded RNG) of the chosen set. */
+export const zombieMix: Record<string, number> = MIXES[charSet] ?? MIXES.orig;
 
 export const senses = {
   coneDeg: 80,

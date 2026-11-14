@@ -135,5 +135,17 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Tyre Stack by Polyfork | https://polyfork.dev/asset/tyre-stack-ad4692 |
 | Young Pine by Polyfork | https://polyfork.dev/asset/young-pine-0d7695 |
 | Pickup Truck by Polyfork | https://polyfork.dev/asset/pickup-truck-a34bf2 |
+| Teen Zombie by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/teen-zombie-b5bb27 |
+| Shambling Ghoul by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/shambling-ghoul-256f2f |
+| Police Officer by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/police-officer-1cc379 |
+| Construction Worker by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/construction-worker-c1ad8c |
+| Farmer by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/farmer-304a43 |
+| Senior Scientist by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/senior-scientist-631736 |
+| Infantry Rifleman by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/infantry-rifleman-c1c0a5 |
+| Groundworker by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/groundworker-083f5c |
 
 (The drivable truck `veh_pickup_pf.glb` is the Pickup Truck above, converted with `tools/audit/pf_vehicle.mjs`: rotated to this game's front axis and re-pivoted wheels.)
+
+## Local AI zombie variants (optional, `?chars=ai`)
+
+`public/assets/models/zmb/zmb_ai_*.glb`: z-image-turbo picture, Hunyuan3D-2.1 mesh and texture, skinned to our zombie rig in Blender (`tools/audit/retarget_char.py`). Hunyuan3D-2.1 is under the Tencent Hunyuan community licence (not valid in the EU, UK and South Korea): owner decision needed before shipping them.

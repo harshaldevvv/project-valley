@@ -12,7 +12,7 @@ import {
 } from 'three';
 import { Frustum, MeshStandardNodeMaterial } from 'three/webgpu';
 import type { Texture } from 'three';
-import { Fn, If, attribute, clamp, cos, dot, float, mix, smoothstep, texture, uv, vec2, int, ivec2, mat4, normalGeometry, normalLocal, positionGeometry, sin, textureLoad, uniform, vec3, vec4 } from 'three/tsl';
+import { vertexColor, Fn, If, attribute, clamp, cos, dot, float, mix, smoothstep, texture, uv, vec2, int, ivec2, mat4, normalGeometry, normalLocal, positionGeometry, sin, textureLoad, uniform, vec3, vec4 } from 'three/tsl';
 import type { Game } from '../core/game';
 import { entries, gltfLoader } from './assets';
 import { characterDetail, grungeTexture, paletteMaterial } from './palette';
@@ -237,7 +237,13 @@ export async function createCrowd(
     const atlas = ownMap ?? palette.map!;
     const mat = new CrowdMaterial({ map: atlas, roughness: 0.85, metalness: 0 });
     mat.name = `crowd_${modelId}_LOD${li}`;
-    if (grunge) {
+    const hasColor = !!src.geometry.getAttribute('color');
+    if (hasColor) {
+      // vertex-coloured model (Polyfork characters): its own colours with the same slight softening as the world models
+      const c = vertexColor().rgb;
+      const l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+      mat.colorNode = mix(vec3(l), c, 0.9).mul(0.95).add(0.03);
+    } else if (grunge) {
       // Grime and blood from the bind pose (so it never swims): dirt toward the feet, noisy wear, dried blood on the torso and head.
       const bp = positionGeometry;
       const uvA = vec2(bp.x.add(bp.z.mul(0.7)), bp.y).mul(1.25);

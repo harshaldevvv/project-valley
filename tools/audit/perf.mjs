@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 const tag = process.argv[2] ?? 'a', port = process.argv[3] ?? '5188';
 const browser = await chromium.launch({ channel: 'chrome', headless: false, args: ['--window-size=1300,780'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-await page.goto(`http://localhost:${port}/?play`);
+await page.goto(`http://localhost:${port}/?play` + (process.env.CHARS ? '&chars=' + process.env.CHARS : ''));
 await page.waitForFunction(() => window.__gp && typeof window.__perf === 'function' && window.__gp.ctx.game.tick > 30, null, { timeout: 120000 });
 await page.waitForTimeout(2500); await page.mouse.click(640, 360);
 const gp = (f, a) => page.evaluate(f, a);

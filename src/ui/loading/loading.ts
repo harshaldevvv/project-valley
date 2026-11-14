@@ -1,6 +1,7 @@
 import { Cache, FileLoader } from 'three';
 import manifest from '../../../public/assets/models/manifest.json';
 import { assetUrl } from '../../engine/assetUrl';
+import { charSet } from '../../content/data/zombies';
 import { genModelPath, genModels } from '../../world/yard/genModels';
 
 /**
@@ -30,7 +31,9 @@ const mb = (b: number) => (b / 1048576).toFixed(1);
 export function prefetchModels(): Promise<void> {
   Cache.enabled = true;
   const list = [
-    ...Object.values(manifest as Record<string, { url: string; bytes?: number }>),
+    ...Object.entries(manifest as Record<string, { url: string; bytes?: number }>)
+      .filter(([id]) => !/^zmb_(ai|pf)_/.test(id) || id.startsWith(`zmb_${charSet}_`)) // only download the zombie set being played
+      .map(([, e]) => e),
     ...genModels.map(([id, bytes]) => ({ url: genModelPath(id), bytes })),
   ];
   const total = list.reduce((a, e) => a + (e.bytes ?? 0), 0) || 1;

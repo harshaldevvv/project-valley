@@ -122,6 +122,13 @@ Frame rate after pass 8 (vsync-capped; p50 16.67 ms in all six scenes, 0 hitches
 60. **Night fill, second pass:** stronger moonlight and a cool blue ground tint; shapes read away from lamps. Before/after: `docs/audit/screenshots/after/40_night_before_fill2.png` and `40_night_after_fill2.png`.
 61. **Interiors furnished** (Polyfork, instanced): beds, bedside tables, wardrobe, bookcase, chairs, small table, fridge, rugs, cartons, shop shelves, drinks fridge, filing cabinet, floor lamps, plus a warm point light per interior (brighter at night). `tools/audit/doorwalk.mjs` confirms the cabin, shop (shopfront lane) and farm doors are walkable.
 
+62. **Three zombie sets you can test, switched with a URL flag** (owner request: "set up the library models and generate locally, we will test both"):
+    - `?chars=orig` (default): the original procedural four.
+    - `?chars=ai`: the 8 local-AI zombies (restored; image model -> Hunyuan3D -> skinned to our rig).
+    - `?chars=pf`: 8 Polyfork catalog characters (teen, ghoul, police, construction worker, farmer, scientist, soldier, groundworker) wearing **our own 23 zombie clips**, retargeted in Blender by `tools/audit/retarget_pf.py`. The rigs differ (ours A-pose and facing -Z, theirs T-pose and Mixamo-named, facing +Z): spine/legs/neck use world-space rotation deltas turned 180 degrees, the arm chain is aimed by absolute bone direction (a first version using deltas left the arms splayed). They render through the GPU crowd renderer with their vertex colours.
+    - Verified for `pf`: spawn, walking/hunched gaits, deaths, hit flash, 60-shot fight, head hit zone (head from 1.3 to 1.5 m, 100 % in `headtest2`), no console errors, 30 zombies hold 16.67 ms with 205 draws and no hitches. `ai` and `orig` re-checked too.
+    - Not done: the *player* character is still the original procedural survivor; swapping it needs a retarget of the 40 survivor clips (aim, reload, melee) and is a separate decision. First-person arms untouched.
+
 ## Cost of all this
 - Download size grew by about 12 MB of public assets after compression (it was about 30 MB); KTX2 textures would shrink GPU memory further.
 - Triangles in view went from about 240k to 600-750k; draw calls from about 70 to 110-130; GPU time per frame with everything (trees, buildings, AO, bloom) is 1.46 ms vs 1.30 ms with the look chain off, on the 4090 (gpums.mjs); the chain itself is about 0.16 ms on the 4090 (about 10x that on a 3050 Ti laptop is the guess; measure there).
