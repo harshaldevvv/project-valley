@@ -10,6 +10,7 @@ import { createDebugPanel } from '../ui/debug/panel';
 import { installMenu } from '../ui/menu/menu';
 import { createAtmosphere } from './atmosphere';
 import { createAudio } from './audio';
+import { preloadFirst } from '../content/data/sounds';
 import { installPost, type Post } from './post';
 import { installWeather, weather } from './weather';
 import { createTimeOfDay, TIME_PRESETS } from './timeofday';
@@ -212,6 +213,9 @@ export async function installEngine(game: Game) {
     clock = createClock(game, tod); // also registers the 'world.time' save slice
     await warmup(game, post);
     // After boot, so 135 sound files don't share bandwidth with the models; until a buffer lands, play() uses a synth.
+    // Weapon / melee / hit sounds are decoded before play starts (a shot must never fall back to the synth);
+    // the other ~135 files stay lazy.
+    await audio.preloadIds(preloadFirst);
     void audio.preload();
     return start();
   };

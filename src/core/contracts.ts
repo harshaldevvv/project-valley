@@ -38,8 +38,8 @@ export interface InteractApi {
 
 /** engine-builder: Web Audio with CC0 sounds. Ids map to files in public/assets/audio (see data/sounds.ts). */
 export interface AudioApi {
-  /** One-shot. position = 3D (HRTF panner); omit for 2D UI sounds. Returns nothing; fire and forget. */
-  play(id: string, position?: Vector3, opts?: { volume?: number; pitchJitter?: number }): void;
+  /** One-shot. position = 3D (HRTF panner); omit for 2D UI sounds; opts.twoD = non-positional even with a position (the player's own gunshot). Returns nothing; fire and forget. */
+  play(id: string, position?: Vector3, opts?: { volume?: number; pitchJitter?: number; twoD?: boolean }): void;
   /** Looping sound attached to an object (engine idle, zombie groan). Returns a handle to stop/adjust. */
   loop(id: string, follow: Object3D, opts?: { volume?: number }): { setVolume(v: number): void; setRate(r: number): void; stop(): void };
   /** How dangerous the moment is, 0 calm .. 1 fight (zombies hunting the player nearby). Drives the music layers. */

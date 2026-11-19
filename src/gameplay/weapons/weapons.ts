@@ -523,7 +523,7 @@ export class Weapons {
     this.sinceShot = 0;
 
     // Juice: sound (+ mechanical layer), flash/light, shake, FOV kick, punch, model kick, shell, smoke
-    this.ctx.sfx(feel.sound, _muz, { pitchJitter: 0.04, volume: 1 });
+    this.ctx.sfx(feel.sound, _muz, { pitchJitter: 0.04, volume: 1, twoD: true }); // own shot: 2D, no HRTF panner at the muzzle
     this.ctx.rig.addTrauma(feel.trauma);
     this.ctx.rig.kick(feel.fovKick, feel.viewPunch);
     this.kickT = 1;

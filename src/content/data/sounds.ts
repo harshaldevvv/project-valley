@@ -14,7 +14,20 @@ export interface SoundDef {
   jitter?: number;
   /** Procedural placeholder used when `files` is empty or fails to load. */
   synth?: 'whoosh' | 'click' | 'thud' | 'noise' | 'beep' | 'hum';
+  /** Gunshots: never culled by distance, never stolen by the voice limit, scheduled even while the context resumes. */
+  priority?: boolean;
+  /** Another sound id played with this one (a shot = body layer + a distant tail layer). */
+  tail?: string;
+  tailVolume?: number;
+  tailDelayS?: number;
 }
+
+/** Sound ids whose files must be decoded before play starts (weapons, melee, hit feedback). The rest load lazily. */
+export const preloadFirst = [
+  'pistol_shot', 'pistol_tail', 'rifle_shot', 'rifle_tail', 'shotgun_shot', 'shotgun_tail', 'dry_fire',
+  'reload_mag_out', 'reload_mag_in', 'bolt_rack', 'casing_tink', 'hit_body', 'hit_head', 'hit_marker', 'kill_confirm',
+  'melee_swing', 'melee_hit', 'impact_wood', 'impact_concrete', 'impact_metal', 'impact_dirt',
+];
 
 const k = (name: string, n = 5) => Array.from({ length: n }, (_, i) => `kenney/${name}_${String(i).padStart(3, '0')}.ogg`);
 const z = (...n: number[]) => n.map((i) => `zombie/z${String(i).padStart(2, '0')}.wav`);
@@ -22,9 +35,12 @@ const ui = (files: string[], volume = 0.5): SoundDef => ({ files, volume, refDis
 
 export const sounds: Record<string, SoundDef> = {
   // weapons
-  pistol_shot: { files: ['gun/pistol_cz.wav', 'gun/pistol_22.wav'], volume: 0.9, refDistance: 4, maxDistance: 400, jitter: 0.04, synth: 'noise' },
-  rifle_shot: { files: ['gun/rifle_sks.wav', 'gun/rifle_mosin.wav', 'gun/rifle_magnum.wav'], volume: 1, refDistance: 5, maxDistance: 500, jitter: 0.04, synth: 'noise' },
-  shotgun_shot: { files: ['gun/shotgun.wav'], volume: 0.62, refDistance: 5, maxDistance: 450, jitter: 0.04, synth: 'noise' },
+  pistol_shot: { files: ['gun/pistol_cz.wav', 'gun/pistol_22.wav'], volume: 0.9, refDistance: 4, maxDistance: 400, jitter: 0.04, priority: true, tail: 'pistol_tail', tailVolume: 0.5, tailDelayS: 0.03, synth: 'noise' },
+  rifle_shot: { files: ['gun/rifle_sks.wav', 'gun/rifle_mosin.wav', 'gun/rifle_magnum.wav'], volume: 1, refDistance: 5, maxDistance: 500, jitter: 0.04, priority: true, tail: 'rifle_tail', tailVolume: 0.55, tailDelayS: 0.03, synth: 'noise' },
+  shotgun_shot: { files: ['gun/shotgun.wav'], volume: 0.62, refDistance: 5, maxDistance: 450, jitter: 0.04, priority: true, tail: 'shotgun_tail', tailVolume: 0.5, tailDelayS: 0.03, synth: 'noise' },
+  pistol_tail: { files: ['gun/pistol_22.wav'], volume: 0.5, refDistance: 12, maxDistance: 500, jitter: 0.04, priority: true, synth: 'noise' },
+  rifle_tail: { files: ['gun/rifle_mosin.wav'], volume: 0.55, refDistance: 14, maxDistance: 600, jitter: 0.04, priority: true, synth: 'noise' },
+  shotgun_tail: { files: ['gun/shotgun.wav'], volume: 0.4, refDistance: 14, maxDistance: 500, jitter: 0.04, priority: true, synth: 'noise' },
   dry_fire: { files: ['kenney/metalClick.ogg'], volume: 1.0, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
   reload_mag_out: { files: ['kenney/metalLatch.ogg'], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
   reload_mag_in: { files: k('impactPlate_light'), volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },

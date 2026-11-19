@@ -107,7 +107,7 @@ export interface Ctx {
   controls: Controls;
   hits: Map<number, Hittable>;
   /** Fire-and-forget sound; silent until the engine installs audio. */
-  sfx(id: string, pos?: Vector3, opts?: { volume?: number; pitchJitter?: number }): void;
+  sfx(id: string, pos?: Vector3, opts?: { volume?: number; pitchJitter?: number; twoD?: boolean }): void;
   loopSfx(id: string, follow: Object3D, opts?: { volume?: number }): ReturnType<AudioApi['loop']> | null;
   /** Seeded random 0..1 for sim code. */
   rand(): number;

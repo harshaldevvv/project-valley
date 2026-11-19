@@ -32,6 +32,8 @@ interface Voice {
   gain: GainNode;
   panner: PannerNode | null;
   loop: boolean;
+  born: number; // ctx.currentTime at creation
+  priority: boolean;
 }
 
 export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui: 0.8, music: 0.4, ambience: 0.6, bgMuted: false }) {
@@ -86,16 +88,22 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
     return b;
   };
   /** A loaded buffer for this def, or a synth placeholder if none is available (yet). */
-  const pick = (def: SoundDef): AudioBuffer => {
+  const pick = (def: SoundDef, id = ''): AudioBuffer => {
     if (def.files.length) {
       const f = def.files[(Math.random() * def.files.length) | 0];
       const b = buffers.get(f);
       if (b) return b;
       if (b === undefined) void load(f);
       for (const g of def.files) if (buffers.get(g)) return buffers.get(g)!; // any loaded sibling
+      if (def.priority && !warned.has('synth:' + id)) {
+        warned.add('synth:' + id);
+        console.warn(`audio: "${id}" fell back to the synth placeholder (file ${f} not loaded)`);
+      }
     }
     return synth(def.synth ?? 'click');
   };
+  /** Loads and decodes these sound ids' files; resolves when all are ready (or failed). */
+  const preloadIds = (ids: string[]) => Promise.all(ids.flatMap((id) => (sounds[id]?.files ?? []).map(load)));
   /** Starts loading every file in the table (call after boot; ~2.6 MB). */
   const preload = () => Promise.all(Object.values(sounds).flatMap((d) => d.files.map(load)));
 
@@ -105,9 +113,19 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
   const listenerPos = new Vector3();
   const tmp = new Vector3();
 
-  const makeVoice = (def: SoundDef, pos: Vector3 | null, loop: boolean, volume: number, rate: number): Voice => {
+  const STEAL_PROTECT_S = 0.15; // a voice younger than this is never stolen
+  const makeVoice = (def: SoundDef, pos: Vector3 | null, loop: boolean, volume: number, rate: number, id = ''): Voice | null => {
+    if (voices.length >= MAX_VOICES) {
+      const now = ctx.currentTime;
+      // oldest one-shot that is not a priority sound (gunshots) and not brand new
+      const victim = voices.find((x) => !x.loop && !x.priority && now - x.born > STEAL_PROTECT_S);
+      if (victim) {
+        victim.src.stop(); // onended disconnects it
+        voices.splice(voices.indexOf(victim), 1);
+      } else if (!def.priority) return null; // nothing safe to steal: drop this ordinary sound, never a shot
+    }
     const src = ctx.createBufferSource();
-    src.buffer = pick(def);
+    src.buffer = pick(def, id);
     src.loop = loop;
     src.playbackRate.value = rate;
     const gain = ctx.createGain();
@@ -127,20 +145,13 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
       });
       gain.connect(panner).connect(sfx);
     } else gain.connect(def.maxDistance <= 1 ? ui : sfx);
-    const v: Voice = { src, gain, panner, loop };
+    const v: Voice = { src, gain, panner, loop, born: ctx.currentTime, priority: !!def.priority };
     src.onended = () => {
       const i = voices.indexOf(v);
       if (i >= 0) voices.splice(i, 1);
       gain.disconnect();
       panner?.disconnect();
     };
-    if (voices.length >= MAX_VOICES) {
-      const oldest = voices.find((x) => !x.loop); // loops are never stolen
-      if (oldest) {
-        oldest.src.stop(); // onended disconnects it
-        voices.splice(voices.indexOf(oldest), 1);
-      }
-    }
     voices.push(v);
     return v;
   };
@@ -161,21 +172,36 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
     setDanger: (level) => (danger = level),
     play(id, position, opts) {
       const def = lookup(id);
-      if (!def || ctx.state !== 'running') return;
+      if (!def) return;
+      if (ctx.state !== 'running') {
+        resume();
+        // Ordinary sounds are dropped while suspended; priority ones (shots) are scheduled and play the moment it resumes.
+        if (!def.priority) return;
+      }
+      const twoD = !!opts?.twoD;
       let delay = 0;
-      if (position) {
+      if (position && !twoD) {
         const d = tmp.copy(position).distanceTo(listenerPos);
-        if (d > def.maxDistance) return;
+        if (d > def.maxDistance && !def.priority) return;
         if (d > 50 && def.maxDistance >= 300) delay = d / SPEED_OF_SOUND;
       }
       const j = opts?.pitchJitter ?? def.jitter ?? 0;
       const vol = (opts?.volume ?? 1) * (1 - Math.random() * 0.2); // ~±1 dB around -1 dB
-      const v = makeVoice(def, position ?? null, false, vol, 1 + (Math.random() * 2 - 1) * j);
-      v.src.start(ctx.currentTime + delay);
+      const rate = 1 + (Math.random() * 2 - 1) * j;
+      const pos = twoD ? null : position ?? null;
+      const v = makeVoice(def, pos, false, vol, rate, id);
+      v?.src.start(ctx.currentTime + delay);
+      if (def.tail) {
+        const t = sounds[def.tail];
+        if (t) {
+          const tv = makeVoice(t, pos, false, vol * (def.tailVolume ?? 0.6), rate * 0.97, def.tail);
+          tv?.src.start(ctx.currentTime + delay + (def.tailDelayS ?? 0.02));
+        }
+      }
     },
     loop(id, follow, opts) {
       const def = lookup(id) ?? { files: [], volume: 0, refDistance: 1, maxDistance: 1, synth: 'hum' as const };
-      const v = makeVoice(def, follow.getWorldPosition(tmp), true, opts?.volume ?? 1, 1);
+      const v = makeVoice(def, follow.getWorldPosition(tmp), true, opts?.volume ?? 1, 1, id)!;
       v.src.start();
       const entry = { v, obj: follow };
       follows.push(entry);
@@ -263,6 +289,7 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
     settings,
     applyVolumes,
     preload,
+    preloadIds,
     load,
     update,
     buses: { music, amb },
