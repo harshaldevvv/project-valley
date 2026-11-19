@@ -143,6 +143,22 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Senior Scientist by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/senior-scientist-631736 |
 | Infantry Rifleman by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/infantry-rifleman-c1c0a5 |
 | Groundworker by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/groundworker-083f5c |
+| Apple by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/apple-b15012 |
+| Bread Loaf by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/bread-loaf-0e0ab5 |
+| Chocolate Bar by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/chocolate-bar-284f07 |
+| Energy Drink Can by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/energy-drink-can-c47bcf |
+| First Aid Bag by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/first-aid-bag-8a7f09 |
+| Camp Water Jug by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/camp-water-jug-1aba54 |
+| Fuel Jerrycan by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/fuel-jerrycan-6f1d85 |
+| Axe by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/axe-b545d6 |
+| Compass by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/compass-d16dde |
+| Kit Bag by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/kit-bag-7d617f |
+| Adventurer's Backpack by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/adventurer-s-backpack-b1365c |
+| Leather Belt Satchel by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/leather-belt-satchel-5bb107 |
+| Skate Helmet by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/skate-helmet-cf1e6e |
+| Steel Helmet by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/steel-helmet-f5aa7d |
+| Field Radio Set by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/field-radio-set-b6f3fd |
+| Tool Case by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/tool-case-d92909 |
 
 (The drivable truck `veh_pickup_pf.glb` is the Pickup Truck above, converted with `tools/audit/pf_vehicle.mjs`: rotated to this game's front axis and re-pivoted wheels.)
 

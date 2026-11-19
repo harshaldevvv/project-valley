@@ -50,6 +50,10 @@ export interface ItemDef {
     infectionMaxStage?: number;
     /** Stamina boost (energy drink, painkillers); mechanics applies it from the itemUsed event. */
     stamina?: number;
+    /** Rest restored, 0..100 points (coffee, soda, chocolate). */
+    fatigue?: number;
+    /** A risk taken by using it (dirty water): `chance` 0..1 of gaining `status` (infection starts at stage 1). */
+    inflicts?: { status: string; chance: number };
   };
 }
 

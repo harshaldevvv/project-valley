@@ -1,0 +1,107 @@
+/** Player-facing text for the items in data/items_more.ts, merged into itemText. `short` is the grid-tile label (max 8 chars). */
+type T = { name: string; short: string; description: string };
+const t = (name: string, short: string, description: string): T => ({ name, short, description });
+
+export const itemTextMore: Record<string, T> = {
+  // Backpacks
+  waist_pack: t('Waist Pack', 'Waist', 'A fanny pack with a broken buckle, tied on with a shoelace. Keys, a snack, nothing else.'),
+  messenger_bag: t('Messenger Bag', 'Messngr', 'Canvas shoulder bag with a flap pocket. Quick to reach, bad on long walks.'),
+  daypack: t('Daypack', 'Daypack', 'A teal commuter pack with a laptop sleeve and one working zip.'),
+  duffel_bag: t('Duffel Bag', 'Duffel', 'Gym duffel, long and deep. Holds a lot, but nothing tall.'),
+  rucksack_military: t('Military Rucksack', 'Rucksack', 'Olive rucksack with two side pouches and a frame that has carried worse than you.'),
+  // Small containers
+  tackle_box: t('Tackle Box', 'Tackle', 'Green plastic tackle box with trays. Tools and parts go in, everything else stays out.'),
+  first_aid_pouch: t('First Aid Pouch', 'Aid Bag', 'A small red pouch with loops for dressings and pills. Medicine only.'),
+  mag_pouch: t('Magazine Pouch', 'Mag Bag', 'A canvas pouch sized for spare magazines and a handful of loose rounds.'),
+  tool_roll: t('Tool Roll', 'Tool Rl', 'A leather roll that ties shut. Small tools stay sorted and silent.'),
+  // Vests
+  hunting_vest: t('Hunting Vest', 'Hunt Vst', 'Blaze-orange vest with big game pockets. Hard to miss, which was the point.'),
+  fishing_vest: t('Fishing Vest', 'Fish Vst', 'Mesh vest with a pocket for every kind of lure. Stiff with old river water.'),
+  chest_rig: t('Chest Rig', 'Chest Rg', 'Three magazine pouches and a flap pocket on a webbing harness. No protection, all access.'),
+  stab_vest: t('Stab Vest', 'Stab Vst', 'Police issue. Stops a knife, shrugs off claws, offers nothing against a bite.'),
+  kevlar_vest: t('Kevlar Vest', 'Kevlar', 'Soft body armour with a front pocket. Bites and scratches skid off the weave.'),
+  plate_carrier: t('Plate Carrier', 'Plates', 'Hard plates front and back, two magazine pouches and a lot of weight. Nothing gets through.'),
+  // Torso
+  flannel_shirt: t('Flannel Shirt', 'Flannel', 'Red check, two chest pockets. Soft from a hundred washes.'),
+  denim_jacket: t('Denim Jacket', 'Denim', 'Faded blue with two chest pockets. Tougher than it looks.'),
+  raincoat: t('Raincoat', 'Raincoat', 'Yellow slicker with one big front pocket. Loud in the quiet.'),
+  puffer_jacket: t('Puffer Jacket', 'Puffer', 'Black quilted jacket with four zip pockets. Rustles with every move.'),
+  leather_jacket: t('Leather Jacket', 'Leather', 'Cracked at the elbows, still stiff. Two pockets, one with a hole.'),
+  hunting_jacket: t('Hunting Jacket', 'Hunt Jkt', 'Green waxed jacket with a big game pocket in the back and two on the front.'),
+  police_jacket: t('Police Jacket', 'Cop Jkt', 'Navy duty jacket with radio loops and deep pockets. The badge is gone.'),
+  // Legs
+  track_pants: t('Track Pants', 'Track', 'Grey jersey trousers with one zip pocket. Quiet and light.'),
+  jeans: t('Jeans', 'Jeans', 'Blue jeans, worn white at the knees. Two deep front pockets.'),
+  work_trousers: t('Work Trousers', 'Work Pnt', 'Heavy brown cotton with a hammer loop and stacked pockets.'),
+  tactical_pants: t('Tactical Pants', 'Tac Pnts', 'Ripstop trousers with four big cargo pockets and reinforced knees.'),
+  // Feet and hands
+  sneakers: t('Sneakers', 'Sneakrs', 'Worn white trainers. Light and quiet, thin against anything sharp.'),
+  rubber_boots: t('Rubber Boots', 'Wellies', 'Green farm wellies. They squelch and they keep your socks dry.'),
+  hiking_boots: t('Hiking Boots', 'Hike Bts', 'Ankle-high trail boots with deep lugs. Broken in by someone else.'),
+  combat_boots: t('Combat Boots', 'Combat', 'Black laced boots, steel toe, stiff leather. Built for a long march.'),
+  gloves_winter: t('Winter Gloves', 'Mittens', 'Knitted gloves in a colour nobody would pick. Warm enough.'),
+  gloves_leather: t('Leather Gloves', 'Leather', 'Thin leather driving gloves. Grip for the wheel and for the haul.'),
+  gloves_tactical: t('Tactical Gloves', 'Tac Glvs', 'Padded knuckles, rubber palms. They survive barbed wire.'),
+  // Head, face, eyes, ears
+  bucket_hat: t('Bucket Hat', 'Bucket', 'Floppy canvas hat. It keeps the sun out of your eyes and little else.'),
+  hunting_cap: t('Hunting Cap', 'Hunt Cap', 'Blaze-orange cap, so the hunters could see you. Few of them are left.'),
+  hard_hat: t('Hard Hat', 'Hard Hat', 'Yellow site helmet with a dent in the brim. Takes a knock to the head.'),
+  bike_helmet: t('Bike Helmet', 'Bike Hlm', 'Blue foam shell with a chin strap. Better than a bare skull.'),
+  riot_helmet: t('Riot Helmet', 'Riot Hlm', 'Black helmet with a drop visor. Nothing gets at your face or neck through it.'),
+  bandana: t('Bandana', 'Bandana', 'A red square of cotton. Over your nose it keeps out dust and little else.'),
+  surgical_mask: t('Surgical Mask', 'Mask', 'A paper mask, still in the sleeve. Keeps out dust and little else.'),
+  balaclava: t('Balaclava', 'Balaclav', 'Black knit, eyes only. It looks bad and it is warm.'),
+  sunglasses: t('Sunglasses', 'Shades', 'Dark lenses, bent arm. The valley is bright and the world is loud.'),
+  safety_goggles: t('Safety Goggles', 'Goggles', 'Clear lenses with a foam seal. Dust, sparks and splatter stay out.'),
+  earmuffs: t('Earmuffs', 'Earmuff', 'Orange range muffs. The valley goes quiet and a little less terrible.'),
+  // Food
+  apple: t('Apple', 'Apple', 'A bruised red apple from a tree nobody picked. Sweet, wet, small.'),
+  crackers: t('Crackers', 'Crackers', 'A sleeve of salted crackers. Dry, crumbly, shelf-stable.'),
+  chocolate_bar: t('Chocolate Bar', 'Choc Bar', 'Milk chocolate, slightly bloomed. A small win.'),
+  instant_noodles: t('Instant Noodles', 'Noodles', 'A foam cup of dry noodles. Good with hot water, edible without it.'),
+  bread_loaf: t('Bread Loaf', 'Bread', 'A sliced loaf, stale but not furry. A day older than hope.'),
+  cereal_box: t('Cereal Box', 'Cereal', 'Honey-coated rings, eaten dry by the fistful. The mascot looks worried.'),
+  canned_peaches: t('Canned Peaches', 'Peaches', 'Peaches in syrup. The syrup counts as water.'),
+  canned_chili: t('Canned Chili', 'Chili', 'Heavy and hot-looking. Beans and beef, edible cold.'),
+  peanut_butter: t('Peanut Butter', 'PB Jar', 'A half-full jar and a clean spoon. Calories by the gram.'),
+  beef_jerky: t('Beef Jerky', 'Jerky', 'Peppered strips in a foil bag. Light, salty, lasts for years.'),
+  // Drink
+  soda_can: t('Soda Can', 'Soda', 'Warm cola. Sugar and caffeine. Your teeth will file a complaint.'),
+  juice_box: t('Juice Box', 'Juice', 'A kid-size apple juice with a bent straw.'),
+  sports_drink: t('Sports Drink', 'Sports', 'Blue and electrolyte-rich. Water plus a push to keep running.'),
+  thermos: t('Thermos', 'Thermos', 'Steel thermos with cold coffee inside. Wakes you up, then some.'),
+  water_jug: t('Water Jug', 'Jug', 'A five-litre camp jug, full. Takes a while to drink and carries well.'),
+  dirty_water: t('Dirty Water', 'Dirty', 'Cloudy and smelling of the creek. It quenches your thirst and may make you sick.'),
+  // Medical
+  antiseptic: t('Antiseptic', 'Antisept', 'A brown bottle of iodine wash. Cleans a fresh wound before the infection sets in.'),
+  tourniquet: t('Tourniquet', 'Tourniq', 'A black strap and a windlass. Stops a bad bleed, hurts like anything.'),
+  first_aid_kit: t('First Aid Kit', 'Aid Kit', 'The household kind: gauze, tape, plasters. Cleans and closes small wounds.'),
+  saline_bag: t('Saline Bag', 'Saline', 'A sealed bag of saline drip. Rehydrates and steadies a bad day.'),
+  vitamins: t('Vitamins', 'Vitamins', 'A tub of multivitamins. A little food and a little rest, if you believe the label.'),
+  adrenaline_shot: t('Adrenaline Shot', 'Adrenal', 'An autoinjector with a red cap. A burst of stamina and a bit of mending, then a crash.'),
+  // Tools
+  lighter: t('Lighter', 'Lighter', 'A scratched steel lighter, still half full. Fire is a decision.'),
+  matches: t('Box of Matches', 'Matches', 'A cardboard box with a few left. Keep it dry.'),
+  can_opener: t('Can Opener', 'Opener', 'A hand-crank can opener. It turns a closed tin into a meal.'),
+  multitool: t('Multitool', 'MultiTl', 'Pliers, knife, screwdrivers, file. Everything you need and nothing you can fight with.'),
+  compass: t('Compass', 'Compass', 'A brass compass that points north and, so far, only north.'),
+  whistle: t('Whistle', 'Whistle', 'A plastic whistle on a lanyard. Do not blow it here.'),
+  sewing_kit: t('Sewing Kit', 'Sewing', 'Needles, thread and a thimble. Patches a coat or a wound.'),
+  road_flare: t('Road Flare', 'Flare', 'A red flare with a striker cap. It burns bright and shows where you are.'),
+  radio_handheld: t('Handheld Radio', 'Radio', 'A two-way radio with a cracked screen. Static, mostly.'),
+  binoculars: t('Binoculars', 'Binocs', 'Compact binoculars with a scuffed strap. Look before you walk in.'),
+  bolt_cutters: t('Bolt Cutters', 'Bolt Cut', 'Red-handled bolt cutters. Locks and chains do not stand a chance.'),
+  jerrycan: t('Jerrycan', 'Jerrycan', 'A steel fuel can, empty. Somebody will want it filled.'),
+  tarp: t('Tarp', 'Tarp', 'Blue plastic sheeting with metal eyelets. Cover, tent, roof, shroud.'),
+  // Materials
+  battery: t('Battery', 'Battery', 'A flat-top battery with some charge left.'),
+  copper_wire: t('Copper Wire', 'Wire', 'A coil of bare copper wire stripped from a dead lamp.'),
+  screws: t('Box of Screws', 'Screws', 'Assorted wood screws, a little rusty.'),
+  sheet_metal: t('Sheet Metal', 'Sheet', 'A flat square of corrugated steel. Heavy and sharp at the corners.'),
+  // Ammo box
+  ammo_762_box: t('Box of 7.62 (40)', '762 Box', 'A sealed box of forty rounds. Unpack it to load magazines.'),
+  // Melee
+  baseball_bat: t('Baseball Bat', 'Bat', 'Ash bat, taped grip, a name burned into the barrel. Stagger first, ask later.'),
+  machete: t('Machete', 'Machete', 'A long scrub-cutting blade, quick and broad. It does not like bone.'),
+  fire_axe: t('Fire Axe', 'Fire Axe', 'Red head, hickory handle. It opens doors, and then everything behind them.'),
+};

@@ -14,6 +14,20 @@ const list: ContainerDef[] = [
   { id: 'wardrobe', grid: { w: 5, h: 7 }, searchSeconds: 3, lootTable: 'civilian_wardrobe', tier: 1, lock: 0 },
   { id: 'food_cupboard', grid: { w: 5, h: 4 }, searchSeconds: 2, lootTable: 'food_cupboard', tier: 1, lock: 0 },
   { id: 'car_trunk', grid: { w: 8, h: 5 }, searchSeconds: 2, lootTable: 'car_trunk', tier: 1, lock: 0 },
+  // Themed types by place (see CONTAINER_THEMES). Locked ones need a lockpick or a crowbar (data/containers LOCKPICK).
+  { id: 'gas_shelf', grid: { w: 5, h: 4 }, searchSeconds: 2, lootTable: 'gas_station_shelf', tier: 1, lock: 0 },
+  { id: 'gas_register', grid: { w: 4, h: 2 }, searchSeconds: 1.5, lootTable: 'gas_station_register', tier: 2, lock: 1 },
+  { id: 'farm_shed', grid: { w: 6, h: 4 }, searchSeconds: 2.5, lootTable: 'farm_barn', tier: 1, lock: 0 },
+  { id: 'kitchen_cupboard', grid: { w: 5, h: 3 }, searchSeconds: 2, lootTable: 'house_kitchen', tier: 1, lock: 0 },
+  { id: 'nightstand', grid: { w: 3, h: 3 }, searchSeconds: 1.5, lootTable: 'house_bedroom', tier: 1, lock: 0 },
+  { id: 'bathroom_cabinet', grid: { w: 3, h: 3 }, searchSeconds: 1.5, lootTable: 'bathroom_cabinet', tier: 1, lock: 0 },
+  { id: 'pharmacy_shelf', grid: { w: 6, h: 4 }, searchSeconds: 3, lootTable: 'pharmacy_shelf', tier: 2, lock: 0 },
+  { id: 'police_locker', grid: { w: 4, h: 5 }, searchSeconds: 2.5, lootTable: 'police_locker', tier: 3, lock: 1 },
+  { id: 'military_footlocker', grid: { w: 6, h: 3 }, searchSeconds: 3, lootTable: 'military_footlocker', tier: 3, lock: 2 },
+  { id: 'camp_stash', grid: { w: 5, h: 4 }, searchSeconds: 2.5, lootTable: 'camp_stash', tier: 1, lock: 0 },
+  { id: 'garage_shelf', grid: { w: 6, h: 4 }, searchSeconds: 2.5, lootTable: 'garage_shelf', tier: 1, lock: 0 },
+  { id: 'school_locker', grid: { w: 3, h: 5 }, searchSeconds: 2, lootTable: 'school_locker', tier: 1, lock: 1 },
+  { id: 'office_desk', grid: { w: 4, h: 3 }, searchSeconds: 2, lootTable: 'office_desk', tier: 1, lock: 0 },
   // Sandbox rack: fixed kit, refilled on every open (an M1-only faucet, never ship it to the real world).
   { id: 'weapon_rack', grid: { w: 8, h: 6 }, searchSeconds: 0, lootTable: 'weapon_rack', lock: 0, refillOnOpen: true },
   // Bodies (searchable). Zombie corpses register at runtime from the zombieKilled event.
@@ -25,6 +39,23 @@ const list: ContainerDef[] = [
   // The player's pickup truck bed: storage, starts empty.
   { id: 'trunk_pickup', grid: { w: 8, h: 5 }, searchSeconds: 0, lootTable: 'empty', lock: 0 },
 ];
+
+/**
+ * Which container types belong in which kind of place, so the environment can fill a POI from a theme tag.
+ * Pick 1-2 of each listed type per room-sized area; the first entry is the common one, the last is the prize.
+ */
+export const CONTAINER_THEMES: Record<string, string[]> = {
+  gas_station: ['gas_shelf', 'gas_register', 'car_trunk', 'garage_shelf'],
+  farm: ['farm_shed', 'kitchen_cupboard', 'wardrobe', 'tool_box', 'car_trunk'],
+  house: ['kitchen_cupboard', 'nightstand', 'wardrobe', 'bathroom_cabinet', 'food_cupboard'],
+  police: ['police_locker', 'office_desk', 'cabinet_locked', 'car_trunk'],
+  military: ['military_footlocker', 'military_crate', 'cabinet_locked'],
+  camp: ['camp_stash', 'duffel', 'car_trunk'],
+  medical: ['pharmacy_shelf', 'medical_cabinet', 'bathroom_cabinet'],
+  garage: ['garage_shelf', 'tool_box', 'crate_wood', 'car_trunk'],
+  school: ['school_locker', 'office_desk', 'food_cupboard'],
+  office: ['office_desk', 'kitchen_cupboard', 'cabinet_metal'],
+};
 
 export const CONTAINERS: Record<string, ContainerDef> = Object.fromEntries(list.map((d) => [d.id, d]));
 

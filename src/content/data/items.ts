@@ -1,3 +1,5 @@
+import './melee_extra';
+import { MORE_ITEMS } from './items_more';
 import type { ItemDef } from './types';
 
 /**
@@ -88,6 +90,7 @@ const list: ItemDef[] = [
   { id: 'alice_pack', kind: 'backpack', w: 4, h: 4, stack: 1, slots: ['backpack'], grid: { w: 6, h: 6 }, pockets: [{ w: 2, h: 4 }, { w: 2, h: 4 }], rarity: 'rare', iconSwatch: '#5d6a48', value: 520 },
   { id: 'large_hiking_pack', kind: 'backpack', w: 4, h: 5, stack: 1, slots: ['backpack'], grid: { w: 6, h: 7 }, rarity: 'rare', iconSwatch: '#6b3a2e', value: 600 },
   { id: 'laboratory_pack', kind: 'backpack', w: 5, h: 6, stack: 1, slots: ['backpack'], grid: { w: 7, h: 8 }, rarity: 'epic', iconSwatch: '#c9c4b0', value: 1100 },
+  ...MORE_ITEMS,
 ];
 
 export const ITEMS: Record<string, ItemDef> = Object.fromEntries(list.map((d) => [d.id, d]));
@@ -102,12 +105,46 @@ export const PICKUP_MODELS = {
     energy_drink: 'item_can', canned_beans: 'item_can', canned_soup: 'item_can', canned_tuna: 'item_can',
     mre: 'item_bag_soft', ifak: 'item_bag_soft', medical_bag: 'item_bag_soft', cloth: 'item_bag_soft', cloth_rag: 'item_bag_soft',
     rope: 'item_bag_soft', wallet: 'item_bag_soft', secure_pouch: 'item_bag_soft', lunchbox: 'item_box_small',
+    // Part 2 (items_more.ts): packaged goods reuse the box or bag, bottles the bottle; the rest has its own model or the kind default.
+    crackers: 'item_box_small', cereal_box: 'item_box_small', instant_noodles: 'item_box_small', vitamins: 'item_bottle', antiseptic: 'item_bottle',
+    sports_drink: 'item_bottle', thermos: 'item_bottle', dirty_water: 'item_bottle', juice_box: 'item_box_small', peanut_butter: 'item_bottle',
+    tourniquet: 'item_bag_soft', saline_bag: 'item_bag_soft', first_aid_pouch: 'item_bag_soft', mag_pouch: 'item_bag_soft', tool_roll: 'item_bag_soft',
+    tackle_box: 'item_box_small', battery: 'item_box_small', matches: 'item_box_small', screws: 'item_box_small', sheet_metal: 'item_box_small',
+    ammo_762_box: 'item_box_small',
   } as Record<string, string>,
+  /**
+   * Own world models (Polyfork, CC BY 4.0, credited in CREDITS.md), loaded straight from public/assets/models/item/<file>.glb.
+   * `size` is the longest side in metres; `upright` keeps it standing instead of lying flat.
+   */
+  files: {
+    apple: { file: 'apple-b15012', size: 0.09, upright: true },
+    bread_loaf: { file: 'bread-loaf-0e0ab5', size: 0.24, upright: true },
+    chocolate_bar: { file: 'chocolate-bar-284f07', size: 0.15 },
+    soda_can: { file: 'energy-drink-can-c47bcf', size: 0.13, upright: true },
+    energy_drink: { file: 'energy-drink-can-c47bcf', size: 0.14, upright: true },
+    first_aid_kit: { file: 'first-aid-bag-8a7f09', size: 0.3 },
+    medical_bag: { file: 'first-aid-bag-8a7f09', size: 0.34 },
+    water_jug: { file: 'camp-water-jug-1aba54', size: 0.36, upright: true },
+    jerrycan: { file: 'fuel-jerrycan-6f1d85', size: 0.42 },
+    fire_axe: { file: 'axe-b545d6', size: 0.75 },
+    compass: { file: 'compass-d16dde', size: 0.08, upright: true },
+    duffel_bag: { file: 'kit-bag-7d617f', size: 0.75 },
+    daypack: { file: 'adventurer-s-backpack-b1365c', size: 0.6 },
+    messenger_bag: { file: 'leather-belt-satchel-5bb107', size: 0.34, upright: true },
+    waist_pack: { file: 'leather-belt-satchel-5bb107', size: 0.26, upright: true },
+    bike_helmet: { file: 'skate-helmet-cf1e6e', size: 0.27, upright: true },
+    helmet_military: { file: 'steel-helmet-f5aa7d', size: 0.3, upright: true },
+    riot_helmet: { file: 'steel-helmet-f5aa7d', size: 0.3, upright: true },
+    radio_handheld: { file: 'field-radio-set-b6f3fd', size: 0.3 },
+    tackle_box: { file: 'tool-case-d92909', size: 0.4 },
+  } as Record<string, { file: string; size: number; upright?: boolean }>,
   byKind: {
     backpack: 'item_backpack_generic', clothing: 'item_bag_soft', food: 'item_can', drink: 'item_can',
   } as Record<string, string>,
   fallback: 'item_box_small',
   tintKinds: ['backpack'] as string[],
+  /** Generic models are tinted with the item's iconSwatch so different goods read apart on the ground. */
+  tintModels: ['item_backpack_generic', 'item_bag_soft', 'item_bottle', 'item_box_small', 'item_can'] as string[],
 };
 
 /** Inventory rules (principles §8). Live-tunable from the debug menu. */

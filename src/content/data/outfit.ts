@@ -61,4 +61,14 @@ export const ITEM_PARTS: Record<string, [string, number]> = {
   secure_pouch: ['satchel', 0], boots_work: ['boots', 0], gloves_work: ['gloves', 0],
   backpack_small: ['backpack_school', 0], school_bag: ['backpack_school', 0], hiking_pack: ['backpack_hiking', 0], military_pack: ['backpack_kit', 0],
   alice_pack: ['backpack_kit', 0], large_hiking_pack: ['backpack_hiking', 0], laboratory_pack: ['backpack_kit', 0],
+  // Part 2 (items_more.ts). Only existing parts are mapped; garments with no part of their own reuse the nearest one in another tint.
+  waist_pack: ['backpack_school', 0], messenger_bag: ['backpack_school', 0], daypack: ['backpack_school', 0], duffel_bag: ['backpack_kit', 0], rucksack_military: ['backpack_kit', 0],
+  flannel_shirt: ['jacket', 3], denim_jacket: ['jacket', 1], raincoat: ['jacket', 2], puffer_jacket: ['jacket', 5], leather_jacket: ['jacket', 5],
+  hunting_jacket: ['jacket', 0], police_jacket: ['jacket', 1],
+  track_pants: ['pants', 3], jeans: ['pants', 1], work_trousers: ['pants', 0], tactical_pants: ['pants', 2],
+  sneakers: ['boots', 1], rubber_boots: ['boots', 3], hiking_boots: ['boots', 2], combat_boots: ['boots', 1],
+  gloves_winter: ['gloves', 2], gloves_leather: ['gloves', 1], gloves_tactical: ['gloves', 0],
+  hunting_vest: ['vest', 1], fishing_vest: ['vest', 1], chest_rig: ['vest', 0], stab_vest: ['vest', 2], kevlar_vest: ['vest', 2], plate_carrier: ['vest', 0],
+  bucket_hat: ['cap', 3], hunting_cap: ['cap', 1], hard_hat: ['helmet_steel', 1], bike_helmet: ['helmet_steel', 2], riot_helmet: ['helmet_steel', 3],
+  sunglasses: ['glasses', 0], safety_goggles: ['goggles', 0],
 };

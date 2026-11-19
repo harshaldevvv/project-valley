@@ -2,6 +2,8 @@ import { Box3, Group, Mesh, type Material, MeshStandardMaterial, Object3D, Vecto
 import { PICKUP_MODELS } from '../../content/data/items';
 import type { ItemDef, ItemInstance } from '../../content/data/types';
 import type { Game } from '../../core/game';
+import { assetUrl } from '../../engine/assetUrl';
+import { gltfLoader } from '../../engine/assets';
 import { loadModel } from '../../engine/models';
 import { defOf } from '../../systems/inventory';
 import type { Loadout } from '../../systems/loadout';
@@ -26,6 +28,24 @@ function tinted(color: string) {
   let m = tints.get(color);
   if (!m) tints.set(color, (m = new MeshStandardMaterial({ color, roughness: 0.85 })));
   return m;
+}
+
+/** Own Polyfork models (PICKUP_MODELS.files): one load per file, scaled so the longest side is `size` metres. */
+const ownFiles = new Map<string, Promise<Object3D | null>>();
+function loadOwn(file: string) {
+  let p = ownFiles.get(file);
+  if (!p) {
+    p = gltfLoader.loadAsync(assetUrl(`assets/models/item/${file}.glb`)).then((g) => g.scene, (e) => (console.warn(`item model ${file} failed to load`, e), null));
+    ownFiles.set(file, p);
+  }
+  return p;
+}
+function scaledTo(src: Object3D, size: number) {
+  const o = src.clone(true);
+  o.updateMatrixWorld(true);
+  new Box3().setFromObject(o).getSize(_size);
+  o.scale.multiplyScalar(size / Math.max(_size.x, _size.y, _size.z, 1e-3));
+  return o;
 }
 
 const _box = new Box3();
@@ -63,6 +83,26 @@ export function createPickupView(game: Game, lo: Loadout, onPickedUp: (item: Ite
       root.rotation.y = ((p.item.uid * 2.39996) % (Math.PI * 2)) - Math.PI; // stable "random" yaw per item
       game.scene.add(root);
       const fallback: [number, number, number] = [d.w * 0.1 + 0.04, 0.08, d.h * 0.1 + 0.04];
+      const own = PICKUP_MODELS.files[d.id];
+      if (own) {
+        void loadOwn(own.file).then((scene) => {
+          if (!scene || live.get(p.item)?.root !== root) return; // missing file, or picked up while loading
+          const inner = scaledTo(scene, own.size);
+          inner.traverse((o) => {
+            if ((o as Mesh).isMesh) (o as Mesh).castShadow = true;
+          });
+          const holder = new Group();
+          holder.add(inner);
+          if (!own.upright) layFlat(inner);
+          else {
+            inner.updateMatrixWorld(true);
+            _box.setFromObject(inner);
+            const c = _box.getCenter(new Vector3());
+            inner.position.set(-c.x, -_box.min.y, -c.z);
+          }
+          root.add(holder);
+        });
+      } else
       void loadModel(pickupModelId(d), fallback).then((proto) => {
         if (live.get(p.item)?.root !== root) return; // picked up while loading
         const inner = proto.create().root;
@@ -70,7 +110,7 @@ export function createPickupView(game: Game, lo: Loadout, onPickedUp: (item: Ite
           const m = o as Mesh;
           if (!m.isMesh) return;
           m.castShadow = true;
-          if (PICKUP_MODELS.tintKinds.includes(d.kind) && d.iconSwatch) m.material = tinted(d.iconSwatch);
+          if ((PICKUP_MODELS.tintKinds.includes(d.kind) || PICKUP_MODELS.tintModels.includes(pickupModelId(d))) && d.iconSwatch) m.material = tinted(d.iconSwatch);
         });
         const holder = new Group();
         holder.add(inner);

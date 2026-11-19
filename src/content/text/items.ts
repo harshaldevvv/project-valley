@@ -1,3 +1,5 @@
+import { itemTextMore } from './items_more';
+
 /** Player-facing item text, keyed by item id. `short` is the grid-tile label (max 8 chars). */
 export const itemText: Record<string, { name: string; short: string; description: string }> = {
   pistol_a: {
@@ -320,4 +322,5 @@ export const itemText: Record<string, { name: string; short: string; description
     short: "Lab Pack",
     description: "A sealed, oversized field-lab pack. Nobody hauls one of these without a reason.",
   },
+  ...itemTextMore,
 };

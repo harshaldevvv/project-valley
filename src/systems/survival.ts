@@ -140,6 +140,7 @@ export class Survival implements SurvivalApi {
     if (use.heal && this.host.hp() < this.host.maxHp() - 0.5) return null;
     if (use.food && this.hunger < 99) return null;
     if (use.water && this.thirst < 99) return null;
+    if (use.fatigue && this.fatigue < 99) return null;
     if (use.stamina) return null; // stamina is mechanics' meter; always worth it
     let blockedInfection: number | null = null;
     for (const id of (use.cures ?? []) as StatusId[]) {
@@ -157,8 +158,9 @@ export class Survival implements SurvivalApi {
 
   /** Apply a consumable's effects (called when its use timer completes). */
   applyUse(use: NonNullable<ItemDef['use']>) {
-    this.adjust({ hunger: use.food, thirst: use.water });
+    this.adjust({ hunger: use.food, thirst: use.water, fatigue: use.fatigue });
     if (use.heal) this.host.heal(use.heal);
+    if (use.inflicts && this.rng.next() < use.inflicts.chance) this.addStatus(use.inflicts.status as StatusId);
     for (const id of (use.cures ?? []) as StatusId[]) {
       const s = this.map.get(id);
       if (!s) continue;
