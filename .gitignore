@@ -8,4 +8,5 @@ assets/previews/*.tmp.png
 __pycache__/
 assets/refs/
 assets/mocap/
-.claude/
+.claude/*
+!.claude/rules/
