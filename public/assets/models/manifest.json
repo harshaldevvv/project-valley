@@ -643,7 +643,7 @@
       "chr_body_a_LOD1": 20000,
       "chr_body_a_LOD2": 8000
     },
-    "bytes": 2960228
+    "bytes": 2946632
   },
   "chr_body_a_parts": {
     "url": "/assets/models/chr/chr_body_a_parts.glb",
@@ -653,6 +653,14 @@
       "chr_body_a_parts_LOD1": 0,
       "chr_body_a_parts_LOD2": 0
     },
-    "bytes": 671668
+    "bytes": 671880
+  },
+  "chr_hero_pf": {
+    "url": "/assets/models/chr/chr_hero_pf.glb",
+    "category": "chr",
+    "tris": {
+      "chr_hero_pf_LOD0": 4485
+    },
+    "bytes": 1123876
   }
 }

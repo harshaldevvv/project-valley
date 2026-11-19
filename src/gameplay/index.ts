@@ -3,7 +3,7 @@ import { BodyFacing } from './player/facing';
 import { installSaves } from './saves';
 import { SurvivalGlue } from './player/survivalGlue';
 import type { Game } from '../core/game';
-import { cameraFeel, health, movement, stamina } from '../content/data/player';
+import { cameraFeel, health, heroLook, movement, stamina } from '../content/data/player';
 import { ballistics, meleeDefs, shove, weaponDefs } from '../content/data/weapons';
 import { horde, senses, zombieDefs } from '../content/data/zombies';
 import { fxTuning } from '../content/data/fx';
@@ -51,15 +51,19 @@ export async function installGameplay(game: Game): Promise<void> {
 
   // Player body (third person)
   // `?hero=1`: the generated main character (chr_body_a) with the wearable outfit system; default stays the original survivor.
-  const hero = new URLSearchParams(location.search).get('hero') === '1';
-  const body = await makeCharacter('survivor', hero ? 'chr_body_a' : 'chr_survivor_a', 'chr_survivor_a');
+  // Default: chr_hero_pf, a low-poly Polyfork character (same style as the world props) carrying our survivor clips
+  // (tools/audit/retarget_pf_hero.py). `?char=orig` plays the original survivor.
+  const qs = new URLSearchParams(location.search);
+  const hero = qs.get('hero') === '1';
+  const charId = hero ? 'chr_body_a' : qs.get('char') === 'orig' ? 'chr_survivor_a' : 'chr_hero_pf';
+  const body = await makeCharacter('survivor', charId, 'chr_survivor_a');
   ctx.playerChar = body;
   game.scene.add(body.root);
   const bodyAnim = body.skinned ? new PlayerAnimator(body) : null;
   ctx.playerAnim = bodyAnim;
   const post = bodyAnim ? new BodyPost(ctx, body.root, bodyAnim) : null;
-  // Backpack mesh follows the backpack slot (asset node chr_survivor_a_BACKPACK)
-  const pack = body.root.getObjectByName('chr_survivor_a_BACKPACK');
+  // Backpack mesh follows the backpack slot (asset node <id>_BACKPACK)
+  const pack = body.root.getObjectByName(`${charId}_BACKPACK`);
   const syncPack = () => {
     const lo = probe(game, 'loadout', 'equipped');
     if (pack && lo) pack.visible = !!lo.equipped('backpack');
@@ -92,6 +96,7 @@ export async function installGameplay(game: Game): Promise<void> {
   let faded = false;
   await ctx.weapons.init(body.hand);
   if (hero) await bindOutfit(game, body.root, ctx.weapons.vm);
+  else if (charId === 'chr_hero_pf') ctx.weapons.vm?.setLook(heroLook.fpSleeve, heroLook.fpGlove); // FP arms match the hero's shirt and gloves
   await Promise.all([ctx.targets.init(), ctx.vehicles.init(), ctx.animStand.init()]);
 
   const perf = game.perf;

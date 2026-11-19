@@ -13,7 +13,16 @@ import type { Character } from './character';
  *   renormalised so weights always sum to 1 per body part (no bind-pose mush).
  * Same method names as the old AnimationController (oneshot / overlay / base / bone / update) for the callers.
  */
-const UPPER = /^(spine|chest|neck|head|shoulder|upper_arm|forearm|hand|finger|thumb|SOCKET)/;
+// Our rig names and Mixamo names (Polyfork hero chr_hero_pf, chr_body_a)
+const UPPER = /^(spine|chest|neck|head|shoulder|upper_arm|forearm|hand|finger|thumb|SOCKET|Spine|Neck|Head|Face_|(Left|Right)(Shoulder|Arm|ForeArm|Hand))/;
+/** Our bone name -> Mixamo bone name, for rigs that use Mixamo naming. */
+const MIXAMO: Record<string, string> = {
+  hips: 'Hips', spine: 'Spine', chest: 'Spine2', neck: 'Neck', head: 'Head',
+  thigh_L: 'LeftUpLeg', shin_L: 'LeftLeg', foot_L: 'LeftFoot', toe_L: 'LeftToeBase',
+  thigh_R: 'RightUpLeg', shin_R: 'RightLeg', foot_R: 'RightFoot', toe_R: 'RightToeBase',
+  shoulder_L: 'LeftShoulder', upper_arm_L: 'LeftArm', forearm_L: 'LeftForeArm', hand_L: 'LeftHand',
+  shoulder_R: 'RightShoulder', upper_arm_R: 'RightArm', forearm_R: 'RightForeArm', hand_R: 'RightHand',
+};
 const half = (clip: AnimationClip, upper: boolean) => {
   const c = clip.clone();
   c.tracks = c.tracks.filter((t) => UPPER.test(t.name.split('.')[0]) === upper);
@@ -99,7 +108,7 @@ export class PlayerAnimator {
 
   /** Bone that gameplay rotates after the mixer (restored before each update). */
   bone(name: string): Object3D | null {
-    const b = this.ch.root.getObjectByName(name) ?? null;
+    const b = this.ch.root.getObjectByName(name) ?? (MIXAMO[name] ? this.ch.root.getObjectByName(MIXAMO[name]) : undefined) ?? null;
     if (b) this.procedural.push({ bone: b, q: b.quaternion.clone(), p: b.position.clone() });
     return b;
   }

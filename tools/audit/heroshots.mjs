@@ -1,0 +1,44 @@
+// node tools/audit/heroshots.mjs <tag> [query]   headless: the player hero in third person (idle, walk, rifle aim, pistol, knife) and first person
+import { launch } from './browser.mjs';
+const [tag = 'hs', query = ''] = process.argv.slice(2);
+const browser = await launch();
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = [];
+page.on('pageerror', (e) => errs.push(String(e).slice(0, 300)));
+page.on('console', (m) => m.type() === 'error' && errs.push(m.text().slice(0, 200)));
+await page.goto('http://localhost:5188/?play' + (query ? '&' + query : ''));
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 180000 });
+await page.waitForTimeout(2000);
+await page.mouse.click(640, 360);
+const gp = (f, a) => page.evaluate(f, a);
+await gp(() => { const g = window.__gp; g.ctx.player.godMode = true; g.sandbox(); });
+const sh = (n) => page.screenshot({ path: `docs/audit/screenshots/wip/${tag}_${n}.png` });
+const SLOT = { rifle_a: 0, pistol_a: 2, knife_a: 3 }; // weaponSlots: primary, secondary, sidearm, melee
+const sel = async (id) => {
+  await gp((i) => window.__gp.ctx.weapons.select(i), SLOT[id]);
+  await page.waitForTimeout(1500);
+};
+await sel('rifle_a');
+await sh('tp_rifle');
+await page.mouse.down({ button: 'right' });
+await page.waitForTimeout(700);
+await sh('tp_rifle_aim');
+await page.mouse.up({ button: 'right' });
+await page.keyboard.down('w');
+await page.waitForTimeout(900);
+await sh('tp_rifle_walk');
+await page.keyboard.up('w');
+await sel('pistol_a');
+await page.mouse.down({ button: 'right' });
+await page.waitForTimeout(700);
+await sh('tp_pistol_aim');
+await page.mouse.up({ button: 'right' });
+await sel('knife_a');
+await sh('tp_knife');
+await gp(() => { window.__gp.ctx.rig.mode = 'fp'; });
+await page.waitForTimeout(800);
+await sh('fp_knife');
+await sel('rifle_a');
+await sh('fp_rifle');
+console.log('errors', JSON.stringify(errs.slice(0, 6)));
+await browser.close();

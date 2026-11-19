@@ -95,7 +95,7 @@ export const cameraFeel = {
   // Third person (principles §2)
   shoulderX: 0.5,
   shoulderY: 0.15,
-  shoulderXAds: 1.0, // QA-064: further out so the shoulder/backpack clear the view // ADS pulls the camera further over the shoulder so the head clears the reticle
+  shoulderXAds: 1.15, // 1.0 -> 1.15 for the wider low-poly hero head (2026-11-20). QA-064: further out so the shoulder/backpack clear the view // ADS pulls the camera further over the shoulder so the head clears the reticle
   armHip: 2.6,
   armAds: 1.45,
   fovHip: 70,
@@ -119,4 +119,10 @@ export const cameraFeel = {
   maxShakeDeg: 3,
   fovKickRecover: 0.12, // s
   hurtTrauma: 0.4,
+};
+
+/** Default player hero chr_hero_pf (Polyfork student-with-backpack + flannel gloves): first-person arm colours. */
+export const heroLook = {
+  fpSleeve: '#7fb0bd', // teal plaid shirt
+  fpGlove: '#6e4a33', // brown work gloves
 };

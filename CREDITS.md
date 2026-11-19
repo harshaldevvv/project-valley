@@ -75,6 +75,8 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 
 | Model | Page |
 |---|---|
+| Student with Backpack by Polyfork (player hero `chr_hero_pf`: our survivor animation clips retargeted onto its skeleton by `tools/audit/retarget_pf_hero.py`, turned to face -Z, meshes joined, backpack kept as a separate part) | https://polyfork.dev/asset/student-with-backpack-65d2b4 |
+| Player in Flannel by Polyfork (gloves part only, worn by the player hero) | https://polyfork.dev/asset/player-in-flannel-d0bae4 |
 | Abandoned Shopping Trolley by Polyfork | https://polyfork.dev/asset/abandoned-shopping-trolley-3de6cb |
 | Alcove Bookcase by Polyfork | https://polyfork.dev/asset/alcove-bookcase-83894d |
 | Alpine Hay Barn by Polyfork | https://polyfork.dev/asset/alpine-hay-barn-3965e5 |
