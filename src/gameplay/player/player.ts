@@ -258,11 +258,27 @@ export class Player implements PlayerView {
     this.curr.y += m.y;
     this.curr.z += m.z;
     this.grounded = this.kcc.computedGrounded();
-    // Bonk head / blocked walls: reflect the actual movement into the velocity
+    // Bonk head; walls: remove only the velocity component pushing into steep contacts (slide along them).
+    // The old rule scaled velocity by moved/desired per axis, so one tick of a trimesh seam, an autostep probe or a
+    // snap-to-ground correction zeroed the speed and the player stopped dead on flat ground, then re-accelerated.
     if (dt > 0) {
       if (m.y < this.vy * dt * 0.5 && this.vy > 0) this.vy = 0;
-      this.vel.x = Math.abs(_w.x) > 1e-5 ? this.vel.x * Math.min(1, Math.max(0, m.x / _w.x)) : this.vel.x;
-      this.vel.z = Math.abs(_w.z) > 1e-5 ? this.vel.z * Math.min(1, Math.max(0, m.z / _w.z)) : this.vel.z;
+      const n = this.kcc.numComputedCollisions();
+      for (let i = 0; i < n; i++) {
+        const col = this.kcc.computedCollision(i);
+        if (!col) continue;
+        const { x: nx, y: ny, z: nz } = col.normal1; // outward normal of the obstacle
+        if (ny > M.wallNormalY) continue; // ground, ramps, step edges
+        const hl = Math.hypot(nx, nz);
+        if (hl < 1e-4) continue;
+        const ux = nx / hl;
+        const uz = nz / hl;
+        const into = this.vel.x * ux + this.vel.z * uz;
+        if (into < 0) {
+          this.vel.x -= ux * into;
+          this.vel.z -= uz * into;
+        }
+      }
     }
     if (this.grounded) {
       if (!wasGrounded && this.vy < -2) this.land(-this.vy);
