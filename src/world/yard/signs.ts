@@ -17,7 +17,9 @@ export interface Card {
   fg?: string;
 }
 
-const CW = 1024, CH = 512, COLS = 2;
+const CW = 1024, CH = 512, COLS = 4;
+/** Cards per atlas page: 4096 x 4096 at most (lower-end GPUs; the hard WebGPU limit is 8192), so any number of signs fits. */
+const PER_PAGE = COLS * 8;
 const cards: Card[] = [];
 const quads: { geo: BufferGeometry; card: number }[] = [];
 
@@ -65,12 +67,20 @@ function wrap(ctx: CanvasRenderingContext2D, s: string, maxW: number) {
 
 export function finishSigns(kit: Kit) {
   if (!quads.length) return;
-  const rows = Math.ceil(cards.length / COLS);
+  const pages = Math.ceil(cards.length / PER_PAGE);
+  for (let pg = 0; pg < pages; pg++) finishPage(kit, pg);
+  cards.length = quads.length = 0;
+}
+
+function finishPage(kit: Kit, pg: number) {
+  const first = pg * PER_PAGE;
+  const pageCards = cards.slice(first, first + PER_PAGE);
+  const rows = Math.ceil(pageCards.length / COLS);
   const canvas = document.createElement('canvas');
   canvas.width = CW * COLS;
   canvas.height = CH * rows;
   const ctx = canvas.getContext('2d')!;
-  cards.forEach((c, i) => {
+  pageCards.forEach((c, i) => {
     const ox = (i % COLS) * CW, oy = Math.floor(i / COLS) * CH;
     ctx.fillStyle = c.bg ?? '#41553b';
     ctx.fillRect(ox, oy, CW, CH);
@@ -112,14 +122,15 @@ export function finishSigns(kit: Kit) {
   tex.colorSpace = SRGBColorSpace;
   tex.anisotropy = 8;
 
-  for (const { geo, card } of quads) {
+  const pageQuads = quads.filter((q) => Math.floor(q.card / PER_PAGE) === pg);
+  for (const { geo, card: gc } of pageQuads) {
+    const card = gc - first;
     const u0 = (card % COLS) / COLS, v0 = 1 - (Math.floor(card / COLS) + 1) / rows; // canvas y-down, texture flipY
     const uv = geo.getAttribute('uv');
     for (let i = 0; i < uv.count; i++) uv.setXY(i, u0 + uv.getX(i) / COLS, v0 + uv.getY(i) / rows);
   }
-  const mesh = new Mesh(mergeGeometries(quads.map((q) => q.geo)), new MeshStandardMaterial({ map: tex, roughness: 0.9 }));
-  mesh.name = 'yard_sign_text';
+  const mesh = new Mesh(mergeGeometries(pageQuads.map((q) => q.geo)), new MeshStandardMaterial({ map: tex, roughness: 0.9 }));
+  mesh.name = pg ? `yard_sign_text_${pg}` : 'yard_sign_text';
   mesh.receiveShadow = true;
   kit.game.scene.add(mesh);
-  cards.length = quads.length = 0;
 }
