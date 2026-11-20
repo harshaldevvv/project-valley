@@ -7,6 +7,7 @@ import type { Rng } from '../engine/rng';
 import {
   autoPlace, containsItem, defOf, forEachItem, gridsOf, mergeInto, newItem, newItems, removeItem, uidState, type Grid,
 } from './inventory';
+import { repairLoadoutSave } from './saveRepair';
 
 /** A world container instance (loot crate, cabinet, car trunk). Plain data. */
 export interface WorldContainer {
@@ -422,6 +423,8 @@ export class Loadout implements LoadoutApi {
   load(save: LoadoutSave) {
     if (save.v !== SAVE_VERSION) throw new Error(`loadout save v${save.v} has no migration to v${SAVE_VERSION}`);
     const s = structuredClone(save);
+    const rep = repairLoadoutSave(s);
+    if (rep.renamed || rep.dropped.length) console.warn(`loadout save repaired: ${rep.renamed} renamed, dropped ${rep.dropped.join(', ') || 'nothing'}`);
     uidState.next = Math.max(uidState.next, s.nextUid);
     this.equipment = s.equipment;
     this.pickups = s.pickups;

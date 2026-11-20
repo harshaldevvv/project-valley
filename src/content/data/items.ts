@@ -95,6 +95,9 @@ const list: ItemDef[] = [
 
 export const ITEMS: Record<string, ItemDef> = Object.fromEntries(list.map((d) => [d.id, d]));
 
+/** Old item id -> current id. Add a row whenever an id is renamed so existing saves keep their items (systems/saveRepair.ts). */
+export const ITEM_RENAMES: Record<string, string> = {};
+
 /**
  * World models for dropped items: the item's own `model` wins (weapons, magazines), then a per-item generic,
  * then one by kind. Backpacks are tinted with their iconSwatch so different packs read apart on the ground.

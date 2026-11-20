@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CONTAINER_THEMES, CONTAINERS } from '../content/data/containers';
 import { difficulty } from '../content/data/difficulty';
-import { ITEMS, PICKUP_MODELS } from '../content/data/items';
+import { ITEMS, ITEM_RENAMES, PICKUP_MODELS } from '../content/data/items';
 import { LOOT } from '../content/data/loot';
 import { ITEM_PARTS, OUTFIT_PARTS, partsById } from '../content/data/outfit';
 import { WOUNDS } from '../content/data/survival';
@@ -11,6 +11,7 @@ import { containerText } from '../content/text/containers';
 import { createRng } from '../engine/rng';
 import { autoPlace, autoPlaceInto, canPlace, gridsOf, newItem } from './inventory';
 import { Loadout } from './loadout';
+import { repairLoadoutSave } from './saveRepair';
 import { Survival, type SurvivalHost } from './survival';
 
 const cells = (id: string) => gridsOf(newItem(id)).reduce((s, g) => s + g.w * g.h, 0);
@@ -260,6 +261,15 @@ describe('loot reach and balance', () => {
     }
   });
 
+  it('every container spot the world places uses a real container type and a known theme', () => {
+    const mods = Object.values(import.meta.glob('../content/data/pois.ts', { eager: true })) as { poiSpots?: { id: string; type: string; theme: string }[] }[];
+    const spots = mods[0]?.poiSpots ?? []; // pois.ts is the environment agent's file: skipped if it is absent
+    for (const sp of spots) {
+      expect(CONTAINERS[sp.type], `${sp.id}: type ${sp.type}`).toBeTruthy();
+      expect(CONTAINER_THEMES[sp.theme], `${sp.id}: theme ${sp.theme}`).toBeTruthy();
+    }
+  });
+
   it('a kitchen gives roughly one meal per visit and a police locker gives armour at tier 3', () => {
     const lo = new Loadout(createRng(11));
     let food = 0;
@@ -271,5 +281,43 @@ describe('loot reach and balance', () => {
     let armour = 0;
     for (let i = 0; i < N; i++) for (const it of lo.rollLoot('police_locker', 3)) if (ITEMS[it.defId].armour) armour++;
     expect(armour).toBeGreaterThan(N * 0.25);
+  });
+});
+
+describe('saves with the new items', () => {
+  it('a loadout full of new gear round-trips through JSON with pockets intact', () => {
+    const lo = new Loadout(createRng(5));
+    lo.equipment.backpack = newItem('rucksack_military');
+    lo.equipment.armor = newItem('chest_rig');
+    lo.give(newItem('mag_rifle_a', 1, { rounds: 17 }));
+    lo.give(newItem('first_aid_kit', 2));
+    lo.give(newItem('chocolate_bar', 3));
+    const json = JSON.stringify(lo.serialize());
+    const lo2 = new Loadout(createRng(5));
+    lo2.load(JSON.parse(json));
+    expect(JSON.stringify(lo2.serialize())).toBe(json);
+    expect(lo2.count('first_aid_kit')).toBe(2);
+    expect(lo2.equipment.armor!.pockets![0][0].item.rounds).toBe(17);
+  });
+
+  it('a save naming a renamed or deleted item still loads: renames keep the item, unknown ones are dropped, never thrown', () => {
+    const lo = new Loadout(createRng(5));
+    lo.equipment.backpack = newItem('daypack');
+    lo.give(newItem('apple', 2));
+    const save = lo.serialize();
+    save.equipment.backpack!.contents![0].item.defId = 'old_apple_id'; // renamed in a later version
+    save.equipment.backpack!.contents!.push({ item: { uid: 99999, defId: 'long_gone_item', count: 1 }, x: 3, y: 3, rotated: false });
+    save.hotbar[0] = 'long_gone_item';
+    ITEM_RENAMES.old_apple_id = 'apple';
+    try {
+      const rep = repairLoadoutSave(save);
+      expect(rep).toEqual({ renamed: 1, dropped: ['long_gone_item'] });
+      const lo2 = new Loadout(createRng(5));
+      lo2.load(save);
+      expect(lo2.count('apple')).toBe(2);
+      expect(lo2.hotbar[0]).toBeNull();
+    } finally {
+      delete ITEM_RENAMES.old_apple_id;
+    }
   });
 });
