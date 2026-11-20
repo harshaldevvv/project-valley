@@ -77,8 +77,8 @@ export const POIS: PoiDef[] = [
     id: 'school', theme: 'school', tier: 2, x: -146, z: 186 + M, radius: 22, landmark: 'one-room-schoolhouse',
     reason: 'An evacuation point that never emptied: lockers and desks beside a stranded school bus.',
     containers: [
-      c('school_locker', 'school', -143.2, 180.6 + M, Math.PI / 2, 'dorm-wardrobe'),
-      c('school_locker', 'school', -143.2, 182.0 + M, Math.PI / 2, 'dorm-wardrobe'),
+      c('school_locker', 'school', -142.3, 180.6 + M, Math.PI / 2, 'dorm-wardrobe'),
+      c('school_locker', 'school', -142.3, 182.0 + M, Math.PI / 2, 'dorm-wardrobe'),
       c('office_desk', 'school', -143.4, 191.0 + M, Math.PI / 2, 'filing-cabinet'),
       c('car_trunk', 'school', -124.6, 192.6 + M, 1.75, null),
     ],
@@ -149,13 +149,13 @@ export const POIS: PoiDef[] = [
       c('car_trunk', 'town', -97.4, 131.6, 1.5, null),
       c('car_trunk', 'town', -131.6, 131.4, 1.4, null),
     ],
-    zombies: [{ x: -105, z: 134, radius: 18, count: 6 }, { x: -88, z: 122, radius: 3, count: 1 }, { x: -101.5, z: 122, radius: 3, count: 1 }, { x: -88, z: 146, radius: 3, count: 1 }, { x: -130, z: 144.5, radius: 5, count: 2 }, { x: -143, z: 134, radius: 5, count: 2 }],
+    zombies: [{ x: -105, z: 134, radius: 18, count: 6 }, { x: -88, z: 122, radius: 3, count: 1 }, { x: -101.5, z: 122, radius: 3, count: 1 }, { x: -88, z: 146, radius: 3, count: 1 }, { x: -130, z: 144.5, radius: 3, count: 2 }, { x: -143, z: 134, radius: 5, count: 2 }],
   },
   {
     id: 'police', theme: 'police', tier: 3, x: -119, z: 124, radius: 14, landmark: 'department-store',
     reason: 'The town police station: lockers, desks and a locked armory with the best guns and ammo outside the army sites.',
     containers: [c('car_trunk', 'police', -122.4, 134.6, -1.5, null), c('car_trunk', 'police', -125.2, 133.6, 1.9, null)],
-    zombies: [{ x: -119, z: 122, radius: 4, count: 3 }, { x: -119, z: 135, radius: 8, count: 3 }],
+    zombies: [{ x: -119, z: 122, radius: 3, count: 3 }, { x: -119, z: 135, radius: 8, count: 3 }],
   },
   // Camp Harlan, the army outpost east of the farm (outskirts_outpost.ts)
   {
@@ -169,7 +169,7 @@ export const POIS: PoiDef[] = [
     ],
     zombies: [
       { x: 132, z: 118, radius: 16, count: 6, soldier: 0.75 },
-      { x: 127, z: 108.6, radius: 4, count: 3, soldier: 0.9 },
+      { x: 127, z: 108.6, radius: 3, count: 3, soldier: 0.9 },
       { x: 144, z: 108, radius: 2.2, count: 2, soldier: 1 },
       { x: 100, z: 118, radius: 6, count: 2, soldier: 0.5 },
     ],

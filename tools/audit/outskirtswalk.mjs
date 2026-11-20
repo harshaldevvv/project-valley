@@ -117,6 +117,25 @@ if (mode === 'town' || mode === 'all') {
     console.log('door prompts', name, JSON.stringify(p0), '->', JSON.stringify(p1));
   }
 }
+if (mode === 'outpost' || mode === 'all') {
+  await ev(() => window.__gp.teleport(93.5, 163, 0));
+  await page.waitForTimeout(1500);
+  await walkTo([[93.5, 140], [93.5, 118], [104, 118], [114, 118], [127, 116], [127, 114.2]], 'farm road to the outpost gate and the barracks');
+  const hold = async () => { await page.keyboard.down('KeyE'); await page.waitForTimeout(600); await page.keyboard.up('KeyE'); await page.waitForTimeout(1200); };
+  const prompts = () => ev(() => { const g = window.__gp.ctx.game, p = g.player.position; return g.interact.all.filter((i) => Math.hypot(i.position.x - p.x, i.position.y - (p.y + 1.2), i.position.z - p.z) < i.radius).map((i) => i.prompt()); });
+  for (const [name, dx, dz, ix, iz] of [['outpost barracks', 127, 113.4, 126.4, 110.4], ['outpost armory', 141.6, 112.3, 141.6, 109]]) {
+    await ev(([x, z]) => window.__gp.teleport(x, z, 0), [dx, dz]);
+    await page.waitForTimeout(700);
+    const p0 = await prompts();
+    await hold();
+    const p1 = await prompts();
+    await walkTo([[ix, iz]], 'through the ' + name + ' door');
+    console.log('door prompts', name, JSON.stringify(p0), '->', JSON.stringify(p1));
+  }
+  await ev(() => window.__gp.teleport(143.6, 106.4, 0));
+  await page.waitForTimeout(800);
+  console.log('container prompts at the armory', JSON.stringify(await prompts()));
+}
 if (mode === 'zombies' || mode === 'all') {
   await ev(() => {
     const z = window.__gp.ctx.zombies, cam = window.__gp.ctx.game.camera, p = window.__gp.ctx.player;
@@ -128,13 +147,15 @@ if (mode === 'zombies' || mode === 'all') {
       return orig(at, yaw, id);
     };
   });
-  for (const [name, x, z, yaw] of [['checkpoint', 0, 104, Math.PI], ['fuel stop', -8, 150, Math.PI / 2], ['Maple Street', -20, 198, Math.PI / 2], ['camp', 10, 252, -2.4]]) {
+  for (const [name, x, z, yaw] of [['checkpoint', 0, 104, Math.PI], ['fuel stop', -8, 150, Math.PI / 2], ['Maple Street', -20, 198, Math.PI / 2], ['camp', 10, 252, -2.4], ['outpost', 96, 146, Math.PI]]) {
     await ev(([x, z, yaw]) => { window.__gp.teleport(x, z, yaw); window.__gp.setLook(yaw, 0); }, [x, z, yaw]);
     await page.waitForTimeout(14000);
     const r = await ev(() => { const zs = window.__gp.ctx.zombies, p = window.__gp.ctx.game.perf.snapshot(); return { alive: zs.alive, poiAlive: zs.poiAlive, draws: p.drawCalls, tris: Math.round(p.triangles / 1000), p95: +p.p95.toFixed(1) }; });
     console.log('zombies at', name, JSON.stringify(r));
   }
   const log = await ev(() => window.__spawnLog);
+  const op = log.filter((l) => l.x > 85 && l.z < 135);
+  console.log('outpost spawns', op.length, 'soldiers', op.filter((l) => /soldier/.test(l.id)).length);
   console.log('spawns', log.length, 'in view', log.filter((l) => l.inView).length, 'closest', Math.min(...log.map((l) => l.dist)), 'variants', JSON.stringify([...new Set(log.map((l) => l.id))]));
 }
 console.log('errors', errs.slice(0, 6));
