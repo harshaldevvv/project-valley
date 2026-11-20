@@ -77,7 +77,10 @@ export class PlayerAnimator {
     const meta = clipMeta.chr_survivor_a;
     for (const [name, action] of ch.actions) {
       const clip = action.getClip();
-      const m = meta[name] ?? {};
+      // Clip ground speeds are measured on the survivor rig; a rig with shorter legs covers less ground per cycle
+      const k = A.strideScale[ch.root.name] ?? 1;
+      const m0 = meta[name] ?? {};
+      const m = m0.speed !== undefined && k !== 1 ? { ...m0, speed: m0.speed * k } : m0;
       const lo = m.upperBody ? null : this.mixer.clipAction(half(clip, false));
       const up = this.mixer.clipAction(half(clip, true));
       for (const a of [lo, up]) {

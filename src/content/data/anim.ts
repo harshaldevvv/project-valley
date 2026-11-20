@@ -32,6 +32,8 @@ export const clipMeta: Record<string, Record<string, ClipMeta>> = {
 export const anim = {
   /** timeScale band for speed matching; outside it the next blend node takes over. */
   speedMatchClamp: [0.8, 1.25] as [number, number],
+  /** Per model: leg length / survivor leg length (clip ground speeds are measured on the survivor). chr_hero_pf 0.81 / 0.845 m. */
+  strideScale: { chr_hero_pf: 0.96 } as Record<string, number>,
   /** 1D forward blend nodes (clip names; speeds come from clipMeta). */
   survivorForward: ['idle', 'walk', 'run', 'sprint'],
   survivorCrouch: ['crouch_idle', 'crouch_walk'],
@@ -62,7 +64,7 @@ export const animPost = {
   leanAccelMaxDeg: 8,
   leanHalflife: 0.15,
   // Foot IK + pelvis (§3.3)
-  footIK: true,
+  footIK: false,
   footIKMaxSpeed: 5,
   footIKReach: 0.3,
   pelvisMax: 0.25,

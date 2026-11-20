@@ -14,7 +14,7 @@
 #   * SOCKET_hand_R / SOCKET_hand_L bones are added under the hands with the same world orientation the survivor's sockets
 #     have in the posed hand, so every weapon clip and the first-person logic can use them unchanged.
 #   * Meshes become <id>_LOD0/1/2; the armature is <id>_rig.
-import bpy, sys, math
+import bpy, sys, math, os
 from mathutils import Matrix, Quaternion, Vector
 
 a = sys.argv[sys.argv.index('--') + 1:]
@@ -74,13 +74,18 @@ bpy.context.view_layer.update()
 bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
 bpy.context.view_layer.update()
 
-MAP = {'hips': 'Hips', 'spine': 'Spine', 'chest': 'Spine2', 'neck': 'Neck', 'head': 'Head',
-       'thigh_L': 'LeftUpLeg', 'shin_L': 'LeftLeg', 'foot_L': 'LeftFoot', 'toe_L': 'LeftToeBase',
-       'thigh_R': 'RightUpLeg', 'shin_R': 'RightLeg', 'foot_R': 'RightFoot', 'toe_R': 'RightToeBase'}
+MAP = {'hips': 'Hips', 'spine': 'Spine', 'chest': 'Spine2', 'neck': 'Neck', 'head': 'Head'}
+LEGS = os.environ.get('LEGS', 'map')  # 'dir': legs mapped like the arms (no measurable difference in foot slide, 2026-11-20)
+if LEGS != 'dir':
+    MAP.update({'thigh_L': 'LeftUpLeg', 'shin_L': 'LeftLeg', 'foot_L': 'LeftFoot', 'toe_L': 'LeftToeBase',
+                'thigh_R': 'RightUpLeg', 'shin_R': 'RightLeg', 'foot_R': 'RightFoot', 'toe_R': 'RightToeBase'})
 LIMB = {}  # target bone -> source bone
 for side, S in (('Left', 'L'), ('Right', 'R')):
     LIMB[side + 'Shoulder'] = 'shoulder_' + S; LIMB[side + 'Arm'] = 'upper_arm_' + S
     LIMB[side + 'ForeArm'] = 'forearm_' + S; LIMB[side + 'Hand'] = 'hand_' + S
+    if LEGS == 'dir':
+        LIMB[side + 'UpLeg'] = 'thigh_' + S; LIMB[side + 'Leg'] = 'shin_' + S
+        LIMB[side + 'Foot'] = 'foot_' + S; LIMB[side + 'ToeBase'] = 'toe_' + S
 EXTRA = {'Spine1': 'spine'}
 Ws, Wt = src.matrix_world, tgt.matrix_world
 Wsq, Wtq = Ws.to_quaternion(), Wt.to_quaternion()
@@ -93,9 +98,11 @@ def s_dir(name): return (Wsq @ (sb[name].tail_local - sb[name].head_local)).norm
 T_CHILD = {}
 for side in ('Left', 'Right'):
     T_CHILD[side + 'Shoulder'] = side + 'Arm'; T_CHILD[side + 'Arm'] = side + 'ForeArm'; T_CHILD[side + 'ForeArm'] = side + 'Hand'
+    T_CHILD[side + 'UpLeg'] = side + 'Leg'; T_CHILD[side + 'Leg'] = side + 'Foot'; T_CHILD[side + 'Foot'] = side + 'ToeBase'
 def t_dir(name):
     if name in T_CHILD: v = tb[T_CHILD[name]].head_local - tb[name].head_local
     elif name.endswith('Hand'): v = tb[name].head_local - tb[name.replace('Hand', 'ForeArm')].head_local
+    elif name.endswith('ToeBase'): v = tb[name].head_local - tb[name.replace('ToeBase', 'Foot')].head_local
     else: v = tb[name].tail_local - tb[name].head_local
     return (Wtq @ v).normalized()
 
