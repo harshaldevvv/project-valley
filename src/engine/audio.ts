@@ -113,6 +113,7 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
   const listenerPos = new Vector3();
   const tmp = new Vector3();
 
+  const lastTail = new Map<string, number>(); // sound id -> ctx time of its last tail layer
   const STEAL_PROTECT_S = 0.15; // a voice younger than this is never stolen
   const makeVoice = (def: SoundDef, pos: Vector3 | null, loop: boolean, volume: number, rate: number, id = ''): Voice | null => {
     if (voices.length >= MAX_VOICES) {
@@ -187,11 +188,13 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
       }
       const j = opts?.pitchJitter ?? def.jitter ?? 0;
       const vol = (opts?.volume ?? 1) * (1 - Math.random() * 0.2); // ~±1 dB around -1 dB
-      const rate = 1 + (Math.random() * 2 - 1) * j;
+      const rate = (1 + (Math.random() * 2 - 1) * j) * (def.rate ?? 1);
       const pos = twoD ? null : position ?? null;
       const v = makeVoice(def, pos, false, vol, rate, id);
       v?.src.start(ctx.currentTime + delay);
-      if (def.tail) {
+      const now = ctx.currentTime;
+      if (def.tail && now - (lastTail.get(id) ?? -9) >= (def.tailGapS ?? 0.3)) {
+        lastTail.set(id, now);
         const t = sounds[def.tail];
         if (t) {
           const tv = makeVoice(t, pos, false, vol * (def.tailVolume ?? 0.6), rate * 0.97, def.tail);

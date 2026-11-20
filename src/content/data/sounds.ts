@@ -20,11 +20,15 @@ export interface SoundDef {
   tail?: string;
   tailVolume?: number;
   tailDelayS?: number;
+  /** Minimum seconds between tail layers of this sound: an automatic weapon would otherwise stack dozens of 3 s tails. */
+  tailGapS?: number;
+  /** Playback-rate multiplier (a deeper revolver from the same recording). */
+  rate?: number;
 }
 
 /** Sound ids whose files must be decoded before play starts (weapons, melee, hit feedback). The rest load lazily. */
 export const preloadFirst = [
-  'pistol_shot', 'pistol_tail', 'rifle_shot', 'rifle_tail', 'shotgun_shot', 'shotgun_tail', 'dry_fire',
+  'pistol_shot', 'pistol_tail', 'revolver_shot', 'bolt_shot', 'smg_shot', 'pump_rack', 'bolt_cycle', 'rifle_shot', 'rifle_tail', 'shotgun_shot', 'shotgun_tail', 'dry_fire',
   'reload_mag_out', 'reload_mag_in', 'bolt_rack', 'casing_tink', 'hit_body', 'hit_head', 'hit_marker', 'kill_confirm',
   'melee_swing', 'melee_hit', 'knife_hit', 'impact_wood', 'impact_concrete', 'impact_metal', 'impact_dirt',
 ];
@@ -35,9 +39,14 @@ const ui = (files: string[], volume = 0.5): SoundDef => ({ files, volume, refDis
 
 export const sounds: Record<string, SoundDef> = {
   // weapons
-  pistol_shot: { files: ['gun/pistol_1911.ogg', 'gun/pistol_ppq.ogg'], volume: 0.9, refDistance: 4, maxDistance: 400, jitter: 0.04, priority: true, tail: 'pistol_tail', tailVolume: 0.5, tailDelayS: 0.03, synth: 'noise' },
-  rifle_shot: { files: ['gun/rifle_ak.ogg', 'gun/rifle_ar15.ogg', 'gun/rifle_sks2.ogg'], volume: 1, refDistance: 5, maxDistance: 500, jitter: 0.04, priority: true, tail: 'rifle_tail', tailVolume: 0.55, tailDelayS: 0.03, synth: 'noise' },
+  pistol_shot: { files: ['gun/pistol_1911.ogg', 'gun/pistol_ppq.ogg'], volume: 0.9, refDistance: 4, maxDistance: 400, jitter: 0.04, priority: true, tail: 'pistol_tail', tailVolume: 0.5, tailDelayS: 0.03, tailGapS: 0.4, synth: 'noise' },
+  rifle_shot: { files: ['gun/rifle_ak.ogg', 'gun/rifle_ar15.ogg', 'gun/rifle_sks2.ogg'], volume: 1, refDistance: 5, maxDistance: 500, jitter: 0.04, priority: true, tail: 'rifle_tail', tailVolume: 0.55, tailDelayS: 0.03, tailGapS: 0.5, synth: 'noise' },
   shotgun_shot: { files: ['gun/shotgun_nova.ogg', 'gun/shotgun_m12.ogg'], volume: 0.8, refDistance: 5, maxDistance: 450, jitter: 0.04, priority: true, tail: 'shotgun_tail', tailVolume: 0.5, tailDelayS: 0.03, synth: 'noise' },
+  revolver_shot: { files: ['gun/pistol_1911.ogg', 'gun/pistol_ppq.ogg'], volume: 1, refDistance: 5, maxDistance: 450, jitter: 0.03, rate: 0.82, priority: true, tail: 'rifle_tail', tailVolume: 0.5, tailDelayS: 0.03, synth: 'noise' },
+  bolt_shot: { files: ['gun/rifle_sks2.ogg', 'gun/rifle_ak.ogg'], volume: 1, refDistance: 6, maxDistance: 600, jitter: 0.03, rate: 0.9, priority: true, tail: 'rifle_tail', tailVolume: 0.75, tailDelayS: 0.03, synth: 'noise' },
+  smg_shot: { files: ['gun/pistol_ppq.ogg', 'gun/pistol_1911.ogg'], volume: 0.8, refDistance: 4, maxDistance: 350, jitter: 0.05, rate: 1.1, priority: true, tail: 'pistol_tail', tailVolume: 0.4, tailDelayS: 0.03, tailGapS: 0.5, synth: 'noise' },
+  pump_rack: { files: ['gun/bolt_cock.ogg'], volume: 0.9, refDistance: 1, maxDistance: 25, jitter: 0.04, synth: 'click' },
+  bolt_cycle: { files: ['gun/bolt_cock.ogg', 'kenney/drawKnife2.ogg'], volume: 0.7, refDistance: 1, maxDistance: 25, jitter: 0.08, rate: 1.15, synth: 'click' },
   pistol_tail: { files: ['gun/pistol_tail.ogg'], volume: 0.5, refDistance: 12, maxDistance: 500, jitter: 0.04, priority: true, synth: 'noise' },
   rifle_tail: { files: ['gun/rifle_tail.ogg'], volume: 0.55, refDistance: 14, maxDistance: 600, jitter: 0.04, priority: true, synth: 'noise' },
   shotgun_tail: { files: ['gun/shotgun_tail.ogg'], volume: 0.4, refDistance: 14, maxDistance: 500, jitter: 0.04, priority: true, synth: 'noise' },

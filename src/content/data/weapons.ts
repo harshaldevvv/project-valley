@@ -1,4 +1,5 @@
 import type { WeaponDef } from './types';
+import { GUN_DEFS, GUN_FEEL } from './weapons_guns';
 
 /**
  * Gun stats (principles §3). Zombie TTK targets: rifle 1 headshot / ~1.5 s body-only; pistol 1–2 headshots.
@@ -73,11 +74,16 @@ export interface WeaponFeel {
   recoverFrac: number; // share of each recoil kick that auto-recovers (rest stays in the view)
   magSize: number; // sandbox fallback mag size
   fallbackSize: [number, number, number]; // placeholder model box
+  /** Pump / bolt guns: a cycle sound this fraction of the way through the shot interval. */
+  cycle?: { sound: string; at: number };
 }
 export const weaponFeel: Record<string, WeaponFeel> = {
   pistol_a: { model: 'wpn_pistol_a', sound: 'pistol_shot', drawMs: 350, trauma: 0.1, fovKick: 1, viewPunch: 1.2, kickBack: 0.03, recoverFrac: 1, magSize: 15, fallbackSize: [0.04, 0.13, 0.2] },
   rifle_a: { model: 'wpn_rifle_a', sound: 'rifle_shot', drawMs: 600, trauma: 0.13, fovKick: 1.5, viewPunch: 0.9, kickBack: 0.035, recoverFrac: 1, magSize: 30, fallbackSize: [0.06, 0.2, 0.9] },
 };
+
+Object.assign(weaponDefs, GUN_DEFS);
+Object.assign(weaponFeel, GUN_FEEL);
 
 /** Shared ballistics (principles §3). */
 export const ballistics = {
@@ -211,6 +217,8 @@ export const fpArms = {
   sprintTuck: 0.35, // rad
   /** ADS: slide the rig forward along the sight line (keeps the sight centred, shrinks the receiver; QA-041). */
   adsForward: { rifle: 0, pistol: 0 } as Record<string, number>,
+  /** Sight-line height above the grip (m) the arms clips are authored for, per FP kind: other guns shift to match when aiming. */
+  adsSightRef: { rifle: 0.162, pistol: 0.086 } as Record<string, number>,
   /** Hip: extra rig offset (m, camera space) so the rifle stock doesn't run into the corner (QA-041). */
   hipOffset: { rifle: [0.12, -0.13, -0.3], pistol: [0, 0, 0], knife: [0, 0, 0] } as Record<string, [number, number, number]>,
 };

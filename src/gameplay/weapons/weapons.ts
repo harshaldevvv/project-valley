@@ -88,6 +88,7 @@ export class Weapons {
   private shotIdx = 0;
   private sinceShot = 9;
   private cooldown = 0;
+  private cycleT = -1; // pump / bolt: time to the cycle sound after a shot
   private sinceSprint = 9;
   private semiBuffered = 0;
   switchT = 0; // >0 while holstering/drawing
@@ -147,7 +148,9 @@ export class Weapons {
 
   async init(handSocket: Object3D) {
     await this.vm.init(this.ctx.game.camera);
-    const kinds: Record<string, 'pistol' | 'rifle' | 'knife'> = { pistol_a: 'pistol', rifle_a: 'rifle', knife_a: 'knife', crowbar_a: 'knife', hammer_a: 'knife' };
+    // Every gun in the data tables gets models: pistol-class guns use the pistol clips and placeholder, the rest the rifle family
+    const kinds: Record<string, 'pistol' | 'rifle' | 'knife'> = { knife_a: 'knife', crowbar_a: 'knife', hammer_a: 'knife' };
+    for (const [gid, gd] of Object.entries(weaponDefs)) kinds[gid] = gd.class === 'pistol' ? 'pistol' : 'rifle';
     for (const id of Object.keys(kinds)) {
       const model = weaponFeel[id]?.model ?? meleeDefs[id]?.model;
       const [tp, fp] = await Promise.all([makeWeaponModel(id, model, kinds[id]), makeWeaponModel(id, model, kinds[id])]);
@@ -221,6 +224,7 @@ export class Weapons {
     this.vm.setKind(this.fpKind);
     this.shotIdx = 0;
     this.bloom = 0;
+    this.cycleT = -1;
   }
 
   /** Begin switching to slot index i (holster -> draw). */
@@ -329,6 +333,10 @@ export class Weapons {
     this.swayY = Math.sin(w) * swayAmp;
     this.swayP = Math.sin(w * 2) * swayAmp * 0.5;
     this.cooldown -= dt;
+    if (this.cycleT > 0 && (this.cycleT -= dt) <= 0) {
+      const cy = weaponFeel[this.item?.defId ?? '']?.cycle;
+      if (cy && this.item) this.ctx.sfx(cy.sound, this.ctx.player.curr, { twoD: true, volume: 0.8, pitchJitter: 0.05 });
+    }
     this.kickT = Math.max(0, this.kickT - dt / 0.08);
 
     if (def) {
@@ -493,6 +501,7 @@ export class Weapons {
     }
     it.durability = Math.max(0, (it.durability ?? 1) - def.durabilityPerShot);
     this.cooldown = shotInterval(def.rpm);
+    this.cycleT = weaponFeel[def.id]?.cycle ? this.cooldown * weaponFeel[def.id].cycle!.at : -1;
     this.shotsFired++;
     // Nothing under the crosshair: the readout says "miss" now, not when the round expires (QA-073)
     if (this.aimMiss) this.lastShot = { distance: 0, zone: 'miss', damage: 0, target: '—' };
@@ -664,7 +673,7 @@ export class Weapons {
         const ho = fpArms.hipOffset[this.fpKind] ?? [0, 0, 0];
         vp.position.set(
           ho[0] * (1 - a) + this.swayLag.x * 0.25 * (1 - a) + Math.cos(p.stepPhase) * fpArms.bob * bob,
-          ho[1] * (1 - a) - this.swayLag.y * 0.25 * (1 - a) + Math.abs(Math.sin(p.stepPhase)) * fpArms.bob * bob - this.sprintT * 0.04,
+          ho[1] * (1 - a) - this.swayLag.y * 0.25 * (1 - a) + Math.abs(Math.sin(p.stepPhase)) * fpArms.bob * bob - this.sprintT * 0.04 + ((fpArms.adsSightRef[this.fpKind] ?? m.fp.sightY) - m.fp.sightY) * a, // ADS: bring this gun's sight line to the height the clips are authored for
           ho[2] * (1 - a) + this.kickT * fpArms.kickBack - a * (fpArms.adsForward[this.fpKind] ?? 0),
         );
         vp.rotation.set(this.kickT * fpArms.kickPitch - this.sprintT * fpArms.sprintTuck * 0.5, this.swayLag.x * (1 - a * 0.7) + this.sprintT * fpArms.sprintTuck, this.sprintT * 0.2);

@@ -1,3 +1,5 @@
+import { GUN_FX } from './weapons_guns';
+
 /**
  * Hit/shot effect tables (docs/research/vfx-impact-effects.md "Rules for our game"). Plain data; Fx reads it.
  * Colour language: red = flesh, yellow/white = hard target (metal), brown/grey = miss on the world.
@@ -89,6 +91,8 @@ export const weaponFx: Record<string, { flashLen: number; tracerEvery: number; c
   pistol_a: { flashLen: 0.26, tracerEvery: 0, casing: 'brass', impactScale: 0.8, smokeEvery: 1 },
   rifle_a: { flashLen: 0.4, tracerEvery: 3, casing: 'brass', impactScale: 1.1, smokeEvery: 3 },
 };
+
+Object.assign(weaponFx, GUN_FX);
 
 export const fxTuning = {
   // Muzzle flash
