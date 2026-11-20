@@ -1,4 +1,4 @@
-import { AnimationAction, AnimationClip, BufferAttribute, Color, LoopOnce, LoopRepeat, Material, Matrix4, MeshStandardMaterial, Object3D, type AnimationMixer, type SkinnedMesh } from 'three';
+import { AnimationAction, AnimationClip, BufferAttribute, Color, DoubleSide, Euler, LoopOnce, LoopRepeat, Material, Matrix4, MeshStandardMaterial, Object3D, Quaternion, type AnimationMixer, type SkinnedMesh } from 'three';
 import { hasAsset } from '../../engine/assets';
 import { loadModel } from '../../engine/models';
 import { fpArms as F } from '../../content/data/weapons';
@@ -10,6 +10,9 @@ import type { WeaponModel } from './models';
  * shove, interact) override it, scaled to gameplay timings. Left-arm-only clips (shove, interact) play over a copy of
  * the base with its *_L tracks stripped. Code adds sway/bob/kick on a pivot (ADS fire has no clip).
  */
+const _wq = new Quaternion();
+const _we = new Euler();
+
 export type FpKind = 'pistol' | 'rifle' | 'knife';
 
 interface Held {
@@ -87,6 +90,7 @@ export class Viewmodel {
       g.addGroup(arm.length, hand.length, 1);
       this.armMesh = mesh;
       this.armMat = mesh.material as Material;
+      this.armMat.side = DoubleSide; // the open wrist / elbow ends are seen from inside at steep pitch: never see-through
       mesh.material = this.look = [this.armMat, this.armMat];
     });
   }
@@ -95,7 +99,7 @@ export class Viewmodel {
     if (!this.armMesh || !this.armMat) return;
     const mk = (c: string | null, old: Material | undefined) => {
       if (old && old !== this.armMat) old.dispose();
-      return c ? new MeshStandardMaterial({ color: new Color(c), roughness: 0.9 }) : this.armMat!;
+      return c ? new MeshStandardMaterial({ color: new Color(c), roughness: 0.9, side: DoubleSide }) : this.armMat!;
     };
     this.look = [mk(sleeve, this.look[0]), mk(glove, this.look[1])];
     this.armMesh.material = this.look;
@@ -225,6 +229,10 @@ export class Viewmodel {
     this.adsNoL?.setEffectiveWeight(noLW * ads);
     if (!this.ads) this.idle?.setEffectiveWeight(baseW);
     this.mixer.update(dt);
+    // Wrist re-pose (data: fpArms.wrist, radians in hand-bone space) applied after the clips, so the grip fingers follow.
+    const wr = itemId ? F.wrist[itemId] : undefined;
+    const hand = this.sockets.get('weapon')?.parent;
+    if (wr && hand) hand.quaternion.multiply(_wq.setFromEuler(_we.set(wr[0], wr[1], wr[2])));
     if (itemId) this.magChoreo(itemId);
   }
 }

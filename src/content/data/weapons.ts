@@ -199,6 +199,8 @@ export const fpArms = {
   } as Record<string, { dur: number; magOut: number; magDrop: number; magGrab: number; magIn: number; bolt: number }>,
   knifeHit: { light: 0.2, heavy: 0.55 }, // s into fp_knife_light / fp_knife_heavy
   shoveHit: 0.2,
+  /** Extra wrist rotation on hand_R per held item id (rad, x/y/z in hand-bone space; +Y is along the forearm). */
+  wrist: { knife_a: [0.45, 0, 0] } as Record<string, [number, number, number]>,
   fade: 0.08, // s crossfade between clips
   kickBack: 0.03, // m code recoil on the rig (ADS fire has no clip)
   kickPitch: 0.04, // rad
