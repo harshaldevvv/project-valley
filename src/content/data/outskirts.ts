@@ -354,7 +354,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   add(c, 'field-rock', 11, 196, 0.2);
   add(c, 'large-boulder', 100, 130, 2);
   add(c, 'large-boulder', -100, 150, 0.8);
-  add(c, 'rock-outcrop', 40, 250, 2.2);
+  add(c, 'rock-outcrop', 54, 244, 2.2);
   add(c, 'fallen-log', -30, 232, 0.4);
   add(c, 'hollow-log', 60, 200, 1.9);
   add(c, 'fire-lookout-tower', -138, 270, 2.2);

@@ -36,17 +36,22 @@ export async function buildAiTrees(game: Game) {
     const h = positionLocal.y.div(PF[b.sp.id].h).max(0);
     const sway = sin(time.mul(1.1).add(phase)).add(sin(time.mul(2.3).add(phase.mul(1.7))).mul(0.35)).mul(h.mul(h)).mul(windGust.mul(0.2).add(0.1));
     mat.positionNode = positionLocal.add(vec3(sway, 0, sway.mul(0.45)));
-    const inst = new InstancedMesh(b.g.geo, mat, b.spots.length);
-    inst.name = `${b.sp.id}_x${b.spots.length}`;
-    b.spots.forEach((t, i) => {
-      q.setFromAxisAngle(up, t.a);
-      sc.setScalar(t.s);
-      p.set(t.x, groundHeight(t.x, t.z) - 0.1, t.z);
-      inst.setMatrixAt(i, m.compose(p, q, sc));
-    });
-    inst.castShadow = false; // far scenery: skip the shadow pass
-    inst.receiveShadow = true;
-    inst.computeBoundingSphere();
-    game.scene.add(inst);
+    // 90 m cells so the cull system (outskirts/cull.ts) can drop far groves; one draw per species per cell
+    const cells = new Map<string, typeof nearTreeSpots>();
+    for (const t of b.spots) { const k = `${Math.floor(t.x / 90)},${Math.floor(t.z / 90)}`; (cells.get(k) ?? cells.set(k, []).get(k)!).push(t); }
+    for (const [ck, list] of cells) {
+      const inst = new InstancedMesh(b.g.geo, mat, list.length);
+      inst.name = `treecell_${b.sp.id}_${ck}`;
+      list.forEach((t, i) => {
+        q.setFromAxisAngle(up, t.a);
+        sc.setScalar(t.s);
+        p.set(t.x, groundHeight(t.x, t.z) - 0.1, t.z);
+        inst.setMatrixAt(i, m.compose(p, q, sc));
+      });
+      inst.castShadow = false; // far scenery: skip the shadow pass
+      inst.receiveShadow = true;
+      inst.computeBoundingSphere();
+      game.scene.add(inst);
+    }
   }
 }

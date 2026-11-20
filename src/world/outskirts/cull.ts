@@ -13,13 +13,13 @@ export function installOutskirtsCull(game: Game) {
     const m = o as Mesh;
     if (!m.isMesh) return;
     const n = m.name;
-    const range = /^grass_/.test(n) ? 70 : /^crop_/.test(n) ? 150 : /^outskirts_/.test(n) ? 260 : 0;
+    const range = /^grass_/.test(n) ? 70 : /^crop_/.test(n) ? 150 : /^outskirts_/.test(n) ? 260 : /^treecell_/.test(n) ? 230 : 0;
     if (!range) return;
     const inst = m as InstancedMesh;
     if (inst.isInstancedMesh && !inst.boundingSphere) inst.computeBoundingSphere();
     if (!m.geometry.boundingSphere) m.geometry.computeBoundingSphere();
     const s = (inst.isInstancedMesh ? inst.boundingSphere : m.geometry.boundingSphere) as Sphere;
-    items.push({ mesh: m, centre: s.center, radius: s.radius, range, yardRange: Math.min(range, /^outskirts_/.test(n) ? 160 : range) });
+    items.push({ mesh: m, centre: s.center, radius: s.radius, range, yardRange: Math.min(range, /^outskirts_/.test(n) ? 160 : /^treecell_/.test(n) ? 200 : range) });
   });
   const cam = game.camera.position;
   game.addSystem({
