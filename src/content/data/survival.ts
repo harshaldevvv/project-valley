@@ -60,3 +60,39 @@ export const ZOMBIE_HIT = {
   /** And the fracture chance (body hits). */
   armourFractureCut: 0.15,
 };
+
+/**
+ * Warmth (comfort degrees are an abstract scale, not Celsius). The equilibrium is
+ *   ambient (day..night, minus rain) + worn clothing (+ fire),
+ * and warmth (0..100) drifts toward `100 - (comfort - equilibrium) * coldPerDegree` (never above 100). It is gentle on
+ * purpose: starting clothes keep you fine at night; you get cold when you shed clothes, sit in the rain at night, or go
+ * out dressed in a T-shirt. A fire beside you warms you within seconds.
+ */
+export const WARMTH = {
+  /** Equilibrium at or above this = fully warm. */
+  comfort: 16,
+  dayTemp: 19,
+  nightTemp: 3,
+  /** Chill from full rain; the raincoat and hats cancel part of it. */
+  rainPenalty: 4,
+  /** Warmth points lost per comfort degree below `comfort`. */
+  coldPerDegree: 5,
+  /** Points per real minute moving toward the target. */
+  coolPerMin: 6,
+  warmPerMin: 18,
+  /** A lit campfire within `fireRadius` metres adds this to the equilibrium and heats you at `fireWarmPerMin`. */
+  fireBonus: 24,
+  fireRadius: 5,
+  fireWarmPerMin: 60,
+  /** Status thresholds. */
+  coldBelow: 55,
+  freezingBelow: 25,
+  /** Effects (multipliers on mods). */
+  cold: { staminaRegen: 0.9, aimSway: 1.1 },
+  freezing: { staminaRegen: 0.7, aimSway: 1.3, moveSpeed: 0.92 },
+  /** Freezing hurts slowly: HP per tick and tick length, s (only with difficulty.coldDamage). */
+  freezeDamage: 1,
+  freezeEvery: 20,
+  /** Respawn warms you to at least this. */
+  respawn: 70,
+};

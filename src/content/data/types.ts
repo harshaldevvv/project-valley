@@ -27,6 +27,10 @@ export interface ItemDef {
   pockets?: { w: number; h: number; accepts?: ItemDef['kind'][] }[];
   /** Armour rating of worn gear (helmet 3 = infection-proof head, principles §7). */
   armour?: number;
+  /** Worn warmth in comfort degrees (data/survival.ts WARMTH): jackets 3-10, hats and gloves 1-3. */
+  warmth?: number;
+  /** Worn rain protection 0..1; the sum over worn items (capped at 1) cancels that share of the rain chill. */
+  rainproof?: number;
   /** Loot rarity (principles §9 tier weights). Default common. */
   rarity?: Rarity;
   /** Boxed goods: "Unpack" turns one into `count` of `item` (an ammo box into loose rounds). */
@@ -54,6 +58,12 @@ export interface ItemDef {
     fatigue?: number;
     /** A risk taken by using it (dirty water): `chance` 0..1 of gaining `status` (infection starts at stage 1). */
     inflicts?: { status: string; chance: number };
+    /** Instant body warmth, 0..100 points (hot food and drink). It fades back toward what the weather and clothes allow. */
+    warmth?: number;
+    /** Custom effect run by the world layer when the timer completes: 'radio' plays a broadcast, 'campfire' places a camp. */
+    action?: 'radio' | 'campfire';
+    /** Not consumed by use (the radio). */
+    keep?: boolean;
   };
 }
 
@@ -164,4 +174,20 @@ export interface BuildPieceDef {
   /** Model size in metres (w, h, d), also the placeholder box size. Pieces snap on the build grid (data/build.ts). */
   size: [number, number, number];
   cost: { item: string; count: number }[];
+}
+
+/** One crafting recipe (data/crafting.ts). Inputs are consumed, tools only have to be carried, a station has to be near. */
+export interface RecipeDef {
+  id: string;
+  category: 'medical' | 'survival' | 'cooking' | 'weapons' | 'gear';
+  inputs: { item: string; count: number }[];
+  /** Each entry is a set of alternatives: carrying any one of them satisfies it (hammer OR crowbar). Not consumed. */
+  tools?: string[][];
+  /** Station that must be close: a lit campfire. 'workbench' is reserved (no workbench exists in the world yet). */
+  station?: 'campfire' | 'workbench' | null;
+  /** Seconds to craft (interrupted by damage). */
+  seconds: number;
+  outputs: { item: string; count: number }[];
+  /** Repairs the item picked in the panel instead of producing outputs: `amount` of durability (0..1) on weapons. */
+  repair?: { amount: number };
 }

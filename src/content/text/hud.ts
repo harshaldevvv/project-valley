@@ -5,6 +5,7 @@ export const hudText = {
   hunger: 'FOOD',
   thirst: 'WATER',
   fatigue: 'REST',
+  warmth: 'WARM',
   yourBag: 'Your bag',
   day: (n: number) => `Day ${n}`,
   stage: (n: number) => `stage ${n}`,

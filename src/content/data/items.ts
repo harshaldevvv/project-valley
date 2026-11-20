@@ -1,5 +1,6 @@
 import './melee_extra';
 import { MORE_ITEMS } from './items_more';
+import { GUN_ITEMS } from './items_guns';
 import type { ItemDef } from './types';
 
 /**
@@ -65,21 +66,21 @@ const list: ItemDef[] = [
   { id: 'medical_bag', kind: 'container', w: 2, h: 2, stack: 1, pockets: [{ w: 4, h: 4, accepts: ['medical'] }], iconSwatch: '#c94a3f', value: 70, rarity: 'uncommon' },
   { id: 'ammo_tin', kind: 'container', w: 2, h: 2, stack: 1, pockets: [{ w: 3, h: 3, accepts: ['ammo', 'magazine'] }], iconSwatch: '#55603f', value: 45, rarity: 'uncommon' },
   // Wearables with storage.
-  { id: 'jacket_field', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['torso'], grid: { w: 4, h: 2 }, iconSwatch: '#5d6a48', value: 140 },
-  { id: 'hoodie', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['torso'], pockets: [{ w: 2, h: 1 }, { w: 2, h: 1 }], iconSwatch: '#5a5f6b', value: 60 },
-  { id: 'military_jacket', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['torso'], pockets: [{ w: 2, h: 2 }, { w: 2, h: 2 }, { w: 1, h: 2 }, { w: 1, h: 2 }], iconSwatch: '#4f5a3a', value: 220, rarity: 'uncommon' },
-  { id: 'cargo_pants', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['legs'], pockets: [{ w: 2, h: 2 }, { w: 2, h: 2 }], iconSwatch: '#6b6450', value: 90 },
+  { id: 'jacket_field', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['torso'], grid: { w: 4, h: 2 }, warmth: 6, iconSwatch: '#5d6a48', value: 140 },
+  { id: 'hoodie', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['torso'], pockets: [{ w: 2, h: 1 }, { w: 2, h: 1 }], warmth: 5, rainproof: 0.1, iconSwatch: '#5a5f6b', value: 60 },
+  { id: 'military_jacket', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['torso'], pockets: [{ w: 2, h: 2 }, { w: 2, h: 2 }, { w: 1, h: 2 }, { w: 1, h: 2 }], warmth: 7, rainproof: 0.2, armour: 1, iconSwatch: '#4f5a3a', value: 220, rarity: 'uncommon' },
+  { id: 'cargo_pants', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['legs'], pockets: [{ w: 2, h: 2 }, { w: 2, h: 2 }], warmth: 2, iconSwatch: '#6b6450', value: 90 },
   // Rig: four mag pouches that take magazines only, plus a small admin pouch.
   { id: 'tactical_vest', kind: 'clothing', w: 3, h: 3, stack: 1, slots: ['armor'], armour: 2, rarity: 'rare',
     pockets: [{ w: 1, h: 2, accepts: ['magazine'] }, { w: 1, h: 2, accepts: ['magazine'] }, { w: 1, h: 2, accepts: ['magazine'] }, { w: 1, h: 2, accepts: ['magazine'] }, { w: 2, h: 2 }],
     iconSwatch: '#3f4a32', value: 380 },
   // Headwear, face, eyes (worn; stats later except armour).
-  { id: 'boots_work', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['feet'], iconSwatch: '#47321f', value: 70 },
-  { id: 'gloves_work', kind: 'clothing', w: 2, h: 1, stack: 1, slots: ['gloves'], iconSwatch: '#26211c', value: 25 },
-  { id: 'beanie', kind: 'clothing', w: 2, h: 1, stack: 1, slots: ['head'], iconSwatch: '#7a2f2a', value: 12 },
-  { id: 'cap', kind: 'clothing', w: 2, h: 1, stack: 1, slots: ['head'], iconSwatch: '#2f4a6b', value: 10 },
-  { id: 'helmet_military', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['head'], armour: 3, rarity: 'rare', iconSwatch: '#4a5238', value: 300 },
-  { id: 'gas_mask', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['face'], rarity: 'uncommon', iconSwatch: '#33383a', value: 150 },
+  { id: 'boots_work', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['feet'], warmth: 2, rainproof: 0.1, iconSwatch: '#47321f', value: 70 },
+  { id: 'gloves_work', kind: 'clothing', w: 2, h: 1, stack: 1, slots: ['gloves'], warmth: 1, iconSwatch: '#26211c', value: 25 },
+  { id: 'beanie', kind: 'clothing', w: 2, h: 1, stack: 1, slots: ['head'], warmth: 3, iconSwatch: '#7a2f2a', value: 12 },
+  { id: 'cap', kind: 'clothing', w: 2, h: 1, stack: 1, slots: ['head'], warmth: 1, rainproof: 0.1, iconSwatch: '#2f4a6b', value: 10 },
+  { id: 'helmet_military', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['head'], armour: 3, rarity: 'rare', warmth: 1, iconSwatch: '#4a5238', value: 300 },
+  { id: 'gas_mask', kind: 'clothing', w: 2, h: 2, stack: 1, slots: ['face'], rarity: 'uncommon', warmth: 1, iconSwatch: '#33383a', value: 150 },
   { id: 'glasses', kind: 'clothing', w: 1, h: 1, stack: 1, slots: ['eyes'], iconSwatch: '#222628', value: 15 },
   { id: 'secure_pouch', kind: 'misc', w: 2, h: 2, stack: 1, slots: ['pouch'], grid: { w: 2, h: 2 }, iconSwatch: '#3f4a3a', value: 0 },
   // Backpacks: footprint < storage (research section 2). Alice has side pockets; the lab pack is rare.
@@ -91,6 +92,7 @@ const list: ItemDef[] = [
   { id: 'large_hiking_pack', kind: 'backpack', w: 4, h: 5, stack: 1, slots: ['backpack'], grid: { w: 6, h: 7 }, rarity: 'rare', iconSwatch: '#6b3a2e', value: 600 },
   { id: 'laboratory_pack', kind: 'backpack', w: 5, h: 6, stack: 1, slots: ['backpack'], grid: { w: 7, h: 8 }, rarity: 'epic', iconSwatch: '#c9c4b0', value: 1100 },
   ...MORE_ITEMS,
+  ...GUN_ITEMS,
 ];
 
 export const ITEMS: Record<string, ItemDef> = Object.fromEntries(list.map((d) => [d.id, d]));

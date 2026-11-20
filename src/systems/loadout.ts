@@ -229,8 +229,10 @@ export class Loadout implements LoadoutApi {
   use(item: ItemInstance) {
     const use = defOf(item).use;
     if (!use) return null;
-    item.count -= 1;
-    if (item.count <= 0) this.detach(item);
+    if (!use.keep) {
+      item.count -= 1;
+      if (item.count <= 0) this.detach(item);
+    }
     this.changed();
     return use;
   }

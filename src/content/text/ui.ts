@@ -42,7 +42,7 @@ export const survivalText = {
   interrupted: 'Interrupted',
   status: {
     bleeding: 'Bleeding', heavy_bleeding: 'Heavy bleeding', fracture: 'Fracture', infection: 'Infection',
-    well_fed: 'Well fed', starving: 'Starving', dehydrated: 'Dehydrated', exhausted: 'Exhausted',
+    well_fed: 'Well fed', starving: 'Starving', dehydrated: 'Dehydrated', exhausted: 'Exhausted', cold: 'Cold', freezing: 'Freezing',
   } as Record<string, string>,
 };
 

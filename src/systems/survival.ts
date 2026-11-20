@@ -1,9 +1,10 @@
 import { difficulty } from '../content/data/difficulty';
-import { SURVIVAL, WOUNDS, ZOMBIE_HIT } from '../content/data/survival';
+import { SURVIVAL, WARMTH, WOUNDS, ZOMBIE_HIT } from '../content/data/survival';
 import type { ItemDef } from '../content/data/types';
 import type { StatusId, SurvivalApi } from '../core/contracts';
 import type { Rng } from '../engine/rng';
 import { useText as USE_TEXT } from '../content/text/ui';
+import { DRY_DAY, stepWarmth, type WarmthEnv } from './warmth';
 
 /**
  * Survival needs + status effects (principles §7). Pure: the world is reached through `SurvivalHost`
@@ -18,6 +19,8 @@ export interface SurvivalHost {
   /** In-game days elapsed, fractional (engine clock: (day - 1) + hours / 24). Drives infection stages. */
   days(): number;
   statusChanged(id: StatusId, active: boolean, stage?: number): void;
+  /** Weather, clothes and fire around the player (optional: tests and old hosts are always warm and dry by day). */
+  env?(): WarmthEnv;
 }
 
 interface StatusState {
@@ -31,18 +34,29 @@ export interface SurvivalSave {
   hunger: number;
   thirst: number;
   fatigue: number;
+  /** Body warmth 0..100. Absent in v1 saves (read as 100). */
+  warmth?: number;
   /** Real seconds played (save-slot playtime). */
   clock: number;
   statuses: [StatusId, StatusState][];
 }
 
-const DERIVED: StatusId[] = ['well_fed', 'starving', 'dehydrated', 'exhausted'];
+const DERIVED: StatusId[] = ['well_fed', 'starving', 'dehydrated', 'exhausted', 'cold', 'freezing'];
+
+/** Survival save versions: 1 = needs and statuses; 2 adds `warmth`. */
+export const SURVIVAL_SAVE_VERSION = 2;
+export function migrateSurvival(d: SurvivalSave, version: number): SurvivalSave {
+  if (version < 2) return { ...d, warmth: 100, statuses: d.statuses.filter(([id]) => id !== ('cold' as StatusId)) };
+  return d;
+}
 
 export class Survival implements SurvivalApi {
   hunger = 100;
   thirst = 100;
   fatigue = 100;
+  warmth = 100;
   clock = 0;
+  private coldT = 0;
   private map = new Map<StatusId, StatusState>();
   private starveT = 0;
   private thirstT = 0;
@@ -69,6 +83,14 @@ export class Survival implements SurvivalApi {
     if (this.hunger < SURVIVAL.lowBelow || this.thirst < SURVIVAL.lowBelow) (staminaRegen *= SURVIVAL.lowStaminaMul), (staminaCost /= SURVIVAL.lowStaminaMul);
     if (this.map.has('exhausted')) aimSway *= SURVIVAL.exhaustedAimSway;
     if (this.map.has('fracture')) (moveSpeed *= WOUNDS.fracture.moveSpeed), (sprintAllowed = false);
+    if (this.map.has('freezing')) {
+      staminaRegen *= WARMTH.freezing.staminaRegen;
+      aimSway *= WARMTH.freezing.aimSway;
+      moveSpeed *= WARMTH.freezing.moveSpeed;
+    } else if (this.map.has('cold')) {
+      staminaRegen *= WARMTH.cold.staminaRegen;
+      aimSway *= WARMTH.cold.aimSway;
+    }
     const inf = this.map.get('infection');
     if (inf) {
       const st = WOUNDS.infection.stages[(inf.stage ?? 1) - 1];
@@ -126,11 +148,12 @@ export class Survival implements SurvivalApi {
     return [];
   }
 
-  adjust(d: { hunger?: number; thirst?: number; fatigue?: number }) {
+  adjust(d: { hunger?: number; thirst?: number; fatigue?: number; warmth?: number }) {
     const c = (v: number) => Math.min(100, Math.max(0, v));
     if (d.hunger) this.hunger = c(this.hunger + d.hunger);
     if (d.thirst) this.thirst = c(this.thirst + d.thirst);
     if (d.fatigue) this.fatigue = c(this.fatigue + d.fatigue);
+    if (d.warmth) this.warmth = c(this.warmth + d.warmth);
   }
 
   /**
@@ -143,6 +166,8 @@ export class Survival implements SurvivalApi {
     if (use.food && this.hunger < 99) return null;
     if (use.water && this.thirst < 99) return null;
     if (use.fatigue && this.fatigue < 99) return null;
+    if (use.warmth && this.warmth < 99) return null;
+    if (use.action) return null; // radio, campfire kit: always allowed
     if (use.stamina) return null; // stamina is mechanics' meter; always worth it
     let blockedInfection: number | null = null;
     for (const id of (use.cures ?? []) as StatusId[]) {
@@ -160,7 +185,7 @@ export class Survival implements SurvivalApi {
 
   /** Apply a consumable's effects (called when its use timer completes). */
   applyUse(use: NonNullable<ItemDef['use']>) {
-    this.adjust({ hunger: use.food, thirst: use.water, fatigue: use.fatigue });
+    this.adjust({ hunger: use.food, thirst: use.water, fatigue: use.fatigue, warmth: use.warmth });
     if (use.heal) this.host.heal(use.heal);
     if (use.inflicts && this.rng.next() < use.inflicts.chance) this.addStatus(use.inflicts.status as StatusId);
     for (const id of (use.cures ?? []) as StatusId[]) {
@@ -214,6 +239,16 @@ export class Survival implements SurvivalApi {
     this.derive('starving', this.hunger <= 0);
     this.derive('dehydrated', this.thirst <= 0);
     this.derive('exhausted', this.fatigue < SURVIVAL.exhaustedBelow);
+
+    // Warmth: drifts toward what the weather, clothes and any fire allow. Freezing hurts slowly, never instantly.
+    const env = this.host.env?.() ?? DRY_DAY;
+    this.warmth = stepWarmth(this.warmth, env, dt);
+    const freezing = this.warmth < WARMTH.freezingBelow;
+    this.derive('freezing', freezing);
+    this.derive('cold', !freezing && this.warmth < WARMTH.coldBelow);
+    if (difficulty.coldDamage && freezing) {
+      if ((this.coldT += dt) >= WARMTH.freezeEvery) (this.coldT = 0), this.host.hurt(WARMTH.freezeDamage, 'cold');
+    } else this.coldT = 0;
   }
 
   private derive(id: StatusId, on: boolean) {
@@ -225,16 +260,18 @@ export class Survival implements SurvivalApi {
   respawn() {
     this.hunger = Math.max(this.hunger, 50);
     this.thirst = Math.max(this.thirst, 50);
+    this.warmth = Math.max(this.warmth, WARMTH.respawn);
     for (const id of ['bleeding', 'heavy_bleeding', 'fracture'] as StatusId[]) this.drop(id);
   }
 
   serialize(): SurvivalSave {
-    return structuredClone({ hunger: this.hunger, thirst: this.thirst, fatigue: this.fatigue, clock: this.clock, statuses: [...this.map] });
+    return structuredClone({ hunger: this.hunger, thirst: this.thirst, fatigue: this.fatigue, warmth: this.warmth, clock: this.clock, statuses: [...this.map] });
   }
 
-  load(s: SurvivalSave) {
+  load(save: SurvivalSave, version = SURVIVAL_SAVE_VERSION) {
+    const s = migrateSurvival(save, version);
     for (const id of [...this.map.keys()]) this.drop(id);
-    Object.assign(this, { hunger: s.hunger, thirst: s.thirst, fatigue: s.fatigue, clock: s.clock });
+    Object.assign(this, { hunger: s.hunger, thirst: s.thirst, fatigue: s.fatigue, warmth: s.warmth ?? 100, clock: s.clock });
     this.lastDays = null;
     for (const [id, st] of s.statuses) {
       this.map.set(id, { ...st });

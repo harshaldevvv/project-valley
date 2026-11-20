@@ -15,6 +15,9 @@ export const EXTRA_MELEE: Record<string, MeleeDef> = {
   baseball_bat: heavy('baseball_bat', 'wpn_crowbar_a', { damage: 62, reach: 2.0, noise: 6, durabilityPerHit: 0.008 }),
   machete: heavy('machete', 'wpn_knife_a', { damage: 64, reach: 1.8, arcDeg: 100, windup: 0.2, recovery: 0.34, staggerOnHit: 2, noise: 5, durabilityPerHit: 0.009, heavyDamageMul: 1.8 }),
   fire_axe: heavy('fire_axe', 'wpn_hammer_a', { damage: 92, reach: 1.8, windup: 0.34, recovery: 0.5, heavyWindup: 0.58, heavyRecovery: 0.6, noise: 7, durabilityPerHit: 0.006, heavyDamageMul: 1.9 }),
+  // Crafted: the spear is long and quick, the nail bat hits harder than the bat and wears out faster.
+  spear: heavy('spear', 'wpn_crowbar_a', { damage: 58, reach: 2.5, arcDeg: 50, rays: 3, windup: 0.2, recovery: 0.36, staggerOnHit: 2, noise: 4, durabilityPerHit: 0.01, heavyDamageMul: 1.9 }),
+  nail_bat: heavy('nail_bat', 'wpn_crowbar_a', { damage: 80, reach: 2.0, noise: 7, durabilityPerHit: 0.012 }),
 };
 
 Object.assign(meleeDefs, EXTRA_MELEE);

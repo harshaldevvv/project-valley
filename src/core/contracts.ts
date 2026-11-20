@@ -65,12 +65,14 @@ export interface PlayerView {
 }
 
 /** M2, systems-builder: survival needs + status effects (principles §7). Pure data; mechanics/HUD read it. */
-export type StatusId = 'bleeding' | 'heavy_bleeding' | 'fracture' | 'infection' | 'well_fed' | 'starving' | 'dehydrated' | 'exhausted';
+export type StatusId = 'bleeding' | 'heavy_bleeding' | 'fracture' | 'infection' | 'well_fed' | 'starving' | 'dehydrated' | 'exhausted' | 'cold' | 'freezing';
 export interface SurvivalApi {
   /** 0..100, 100 = full / rested. */
   readonly hunger: number;
   readonly thirst: number;
   readonly fatigue: number;
+  /** Body warmth 0..100, 100 = comfortable (data/survival.ts WARMTH). */
+  readonly warmth: number;
   /** Active statuses with optional stage (infection 1..4) and seconds left (null = until cured). */
   readonly statuses: ReadonlyMap<StatusId, { stage?: number; timeLeft: number | null }>;
   /** Multipliers mechanics applies to the player every tick (1 = normal). */

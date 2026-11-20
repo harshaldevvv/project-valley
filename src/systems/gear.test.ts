@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RECIPES } from '../content/data/crafting';
 import { CONTAINER_THEMES, CONTAINERS } from '../content/data/containers';
 import { difficulty } from '../content/data/difficulty';
 import { ITEMS, ITEM_RENAMES, PICKUP_MODELS } from '../content/data/items';
@@ -229,7 +230,8 @@ describe('loot reach and balance', () => {
   }
 
   it('every item that is not a starter or a derivative can be found in at least one loot table', () => {
-    const exempt = new Set(['secure_pouch']); // starting kit only
+    const crafted = RECIPES.flatMap((r) => r.outputs.map((o) => o.item)).filter((id) => ['hot_soup', 'hot_chili', 'hot_noodles', 'spear', 'nail_bat'].includes(id));
+    const exempt = new Set(['secure_pouch', ...crafted]); // starting kit only, or made only by crafting (cooked food, crafted weapons)
     const never = Object.keys(ITEMS).filter((id) => !exempt.has(id) && !rolled.has(id));
     expect(never).toEqual([]);
   });

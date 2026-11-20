@@ -1,4 +1,5 @@
 import type { LootTable, Rarity } from './types';
+import { GUN_LOOT } from './loot_guns';
 
 /**
  * Loot tables (principles §9): POI-themed, at least 60% of each table's weight is items specific to that kind of place;
@@ -87,6 +88,8 @@ const list: LootTable[] = [
       { item: 'saline_bag', weight: 4, count: [1, 1] },
       { item: 'adrenaline_shot', weight: 1, count: [1, 1] },
             { item: 'sterile_gauze', weight: 10, count: [1, 4] },
+            { item: 'purification_tablets', weight: 6, count: [1, 2] },
+      { item: 'sterile_bandage', weight: 6, count: [1, 2] },
       { table: 'common_junk', weight: JUNK, count: [1, 1] },
     ],
   },
@@ -120,6 +123,7 @@ const list: LootTable[] = [
             { item: 'bandolier', weight: 3, count: [1, 1] },
       { item: 'assault_pack', weight: 2, count: [1, 1] },
       { item: 'energy_gel', weight: 4, count: [1, 2] },
+            { item: 'purification_tablets', weight: 4, count: [1, 3] },
       { table: 'common_junk', weight: JUNK, count: [1, 1] },
     ],
   },
@@ -353,6 +357,9 @@ const list: LootTable[] = [
       { item: 'camping_lantern', weight: 3, count: [1, 1] },
       { item: 'scarf', weight: 3, count: [1, 1] },
       { item: 'honey_jar', weight: 3, count: [1, 1] },
+            { item: 'torch', weight: 4, count: [1, 2] },
+      { item: 'campfire_kit', weight: 3, count: [1, 1] },
+      { item: 'cooking_pot', weight: 3, count: [1, 1] },
       { table: 'common_junk', weight: JUNK, count: [1, 1] },
     ],
   },
@@ -383,6 +390,7 @@ const list: LootTable[] = [
       { item: 'sardines', weight: 6, count: [1, 2] },
       { item: 'honey_jar', weight: 3, count: [1, 1] },
       { item: 'iced_tea', weight: 6, count: [1, 1] },
+            { item: 'cooking_pot', weight: 5, count: [1, 1] },
       { table: 'common_junk', weight: JUNK, count: [1, 1] },
     ],
   },
@@ -424,6 +432,7 @@ const list: LootTable[] = [
       { item: 'antibiotics', weight: 5, count: [1, 1] },
       { item: 'first_aid_pouch', weight: 3, count: [1, 1] },
             { item: 'sterile_gauze', weight: 10, count: [1, 3] },
+            { item: 'sterile_bandage', weight: 4, count: [1, 1] },
       { table: 'common_junk', weight: JUNK, count: [1, 1] },
     ],
   },
@@ -450,6 +459,8 @@ const list: LootTable[] = [
       { item: 'antiviral', weight: 1, count: [1, 1] },
             { item: 'laboratory_pack', weight: 1, count: [1, 1] },
             { item: 'sterile_gauze', weight: 12, count: [1, 4] },
+            { item: 'purification_tablets', weight: 8, count: [1, 3] },
+      { item: 'sterile_bandage', weight: 8, count: [1, 2] },
       { table: 'common_junk', weight: JUNK, count: [1, 1] },
     ],
   },
@@ -517,6 +528,9 @@ const list: LootTable[] = [
       { item: 'headlamp', weight: 4, count: [1, 1] },
       { item: 'energy_gel', weight: 6, count: [1, 2] },
       { item: 'sterile_gauze', weight: 6, count: [1, 3] },
+            { item: 'sterile_bandage', weight: 5, count: [1, 2] },
+      { item: 'purification_tablets', weight: 6, count: [1, 3] },
+      { item: 'cooking_pot', weight: 3, count: [1, 1] },
       { table: 'common_junk', weight: JUNK, count: [1, 1] },
     ],
   },
@@ -558,6 +572,10 @@ const list: LootTable[] = [
       { item: 'scarf', weight: 3, count: [1, 1] },
       { item: 'cowboy_hat', weight: 2, count: [1, 1] },
       { item: 'canned_corn', weight: 6, count: [1, 2] },
+            { item: 'campfire_kit', weight: 6, count: [1, 1] },
+      { item: 'cooking_pot', weight: 5, count: [1, 1] },
+      { item: 'torch', weight: 6, count: [1, 2] },
+      { item: 'purification_tablets', weight: 6, count: [1, 3] },
       { table: 'common_junk', weight: JUNK, count: [1, 1] },
     ],
   },
@@ -591,6 +609,7 @@ const list: LootTable[] = [
       { item: 'camping_lantern', weight: 3, count: [1, 1] },
       { item: 'glow_stick', weight: 4, count: [1, 2] },
       { item: 'motorcycle_helmet', weight: 2, count: [1, 1] },
+            { item: 'torch', weight: 4, count: [1, 2] },
       { table: 'common_junk', weight: JUNK, count: [1, 1] },
     ],
   },
@@ -658,5 +677,8 @@ const list: LootTable[] = [
     ],
   },
 ];
+
+// M4 guns (data/loot_guns.ts) join the themed tables by id
+for (const t of list) if (GUN_LOOT[t.id]) t.entries.push(...GUN_LOOT[t.id]);
 
 export const LOOT: Record<string, LootTable> = Object.fromEntries(list.map((t) => [t.id, t]));
