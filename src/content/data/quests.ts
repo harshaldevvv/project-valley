@@ -18,6 +18,8 @@ export type Objective = { poi?: string } & (
   | { type: 'use'; item: string; count?: number }
   /** Stay alive for this many in-game hours from when the objective starts. */
   | { type: 'survive'; hours: number }
+  /** Hand an item to an NPC (data/npc.ts) in conversation: the item is taken from the pack. */
+  | { type: 'give'; item: string; count?: number; npc: string }
   /** Read a note item (the note is an item with use.action 'read'). */
   | { type: 'read'; note: string }
   /** A named signal from questBus ('refuel', 'campfire_lit', 'radio', ...). */
@@ -70,6 +72,7 @@ export const QUESTS: QuestDef[] = [
       { type: 'goto', poi: 'maple' },
       { type: 'read', note: 'note_maple_sick' },
       { type: 'collect', item: 'antibiotics', count: 1 },
+      { type: 'give', item: 'antibiotics', npc: 'eli', poi: 'maple' },
     ],
     rewards: [{ item: 'first_aid_kit', count: 1 }, { item: 'tourniquet', count: 1 }, { item: 'canned_chili', count: 2 }],
   },

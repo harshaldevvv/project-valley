@@ -184,7 +184,9 @@ describe('progress rules', () => {
     goto(w, 'maple');
     q.tick();
     q.report({ type: 'note', id: 'note_maple_sick' });
-    expect(q.state.maple.status).toBe('done'); // the pills were already in the pack
+    expect(q.current('maple')).toMatchObject({ type: 'give' }); // the pills were already in the pack: on to handing them over
+    q.report({ type: 'give', npc: 'eli', item: 'antibiotics' });
+    expect(q.state.maple.status).toBe('done');
   });
 
   it('kills in an area count only there, and the counter reports progress', () => {

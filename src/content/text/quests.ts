@@ -38,8 +38,8 @@ export const questText: Record<string, QuestText> = {
   maple: {
     title: 'Maple Street',
     summary: 'A note on a nightstand: somebody is sick, and the only cure is in a bathroom cabinet two houses down.',
-    objectives: ['Go to Maple Street', 'Read the note in the house', 'Find antibiotics (the second house, bathroom cabinet)'],
-    done: 'You leave the pills on the nightstand with the note. The bed is empty. The door is open. Take the kit he left you.',
+    objectives: ['Go to Maple Street', 'Read the note in the house', 'Find antibiotics (the second house, bathroom cabinet)', 'Bring the antibiotics to Eli on the porch'],
+    done: 'Eli takes the pills like they might vanish. Danny will see morning. Take the kit; it is not much, but it is all he has.',
   },
   farm: {
     title: 'Hollow Creek Farm',
@@ -80,7 +80,7 @@ export const questFallback: QuestText = { title: 'Unnamed task', summary: '', ob
 export const noteText: Record<string, { title: string; body: string }> = {
   note_maple_sick: {
     title: 'Note on the nightstand',
-    body: 'Danny has a fever and the cough is wet now. The cabinet in my brother\'s house, the green one at the back, has antibiotics. I went to get them and I have not come back, so if you are reading this: please. Leave them on the nightstand. He is too weak to go to the door. Do not knock hard.',
+    body: 'Danny has a fever and the cough is wet now. The cabinet in my brother\'s house, the green one at the back, has antibiotics. I went to get them and I have not come back, so if you are reading this: please. Bring them to Eli on the porch, he will not open the door for anyone else. Danny is too weak to go to the door. Do not knock hard.',
   },
   note_school_roll: {
     title: 'Evacuation register',

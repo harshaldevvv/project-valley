@@ -305,6 +305,10 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Field Radio Set by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/field-radio-set-b6f3fd |
 | Tool Case by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/tool-case-d92909 |
 | Camping Lantern by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/camping-lantern-21d14b |
+| Merchant by Polyfork (NPC chr_npc_trader (the Gate Checkpoint trader), our survivor clips retargeted with `tools/audit/retarget_pf_hero.py`) | https://polyfork.dev/asset/merchant-6f606b |
+| Male Villager by Polyfork (NPC chr_npc_eli (Maple Street), our survivor clips retargeted with `tools/audit/retarget_pf_hero.py`) | https://polyfork.dev/asset/villager-40255c |
+| Farmer by Polyfork (NPC chr_npc_hollis (Hollow Creek Farm), our survivor clips retargeted with `tools/audit/retarget_pf_hero.py`) | https://polyfork.dev/asset/farmer-304a43 |
+| Forest Ranger by Polyfork (NPC chr_npc_wren (Ranger Ridge), our survivor clips retargeted with `tools/audit/retarget_pf_hero.py`) | https://polyfork.dev/asset/forest-ranger-6906b0 |
 
 (The drivable truck `veh_pickup_pf.glb` is the Pickup Truck above, converted with `tools/audit/pf_vehicle.mjs`: rotated to this game's front axis and re-pivoted wheels.)
 

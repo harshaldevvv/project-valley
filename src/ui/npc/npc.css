@@ -1,0 +1,27 @@
+/* Conversation panel and trade screen (inventory.css variables and panels). */
+.dlg { position: fixed; left: 0; right: 0; bottom: 6vh; z-index: 22; display: flex; justify-content: center; pointer-events: none; font: 15px/1.45 system-ui, 'Segoe UI', sans-serif; color: #e4e8ea; }
+.dlg[hidden] { display: none; }
+.dlg-box { pointer-events: auto; width: min(720px, 92vw); padding: 14px 18px 10px; background: rgba(12, 15, 17, 0.92); border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 2px solid #d9b25a; border-radius: 6px; box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55); }
+.dlg-name { font: 700 12px system-ui; letter-spacing: 0.16em; text-transform: uppercase; color: #d9b25a; margin-bottom: 6px; }
+.dlg-say { font-size: 16px; line-height: 1.55; color: #f1efe6; margin-bottom: 12px; min-height: 2.6em; }
+.dlg-choices { display: flex; flex-direction: column; gap: 5px; }
+.dlg-choice { display: flex; gap: 10px; align-items: baseline; text-align: left; font: 600 14px system-ui; color: #dfe5e8; padding: 8px 12px; cursor: pointer;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; }
+.dlg-choice:hover { background: rgba(217, 178, 90, 0.14); border-color: rgba(217, 178, 90, 0.5); }
+.dlg-n { color: #d9b25a; font-weight: 700; min-width: 14px; }
+.tr-root { z-index: 22; }
+.tr-wrap { display: flex; gap: 14px; align-items: flex-start; max-height: calc(100vh - max(16px, 4vh) - 90px); }
+.tr-col { width: min(400px, 46vw); }
+.tr-cash { margin: -2px 0 8px; font: 700 13px system-ui; color: #9fd09a; letter-spacing: 0.04em; }
+.tr-row { display: grid; grid-template-columns: 38px 1fr auto auto; gap: 8px; align-items: center; padding: 4px 6px; margin-bottom: 3px; border-radius: 5px; background: rgba(255, 255, 255, 0.035); }
+.tr-row:hover { background: rgba(255, 255, 255, 0.07); }
+.tr-ic { width: 34px; height: 34px; object-fit: contain; border-radius: 3px; }
+.tr-name b { font-weight: 600; font-size: 14px; }
+.tr-name small { color: var(--dim); margin-left: 6px; font-size: 12px; }
+.tr-btn { font: 700 12px system-ui; letter-spacing: 0.04em; color: #15181a; background: #d9b25a; border: 0; border-radius: 4px; padding: 6px 9px; cursor: pointer; white-space: nowrap; }
+.tr-btn:disabled { background: rgba(255, 255, 255, 0.12); color: var(--dim); cursor: default; }
+.tr-btn.alt { background: rgba(255, 255, 255, 0.14); color: var(--text); }
+.tr-row.poor .tr-name b { color: #aeb6ba; }
+.tr-empty { color: var(--dim); padding: 8px 4px; font-size: 13px; }
+.tr-note { min-height: 20px; text-align: center; color: #e0a090; font: 600 13px system-ui; margin-top: 4px; }

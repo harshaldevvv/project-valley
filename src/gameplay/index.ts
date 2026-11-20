@@ -1,6 +1,7 @@
 import { Box3, BoxGeometry, Mesh, Vector3, type Material } from 'three';
 import { BodyFacing } from './player/facing';
 import { installSaves } from './saves';
+import { installNpcs } from './npc/npc';
 import { SurvivalGlue } from './player/survivalGlue';
 import type { Game } from '../core/game';
 import { cameraFeel, health, movement, stamina } from '../content/data/player';
@@ -23,8 +24,8 @@ import { createCtx, probe, type Ctx } from './ctx';
 import { Fx } from './fx/fx';
 import { Interact } from './interact/interact';
 import { Melee } from './melee/melee';
-import { Player } from './player/player';
 import { Throwables } from './throwables/throwables';
+import { Player } from './player/player';
 import { Vehicles } from './vehicles/vehicles';
 import { Targets } from './weapons/targets';
 import { sandboxLoadout, Weapons } from './weapons/weapons';
@@ -41,8 +42,8 @@ export async function installGameplay(game: Game): Promise<void> {
   ctx.rig = new CameraRig(ctx);
   ctx.weapons = new Weapons(ctx);
   ctx.melee = new Melee(ctx);
-  ctx.interact = new Interact(ctx);
   ctx.throwables = new Throwables(ctx);
+  ctx.interact = new Interact(ctx);
   ctx.zombies = new Zombies(ctx);
   await ctx.zombies.warmCrowds();
   ctx.vehicles = new Vehicles(ctx);
@@ -129,8 +130,8 @@ export async function installGameplay(game: Game): Promise<void> {
       ctx.rig.step(dt);
       ctx.melee.step(dt);
       ctx.weapons.step(dt);
-      ctx.facing.step(dt);
       ctx.throwables.step(dt);
+      ctx.facing.step(dt);
       ctx.interact.step(dt);
       ctx.vehicles.step(dt);
       ctx.targets.step(dt);
@@ -218,6 +219,7 @@ export async function installGameplay(game: Game): Promise<void> {
     /* storage unavailable: defaults */
   }
   installSaves(ctx);
+  await installNpcs(ctx); // friendly NPCs and the trader (gameplay/npc)
   installDebug(ctx);
   // Playwright / console hooks (pointer lock may not engage under automation)
   (window as unknown as { __gp: unknown }).__gp = {

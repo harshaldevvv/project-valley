@@ -35,6 +35,7 @@ export type Report =
   | { type: 'use'; item: string }
   | { type: 'craft'; recipe: string }
   | { type: 'note'; id: string }
+  | { type: 'give'; npc: string; item: string }
   | { type: 'event'; name: string; poi?: string };
 
 export interface QState {
@@ -192,7 +193,8 @@ export class Quests {
           hit = s.n >= (o.count ?? 1);
           if (!hit) this.emit({ type: 'progress', quest: q.id, index: s.step, n: s.n, of: o.count ?? 1 });
         }
-      } else if (r.type === 'craft' && o.type === 'craft') hit = o.recipe === r.recipe;
+      } else if (r.type === 'give' && o.type === 'give') hit = o.npc === r.npc && o.item === r.item;
+      else if (r.type === 'craft' && o.type === 'craft') hit = o.recipe === r.recipe;
       else if (r.type === 'note' && o.type === 'read') hit = o.note === r.id;
       else if (r.type === 'event' && o.type === 'event' && o.name === r.name) {
         const area = o.poi ? this.env.place(o.poi) : null;

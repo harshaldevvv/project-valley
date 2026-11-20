@@ -11,6 +11,7 @@ import { autoPlace, newItem, newItems } from './inventory';
 import type { Loadout } from './loadout';
 import { QUEST_SAVE_VERSION, Quests, type QuestSave } from './quests';
 import { questBus } from './questBus';
+import { worldHooks } from './worldHooks';
 
 /**
  * World side of quests v1: feeds the pure rules (systems/quests.ts) from game events and the quest bus, puts the quest
@@ -36,6 +37,12 @@ export function installQuests(game: Game, lo: Loadout, deps: { sfx(id: string, a
       deps.toast(T.rewardGiven(itemText[item]?.name ?? item, count), item);
     },
   });
+
+  worldHooks.quests = {
+    report: (r) => quests.report(r),
+    status: (id) => quests.state[id]?.status ?? 'locked',
+    objectives: () => quests.active().map((q) => quests.current(q.id)!).filter(Boolean),
+  };
 
   const ui = new QuestUi(
     quests,

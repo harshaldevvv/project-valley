@@ -855,5 +855,45 @@
       "zmb_pfz_firefighter_a_LOD2": 753
     },
     "bytes": 814624
+  },
+  "chr_npc_trader": {
+    "url": "/assets/models/chr/chr_npc_trader.glb",
+    "category": "chr",
+    "tris": {
+      "chr_npc_trader_LOD0": 4007,
+      "chr_npc_trader_LOD1": 0,
+      "chr_npc_trader_LOD2": 0
+    },
+    "bytes": 946764
+  },
+  "chr_npc_eli": {
+    "url": "/assets/models/chr/chr_npc_eli.glb",
+    "category": "chr",
+    "tris": {
+      "chr_npc_eli_LOD0": 3735,
+      "chr_npc_eli_LOD1": 0,
+      "chr_npc_eli_LOD2": 0
+    },
+    "bytes": 929184
+  },
+  "chr_npc_hollis": {
+    "url": "/assets/models/chr/chr_npc_hollis.glb",
+    "category": "chr",
+    "tris": {
+      "chr_npc_hollis_LOD0": 4875,
+      "chr_npc_hollis_LOD1": 0,
+      "chr_npc_hollis_LOD2": 0
+    },
+    "bytes": 957592
+  },
+  "chr_npc_wren": {
+    "url": "/assets/models/chr/chr_npc_wren.glb",
+    "category": "chr",
+    "tris": {
+      "chr_npc_wren_LOD0": 3829,
+      "chr_npc_wren_LOD1": 0,
+      "chr_npc_wren_LOD2": 0
+    },
+    "bytes": 932452
   }
 }
