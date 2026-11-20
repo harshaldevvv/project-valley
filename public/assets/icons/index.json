@@ -195,6 +195,11 @@
   "note_school_roll",
   "note_camp_diary",
   "note_crash_log",
-  "note_ranger_log"
+  "note_ranger_log",
+  "frag_grenade",
+  "molotov",
+  "glass_bottle",
+  "flare",
+  "fuel_can"
  ]
 }

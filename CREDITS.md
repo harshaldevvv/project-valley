@@ -35,6 +35,7 @@ funding from NSF EIA-0196217.
 | Magazine and bolt sounds | [Gun reload sounds](https://opengameart.org/content/gun-reload-sounds) | Joaken |
 | Knife and melee swings | [20 Sword Sound Effects](https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes), [3 melee sounds](https://opengameart.org/content/3-melee-sounds) | StarNinjas, qubodup |
 | Knife stab | [150 Combat Sound Effects](https://opengameart.org/content/150-combat-sound-effects) (Kenney RPG Audio) | Kenney, MedicineStorm |
+| Explosion, molotov burst, glass break, flare hiss | [150 Combat Sound Effects](https://opengameart.org/content/150-combat-sound-effects) (Kenney Sci-fi Sounds, CoMiGo Bleeps and Bloops, Kronbits 200 Free SFX) | Kenney, Cosmo Myzrail Gorynych, Kronbits, MedicineStorm |
 | Zombie groans, alerts, attacks, deaths | [Zombies Sound Pack](https://opengameart.org/content/zombies-sound-pack) | artisticdude |
 | Zombie groans | [Undead Moans](https://opengameart.org/content/undead-moans) | AntumDeluge |
 | Zombie groans | [Zombie moans](https://opengameart.org/content/zombie-moans) | darsycho |

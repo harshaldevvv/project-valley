@@ -38,6 +38,36 @@ function tor(g, r, t, x, y, z, c, o = {}) {
 
 // ---------- builders: (swatch) -> Group, upright (Y up), front toward +Z ----------
 const B = {
+  grenade(c) {
+    const g = G();
+    sph(g, 0.34, 0, 0, 0, c, { rough: 0.5 });
+    cyl(g, 0.12, 0.14, 0, 0.36, 0, '#8a8f93', { metal: 0.6, rough: 0.35 });
+    box(g, 0.1, 0.06, 0.5, 0.0, 0.46, 0.12, '#9aa0a4', { metal: 0.6, rough: 0.35 });
+    tor(g, 0.1, 0.025, 0.2, 0.42, 0, '#b9bec1', { metal: 0.7, rough: 0.3, rx: Math.PI / 2 });
+    return g;
+  },
+  flare(c) {
+    const g = G();
+    cyl(g, 0.12, 1.0, 0, 0, 0, c, { rough: 0.6 });
+    cyl(g, 0.125, 0.12, 0, 0.5, 0, '#ffe9a0', { rough: 0.4 });
+    cyl(g, 0.126, 0.1, 0, -0.45, 0, '#2a2a2a', { rough: 0.6 });
+    return g;
+  },
+  molotov(c) {
+    const g = G();
+    cyl(g, 0.26, 0.9, 0, -0.1, 0, c, { rough: 0.25 });
+    cyl(g, 0.12, 0.34, 0, 0.5, 0, c, { rough: 0.25, r2: 0.09 });
+    box(g, 0.2, 0.05, 0.14, 0.04, 0.7, 0, '#e8dcc0', { rough: 0.9, rz: 0.4 });
+    box(g, 0.05, 0.4, 0.14, 0.12, 0.86, 0, '#e8dcc0', { rough: 0.9, rz: -0.3 });
+    return g;
+  },
+  fuelcan(c) {
+    const g = G();
+    box(g, 0.9, 1.0, 0.4, 0, 0, 0, c, { rough: 0.5, metal: 0.3 });
+    cyl(g, 0.12, 0.16, -0.22, 0.58, 0, '#2a2a2a', { rough: 0.5 });
+    box(g, 0.36, 0.08, 0.1, 0.1, 0.52, 0, '#2a2a2a', { rough: 0.5 });
+    return g;
+  },
   pack(c, o = {}) {
     const g = G(), w = o.w ?? 1, h = o.h ?? 1.25, d = o.d ?? 0.6;
     box(g, w, h, d, 0, 0, 0, c);
@@ -408,6 +438,7 @@ const B = {
 
 // itemId -> [builder, options]; ids not listed fall back by kind.
 const MAP = {
+  frag_grenade: ['grenade'], molotov: ['molotov'], glass_bottle: ['bottle', { r: 0.2, h: 0.9, label: '#3f6a4a' }], flare: ['flare'], fuel_can: ['fuelcan'],
   waist_pack: ['pouch', { w: 1.2, h: 0.7, d: 0.4, strap: true }], messenger_bag: ['pouch', { w: 1.4, h: 1.0, d: 0.45 }],
   daypack: ['pack', { w: 0.95, h: 1.2 }], school_bag: ['pack', { w: 0.95, h: 1.15 }], backpack_small: ['pack', { w: 0.95, h: 1.15 }], rucksack_military: ['pack', { w: 1.1, h: 1.45, d: 0.7, side: true }],
   duffel_bag: ['duffel'], tackle_box: ['tackle'], first_aid_pouch: ['pouch', { w: 1.1, h: 0.7, cross: true }], mag_pouch: ['pouch', { w: 0.7, h: 1.2 }], tool_roll: ['roll'],

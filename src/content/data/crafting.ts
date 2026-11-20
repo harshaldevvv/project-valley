@@ -5,7 +5,7 @@ import type { RecipeDef } from './types';
  *  - every id exists, and the recipe graph has no cycle (nothing can be turned back into its own ingredients);
  *  - outputs are worth at most ~4x their inputs (labour margin), so crafting never mints money out of junk;
  *  - rags come only from clothes (a finite item), so bandages stay limited by what you find and wear out.
- * Not here on purpose: molotov (no throwables), arrows (no bow), cooking raw meat (no raw food exists yet), workbench
+ * Not here on purpose: arrows (no bow), cooking raw meat (no raw food exists yet), workbench
  * recipes (no workbench in the world), barricades (build mode already builds them from planks and nails).
  */
 const CUT = ['knife_a', 'multitool', 'machete'];
@@ -37,6 +37,7 @@ const list: RecipeDef[] = [
   { id: 'spear', category: 'weapons', inputs: [{ item: 'wood_planks', count: 2 }, { item: 'knife_a', count: 1 }, { item: 'duct_tape', count: 1 }], seconds: 8, outputs: [{ item: 'spear', count: 1 }] },
   { id: 'nail_bat', category: 'weapons', inputs: [{ item: 'baseball_bat', count: 1 }, { item: 'nails', count: 8 }], tools: [HIT], seconds: 8, outputs: [{ item: 'nail_bat', count: 1 }] },
   { id: 'repair_weapon', category: 'weapons', inputs: [{ item: 'scrap_metal', count: 1 }, { item: 'cloth_rag', count: 1 }], tools: [['multitool', 'wrench', 'repair_kit']], seconds: 6, outputs: [], repair: { amount: 0.35 } },
+  { id: 'molotov', category: 'weapons', inputs: [{ item: 'glass_bottle', count: 2 }, { item: 'cloth_rag', count: 2 }, { item: 'fuel_can', count: 1 }], seconds: 6, outputs: [{ item: 'molotov', count: 2 }] },
   // ---- gear ----
   { id: 'lockpick', category: 'gear', inputs: [{ item: 'copper_wire', count: 2 }, { item: 'scrap_metal', count: 1 }], tools: [['multitool', 'knife_a']], seconds: 6, outputs: [{ item: 'lockpick', count: 2 }] },
   { id: 'bandana', category: 'gear', inputs: [{ item: 'cloth_rag', count: 2 }], seconds: 3, outputs: [{ item: 'bandana', count: 1 }] },
