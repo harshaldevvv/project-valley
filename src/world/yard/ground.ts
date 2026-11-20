@@ -91,7 +91,9 @@ export function buildGround(kit: Kit) {
   const hf = new Float32Array(row * row);
   for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) hf[i * row + j] = heights[j * row + i];
   const terrain = world.createCollider(
-    R.ColliderDesc.heightfield(n, n, hf, { x: EXTENT * 2, y: 1, z: EXTENT * 2 }).setCollisionGroups(groups(Group.TERRAIN, 0xffff)),
+    // FIX_INTERNAL_EDGES: without it the character controller catches on the edges between cells and stops for a
+    // frame every cell (~5 m) even on flat ground (the stutter the owner reported on roads, 2026-11-20).
+    R.ColliderDesc.heightfield(n, n, hf, { x: EXTENT * 2, y: 1, z: EXTENT * 2 }, R.HeightFieldFlags.FIX_INTERNAL_EDGES).setCollisionGroups(groups(Group.TERRAIN, 0xffff)),
   );
   tagTerrain(terrain.handle);
 

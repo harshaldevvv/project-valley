@@ -252,8 +252,24 @@ export class Player implements PlayerView {
     _w.set(this.vel.x * dt, this.vy * dt, this.vel.z * dt);
     const wasGrounded = this.grounded;
     const { QueryFilterFlags } = this.ctx.game.phys.R;
-    this.kcc.computeColliderMovement(this.collider, _w, QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.PLAYER, WORLD_FILTER));
-    const m = this.kcc.computedMovement();
+    const filt = groups(Group.PLAYER, WORLD_FILTER);
+    this.kcc.computeColliderMovement(this.collider, _w, QueryFilterFlags.EXCLUDE_SENSORS, filt);
+    let m = this.kcc.computedMovement();
+    // Rapier quirk: at heightfield cell edges the controller sometimes returns ~zero horizontal movement while the only
+    // contact is flat floor, a one-tick stop every few metres. Retry once with a small lift (snap-to-ground lands it).
+    const want = Math.hypot(_w.x, _w.z);
+    if (want > 1e-4 && Math.hypot(m.x, m.z) < want * 0.25 && this.grounded) {
+      let floorOnly = this.kcc.numComputedCollisions() > 0;
+      for (let i = 0; i < this.kcc.numComputedCollisions(); i++) {
+        const col = this.kcc.computedCollision(i);
+        if (col && col.normal1.y <= M.wallNormalY) floorOnly = false;
+      }
+      if (floorOnly) {
+        _w.y = Math.max(_w.y, 0) + M.seamLift;
+        this.kcc.computeColliderMovement(this.collider, _w, QueryFilterFlags.EXCLUDE_SENSORS, filt);
+        m = this.kcc.computedMovement();
+      }
+    }
     this.curr.x += m.x;
     this.curr.y += m.y;
     this.curr.z += m.z;

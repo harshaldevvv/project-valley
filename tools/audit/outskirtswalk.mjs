@@ -23,7 +23,11 @@ const install = () => page.evaluate(() => {
     const x0 = p.curr.x, z0 = p.curr.z;
     orig(dt);
     const sp = Math.hypot(p.vel.x, p.vel.z), d = Math.hypot(p.curr.x - x0, p.curr.z - z0);
-    if (window.__walking && sp > 1.5 && d < sp * dt * 0.4) window.__stalls.push([+p.curr.x.toFixed(1), +p.curr.z.toFixed(1), +sp.toFixed(1)]);
+    if (window.__walking && sp > 1.5 && d < sp * dt * 0.4) {
+      const k = p.kcc, hits = [];
+      for (let i = 0; i < k.numComputedCollisions(); i++) { const c = k.computedCollision(i); if (c) hits.push(`${c.normal1.y.toFixed(2)}:${c.collider?.collisionGroups() >>> 16}`); }
+      window.__stalls.push([+p.curr.x.toFixed(1), +p.curr.z.toFixed(1), +sp.toFixed(1), p.grounded ? 'g' : 'air', +(d / dt).toFixed(1), hits.join('|')]);
+    }
   };
 });
 const ev = async (f, a) => {

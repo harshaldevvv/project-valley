@@ -1,13 +1,16 @@
 // node tools/audit/stalldiag.mjs   headless: walk 8 directions from spawn, log ticks where the body moves < 50% of its velocity, with the hit normals
 import { launch } from './browser.mjs';
 const browser = await launch();
-const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
+const ctx0 = await browser.newContext();
+await ctx0.route('**/@vite/client', (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: 'export const createHotContext=()=>({accept(){},on(){},dispose(){},prune(){},invalidate(){},data:{}});export const updateStyle=()=>{};export const removeStyle=()=>{};export const injectQuery=(u)=>u;' }));
+const page = await ctx0.newPage({ viewport: { width: 960, height: 540 } });
 const errs = [];
 page.on('pageerror', (e) => errs.push(String(e).slice(0, 300)));
 await page.goto('http://localhost:5188/?play');
 await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 180000 });
 await page.waitForTimeout(2000);
 await page.mouse.click(480, 270);
+if (process.env.START) await page.evaluate((s) => { window.__start = s; }, process.env.START.split(',').map(Number));
 const out = await page.evaluate(async () => {
   const g = window.__gp;
   const p = g.ctx.player;
@@ -35,6 +38,7 @@ const out = await page.evaluate(async () => {
   };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const start = p.curr.clone();
+  if (window.__start) start.set(window.__start[0], 0.1, window.__start[1]);
   for (let k = 0; k < 8; k++) {
     p.teleport(start.clone(), (k * Math.PI) / 4);
     p.setLook((k * Math.PI) / 4, 0);
