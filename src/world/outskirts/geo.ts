@@ -5,15 +5,18 @@ import { BoxGeometry, BufferAttribute, BufferGeometry, Matrix4 } from 'three';
  * non-indexed), so a house built here merges into the same chunk mesh and uses the same material as the catalog props.
  */
 /** Hex to the plain 0..1 floats the Polyfork models carry in their vertex colours (the pf material reads them as they are). */
-export function lin(hex: string): [number, number, number] {
+export function lin(hex: string, gain = 1): [number, number, number] {
   const n = parseInt(hex.slice(1), 16);
-  return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+  return [((n >> 16) / 255) * gain, (((n >> 8) & 255) / 255) * gain, ((n & 255) / 255) * gain];
 }
 
-function paint(g: BufferGeometry, hex: string, bottom: number, y0: number, y1: number): BufferGeometry {
+/** Interior brightness gains (rooms are lit only by ambient light and the hole in the roof, so their surfaces read darker than outside). */
+export const GAIN = { wall: 1.3, floor: 1.4, ceiling: 2.2 } as const;
+
+function paint(g: BufferGeometry, hex: string, bottom: number, y0: number, y1: number, gain = 1): BufferGeometry {
   const ng = g.index ? g.toNonIndexed() : g;
   ng.deleteAttribute('uv');
-  const [r, gr, b] = lin(hex);
+  const [r, gr, b] = lin(hex, gain);
   const pos = ng.getAttribute('position');
   const col = new Float32Array(pos.count * 3);
   const span = Math.max(y1 - y0, 1e-3);
@@ -27,19 +30,19 @@ function paint(g: BufferGeometry, hex: string, bottom: number, y0: number, y1: n
 }
 
 /** Box of size w,h,d with its base centre at (cx, y, cz), yawed about its own base centre. */
-export function boxG(w: number, h: number, d: number, cx: number, y: number, cz: number, hex: string, o: { yaw?: number; bottom?: number; rotX?: number } = {}) {
+export function boxG(w: number, h: number, d: number, cx: number, y: number, cz: number, hex: string, o: { yaw?: number; bottom?: number; rotX?: number; gain?: number } = {}) {
   const g = new BoxGeometry(w, h, d);
   g.translate(0, h / 2, 0);
   if (o.rotX) g.rotateX(o.rotX);
   if (o.yaw) g.rotateY(o.yaw);
   g.translate(cx, y, cz);
-  return paint(g, hex, o.bottom ?? 0.82, y, y + h);
+  return paint(g, hex, o.bottom ?? 0.82, y, y + h, o.gain);
 }
 
 /** Box centred at (cx, cy, cz) rotated about X (roof panels). */
-export function panelG(w: number, h: number, d: number, cx: number, cy: number, cz: number, rotX: number, hex: string, shade = 0.9) {
+export function panelG(w: number, h: number, d: number, cx: number, cy: number, cz: number, rotX: number, hex: string, shade = 0.9, gain = 1) {
   const g = new BoxGeometry(w, h, d).rotateX(rotX).translate(cx, cy, cz);
-  return paint(g, hex, shade, cy - d / 2, cy + d / 2);
+  return paint(g, hex, shade, cy - d / 2, cy + d / 2, gain);
 }
 
 /** Double-sided flat triangle (gable ends). */

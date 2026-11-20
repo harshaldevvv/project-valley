@@ -1,6 +1,7 @@
-import { Box3, Object3D, Mesh, Vector3 } from 'three';
+import { BufferGeometry, Matrix4, Mesh, Vector3 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { pfWorldMaterial } from '../../engine/palette';
-import { loadPf } from './pfModels';
+import { loadPfGeometry } from './pfModels';
 import type { Surface } from '../surfaces';
 import { groundHeight } from './ground';
 import type { Kit } from './kit';
@@ -51,36 +52,40 @@ export const genProps: Prop[] = [
 export const underGenProp = (x: number, z: number, pad = 0.4) => genProps.some((p) => Math.hypot(x - p.x, z - p.z) < (p.r ?? (p.solid ? 2.4 : 0.6)) + pad);
 
 export async function buildGenProps(kit: Kit) {
-  const cache = new Map<string, Promise<Object3D | null>>();
-  const load = (id: string) => {
-    let p = cache.get(id);
-    if (!p) cache.set(id, (p = loadPf(id)));
-    return p;
-  };
-  const detailMat = await pfWorldMaterial();
-  await Promise.all([...new Set(genProps.map((p) => p.id))].map(load)); // fetch all models in parallel, place them in order below
+  // every prop's parts are baked into one geometry and merged into two meshes (inside the walls / the far hills): 2 draws instead of ~90
+  const ids = [...new Set(genProps.map((p) => p.id))];
+  const geos = new Map(await Promise.all(ids.map(async (id) => [id, await loadPfGeometry(id)] as const)));
+  const near: BufferGeometry[] = [], far: BufferGeometry[] = [];
+  const UP = new Vector3(0, 1, 0);
   for (const p of genProps) {
-    const g = await load(p.id);
-    if (!g) continue;
-    const o = g.clone(true);
-    o.traverse((m) => {
-      const mesh = m as Mesh;
-      if (!mesh.isMesh) return;
-      mesh.castShadow = mesh.receiveShadow = true;
-      if ((mesh.material as { vertexColors?: boolean }).vertexColors) mesh.material = detailMat;
-    });
-    o.updateMatrixWorld(true);
-    const local = new Box3().setFromObject(o); // un-rotated, at the origin
-    o.position.set(p.x, p.noCollide && Math.max(Math.abs(p.x), Math.abs(p.z)) > 105 ? groundHeight(p.x, p.z) - 0.2 : 0, p.z);
-    o.rotation.y = p.yaw;
-    kit.game.scene.add(o);
+    const src = geos.get(p.id);
+    if (!src) continue;
+    const g = src.geo.clone();
+    if (!g.boundingBox) g.computeBoundingBox();
+    const local = g.boundingBox!.clone(); // un-rotated, at the origin
+    const outside = Math.max(Math.abs(p.x), Math.abs(p.z)) > 105;
+    const y = p.noCollide && outside ? groundHeight(p.x, p.z) - 0.2 : 0;
+    g.applyMatrix4(new Matrix4().makeRotationY(p.yaw).setPosition(p.x, y, p.z));
+    (outside ? far : near).push(g);
     if (p.solid) {
-      const s = local.getSize(new Vector3()), c = local.getCenter(new Vector3()).applyAxisAngle(new Vector3(0, 1, 0), p.yaw);
+      const s = local.getSize(new Vector3()), c = local.getCenter(new Vector3()).applyAxisAngle(UP, p.yaw);
       const k = p.shrink ?? 0.85;
       kit.cuboid((s.x / 2) * k, s.y / 2, (s.z / 2) * k, p.x + c.x, c.y, p.z + c.z, p.yaw, p.surface);
     } else if (!p.noCollide) {
       // trunk only
       kit.cuboid(0.25, 1.5, 0.25, p.x, 1.5, p.z, 0, p.surface);
     }
+  }
+  const mat = await pfWorldMaterial();
+  for (const [name, list] of [['genprops_near', near], ['genprops_far', far]] as const) {
+    if (!list.length) continue;
+    const names = Object.keys(list[0].attributes);
+    for (const g of list) for (const n of Object.keys(g.attributes)) if (!names.includes(n)) g.deleteAttribute(n);
+    const merged = mergeGeometries(list, false);
+    if (!merged) continue;
+    const mesh = new Mesh(merged, mat);
+    mesh.name = name;
+    mesh.castShadow = mesh.receiveShadow = true;
+    kit.game.scene.add(mesh);
   }
 }

@@ -23,8 +23,9 @@ import { buildScatter } from './scatter';
  */
 const UP = new Vector3(0, 1, 0);
 /** models whose open side is local -Z (the bar-back shelf: its black back panel is on +Z), turned round so yaw means "front toward" like the rest */
-/** models whose vertex colours are near black (the bar-back shelf interior, the brick garage) are brightened a little */
-const DEFAULT_LIFT: Record<string, number> = { 'back-bar-shelf-unit': 3, 'auto-repair-garage': 3.2 };
+/** models whose vertex colours are near black (the bar-back shelf interior, the brick garage, the department store) are brightened.
+ *  lift k maps c -> 1 - (1 - c)^k: dark colours gain about k times, light ones approach 1 instead of blowing out (bloom). */
+const DEFAULT_LIFT: Record<string, number> = { 'back-bar-shelf-unit': 3, 'auto-repair-garage': 3.2, 'department-store': 2.6 };
 const FRONT_MINUS_Z = new Set(['back-bar-shelf-unit']);
 
 const surfaceFor = (k: string): SurfaceTag => {
@@ -86,7 +87,7 @@ export async function buildOutskirts(kit: Kit, game: Game) {
     const g = m.geo.clone();
     if (FRONT_MINUS_Z.has(p.k)) p = { ...p, yaw: p.yaw + Math.PI };
     if (!p.lift && DEFAULT_LIFT[p.k]) p = { ...p, lift: DEFAULT_LIFT[p.k] };
-    if (p.lift) { const col = g.getAttribute('color'); for (let n = 0; n < col.count * 3; n++) (col.array as Float32Array)[n] *= p.lift; }
+    if (p.lift) { const a = g.getAttribute('color').array as Float32Array; for (let n = 0; n < a.length; n++) a[n] = 1 - Math.pow(1 - Math.min(1, Math.max(0.06, a[n])), p.lift); }
     g.applyMatrix4(new Matrix4().compose(new Vector3(p.x, p.y ?? 0, p.z), new Quaternion().setFromAxisAngle(UP, p.yaw), new Vector3(s, s, s)));
     push(p.chunk, g);
     if (Math.max(m.size.x, m.size.z) * s > 1.2) footprints.push({ x: p.x, z: p.z, r: (Math.hypot(m.size.x, m.size.z) / 2) * s * 0.85 });

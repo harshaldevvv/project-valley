@@ -4,7 +4,7 @@ import type { BuildingDef, Opening, Placed } from '../../content/data/outskirts'
 import type { SurfaceTag } from '../../content/data/outskirts';
 import { BUILDINGS } from '../../content/data/outskirts';
 import type { DoorDef } from '../yard/doors';
-import { boxG, panelG, triG, xform } from './geo';
+import { boxG, GAIN, panelG, triG, xform } from './geo';
 
 /**
  * Enterable buildings, generated from a BuildingDef (content/data/outskirts.ts): walls with door and window gaps (each gap keeps
@@ -33,7 +33,7 @@ export function buildBuilding(b: BuildingDef, ctx: BuildCtx): BuildResult {
   const hw = b.w / 2, hd = b.d / 2;
 
   // ---- floor
-  geos.push(boxG(b.w - T, 0.08, b.d - T, 0, 0, 0, b.floor, { bottom: 0.9 }));
+  geos.push(boxG(b.w - T, 0.08, b.d - T, 0, 0, 0, b.floor, { bottom: 0.9, gain: GAIN.floor }));
   ctx.region((x, z) => {
     const dx = x - b.x, dz = z - b.z;
     const u = dx * cs - dz * sn, v = dx * sn + dz * cs; // inverse of buildingWorld
@@ -45,8 +45,8 @@ export function buildBuilding(b: BuildingDef, ctx: BuildCtx): BuildResult {
     const piece = (a: number, c: number, y0: number, y1: number) => {
       if (c - a < 0.02 || y1 - y0 < 0.02) return;
       const mid = (a + c) / 2, len = c - a;
-      if (axis === 'u') { geos.push(boxG(len, y1 - y0, T, mid, y0, fixed, b.wall)); col(mid, fixed, y0, y1, len / 2, T / 2); }
-      else { geos.push(boxG(T, y1 - y0, len, fixed, y0, mid, b.wall)); col(fixed, mid, y0, y1, T / 2, len / 2); }
+      if (axis === 'u') { geos.push(boxG(len, y1 - y0, T, mid, y0, fixed, b.wall, { gain: GAIN.wall })); col(mid, fixed, y0, y1, len / 2, T / 2); }
+      else { geos.push(boxG(T, y1 - y0, len, fixed, y0, mid, b.wall, { gain: GAIN.wall })); col(fixed, mid, y0, y1, T / 2, len / 2); }
     };
     let cur = from;
     for (const o of [...openings].sort((p, q) => p.u - q.u)) {
@@ -83,7 +83,7 @@ export function buildBuilding(b: BuildingDef, ctx: BuildCtx): BuildResult {
     for (const [u0, u1, side] of spans) {
       if (u1 - u0 < 0.05) continue;
       geos.push(panelG(u1 - u0, roofH, L, (u0 + u1) / 2, cy, side * cvv, side * ang, b.roof));
-      geos.push(panelG(u1 - u0 - 0.1, 0.05, L - 0.2, (u0 + u1) / 2, cy - 0.12, side * cvv, side * ang, '#cfc6b4', 1)); // light ceiling underside
+      geos.push(panelG(u1 - u0 - 0.1, 0.05, L - 0.2, (u0 + u1) / 2, cy - 0.12, side * cvv, side * ang, '#d2d6de', 1, GAIN.ceiling)); // light ceiling underside
     }
     geos.push(boxG(b.w + 2 * endOver, 0.12, 0.34, 0, b.h + rise + 0.02, 0, b.trim, { bottom: 0.9 }));
     for (const u of [-hw + T / 2, hw - T / 2]) geos.push(triG([u, b.h, -hd], [u, b.h, hd], [u, b.h + rise, 0], b.wall));
@@ -106,7 +106,7 @@ export function buildBuilding(b: BuildingDef, ctx: BuildCtx): BuildResult {
       const midV = (v0 + v1) / 2;
       const rot = lean ? -Math.atan2(0.9, 2 * D) : 0; // rotateX(+) lowers the +z end, so the front-high slope is negative
       geos.push(panelG(u1 - u0, 0.2, v1 - v0, (u0 + u1) / 2, yAt(midV) + 0.1, midV, rot, b.roof, 0.88));
-      geos.push(panelG(u1 - u0 - 0.1, 0.05, v1 - v0 - 0.1, (u0 + u1) / 2, yAt(midV) - 0.03, midV, rot, '#cfc6b4', 1)); // light ceiling underside
+      geos.push(panelG(u1 - u0 - 0.1, 0.05, v1 - v0 - 0.1, (u0 + u1) / 2, yAt(midV) - 0.03, midV, rot, '#d2d6de', 1, GAIN.ceiling)); // light ceiling underside
     };
     slab(-W, hole.u0, -D, D);
     slab(hole.u1, W, -D, D);
