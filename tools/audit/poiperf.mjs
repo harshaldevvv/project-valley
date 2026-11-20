@@ -9,6 +9,7 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const errs = [];
 page.on('pageerror', (e) => errs.push(String(e).slice(0, 300)));
 page.on('console', (m) => (m.type() === 'error') && errs.push(m.text().slice(0, 200)));
+await page.routeWebSocket(/.*/, () => {}); // swallow the vite HMR socket: other agents' edits must not reload this run
 await page.goto('http://localhost:5188/?play&gputime');
 await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 240000 });
 await page.waitForTimeout(2500);
