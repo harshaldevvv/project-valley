@@ -309,6 +309,10 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Male Villager by Polyfork (NPC chr_npc_eli (Maple Street), our survivor clips retargeted with `tools/audit/retarget_pf_hero.py`) | https://polyfork.dev/asset/villager-40255c |
 | Farmer by Polyfork (NPC chr_npc_hollis (Hollow Creek Farm), our survivor clips retargeted with `tools/audit/retarget_pf_hero.py`) | https://polyfork.dev/asset/farmer-304a43 |
 | Forest Ranger by Polyfork (NPC chr_npc_wren (Ranger Ridge), our survivor clips retargeted with `tools/audit/retarget_pf_hero.py`) | https://polyfork.dev/asset/forest-ranger-6906b0 |
+| Surveyor by Polyfork (zombie archetype zmb_pfz_runner_a: zombified vertex colours, our zombie clips retargeted, `tools/audit/build_pfz_special.sh`) | https://polyfork.dev/asset/surveyor-82e5c7 |
+| Lake Angler by Polyfork (zombie archetype zmb_pfz_screamer_a: zombified vertex colours, our zombie clips retargeted, `tools/audit/build_pfz_special.sh`) | https://polyfork.dev/asset/lake-angler-1c4740 |
+| Scuba Diver by Polyfork (zombie archetype zmb_pfz_crawler_a: zombified vertex colours, our zombie clips retargeted, `tools/audit/build_pfz_special.sh`) | https://polyfork.dev/asset/scuba-diver-bdd1c8 |
+| Groundworker by Polyfork (zombie archetype zmb_pfz_brute_a, scaled 1.4: zombified vertex colours, our zombie clips retargeted, `tools/audit/build_pfz_special.sh`) | https://polyfork.dev/asset/groundworker-083f5c |
 
 (The drivable truck `veh_pickup_pf.glb` is the Pickup Truck above, converted with `tools/audit/pf_vehicle.mjs`: rotated to this game's front axis and re-pivoted wheels.)
 

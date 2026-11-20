@@ -19,8 +19,9 @@ export const newSenseState = (): SenseState => ({ awareness: 'unaware', suspicio
  * Suspicion gain per second from sight. 0 when outside the cone or range.
  * `stance` 1 standing / 0.6 crouched; `speed01` 0 = still .. 1 = jogging or faster.
  */
-export function sightRate(dist: number, angleDeg: number, stance: number, speed01: number, night = false) {
-  const range = (night ? S.rangeNight : S.rangeDay) * stance * (0.7 + 0.3 * Math.min(1, speed01));
+export function sightRate(dist: number, angleDeg: number, stance: number, speed01: number, night: boolean | number = false) {
+  const nf = typeof night === 'number' ? Math.min(1, Math.max(0, night)) : night ? 1 : 0; // 0 day .. 1 night
+  const range = (S.rangeDay + (S.rangeNight - S.rangeDay) * nf) * stance * (0.7 + 0.3 * Math.min(1, speed01));
   if (dist > range || angleDeg > S.coneDeg / 2) return 0;
   const t = dist / range;
   return 1 / (S.buildNear + (S.buildFar - S.buildNear) * t);

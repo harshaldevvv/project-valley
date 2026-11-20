@@ -16,7 +16,10 @@ import type { Ctx, HitInfo, HitResult, Hittable, Zone } from '../ctx';
 import { AnimationController, applyPose, makeCharacter, newPose, type Character } from '../animstand/character';
 import { createCrowd, type Crowd } from '../../engine/crowd';
 import { CrowdAnim } from './crowdAnim';
+import { HordeNight } from './hordeNight';
 import { newSenseState, sightRate, updateSenses, type SenseState } from './senses';
+import { ARCH_AI } from '../../content/data/zombie_arch';
+import { chaseMul, hearingMul, pickArchetype, spawnHp, suspicionMul, windupMul, zoneCount } from './archetypes';
 
 /**
  * Shamblers (principles §4 reaction ladder, §6 senses/tokens/telegraphs/anti-cheese).
@@ -28,7 +31,7 @@ const CAPSULE_HH = 0.45;
 const CAPSULE_R = 0.3;
 const HEAD_Y = 1.62;
 
-type Mode = 'move' | 'windup' | 'recover' | 'stagger' | 'climb' | 'dead';
+type Mode = 'move' | 'windup' | 'recover' | 'stagger' | 'climb' | 'scream' | 'dead';
 
 const _v = new Vector3();
 const _w = new Vector3();
@@ -80,6 +83,8 @@ export class Zombie {
   walkSpeed = 0.5;
   settled = false;
   headKill = false;
+  /** Screamer: seconds until it can scream again. */
+  screamCd = 0;
   /** Capsule centre above the feet (scaled per variant). */
   get capY() {
     return CAPSULE_HH * (this.def.scale ?? 1) + CAPSULE_R;
@@ -125,6 +130,12 @@ export class Zombies {
   private linePos = new Float32Array(30 * 8 * 3);
   private lineCol = new Float32Array(30 * 8 * 3);
   kills = 0;
+  /** Player knocked down by a brute: seconds left, and whether this module set `locked` (so it only clears its own). */
+  private knockT = 0;
+  private knockLocked = false;
+  /** Horde night lite (hordeNight.ts): streaming zone spawns pause while it is on. */
+  hordeOn = false;
+  horde!: HordeNight;
   private lastWindup = -9;
   private bags = new Map<string, string[]>();
   private tickN = 0;
@@ -146,12 +157,41 @@ export class Zombies {
     this.lines.renderOrder = 10;
     this.lines.visible = false;
     ctx.game.scene.add(this.lines);
+    this.horde = new HordeNight(ctx, this);
+  }
+
+  /** Remove one zombie now (dawn burns the horde off). */
+  dismiss(z: Zombie) {
+    this.remove(z);
+    const k = this.list.indexOf(z);
+    if (k >= 0) this.list.splice(k, 1);
   }
 
   get alive() {
     let n = 0;
     for (const z of this.list) if (z.alive) n++;
     return n;
+  }
+
+  /** 0 day .. 1 night, from the engine clock (0 when there is none, as in tests). */
+  night01() {
+    try {
+      return this.ctx.game.time.night;
+    } catch {
+      return 0;
+    }
+  }
+
+  /** The brute's hit: no control for a moment and a heavy camera kick. */
+  private knockPlayer(seconds: number) {
+    const p = this.ctx.player;
+    this.knockT = Math.max(this.knockT, seconds);
+    if (!p.locked) {
+      p.locked = true;
+      this.knockLocked = true;
+    }
+    this.ctx.rig.trauma = Math.max(this.ctx.rig.trauma, ARCH_AI.brute.trauma);
+    this.ctx.rig.kick(6, 5);
   }
 
   /** Random points inside the pen (environment's yardSpawns.penZombies circle). */
@@ -183,6 +223,7 @@ export class Zombies {
     return n;
   }
   updatePoiSpawns(dt: number) {
+    if (this.hordeOn) return;
     this.poiT += dt;
     if (this.poiT < POI_SPAWN.interval) return;
     this.poiT = 0;
@@ -212,7 +253,8 @@ export class Zombies {
     cam.updateMatrixWorld();
     this.poiFrustum.setFromProjectionMatrix(this.poiM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
     const dist = (zn: { x: number; z: number }) => Math.hypot(zn.x - px, zn.z - pz);
-    const want = (zn: { count: number; tier: number }) => Math.max(1, Math.round(zn.count * (POI_SPAWN.tierScale[zn.tier] ?? 1)));
+    const night = this.night01();
+    const want = (zn: { count: number; tier: number }) => zoneCount(zn.count * (POI_SPAWN.tierScale[zn.tier] ?? 1), night); // fewer by day, more at night
     if (this.alive >= HD.maxAlive || this.poiAlive >= POI_SPAWN.cap) {
       // full: free the farthest populated zone (out of sight) for a nearer one that is short of zombies
       const needy = this.poiZones.filter((zn) => zn.cool <= 0 && dist(zn) < POI_SPAWN.activate + zn.radius && zn.list.length + zn.killed < want(zn)).sort((a, b) => dist(a) - dist(b))[0];
@@ -234,7 +276,7 @@ export class Zombies {
         this.poiS.center.set(x, 1, z);
         if (this.poiFrustum.intersectsSphere(this.poiS)) continue; // never pop in view
         this.poiBusy = true;
-        this.spawn(new Vector3(x, 0.05, z), this.ctx.rand() * Math.PI * 2, this.pickVariant())
+        this.spawn(new Vector3(x, 0.05, z), this.ctx.rand() * Math.PI * 2, this.pickVariant(zone.tier, night))
           .then((zb) => zone.list.push(zb))
           .catch(() => undefined)
           .finally(() => (this.poiBusy = false));
@@ -244,7 +286,10 @@ export class Zombies {
   }
 
   /** Weighted variant from data/zombies zombieMix (seeded RNG); variants whose model isn't built fall back to the shambler. */
-  pickVariant() {
+  pickVariant(tier = 1, night = this.night01()) {
+    // a special archetype first (data/zombie_arch.ts ARCH_SPAWN: by tier and time of day), if its model is built
+    const special = pickArchetype(this.ctx.rand(), tier, night);
+    if (special && hasAsset(zombieDefs[special]?.model ?? '')) return special;
     let total = 0;
     for (const k in zombieMix) total += zombieMix[k];
     let r = this.ctx.rand() * total;
@@ -305,6 +350,8 @@ export class Zombies {
     z.gait.idle = idles.length ? pick(idles) : 'z_idle';
     z.gait.k = A.zombieTimeScale[0] + this.ctx.rand() * (A.zombieTimeScale[1] - A.zombieTimeScale[0]);
     z.walkSpeed = (ZM[z.gait.walk]?.speed ?? def.walk) * z.gait.k;
+    z.hp = spawnHp(def.hp, this.night01()); // tougher by day
+    if (def.startsCrawling) z.crawler = true;
     z.curr.copy(at);
     z.prev.copy(at);
     z.home.copy(at);
@@ -497,12 +544,18 @@ export class Zombies {
   // ------------------------------------------------------------- sim
   step(dt: number) {
     this.updatePoiSpawns(dt);
+    this.horde.step(dt);
     this.time += dt;
     this.tickN++;
     const p = this.ctx.player;
     const playerTarget = !p.dead;
     const stance = p.crouched ? SN.stanceCrouch : 1;
     const noises = this.noises;
+    const night = this.night01();
+    if (this.knockT > 0 && (this.knockT -= dt) <= 0 && this.knockLocked) {
+      p.locked = false; // only the lock this module took
+      this.knockLocked = false;
+    }
     for (let i = 0; i < this.list.length; i++) {
       const z = this.list[i];
       z.prev.copy(z.curr);
@@ -553,12 +606,12 @@ export class Zombies {
       if ((z.losT -= dt) <= 0) {
         z.losT = 1 / SN.losHz + (z.id % 6) * 0.004; // staggered across zombies
         z.sight = 0;
-        if (playerTarget && !HD.passive && dist < SN.rangeDay) {
+        if (playerTarget && !HD.passive && dist < Math.max(SN.rangeDay, SN.rangeNight)) {
           const fwdX = -Math.sin(z.yaw);
           const fwdZ = -Math.cos(z.yaw);
           const cos = (fwdX * _to.x + fwdZ * _to.z) / Math.max(1e-3, dist);
           const ang = (Math.acos(Math.max(-1, Math.min(1, cos))) * 180) / Math.PI;
-          const rate = dist < 1.2 ? 4 : Math.max(sightRate(dist, ang, stance, p.speed01), dist < SN.nearRange ? SN.nearRate : 0);
+          const rate = dist < 1.2 ? 4 : Math.max(sightRate(dist, ang, stance, p.speed01, night) * suspicionMul(night), dist < SN.nearRange ? SN.nearRate : 0);
           z.seen = rate > 0 && this.los(z, p.curr, p.eyeHeight - 0.2);
           z.sight = z.seen ? rate : 0;
         } else z.seen = false;
@@ -567,7 +620,7 @@ export class Zombies {
       if (!HD.passive)
         for (const n of noises) {
           const d = n.pos.distanceTo(z.curr);
-          if (d < n.radius) {
+          if (d < n.radius * hearingMul(night)) {
             heard = true;
             // Imprecise for far sounds: the zombie searches around where it came from
             z.lastKnown.copy(n.pos);
@@ -621,6 +674,7 @@ export class Zombies {
     _v.set(0, 0, 0); // desired velocity
     let face: Vector3 | null = null;
     z.modeT -= dt;
+    if (z.screamCd > 0) z.screamCd -= dt;
 
     switch (z.mode) {
       case 'stagger':
@@ -651,6 +705,7 @@ export class Zombies {
               if (p.damage(d.attackDamage, z.curr)) {
                 this.ctx.sfx('melee_hit', p.curr, { volume: 0.8 });
                 this.ctx.survival?.zombieHit(d.attackDamage, z.crawler ? 'limb' : 'body'); // M2: wounds / infection rolls
+                if (d.knockdownS) this.knockPlayer(d.knockdownS); // brute
               }
             } else this.ctx.sfx('melee_swing', z.curr, { volume: 0.6 });
           }
@@ -662,6 +717,18 @@ export class Zombies {
         if (z.modeT <= 0) {
           z.mode = 'move';
           this.releaseToken(z);
+        }
+        break;
+      case 'scream':
+        // Screamer: stands and screams (a telegraph), then everyone in range hears where the player is
+        face = tgt;
+        if (z.modeT <= 0) {
+          const sc = d.scream!;
+          this.ctx.sfx('zombie_alert', z.curr, { pitchJitter: 0.05, volume: 1 });
+          this.ctx.sfx('zombie_attack', z.curr, { pitchJitter: 0.05, volume: 1 });
+          this.ctx.game.events.emit('noise', { position: tgt.clone().setY(0), radius: sc.radius, source: 'scream' });
+          z.mode = 'move';
+          z.screamCd = sc.cooldownS;
         }
         break;
       case 'climb': {
@@ -682,9 +749,15 @@ export class Zombies {
       }
       case 'move': {
         const s = z.sense.awareness;
-        const speed = z.crawler ? d.crawl : d.chase * z.gait.k;
+        const speed = (z.crawler ? d.crawl : d.chase * z.gait.k) * chaseMul(this.night01());
         if (s === 'detected') {
           face = tgt;
+          if (d.scream && z.screamCd <= 0 && !car && dist > 4) {
+            z.mode = 'scream';
+            z.modeT = d.scream.windupS;
+            z.anim?.oneshot('z_grab');
+            break;
+          }
           // Ask for an attack token on approach; holders close in, the rest circle (Doom tokens)
           if (!z.token && dist < d.circleRadius + 1 && this.tokensInUse() < HD.attackTokens) z.token = true;
           if (z.token && dist > d.circleRadius + 3) z.token = false;
@@ -693,7 +766,7 @@ export class Zombies {
               this.lastWindup = this.time;
               // Telegraph: windup with an audio cue ≥ 0.3 s before the hit lands
               z.mode = 'windup';
-              z.modeT = d.attackWindup;
+              z.modeT = d.attackWindup * windupMul(this.night01());
               this.ctx.sfx('zombie_attack', z.curr, { pitchJitter: 0.08 });
               z.anim?.oneshot('z_attack');
               break;

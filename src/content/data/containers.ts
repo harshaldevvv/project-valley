@@ -56,6 +56,7 @@ export const CONTAINER_THEMES: Record<string, string[]> = {
   garage: ['garage_shelf', 'tool_box', 'crate_wood', 'car_trunk'],
   school: ['school_locker', 'office_desk', 'food_cupboard'],
   office: ['office_desk', 'kitchen_cupboard', 'cabinet_metal'],
+  town: ['office_desk', 'kitchen_cupboard', 'nightstand', 'wardrobe', 'pharmacy_shelf', 'car_trunk'],
   road: ['car_trunk', 'duffel', 'crate_wood', 'camp_stash'],
   diner: ['kitchen_cupboard', 'food_cupboard', 'office_desk', 'car_trunk'],
   ranger: ['military_footlocker', 'office_desk', 'military_crate', 'car_trunk'],

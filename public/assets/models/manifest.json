@@ -895,5 +895,45 @@
       "chr_npc_wren_LOD2": 0
     },
     "bytes": 932452
+  },
+  "zmb_pfz_runner_a": {
+    "url": "/assets/models/zmb/zmb_pfz_runner_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_runner_a_LOD0": 3673,
+      "zmb_pfz_runner_a_LOD1": 1836,
+      "zmb_pfz_runner_a_LOD2": 734
+    },
+    "bytes": 809480
+  },
+  "zmb_pfz_crawler_a": {
+    "url": "/assets/models/zmb/zmb_pfz_crawler_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_crawler_a_LOD0": 3829,
+      "zmb_pfz_crawler_a_LOD1": 1914,
+      "zmb_pfz_crawler_a_LOD2": 765
+    },
+    "bytes": 805860
+  },
+  "zmb_pfz_brute_a": {
+    "url": "/assets/models/zmb/zmb_pfz_brute_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_brute_a_LOD0": 4857,
+      "zmb_pfz_brute_a_LOD1": 2428,
+      "zmb_pfz_brute_a_LOD2": 971
+    },
+    "bytes": 863996
+  },
+  "zmb_pfz_screamer_a": {
+    "url": "/assets/models/zmb/zmb_pfz_screamer_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_screamer_a_LOD0": 4487,
+      "zmb_pfz_screamer_a_LOD1": 2243,
+      "zmb_pfz_screamer_a_LOD2": 897
+    },
+    "bytes": 849568
   }
 }

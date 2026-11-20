@@ -32,6 +32,14 @@ export interface ZombieDef {
   helmetMul?: number;
   /** Fraction of z_death to hold: the body is down but the arms haven't splayed yet (QA-034). */
   deathHoldAt: number;
+  /** Special archetype (data/zombie_arch.ts): runner, crawler, brute or screamer. Plain zombies leave it out. */
+  archetype?: string;
+  /** Spawns already on the ground (the crawler): z_crawl clip and crawler hit zones from the start. */
+  startsCrawling?: boolean;
+  /** A landed hit knocks the player down for this long (the brute), s. */
+  knockdownS?: number;
+  /** Screams on first detecting the player: after `windupS` every zombie within `radius` m hears it (the screamer). */
+  scream?: { windupS: number; radius: number; cooldownS: number };
 }
 
 const zombieDefsBase: Record<string, ZombieDef> = {
@@ -96,6 +104,15 @@ export const zombieDefs: Record<string, ZombieDef> = {
   pfz_patient: { ...zombieDefsBase.shambler, id: 'pfz_patient', headY: 1.38, model: 'zmb_pfz_patient_a', scale: 0.98, hp: 95 },
   pfz_hoodie: { ...zombieDefsBase.shambler, id: 'pfz_hoodie', headY: 1.38, model: 'zmb_pfz_hoodie_a', scale: 1.0, hp: 105 },
   pfz_firefighter: { ...zombieDefsBase.shambler, id: 'pfz_firefighter', headY: 1.38, model: 'zmb_pfz_firefighter_a', scale: 1.04, hp: 160, helmetMul: 0.7 },
+  // ---- special archetypes (models: tools/audit/build_pfz_special.sh; numbers and spawn weights: data/zombie_arch.ts) ----
+  // Runner: fast and fragile, swings sooner, hard to outrun but dies to a couple of hits.
+  runner: { ...zombieDefsBase.shambler, id: 'runner', archetype: 'runner', headY: 1.38, model: 'zmb_pfz_runner_a', scale: 0.97, hp: 55, legHp: 40, walk: 1.0, chase: 4.4, crawl: 0.6, attackWindup: 0.35, attackRecover: 0.7, attackDamage: 7, sprintMissChance: 0.1, circleRadius: 1.2, staggerFrac: 0.2 },
+  // Crawler: on the ground from the start, low and dark. Capsule and head ball are low (scale 0.55), the clip is z_crawl.
+  crawler: { ...zombieDefsBase.shambler, id: 'crawler', archetype: 'crawler', startsCrawling: true, headY: 1.0, model: 'zmb_pfz_crawler_a', scale: 0.55, hp: 70, legHp: 999, walk: 0.5, chase: 1.6, crawl: 1.7, attackRange: 1.3, attackWindup: 0.5, attackRecover: 0.9, attackDamage: 8, sprintMissChance: 0.5, circleRadius: 1.3, climbMax: 0.3 },
+  // Brute: big (scale 1.4 baked into the model), slow, a lot of HP, hardly staggers, a hit knocks you down.
+  brute: { ...zombieDefsBase.shambler, id: 'brute', archetype: 'brute', headY: 1.38, model: 'zmb_pfz_brute_a', scale: 1.4, hp: 650, legHp: 420, walk: 0.45, chase: 1.0, crawl: 0.4, attackRange: 2.1, attackWindup: 1.0, attackRecover: 1.7, attackDamage: 26, sprintMissChance: 0.2, circleRadius: 2.6, climbMax: 1.4, staggerFrac: 0.6, zoneMul: { body: 0.3, limb: 0.2 }, knockdownS: 0.9, helmetMul: 0.8 },
+  // Screamer: weak, but its scream tells every zombie within 55 m where you are.
+  screamer: { ...zombieDefsBase.shambler, id: 'screamer', archetype: 'screamer', headY: 1.38, model: 'zmb_pfz_screamer_a', scale: 0.95, hp: 80, legHp: 50, chase: 1.5, attackDamage: 6, scream: { windupS: 1.1, radius: 55, cooldownS: 30 } },
   civilian_f: { ...zombieDefsBase.shambler, id: 'civilian_f', model: 'zmb_civilian_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.93, hp: 110 },
 };
 
@@ -113,7 +130,7 @@ export const zombieMix: Record<string, number> = MIXES[charSet] ?? MIXES.orig;
 export const senses = {
   coneDeg: 80,
   rangeDay: 25,
-  rangeNight: 10,
+  rangeNight: 32, // zombies sense FURTHER at night (smell and sound carry; data/zombie_arch.ts DAY_NIGHT adds speed and hearing)
   stanceCrouch: 0.6,
   buildNear: 0.5, // s to fill suspicion at point blank
   buildFar: 1.5, // s at max range
