@@ -13,6 +13,8 @@ Flat plateau x -160..160, z 100..300 behind the open south gate (0, 100); hills 
 | Pinewood Camp | 2 | 40, 268 | stashes, coolers, camper van | pine stand |
 | Medevac Crash Site | 3 | -66, 262 | best medical and military loot | helicopter |
 | Ranger Ridge | 3 | 124, 262 | footlockers, vantage | fire lookout |
+| Dunmore (town) | 2 | -105, 135 | Main Street: pharmacy (medical), hardware (tools), grocery (food), 4-room motel, post office, church and clock tower; Mill Road links it to Maple Street | church, department store |
+| Dunmore Police | 3 | -119, 124 | lockers, desks, locked armory (footlockers, gun cabinets) | department store behind it |
 | Broken-Down Bus / Hunting Stand / Roadside Memorial | 1 | see pois.ts | small stashes between the big POIs | bus, tower, shrine |
 
 Danger rises with distance from the gate (tier 1 near, 3 far): `POI_SPAWN.tierScale` multiplies each zone's zombie count. Zombies stream in near the player (never in view, never closer than 24 m, 22 alive at most) and are removed again beyond 160 m.

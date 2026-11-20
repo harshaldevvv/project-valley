@@ -174,6 +174,22 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Tree Stump by Polyfork | https://polyfork.dev/asset/tree-stump-00f3bf |
 | Tyre Stack by Polyfork | https://polyfork.dev/asset/tyre-stack-ad4692 |
 | Young Pine by Polyfork | https://polyfork.dev/asset/young-pine-0d7695 |
+| Brick Church by Polyfork | https://polyfork.dev/asset/brick-church-322885 |
+| City Bus by Polyfork | https://polyfork.dev/asset/city-bus-49fd97 |
+| Clock Tower by Polyfork | https://polyfork.dev/asset/clock-tower-752081 |
+| Department Store by Polyfork | https://polyfork.dev/asset/department-store-ffbd58 |
+| Flower Planter by Polyfork | https://polyfork.dev/asset/flower-planter-500ed2 |
+| Newsstand by Polyfork | https://polyfork.dev/asset/newsstand-6dfd65 |
+| One-Storey Shop Row by Polyfork | https://polyfork.dev/asset/one-storey-shop-row-83c958 |
+| Park Bench by Polyfork | https://polyfork.dev/asset/park-bench-dc8b62 |
+| Railway Telegraph Pole Run by Polyfork | https://polyfork.dev/asset/railway-telegraph-pole-run-bb9354 |
+| Roadside Capilla Shrine by Polyfork | https://polyfork.dev/asset/roadside-capilla-shrine-c63056 |
+| Splay-Leg Lookout Tower by Polyfork | https://polyfork.dev/asset/splay-leg-lookout-tower-6fae7e |
+| Stone Cairn by Polyfork | https://polyfork.dev/asset/stone-cairn-a9bf48 |
+| Summit Cross by Polyfork | https://polyfork.dev/asset/summit-cross-181eba |
+| Team Minibus by Polyfork | https://polyfork.dev/asset/team-minibus-f14295 |
+| Telegraph and Post Office by Polyfork | https://polyfork.dev/asset/telegraph-and-post-office-71d3ff |
+| Telegraph Pole Line by Polyfork | https://polyfork.dev/asset/telegraph-pole-line-95e382 |
 | Air Ambulance Helicopter by Polyfork | https://polyfork.dev/asset/air-ambulance-helicopter-ed9acc |
 | Ambulance Van by Polyfork | https://polyfork.dev/asset/ambulance-van-29919a |
 | Auto Repair Garage by Polyfork | https://polyfork.dev/asset/auto-repair-garage-b91464 |

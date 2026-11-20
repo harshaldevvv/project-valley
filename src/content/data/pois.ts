@@ -8,7 +8,7 @@ import { FILL_SPOTS } from './outskirts_fill';
  * is a data/containers.ts id; `theme` is a CONTAINER_THEMES key (what the spot is for), so a table can be re-pointed per theme.
  * Zombie zones are data only: the zombie system may read `poiZombieZones` to place hordes.
  */
-export type PoiTheme = 'gas' | 'farm' | 'house' | 'police' | 'camp' | 'school' | 'medical' | 'diner' | 'ranger' | 'road';
+export type PoiTheme = 'gas' | 'farm' | 'house' | 'police' | 'camp' | 'school' | 'medical' | 'diner' | 'ranger' | 'road' | 'town';
 export interface PoiContainer {
   type: string;
   theme: string;
@@ -139,6 +139,23 @@ export const POIS: PoiDef[] = [
     zombies: [{ x: 124, z: 262, radius: 14, count: 6 }],
   },
 
+  // Dunmore, the town (buildings in outskirts_town.ts; the police station is its own tier-3 POI)
+  {
+    id: 'town', theme: 'town', tier: 2, x: -105, z: 135, radius: 40, landmark: 'brick-church',
+    reason: 'Main Street: a pharmacy (medical), hardware store (tools), grocery (food) and a motel strip with bedrooms to search, under a church and clock tower.',
+    containers: [
+      c('car_trunk', 'town', -85.6, 138.8, 1.6, null),
+      c('car_trunk', 'town', -97.4, 131.6, 1.5, null),
+      c('car_trunk', 'town', -131.6, 131.4, 1.4, null),
+    ],
+    zombies: [{ x: -105, z: 134, radius: 18, count: 6 }, { x: -88, z: 122, radius: 3, count: 1 }, { x: -101.5, z: 122, radius: 3, count: 1 }, { x: -88, z: 146, radius: 3, count: 1 }, { x: -130, z: 144.5, radius: 5, count: 2 }, { x: -143, z: 134, radius: 5, count: 2 }],
+  },
+  {
+    id: 'police', theme: 'police', tier: 3, x: -119, z: 124, radius: 14, landmark: 'department-store',
+    reason: 'The town police station: lockers, desks and a locked armory with the best guns and ammo outside the army sites.',
+    containers: [c('car_trunk', 'police', -122.4, 134.6, -1.5, null), c('car_trunk', 'police', -125.2, 133.6, 1.9, null)],
+    zombies: [{ x: -119, z: 122, radius: 4, count: 3 }, { x: -119, z: 135, radius: 8, count: 3 }],
+  },
   // micro-POIs (models in outskirts_fill.ts)
   {
     id: 'bus', theme: 'road', tier: 1, x: -22, z: 240, radius: 9, landmark: 'city-bus',

@@ -63,6 +63,7 @@ export function buildBuilding(b: BuildingDef, ctx: BuildCtx): BuildResult {
   openWall('v', -hw + T / 2, -hd + T, hd - T, b.left, b.h);
   openWall('v', hw - T / 2, -hd + T, hd - T, b.right, b.h);
   if (b.partition) openWall('u', b.partition.v, -hw + T, hw - T, b.partition.open, b.h);
+  for (const dv of b.dividers ?? []) openWall('v', dv.u, -hd + T, hd - T, dv.open, b.h);
   // corner posts in the trim colour
   for (const [u, v] of [[-hw, -hd], [hw, -hd], [-hw, hd], [hw, hd]]) geos.push(boxG(0.3, b.h + 0.05, 0.3, u, 0, v, b.trim, { bottom: 0.8 }));
 
@@ -144,12 +145,13 @@ export function buildBuilding(b: BuildingDef, ctx: BuildCtx): BuildResult {
       items.push({ chunk: b.chunk, k: c.model, x: w.x, z: w.z, yaw: b.yaw + (c.yaw ?? 0), ...(c.y ? { y: c.y } : {}), surf: 'wood' });
     }
   }
-  if (b.kind === 'shop') {
-    // shop counter next to the register
-    const cu = 2.9, cv = -0.9;
-    geos.push(boxG(3.0, 1.0, 0.8, cu, 0, cv, '#7b5b3a', { bottom: 0.8 }));
-    geos.push(boxG(3.1, 0.06, 0.9, cu, 1.0, cv, '#b9b4a6', { bottom: 1 }));
-    col(cu, cv, 0, 1.06, 1.55, 0.45);
+  const counter = b.counter === undefined ? (b.kind === 'shop' ? { u: 2.9, v: -0.9, w: 3 } : null) : b.counter;
+  if (counter) {
+    // shop counter (the register container sits on it)
+    const { u: cu, v: cv, w: cw } = counter;
+    geos.push(boxG(cw, 1.0, 0.8, cu, 0, cv, '#7b5b3a', { bottom: 0.8 }));
+    geos.push(boxG(cw + 0.1, 0.06, 0.9, cu, 1.0, cv, '#b9b4a6', { bottom: 1 }));
+    col(cu, cv, 0, 1.06, cw / 2 + 0.05, 0.45);
   }
 
   const m = xform(b.x, b.z, b.yaw);
@@ -162,10 +164,10 @@ export function buildingDoors(): DoorDef[] {
   const out: DoorDef[] = [];
   for (const b of BUILDINGS) {
     if (b.kind === 'shed') continue;
-    const o = b.front.find((f) => f.sill === 0 && f.w <= 1.2);
-    if (!o) continue;
+    for (const o of b.front.filter((f) => f.sill === 0 && f.w <= 1.2)) {
     const hinge = buildingWorld(b, o.u - o.w / 2 + 0.01, b.d / 2 - T / 2);
     out.push({ hx: hinge.x, hz: hinge.z, dx: Math.cos(b.yaw), dz: -Math.sin(b.yaw), ox: Math.sin(b.yaw), oz: Math.cos(b.yaw), w: o.w - 0.04 });
+    }
   }
   return out;
 }

@@ -89,11 +89,11 @@ if (mode === 'walk' || mode === 'all') {
   await page.waitForTimeout(600);
   const prompt = await ev(() => { const g = window.__gp.ctx.game, p = g.player.position; return g.interact.all.filter((i) => Math.hypot(i.position.x - p.x, i.position.y - (p.y + 1.2), i.position.z - p.z) < i.radius).map((i) => i.prompt()); });
   console.log('prompts at the door:', JSON.stringify(prompt));
-  await page.keyboard.down('KeyE'); await page.waitForTimeout(500); await page.keyboard.up('KeyE');
+  for (let k = 0; k < 3; k++) { await page.keyboard.down('KeyE'); await page.waitForTimeout(600); await page.keyboard.up('KeyE'); await page.waitForTimeout(1100); const pr = await ev(() => { const g = window.__gp.ctx.game, p = g.player.position; return g.interact.all.filter((i) => Math.hypot(i.position.x - p.x, i.position.y - (p.y + 1.2), i.position.z - p.z) < i.radius).map((i) => i.prompt()); }); if (pr.includes('Close door')) break; }
   await page.waitForTimeout(900);
-  await walkTo([[-60.5, 184.5], [-60.5, 181]], 'through the opened door into house A');
+  await walkTo([[-60.5, 185.2], [-61.6, 184.4], [-61.6, 180.5]], 'through the opened door into house A');
   // container prompts at three places
-  for (const [name, x, z, yaw] of [['checkpoint footlocker', -21.4, 120.7, 3.14], ['house A kitchen', -59.5, 185.6, 0], ['fuel shop shelf', -30.3, 153.4, 1.57]]) {
+  for (const [name, x, z, yaw] of [['checkpoint footlocker', -21.4, 120.7, 3.14], ['house A kitchen', -59.5, 185.6, 0], ['fuel shop shelf', -30.3, 153.4, 1.57], ['pharmacy shelf', -91.4, 121.0, 0], ['police locker', -124.1, 121.9, 4.71], ['armory footlocker', -123.6, 118.4, 0]]) {
     await ev(([x, z, yaw]) => window.__gp.teleport(x, z, yaw), [x, z, yaw]);
     await page.waitForTimeout(700);
     const ps = await ev(() => { const g = window.__gp.ctx.game, p = g.player.position; return g.interact.all.filter((i) => Math.hypot(i.position.x - p.x, i.position.y - (p.y + 1.2), i.position.z - p.z) < i.radius).map((i) => i.prompt()); });
@@ -101,6 +101,22 @@ if (mode === 'walk' || mode === 'all') {
   }
 }
 
+if (mode === 'town' || mode === 'all') {
+  await ev(() => window.__gp.teleport(-72, 202, 0));
+  await page.waitForTimeout(1500);
+  await walkTo([[-72, 180], [-72, 160], [-72, 138], [-90, 134], [-120, 134], [-140, 134]], 'Mill Road into Dunmore, Main Street to the church');
+  const hold = async () => { await page.keyboard.down('KeyE'); await page.waitForTimeout(600); await page.keyboard.up('KeyE'); await page.waitForTimeout(1200); };
+  const prompts = () => ev(() => { const g = window.__gp.ctx.game, p = g.player.position; return g.interact.all.filter((i) => Math.hypot(i.position.x - p.x, i.position.y - (p.y + 1.2), i.position.z - p.z) < i.radius).map((i) => i.prompt()); });
+  for (const [name, dx, dz, ix, iz] of [['pharmacy', -88, 128.7, -88, 124], ['police station', -119, 128.7, -119, 124], ['grocery', -88, 139.3, -88, 143.5], ['motel room 1', -117.5, 139.3, -117.5, 143.5]]) {
+    await ev(([x, z, yaw]) => window.__gp.teleport(x, z, yaw), [dx, dz, name === 'grocery' || name.startsWith('motel') ? Math.PI : 0]);
+    await page.waitForTimeout(700);
+    const p0 = await prompts();
+    await hold();
+    const p1 = await prompts();
+    await walkTo([[ix, iz]], 'through the ' + name + ' door');
+    console.log('door prompts', name, JSON.stringify(p0), '->', JSON.stringify(p1));
+  }
+}
 if (mode === 'zombies' || mode === 'all') {
   await ev(() => {
     const z = window.__gp.ctx.zombies, cam = window.__gp.ctx.game.camera, p = window.__gp.ctx.player;

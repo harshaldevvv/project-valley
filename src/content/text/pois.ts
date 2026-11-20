@@ -8,6 +8,8 @@ export const poiText: Record<string, { name: string; hook: string }> = {
   diner: { name: 'Crossroads Diner', hook: 'Open 24 hours, once.' },
   camp: { name: 'Pinewood Camp', hook: 'Campers came to wait it out.' },
   crash: { name: 'Medevac Crash Site', hook: 'It went down carrying the cure, or so the radio said.' },
+  town: { name: 'Dunmore', hook: 'Main Street kept its lights on longer than anyone.' },
+  police: { name: 'Dunmore Police', hook: 'The armory door held. The officers did not.' },
   bus: { name: 'Broken-Down Bus', hook: 'Somebody got out and ran.' },
   stand: { name: 'Hunting Stand', hook: 'Best view in the west. Worst place to be seen.' },
   memorial: { name: 'Roadside Memorial', hook: 'Fresh candles. Fresher tracks.' },

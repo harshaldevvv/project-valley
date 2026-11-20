@@ -11,6 +11,7 @@
  *        |  diner / crossroads z~215
  *        |  crash site (-110..-40, 235..290)    camp (15..70, 246..290)    ranger ridge (120..155, 240..290)
  */
+import { TOWN_BUILDINGS, TOWN_CLEAR, TOWN_PADS, TOWN_PLACED, TOWN_ROADS, TOWN_SIGNS } from './outskirts_town';
 export type SurfaceTag = 'grass' | 'dirt' | 'concrete' | 'wood' | 'metal' | 'rubber' | 'chainlink';
 
 /** The flat, playable plateau (terrain.ts blends the hills back in over `blend` m beyond it). */
@@ -171,7 +172,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   addM(s, 'detached-garage', -118, 202, Math.PI);
   // frontage fences with a gap at each driveway, side fences, back fences
   runM(n, 'picket-fence-run', 4, -42, 179.5, -22, 179.5, {}, []);
-  runM(n, 'picket-fence-run', 4, -80, 179.5, -50, 179.5, {}, [4, 5]);
+  runM(n, 'picket-fence-run', 4, -80, 179.5, -50, 179.5, {}, [1, 2, 4, 5]); // 1, 2: Mill Road crosses here
   runM(n, 'picket-fence-run', 4, -108, 179.5, -82, 179.5, {}, [3]);
   runM(n, 'picket-fence-run', 4, -134, 179.5, -110, 179.5, {}, [2]);
   runM(s, 'picket-fence-run', 4, -46, 193, -26, 193, {}, [2]);
@@ -182,7 +183,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   runM(n, 'board-privacy-fence-run', 4, -106, 166, -106, 150, {}, []);
   runM(s, 'board-privacy-fence-run', 4, -48, 208, -48, 224, {}, []);
   runM(s, 'board-privacy-fence-run', 4, -80, 211, -80, 224, {}, []);
-  runM(n, 'board-privacy-fence-run', 4, -44, 150, -76, 150, {}, []);
+  runM(n, 'board-privacy-fence-run', 4, -44, 150, -76, 150, {}, [6, 7]);
   runM(n, 'board-privacy-fence-run', 4, -106, 150, -76, 150, {}, []);
   // cars and yard clutter
   addM(n, 'family-crossover-suv', -22.5, 174.5, 0.2);
@@ -396,6 +397,10 @@ export interface BuildingDef {
   left: Opening[];
   right: Opening[];
   partition?: { v: number; open: Opening[] };
+  /** walls along local v at u (motel rooms) */
+  dividers?: { u: number; open: Opening[] }[];
+  /** shop counter; default for a 'shop' is at (2.9, -0.9), null = none */
+  counter?: { u: number; v: number; w: number } | null;
   porch?: boolean;
   chimney?: [number, number];
   roofBreak?: { side: 'front' | 'back'; u0: number; u1: number };
@@ -563,3 +568,11 @@ export const POI_SIGNS: { poi: string; x: number; z: number; toward: [number, nu
   { poi: 'crash', x: -34, z: 244.3, toward: [0, 244.3] },
   { poi: 'ranger', x: 82, z: 229.6, toward: [60, 229.6] },
 ];
+
+// ---------------------------------------------------------------- the town (outskirts_town.ts)
+ROADS.push(...TOWN_ROADS);
+PADS.push(...TOWN_PADS);
+PLACED.push(...TOWN_PLACED);
+BUILDINGS.push(...TOWN_BUILDINGS);
+POI_SIGNS.push(...TOWN_SIGNS);
+CLEAR_RECTS.push(...TOWN_CLEAR);

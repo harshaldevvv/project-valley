@@ -215,7 +215,8 @@ export class Zombies {
   private poiBusy = false;
   private poiFrustum = new Frustum();
   private poiM = new Matrix4();
-  private poiS = new Sphere(new Vector3(), 1.4);
+  private poiInv = new Matrix4();
+  private poiS = new Sphere(new Vector3(), 2.5);
   /** Zombies of the outskirts zones alive right now (for tests and the perf overlay). */
   get poiAlive() {
     let n = 0;
@@ -251,7 +252,7 @@ export class Zombies {
     if (this.poiBusy) return;
     const cam = this.ctx.game.camera;
     cam.updateMatrixWorld();
-    this.poiFrustum.setFromProjectionMatrix(this.poiM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+    this.poiFrustum.setFromProjectionMatrix(this.poiM.multiplyMatrices(cam.projectionMatrix, this.poiInv.copy(cam.matrixWorld).invert())); // fresh inverse: the renderer's copy is a frame old after a teleport
     const dist = (zn: { x: number; z: number }) => Math.hypot(zn.x - px, zn.z - pz);
     const night = this.night01();
     const want = (zn: { count: number; tier: number }) => zoneCount(zn.count * (POI_SPAWN.tierScale[zn.tier] ?? 1), night); // fewer by day, more at night
