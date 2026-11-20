@@ -79,6 +79,22 @@ describe('vests, containers, restricted pockets', () => {
     for (const id of ['chest_rig', 'hunting_vest', 'sneakers', 'bike_helmet']) expect(arm(id)).toBeLessThan(WOUNDS.infection.armourImmune);
   });
 
+  it('armour cuts the chance of bleeding from a hit: none, stab vest, plates', () => {
+    const rate = (armour: number) => {
+      let bled = 0;
+      for (let seed = 1; seed <= 600; seed++) {
+        const s = new Survival(createRng(seed), host().api);
+        s.onZombieHit({ damage: 10, zone: 'body', armour });
+        if (s.statuses.has('bleeding')) bled++;
+      }
+      return bled / 600;
+    };
+    const [none, stab, plates] = [rate(0), rate(ITEMS.stab_vest.armour!), rate(ITEMS.plate_carrier.armour!)];
+    expect(none).toBeGreaterThan(0.22);
+    expect(stab).toBeLessThan(none * 0.92);
+    expect(plates).toBeLessThan(none * 0.6);
+  });
+
   it('every wearable has a slot that exists, and slots match the kind of clothing', () => {
     const slots = ['head', 'face', 'eyes', 'ears', 'torso', 'armor', 'legs', 'gloves', 'feet', 'backpack'];
     for (const d of Object.values(ITEMS).filter((x) => x.kind === 'clothing' || x.kind === 'backpack')) {

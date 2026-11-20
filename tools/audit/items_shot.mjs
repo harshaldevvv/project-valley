@@ -23,6 +23,11 @@ console.log('give leftovers', JSON.stringify(res));
 await page.keyboard.press('Tab');
 await page.waitForTimeout(800);
 await page.screenshot({ path: out + 'items_inventory.png' });
+for (const [label, shot] of [['Adrenal', 'items_tip_use'], ['Chest Rg', 'items_tip_vest']]) {
+  await page.getByText(label, { exact: true }).first().hover();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: out + shot + '.png' });
+}
 await page.keyboard.press('Tab');
 // ground pickups: lay items in a grid in front of the player (yaw 0 faces -z)
 await page.evaluate(() => {

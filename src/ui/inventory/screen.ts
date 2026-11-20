@@ -1,6 +1,6 @@
 import { INVENTORY } from '../../content/data/items';
 import type { GridItem, ItemInstance, SlotName } from '../../content/data/types';
-import { weaponDefs } from '../../content/data/weapons';
+import { meleeDefs, weaponDefs } from '../../content/data/weapons';
 import { containerText } from '../../content/text/containers';
 import { itemText } from '../../content/text/items';
 import { inventoryText, survivalText } from '../../content/text/ui';
@@ -778,6 +778,13 @@ export class InventoryScreen {
     if (d.use?.heal) rows.push([S.heals, `+${d.use.heal}`]);
     if (d.use?.food) rows.push([S.food, `+${d.use.food}`]);
     if (d.use?.water) rows.push([S.water, `+${d.use.water}`]);
+    if (d.use?.fatigue) rows.push([S.rest, `+${d.use.fatigue}`]);
+    if (d.use?.stamina) rows.push([S.stamina, `+${d.use.stamina}`]);
+    if (d.use?.cures?.length) rows.push([S.treats, d.use.cures.map((c) => survivalText.status[c] ?? c).join(', ')]);
+    if (d.use?.inflicts) rows.push([S.risk, `${Math.round(d.use.inflicts.chance * 100)}% ${(survivalText.status[d.use.inflicts.status] ?? d.use.inflicts.status).toLowerCase()}`]);
+    if (d.armour) rows.push([S.armour, String(d.armour), eqD ? d.armour - (eqD.armour ?? 0) : undefined]);
+    const md = meleeDefs[it.defId];
+    if (md && !wd) rows.push([S.damage, String(md.damage), eqD && meleeDefs[eqD.id] ? md.damage - meleeDefs[eqD.id].damage : undefined]);
     rows.push([S.size, `${d.w}×${d.h}`], [S.value, `$${d.value * it.count}`]);
     this.tip.replaceChildren();
     const desc = itemText[it.defId]?.description;

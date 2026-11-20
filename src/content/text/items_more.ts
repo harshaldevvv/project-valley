@@ -78,7 +78,7 @@ export const itemTextMore: Record<string, T> = {
   first_aid_kit: t('First Aid Kit', 'Aid Kit', 'The household kind: gauze, tape, plasters. Cleans and closes small wounds.'),
   saline_bag: t('Saline Bag', 'Saline', 'A sealed bag of saline drip. Rehydrates and steadies a bad day.'),
   vitamins: t('Vitamins', 'Vitamins', 'A tub of multivitamins. A little food and a little rest, if you believe the label.'),
-  adrenaline_shot: t('Adrenaline Shot', 'Adrenal', 'An autoinjector with a red cap. A burst of stamina and a bit of mending, then a crash.'),
+  adrenaline_shot: t('Adrenaline Shot', 'Adrenal', 'An autoinjector with a red cap. A burst of stamina and a little mending.'),
   // Tools
   lighter: t('Lighter', 'Lighter', 'A scratched steel lighter, still half full. Fire is a decision.'),
   matches: t('Box of Matches', 'Matches', 'A cardboard box with a few left. Keep it dry.'),

@@ -114,8 +114,10 @@ export class Survival implements SurvivalApi {
   }
 
   onZombieHit(info: { damage: number; zone: 'head' | 'body' | 'limb'; armour: number }) {
-    if (this.rng.next() < ZOMBIE_HIT.bleedChance[info.zone]) this.addStatus(info.damage >= ZOMBIE_HIT.heavyBleedDamage ? 'heavy_bleeding' : 'bleeding');
-    if (this.rng.next() < ZOMBIE_HIT.fractureChance[info.zone]) this.addStatus('fracture');
+    const bleedMul = 1 - Math.min(ZOMBIE_HIT.armourBleedCutMax, info.armour * ZOMBIE_HIT.armourBleedCut);
+    const fractureMul = 1 - Math.min(ZOMBIE_HIT.armourBleedCutMax, info.armour * ZOMBIE_HIT.armourFractureCut);
+    if (this.rng.next() < ZOMBIE_HIT.bleedChance[info.zone] * bleedMul) this.addStatus(info.damage >= ZOMBIE_HIT.heavyBleedDamage ? 'heavy_bleeding' : 'bleeding');
+    if (this.rng.next() < ZOMBIE_HIT.fractureChance[info.zone] * fractureMul) this.addStatus('fracture');
     if (info.armour < WOUNDS.infection.armourImmune && this.rng.next() < WOUNDS.infection.chance) this.addStatus('infection');
   }
 

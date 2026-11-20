@@ -54,4 +54,9 @@ export const ZOMBIE_HIT = {
   /** A hit at or above this damage bleeds heavily instead. */
   heavyBleedDamage: 20,
   fractureChance: { head: 0, body: 0.02, limb: 0.08 } as Record<'head' | 'body' | 'limb', number>,
+  /** Each armour point of the worn helmet/vest cuts the bleed chance by this much (stab vest 1 = -20%, plates 3 = -60%), up to the cap. */
+  armourBleedCut: 0.2,
+  armourBleedCutMax: 0.8,
+  /** And the fracture chance (body hits). */
+  armourFractureCut: 0.15,
 };
