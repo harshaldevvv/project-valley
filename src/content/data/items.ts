@@ -57,7 +57,7 @@ const list: ItemDef[] = [
   { id: 'lockpick', kind: 'tool', w: 1, h: 1, stack: 10, iconSwatch: '#8f9aa0', value: 20 },
   { id: 'repair_kit', kind: 'tool', w: 2, h: 1, stack: 1, iconSwatch: '#b5523a', value: 120, rarity: 'uncommon' },
   { id: 'wrench', kind: 'tool', w: 1, h: 2, stack: 1, iconSwatch: '#8d9396', value: 25 },
-  { id: 'flashlight_a', kind: 'tool', w: 1, h: 2, stack: 1, iconSwatch: '#2f3437', value: 35 },
+  { id: 'flashlight_a', kind: 'tool', w: 1, h: 2, stack: 1, iconSwatch: '#2f3437', value: 35, use: { seconds: 0.3, keep: true, action: 'light' } },
   // Valuables.
   { id: 'cash', kind: 'valuable', w: 1, h: 1, stack: 5000, iconSwatch: '#5f8a4a', value: 1 },
   { id: 'wallet', kind: 'container', w: 1, h: 1, stack: 1, pockets: [{ w: 2, h: 3, accepts: ['valuable', 'tool'] }], iconSwatch: '#5a4030', value: 10 },
@@ -164,7 +164,7 @@ export const INVENTORY = {
   /** Dropped items land this far in front of the player, m. */
   dropAhead: 0.7,
   /** Hotbar keys 5..9 bind consumables by item id (by type, not by instance). */
-  hotbar: ['bandage', 'canned_beans', 'water_bottle', null, null] as (string | null)[],
+  hotbar: ['bandage', 'canned_beans', 'water_bottle', 'flashlight_a', null] as (string | null)[],
   /** Order in which worn grids receive picked-up items. */
   fillOrder: ['torso', 'legs', 'armor', 'backpack'] as const,
 };
@@ -180,5 +180,7 @@ export const STARTING_KIT = {
     { item: 'wood_planks', count: 10 },
     { item: 'nails', count: 20 },
     { item: 'lockpick', count: 3 },
+    { item: 'flashlight_a', count: 1 },
+    { item: 'battery', count: 2 },
   ],
 };

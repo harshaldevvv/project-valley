@@ -8,6 +8,23 @@ import type { Game } from '../core/game';
  * start (adding lights recompiles shaders), intensity 0 while off. It ramps smoothly and flickers very slightly.
  * Stronger at night; by day it barely shows, so it is only useful in the dark.
  */
+/**
+ * The beam's switch, shared with the systems layer (which knows about items and batteries): `available()` says whether a
+ * light source and charge exist (default: always), `denied()` is called when turning on is refused.
+ */
+export const flashlightControl = {
+  on: false,
+  available: (): boolean => true,
+  denied: (): void => undefined,
+  set(v: boolean) {
+    if (v && !this.available()) return this.denied(), (this.on = false);
+    this.on = v;
+  },
+  toggle() {
+    this.set(!this.on);
+  },
+};
+
 export function installFlashlight(game: Game) {
   const light = new SpotLight('#ffe9c4', 0, 46, Math.PI / 6.2, 0.55, 1.5);
   light.castShadow = false;
@@ -28,7 +45,7 @@ export function installFlashlight(game: Game) {
   cone.visible = false;
   game.scene.add(cone);
   addEventListener('keydown', (e) => {
-    if (e.code === 'KeyL' && !e.repeat && !game.input.blocked) state.on = !state.on;
+    if (e.code === 'KeyL' && !e.repeat && !game.input.blocked) flashlightControl.toggle();
   });
   const fwd = new Vector3();
   let t = 0;
@@ -36,6 +53,7 @@ export function installFlashlight(game: Game) {
     name: 'flashlight',
     render(_a, dt) {
       t += dt;
+      state.on = flashlightControl.on;
       const goal = state.on ? 1 : 0;
       state.level += (goal - state.level) * Math.min(1, dt * 14);
       if (state.level < 0.01) {

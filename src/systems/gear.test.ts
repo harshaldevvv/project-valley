@@ -170,7 +170,7 @@ describe('consumable effects', () => {
     for (const d of Object.values(ITEMS)) {
       const u = d.use;
       if (!u) continue;
-      expect(u.seconds, d.id).toBeGreaterThanOrEqual(1);
+      expect(u.seconds, d.id).toBeGreaterThanOrEqual(u.action ? 0.2 : 1);
       expect(u.seconds, d.id).toBeLessThanOrEqual(6);
       expect(u.food ?? 0, d.id).toBeLessThanOrEqual(50);
       expect(u.water ?? 0, d.id).toBeLessThanOrEqual(80);

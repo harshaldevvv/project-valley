@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
 import { survivalFeel as SF } from '../../content/data/player';
+import { VEHICLE_FUEL } from '../../content/data/tools';
 import { hudText as T } from '../../content/text/hud';
 import { survivalText } from '../../content/text/ui';
 import { probe, type Ctx } from '../../gameplay/ctx';
@@ -24,6 +25,9 @@ const CSS = `
 .hud .chip{display:flex;align-items:center;gap:4px;padding:2px 7px 2px 4px;border-radius:10px;background:#000a;font:600 11px system-ui;letter-spacing:.3px}
 .hud .chip svg{width:14px;height:14px}
 .hud .chip.bad{box-shadow:inset 0 0 0 1px #ff503c88}.hud .chip.good{box-shadow:inset 0 0 0 1px #8fd08a88}
+.hud .fuel{position:absolute;right:24px;bottom:96px;display:none;align-items:center;gap:8px;padding:5px 10px;border-radius:5px;background:#000a;font:700 12px system-ui;letter-spacing:.8px}
+.hud .fuel i{display:block;width:110px;height:7px;background:#ffffff26;border-radius:3px;overflow:hidden}.hud .fuel b{display:block;height:100%;background:#d9b25a;transform-origin:left}
+.hud .fuel.low b{background:#e0502e}.hud .fuel.low{animation:hudflash 1s steps(2,start) infinite}
 .hud .frost{position:absolute;inset:0;background:radial-gradient(ellipse at center,#0000 30%,#b4dcff88 68%,#eaf6fff0 100%);opacity:0;pointer-events:none;transition:opacity .8s}
 .hud .bleed{position:absolute;inset:0;background:radial-gradient(ellipse at center,#0000 50%,#a0000088 100%);opacity:0;pointer-events:none}
 .hud .clock{position:absolute;left:24px;top:20px;display:flex;align-items:center;gap:7px;padding:4px 10px 4px 8px;border-radius:12px;background:#000a;font:700 13px system-ui;letter-spacing:.5px}
@@ -65,6 +69,9 @@ export class SurvivalHud {
   private chipKey = '';
   private bleed: HTMLElement;
   private frost: HTMLElement;
+  private fuel: HTMLElement;
+  private fuelFill: HTMLElement;
+  private fuelTxt: HTMLElement;
   private bag: HTMLElement;
   private bagLbl: HTMLElement;
   private time = 0;
@@ -87,6 +94,9 @@ export class SurvivalHud {
     this.chips = el('chips', bars);
     this.bleed = el('bleed', root);
     root.insertBefore(this.bleed, root.firstChild);
+    this.fuel = el('fuel', root);
+    this.fuelTxt = el('', this.fuel, 'span');
+    this.fuelFill = el('', el('', this.fuel, 'i'), 'b');
     this.frost = el('frost', root);
     root.insertBefore(this.frost, root.firstChild);
     this.clock = el('clock', root);
@@ -146,6 +156,15 @@ export class SurvivalHud {
     const p = this.ctx.player;
     const beat = Math.pow(Math.max(0, Math.sin(this.time * Math.PI * (heavy ? 2.6 : 2))), 6);
     this.bleed.style.opacity = bleeding && !p.dead ? ((heavy ? 0.35 : 0.2) + beat * (heavy ? 0.55 : 0.4)).toFixed(2) : '0';
+    // Fuel gauge while driving
+    const car = this.ctx.vehicles?.driving ?? null;
+    if (car && !p.dead) {
+      const frac = Math.max(0, Math.min(1, car.fuel / car.def.fuelLiters));
+      this.fuel.style.display = 'flex';
+      this.fuelTxt.textContent = `${T.fuel} ${Math.round(car.fuel)} L`;
+      this.fuelFill.style.transform = `scaleX(${frac.toFixed(3)})`;
+      this.fuel.classList.toggle('low', frac < VEHICLE_FUEL.lowFraction);
+    } else this.fuel.style.display = 'none';
     // Cold: a frosty screen edge that grows as warmth falls (nothing at all while warm)
     const chill = Math.max(0, Math.min(1, (SF.frostFrom - s.warmth) / (SF.frostFrom - SF.frostFull)));
     this.frost.style.opacity = p.dead ? '0' : chill.toFixed(2);

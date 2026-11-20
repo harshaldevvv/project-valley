@@ -8,6 +8,9 @@ import { yardSpawns } from '../../world/yard/spawns';
 import { probe, type Ctx } from '../ctx';
 import type { Interactable } from '../../core/contracts';
 import { vehicleText as T } from '../../content/text/vehicles';
+import { VEHICLE_FUEL } from '../../content/data/tools';
+import { burn } from '../../systems/fuel';
+import { worldHooks } from '../../systems/worldHooks';
 
 /**
  * Data-driven cars (one VehicleDef row = one car on the track): Rapier DynamicRayCastVehicleController,
@@ -40,11 +43,17 @@ export class Car {
   readonly hoodPos = new Vector3();
   readonly trunkId: string;
   hp: number;
+  /** Litres in the tank (data/tools.ts VEHICLE_FUEL). At 0 the engine stalls: no power, no engine sound. */
+  fuel: number;
+  stalledToast = false;
   smokeT = 0;
   tipped = false;
   tippedT = 0;
   get dead() {
     return this.hp <= 0;
+  }
+  get empty() {
+    return this.fuel <= 0;
   }
   cy: number; // chassis centre height above the model origin
   constructor(
@@ -58,6 +67,7 @@ export class Car {
   ) {
     this.trunkId = `veh_${n}_trunk`;
     this.hp = def.hp;
+    this.fuel = def.fuelLiters * VEHICLE_FUEL.startFraction;
     this.cy = cy;
   }
 }
@@ -88,6 +98,11 @@ export class Vehicles {
       await this.spawn(def, new Vector3(s.x + i * 6, s.y, s.z), s.yaw, i);
       i++;
     }
+    // Saves keep fuel through systems' 'worldtools' section (gameplay/saves.ts is not touched)
+    worldHooks.carFuel = {
+      get: () => this.list.map((c) => +c.fuel.toFixed(2)),
+      set: (a) => this.list.forEach((c, k) => typeof a[k] === 'number' && (c.fuel = Math.min(c.def.fuelLiters, Math.max(0, a[k])))),
+    };
   }
 
   async spawn(def: Def, at: Vector3, yaw: number, n: number) {
@@ -192,6 +207,26 @@ export class Vehicles {
         this.ctx.playerAnim?.oneshot('interact_search', 0.1);
         this.ctx.sfx('build_place', car.hoodPos);
         this.ctx.game.events.emit('toast', { text: T.repaired });
+      },
+    });
+    // Refuel from carried jerrycans, standing at the car (rear, by the filler cap)
+    const space = () => car.def.fuelLiters - car.fuel;
+    this.registerPrompt({
+      position: car.trunkPos,
+      radius: 2.2,
+      prompt: () => (this.driving || space() < 0.5 ? null : worldHooks.fuelCarried() > 0 ? T.refuel(Math.round(Math.min(space(), worldHooks.fuelCarried()))) : T.refuelNeedsCan),
+      holdSeconds: () => (worldHooks.fuelCarried() > 0 ? VEHICLE_FUEL.refuelSeconds : 0),
+      onInteract: () => {
+        const got = worldHooks.takeFuel(space());
+        if (got <= 0) {
+          this.ctx.game.events.emit('toast', { text: T.noFuelCarried });
+          return;
+        }
+        car.fuel = Math.min(car.def.fuelLiters, car.fuel + got);
+        car.stalledToast = false;
+        this.ctx.playerAnim?.oneshot('interact_search', 0.1);
+        this.ctx.sfx('search_rustle', car.trunkPos);
+        this.ctx.game.events.emit('toast', { text: T.refueled(Math.round(got)) });
       },
     });
     this.registerPrompt({
@@ -404,10 +439,11 @@ export class Vehicles {
         const back = c.down('back');
         steerIn = (c.down('left') ? 1 : 0) - (c.down('right') ? 1 : 0);
         hand = c.down('handbrake');
-        if (fwd && !car.dead) engine = car.speed < top ? d.engineForce : 0;
+        const run = !car.dead && !car.empty;
+        if (fwd && run) engine = car.speed < top ? d.engineForce : 0;
         if (back) {
           if (car.speed > 1) brake = d.brakeForce;
-          else if (!car.dead) engine = car.speed > -d.reverseKmh / 3.6 ? -d.engineForce * 0.6 : 0;
+          else if (run) engine = car.speed > -d.reverseKmh / 3.6 ? -d.engineForce * 0.6 : 0;
         }
         if (!fwd && !back) brake = d.brakeForce * 0.04; // engine braking
         if (c.pressed('horn')) {
@@ -419,9 +455,17 @@ export class Vehicles {
           car.noiseT = 1;
           this.ctx.game.events.emit('noise', { position: car.currPos.clone(), radius: d.engineNoise, source: 'engine' });
         }
+        // Fuel: idle burn while the engine runs, more with the pedal down; empty = stall
+        if (!car.dead && !car.empty) {
+          car.fuel = Math.max(0, car.fuel - burn(VEHICLE_FUEL.idleLPerS, VEHICLE_FUEL.driveLPerS, fwd || back ? 1 : 0, dt));
+          if (car.empty && !car.stalledToast) {
+            car.stalledToast = true;
+            this.ctx.game.events.emit('toast', { text: T.outOfFuel });
+          }
+        }
         const k = Math.min(1, Math.abs(car.speed) / top);
         car.engine?.setRate(d.idleRate + (d.maxRate - d.idleRate) * (fwd || back ? Math.max(k, 0.25) : k));
-        car.engine?.setVolume(0.45 + 0.4 * k);
+        car.engine?.setVolume(car.empty || car.dead ? 0 : 0.45 + 0.4 * k);
       }
       // Speed-sensitive steering, rate-limited
       // Speed-sensitive steering; none in the air (QA-056)

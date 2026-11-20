@@ -54,7 +54,7 @@ export function installSurvival(
     heal: (n) => player()?.heal(n),
     isNight,
     days,
-    env: () => ({ night: time()?.night ?? 0, rain: weather.rain, ...wornWarmth(lo.equipment), fire: worldHooks.fireNear() }),
+    env: () => ({ night: time()?.night ?? 0, rain: weather.rain, ...wornWarmth(lo.equipment), fire: worldHooks.fireNear(), sheltered: worldHooks.sheltered() }),
     statusChanged: (id, active, stage) => {
       game.events.emit('statusChanged', { id, active, stage });
       // Wounds announce themselves; derived needs states are for the HUD icons only.

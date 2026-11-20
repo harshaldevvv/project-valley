@@ -91,7 +91,7 @@ export const itemTextMore: Record<string, T> = {
   radio_handheld: t('Handheld Radio', 'Radio', 'A two-way radio with a cracked screen. Static, mostly, and now and then a voice. Use it to listen.'),
   binoculars: t('Binoculars', 'Binocs', 'Compact binoculars with a scuffed strap. Look before you walk in.'),
   bolt_cutters: t('Bolt Cutters', 'Bolt Cut', 'Red-handled bolt cutters. Locks and chains do not stand a chance.'),
-  jerrycan: t('Jerrycan', 'Jerrycan', 'A steel fuel can, empty. Somebody will want it filled.'),
+  jerrycan: t('Jerrycan', 'Jerrycan', 'A steel fuel can. Fill it at a pump and pour it into a truck: stand at the back of the car and hold E.'),
   tarp: t('Tarp', 'Tarp', 'Blue plastic sheeting with metal eyelets. Cover, tent, roof, shroud.'),
   // Materials
   battery: t('Battery', 'Battery', 'A flat-top battery with some charge left.'),

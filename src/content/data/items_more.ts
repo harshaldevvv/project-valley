@@ -112,7 +112,7 @@ export const MORE_ITEMS: ItemDef[] = [
   { id: 'radio_handheld', kind: 'tool', w: 1, h: 2, stack: 1, rarity: 'uncommon', iconSwatch: '#3a3f44', value: 70, use: { seconds: 1.5, keep: true, action: 'radio', sound: 'item_pickup' } },
   { id: 'binoculars', kind: 'tool', w: 2, h: 1, stack: 1, rarity: 'uncommon', iconSwatch: '#2a2d30', value: 80 },
   { id: 'bolt_cutters', kind: 'tool', w: 1, h: 3, stack: 1, rarity: 'uncommon', iconSwatch: '#b5342a', value: 90 },
-  { id: 'jerrycan', kind: 'tool', w: 2, h: 3, stack: 1, iconSwatch: '#b5622a', value: 40 },
+  { id: 'jerrycan', kind: 'tool', w: 2, h: 3, stack: 1, fuelCapacity: 20, iconSwatch: '#b5622a', value: 40 },
   { id: 'tarp', kind: 'tool', w: 2, h: 2, stack: 1, iconSwatch: '#3a6a8a', value: 15 },
 
   // ---------- Materials ----------
@@ -145,8 +145,8 @@ export const MORE_ITEMS: ItemDef[] = [
   { id: 'energy_gel', kind: 'food', w: 1, h: 1, stack: 5, iconSwatch: '#c9d92f', value: 8, use: { seconds: 1.2, food: 6, stamina: 50, sound: 'item_pickup' } },
   { id: 'iced_tea', kind: 'drink', w: 1, h: 2, stack: 1, iconSwatch: '#b5622a', value: 8, use: { seconds: 2, water: 22, fatigue: 3, sound: 'item_pickup' } },
   { id: 'sterile_gauze', kind: 'medical', w: 1, h: 1, stack: 6, iconSwatch: '#e9e6dc', value: 9, use: { seconds: 2, heal: 8, cures: ['bleeding'], sound: 'search_rustle' } },
-  { id: 'headlamp', kind: 'tool', w: 1, h: 1, stack: 1, rarity: 'uncommon', iconSwatch: '#2a2d30', value: 45 },
-  { id: 'camping_lantern', kind: 'tool', w: 2, h: 2, stack: 1, rarity: 'uncommon', iconSwatch: '#c9a52e', value: 35 },
+  { id: 'headlamp', kind: 'tool', w: 1, h: 1, stack: 1, slots: ['eyes'], rarity: 'uncommon', iconSwatch: '#2a2d30', value: 45, use: { seconds: 0.3, keep: true, action: 'light' } },
+  { id: 'camping_lantern', kind: 'tool', w: 2, h: 2, stack: 1, rarity: 'uncommon', iconSwatch: '#c9a52e', value: 35, use: { seconds: 0.3, keep: true, action: 'light' } },
   { id: 'glow_stick', kind: 'tool', w: 1, h: 1, stack: 5, iconSwatch: '#5fe07a', value: 4 },
 
   // ---------- Crafting products and tools (data/crafting.ts) ----------

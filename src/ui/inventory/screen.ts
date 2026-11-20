@@ -782,6 +782,7 @@ export class InventoryScreen {
     if (d.use?.stamina) rows.push([S.stamina, `+${d.use.stamina}`]);
     if (d.use?.cures?.length) rows.push([S.treats, d.use.cures.map((c) => survivalText.status[c] ?? c).join(', ')]);
     if (d.use?.inflicts) rows.push([S.risk, `${Math.round(d.use.inflicts.chance * 100)}% ${(survivalText.status[d.use.inflicts.status] ?? d.use.inflicts.status).toLowerCase()}`]);
+    if (d.fuelCapacity) rows.push([S.fuel, `${it.fuel ?? 0} / ${d.fuelCapacity} L`]);
     if (d.use?.warmth) rows.push([S.warmth, `+${d.use.warmth}`]);
     if (d.warmth) rows.push([S.warmth, `+${d.warmth}`, eqD ? d.warmth - (eqD.warmth ?? 0) : undefined]);
     if (d.rainproof) rows.push([S.rain, `${Math.round(d.rainproof * 100)}%`]);

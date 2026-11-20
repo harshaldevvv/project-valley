@@ -14,13 +14,16 @@ export interface WarmthEnv {
   rainproof: number;
   /** Standing next to a lit campfire. */
   fire: boolean;
+  /** Indoors or under a roof: out of the rain and the wind. */
+  sheltered?: boolean;
 }
 
 export const DRY_DAY: WarmthEnv = { night: 0, rain: 0, clothing: 0, rainproof: 0, fire: false };
 
 /** Outdoor temperature on the comfort scale. */
-export function ambient(env: Pick<WarmthEnv, 'night' | 'rain' | 'rainproof'>) {
+export function ambient(env: Pick<WarmthEnv, 'night' | 'rain' | 'rainproof' | 'sheltered'>) {
   const base = WARMTH.dayTemp + (WARMTH.nightTemp - WARMTH.dayTemp) * Math.min(1, Math.max(0, env.night));
+  if (env.sheltered) return base + WARMTH.shelterBonus;
   return base - env.rain * WARMTH.rainPenalty * (1 - Math.min(1, Math.max(0, env.rainproof)));
 }
 
@@ -53,4 +56,25 @@ export function wornWarmth(equipment: Partial<Record<SlotName, ItemInstance | un
     rain += d.rainproof ?? 0;
   }
   return { clothing, rainproof: Math.min(1, rain) };
+}
+
+/** A building footprint as in data/outskirts.ts: centre, size (w along local x, d along local z) and yaw. */
+export interface Footprint {
+  x: number;
+  z: number;
+  w: number;
+  d: number;
+  yaw: number;
+}
+/** Is the point inside any footprint (turned by its yaw)? Used for "indoors counts as out of the rain". */
+export function insideAny(x: number, z: number, list: readonly Footprint[], margin = 0) {
+  for (const b of list) {
+    const dx = x - b.x;
+    const dz = z - b.z;
+    // outskirts buildingWorld(): x = bx + u cos(yaw) + v sin(yaw), z = bz - u sin(yaw) + v cos(yaw)
+    const u = dx * Math.cos(b.yaw) - dz * Math.sin(b.yaw);
+    const v = dx * Math.sin(b.yaw) + dz * Math.cos(b.yaw);
+    if (Math.abs(u) <= b.w / 2 + margin && Math.abs(v) <= b.d / 2 + margin) return true;
+  }
+  return false;
 }

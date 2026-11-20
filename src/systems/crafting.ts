@@ -29,14 +29,31 @@ export function damagedWeapons(lo: Loadout): ItemInstance[] {
   return out;
 }
 
+/** Worn or wielded items (empty ones only) of this kind, up to `n`. */
+function equippedFor(lo: Loadout, id: string, n: number): ItemInstance[] {
+  const out: ItemInstance[] = [];
+  for (const it of Object.values(lo.equipment)) if (it && it.defId === id && out.length < n && it.count === 1 && !lo.holdsThings(it) && !out.includes(it)) out.push(it);
+  return out;
+}
+
+/** Equipped items this recipe would use up because the pack alone is short (the panel asks the player to confirm). */
+export function equippedUse(lo: Loadout, r: RecipeDef): ItemInstance[] {
+  const out: ItemInstance[] = [];
+  for (const i of r.inputs) {
+    const short = i.count - lo.count(i.item);
+    if (short > 0) out.push(...equippedFor(lo, i.item, short));
+  }
+  return out;
+}
+
 /** What is missing for this recipe (empty = ready). `target` is the weapon picked for a repair. */
 export function check(lo: Loadout, r: RecipeDef, stations: ReadonlySet<Station>, target?: ItemInstance | null): Missing[] {
   const miss: Missing[] = [];
   for (const i of r.inputs) {
-    const have = lo.count(i.item);
+    const have = lo.countAll(i.item);
     if (have < i.count) miss.push({ kind: 'input', item: i.item, have, need: i.count });
   }
-  for (const group of r.tools ?? []) if (!group.some((t) => lo.count(t) > 0)) miss.push({ kind: 'tool', any: group });
+  for (const group of r.tools ?? []) if (!group.some((t) => lo.countAll(t) > 0)) miss.push({ kind: 'tool', any: group });
   if (r.station && !stations.has(r.station)) miss.push({ kind: 'station', station: r.station });
   if (r.repair && !(target && damagedWeapons(lo).includes(target))) miss.push({ kind: 'target' });
   return miss;
@@ -47,7 +64,12 @@ export const canCraft = (lo: Loadout, r: RecipeDef, stations: ReadonlySet<Statio
 /** Make it: consume inputs, add outputs (onto the ground if the pack is full, never lost). Returns the new items. */
 export function perform(lo: Loadout, r: RecipeDef, stations: ReadonlySet<Station>, target?: ItemInstance | null): ItemInstance[] | null {
   if (!canCraft(lo, r, stations, target)) return null;
-  for (const i of r.inputs) lo.consume(i.item, i.count);
+  for (const i of r.inputs) {
+    // Carried items first; only then the worn or wielded one (the panel asks before this happens).
+    const left = i.count - lo.consume(i.item, i.count);
+    if (left > 0) for (const it of equippedFor(lo, i.item, left)) for (const slot of Object.keys(lo.equipment) as (keyof typeof lo.equipment)[]) if (lo.equipment[slot] === it) delete lo.equipment[slot];
+  }
+  lo.changed();
   if (r.repair && target) {
     target.durability = Math.min(1, (target.durability ?? 1) + r.repair.amount);
     lo.changed();
@@ -87,4 +109,4 @@ export function cutLock(lo: Loadout, lockLevel: number, maxLock: number, wear: n
   }
   return false;
 }
-export const canCut = (lo: Loadout, lockLevel: number, maxLock: number, tools: string[]) => lockLevel <= maxLock && tools.some((t) => lo.count(t) > 0);
+export const canCut = (lo: Loadout, lockLevel: number, maxLock: number, tools: string[]) => lockLevel <= maxLock && tools.some((t) => lo.countAll(t) > 0);

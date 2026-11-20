@@ -1,6 +1,7 @@
 import { CONTAINERS } from '../content/data/containers';
 import { INVENTORY, ITEMS, STARTING_KIT } from '../content/data/items';
 import { LOOT, rarityMul } from '../content/data/loot';
+import { JERRYCAN_LOOT, LIGHT } from '../content/data/tools';
 import type { ItemInstance, SlotName } from '../content/data/types';
 import type { LoadoutApi } from '../core/contracts';
 import type { Rng } from '../engine/rng';
@@ -27,7 +28,8 @@ export interface Pickup {
   z: number;
 }
 
-export const SAVE_VERSION = 1;
+/** 1 = first format; 2 = the flashlight needs an item, so old saves are given one (see load). */
+export const SAVE_VERSION = 2;
 export interface LoadoutSave {
   v: number;
   nextUid: number;
@@ -140,6 +142,17 @@ export class Loadout implements LoadoutApi {
     let n = 0;
     for (const { grid } of this.playerGrids()) forEachItem(grid, (gi) => gi.item.defId === defId && (n += gi.item.count), true);
     return n;
+  }
+
+  /** Carried in the worn grids plus worn or wielded in a slot (a container that holds things is not counted: it could not be consumed without spilling them). */
+  countAll(defId: string): number {
+    let n = this.count(defId);
+    for (const it of Object.values(this.equipment)) if (it && it.defId === defId && !this.holdsThings(it)) n += it.count;
+    return n;
+  }
+
+  holdsThings(it: ItemInstance) {
+    return gridsOf(it).some((g) => g.contents.length > 0) || !!it.mag;
   }
 
   consume(defId: string, n: number): number {
@@ -372,6 +385,7 @@ export class Loadout implements LoadoutApi {
     const make = (item: string, count: number, rounds?: number) => {
       const d = defOf(item);
       const extra: Partial<ItemInstance> = {};
+      if (d.fuelCapacity) extra.fuel = Math.round(d.fuelCapacity * (JERRYCAN_LOOT.min + this.rng.next() * (JERRYCAN_LOOT.max - JERRYCAN_LOOT.min)) * 2) / 2;
       if (d.kind === 'magazine') extra.rounds = rounds === -1 ? d.capacity : rounds ?? this.rng.int(0, d.capacity ?? 0);
       if (d.kind === 'weapon' && rounds === -1) {
         // Loaded weapon: insert a full magazine that fits it (or fill an internal magazine).
@@ -422,12 +436,28 @@ export class Loadout implements LoadoutApi {
     });
   }
 
+  /** v1 saves predate the flashlight rule: give a flashlight and two batteries if the player carries no light, and bind it. */
+  private migrateV1(s: LoadoutSave) {
+    const has = (id: string) => JSON.stringify(s).includes(`"defId":"${id}"`);
+    if (LIGHT.items.some(has)) return;
+    const holder = new Loadout(this.rng);
+    holder.equipment = s.equipment;
+    holder.give(newItem('flashlight_a'));
+    for (const it of newItems(LIGHT.batteryItem, 2)) holder.give(it);
+    s.pickups.push(...holder.pickups);
+    if (!s.hotbar.includes('flashlight_a')) {
+      const i = s.hotbar.indexOf(null);
+      if (i >= 0) s.hotbar[i] = 'flashlight_a';
+    }
+  }
+
   load(save: LoadoutSave) {
-    if (save.v !== SAVE_VERSION) throw new Error(`loadout save v${save.v} has no migration to v${SAVE_VERSION}`);
+    if (save.v < 1 || save.v > SAVE_VERSION) throw new Error(`loadout save v${save.v} has no migration to v${SAVE_VERSION}`);
     const s = structuredClone(save);
     const rep = repairLoadoutSave(s);
     if (rep.renamed || rep.dropped.length) console.warn(`loadout save repaired: ${rep.renamed} renamed, dropped ${rep.dropped.join(', ') || 'nothing'}`);
     uidState.next = Math.max(uidState.next, s.nextUid);
+    if (save.v < 2) this.migrateV1(s);
     this.equipment = s.equipment;
     this.pickups = s.pickups;
     this.containers.clear();

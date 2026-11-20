@@ -25,6 +25,8 @@ export interface ItemDef {
   grid?: { w: number; h: number };
   /** Extra sub-grids (side pockets, mag pouches). `accepts` limits which item kinds fit. Stored in ItemInstance.pockets. */
   pockets?: { w: number; h: number; accepts?: ItemDef['kind'][] }[];
+  /** Fuel cans: litres a full one holds. */
+  fuelCapacity?: number;
   /** Armour rating of worn gear (helmet 3 = infection-proof head, principles §7). */
   armour?: number;
   /** Worn warmth in comfort degrees (data/survival.ts WARMTH): jackets 3-10, hats and gloves 1-3. */
@@ -61,7 +63,7 @@ export interface ItemDef {
     /** Instant body warmth, 0..100 points (hot food and drink). It fades back toward what the weather and clothes allow. */
     warmth?: number;
     /** Custom effect run by the world layer when the timer completes: 'radio' plays a broadcast, 'campfire' places a camp. */
-    action?: 'radio' | 'campfire';
+    action?: 'radio' | 'campfire' | 'light';
     /** Not consumed by use (the radio). */
     keep?: boolean;
   };
@@ -112,6 +114,8 @@ export interface ItemInstance {
   /** Sub-grid contents, one array per ItemDef.pockets entry. */
   pockets?: GridItem[][];
   rarity?: Rarity;
+  /** Fuel cans: litres inside (absent = empty). */
+  fuel?: number;
 }
 
 export interface GridItem {

@@ -69,6 +69,10 @@ export const ZOMBIE_HIT = {
  * out dressed in a T-shirt. A fire beside you warms you within seconds.
  */
 export const WARMTH = {
+  /** Indoors or under a roof: no rain, and this much warmer (no wind). */
+  shelterBonus: 3,
+  /** Roof check: a solid thing within this many metres straight above the head counts as a roof. */
+  roofCheckM: 9,
   /** Equilibrium at or above this = fully warm. */
   comfort: 16,
   dayTemp: 19,

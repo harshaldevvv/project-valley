@@ -14,7 +14,7 @@ import { LockpickScreen } from '../ui/lockpick/lockpick';
 import { canCut, cutLock } from './crafting';
 import { newItem, newItems } from './inventory';
 import { installSave } from './installSave';
-import { installCraft, type WorldToolsSave } from './installCraft';
+import { installCraft, WORLDTOOLS_VERSION, type WorldToolsSave } from './installCraft';
 import { installSurvival, type DeathBag } from './installSurvival';
 import { Loadout, SAVE_VERSION, type LoadoutSave } from './loadout';
 import type { Piece } from './build';
@@ -236,7 +236,7 @@ export async function installSystems(game: Game): Promise<void> {
   });
   saves.section('deathbags', { version: 1, save: () => m2.bags.serialize(), load: (d) => m2.bags.load(d as DeathBag[]) });
   saves.section('survival', { version: SURVIVAL_SAVE_VERSION, save: () => m2.survival.serialize(), load: (d, v) => m2.survival.load(d as SurvivalSave, v) });
-  saves.section('worldtools', { version: 1, save: () => craft.serialize(), load: (d) => craft.load(d as WorldToolsSave) });
+  saves.section('worldtools', { version: WORLDTOOLS_VERSION, save: () => craft.serialize(), load: (d, v) => craft.load(d as WorldToolsSave, v) });
 
   game.events.on('playerDied', () => {
     screen.close();

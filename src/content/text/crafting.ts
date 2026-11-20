@@ -19,6 +19,8 @@ export const craftText = {
   makes: 'Makes',
   time: (s: number) => `${s} s`,
   craft: 'Craft',
+  confirm: (names: string) => `Confirm: uses up your equipped ${names}`,
+  usesEquipped: (names: string) => `This would use up what you wear or wield: ${names}`,
   cantCraft: 'Missing something',
   pickWeapon: 'Pick a weapon to repair',
   noDamaged: 'Nothing needs repair',
@@ -44,6 +46,15 @@ export const campText = {
   died: 'The campfire burns out',
   warm: 'You warm up by the fire',
   tooFar: 'Not enough room to lay a fire here',
+  pumpFill: (l: number, left: number) => `Fill jerrycan (${l} L, pump holds ${left} L)`,
+  pumpNeedsCan: 'Fuel pump (bring a jerrycan)',
+  pumpDry: 'The pump is dry',
+  pumped: (l: number) => `Filled ${l} L`,
+  noLight2: 'You need a flashlight in a quick slot, or a headlamp on',
+  noBattery: 'No battery left',
+  newBattery: 'New battery in',
+  lightDead: 'The light is dead',
+  lightLow: 'The light is fading and you have no spare battery',
 };
 
 export const toolText = {

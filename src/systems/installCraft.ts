@@ -1,7 +1,12 @@
 import { AdditiveBlending, BoxGeometry, Box3, ConeGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PointLight, Vector3 } from 'three';
 import { RECIPES } from '../content/data/crafting';
 import { WARMTH } from '../content/data/survival';
-import { BINOCULARS, CAMPFIRE, RADIO } from '../content/data/tools';
+import { BINOCULARS, CAMPFIRE, LIGHT, PUMPS, RADIO } from '../content/data/tools';
+import { BUILDINGS } from '../content/data/outskirts';
+import { Group as PGroup, groups } from '../engine/physics';
+import { flashlightControl } from '../engine/flashlight';
+import * as fuel from './fuel';
+import { insideAny } from './warmth';
 import type { ItemInstance, RecipeDef } from '../content/data/types';
 import { campText, craftText } from '../content/text/crafting';
 import { radioLines, radioStation } from '../content/text/radio';
@@ -29,9 +34,23 @@ export interface Camp {
   /** Seconds of burn left. */
   fuel: number;
 }
+/** Save slice 'worldtools': v1 = camps + radio; v2 adds pump reserves, light charge and car fuel (v1 loads with defaults). */
+export const WORLDTOOLS_VERSION = 2;
 export interface WorldToolsSave {
   camps: Camp[];
   radio: number;
+  pumps?: number[];
+  charge?: number;
+  carFuel?: number[];
+}
+export function migrateWorldTools(d: WorldToolsSave, version: number): Required<WorldToolsSave> {
+  return {
+    camps: d.camps ?? [],
+    radio: d.radio ?? 0,
+    pumps: version < 2 || !d.pumps ? PUMPS.spots.map(() => PUMPS.reserveLiters) : d.pumps,
+    charge: version < 2 || d.charge === undefined ? LIGHT.startSeconds : d.charge,
+    carFuel: version < 2 || !d.carFuel ? [] : d.carFuel,
+  };
 }
 
 const FLAME = new ConeGeometry(0.18, 0.6, 8).translate(0, 0.3, 0);
@@ -171,6 +190,60 @@ export function installCraft(
     return s;
   };
 
+  // ---------------- fuel: carried cans, pumps ----------------
+  worldHooks.takeFuel = (max) => fuel.draw(lo, max);
+  worldHooks.fuelCarried = () => fuel.carried(lo);
+  const pumps = PUMPS.spots.map(() => PUMPS.reserveLiters);
+  PUMPS.spots.forEach((spot, i) => {
+    game.interact.register({
+      position: new Vector3(spot.x, 1.0, spot.z),
+      radius: PUMPS.reach,
+      prompt: () => (pumps[i] <= 0 ? campText.pumpDry : fuel.cans(lo).length === 0 ? campText.pumpNeedsCan : fuel.space(lo) < 0.5 ? null : campText.pumpFill(Math.round(Math.min(pumps[i], fuel.space(lo))), Math.round(pumps[i]))),
+      holdSeconds: () => (pumps[i] > 0 && fuel.space(lo) >= 0.5 ? PUMPS.fillSeconds : 0),
+      onInteract() {
+        const put = fuel.fill(lo, Math.min(pumps[i], fuel.space(lo)));
+        if (put <= 0) return deps.sfx('build_invalid');
+        pumps[i] -= put;
+        deps.sfx('search_rustle');
+        deps.toast(campText.pumped(Math.round(put)));
+      },
+    });
+  });
+
+  // ---------------- light: items, battery ----------------
+  let charge = LIGHT.startSeconds;
+  const lightItems = () => {
+    const have = new Set<string>();
+    for (const it of Object.values(lo.equipment)) if (it && LIGHT.items.includes(it.defId)) have.add(it.defId);
+    for (const id of lo.hotbar) if (id && LIGHT.items.includes(id) && lo.count(id) > 0) have.add(id);
+    return have.size > 0;
+  };
+  flashlightControl.available = () => lightItems() && (charge > 0 || lo.count(LIGHT.batteryItem) > 0);
+  flashlightControl.denied = () => deps.toast(!lightItems() ? campText.noLight2 : campText.noBattery);
+  let warned = false;
+
+  // ---------------- shelter (indoors or under a roof) ----------------
+  let sheltered = false;
+  let shelterT = 0;
+  let ray: InstanceType<typeof game.phys.R.Ray> | null = null;
+  const roofFilter = groups(PGroup.PLAYER, PGroup.STATIC | PGroup.BUILD);
+  function checkShelter() {
+    const p = feet();
+    let under = insideAny(p.x, p.z, BUILDINGS, 0.1);
+    if (!under) {
+      try {
+        ray ??= new game.phys.R.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
+        ray.origin = { x: p.x, y: p.y + 2.1, z: p.z };
+        ray.dir = { x: 0, y: 1, z: 0 };
+        under = !!game.phys.world.castRay(ray, WARMTH.roofCheckM, true, undefined, roofFilter);
+      } catch {
+        /* physics not ready */
+      }
+    }
+    sheltered = under;
+  }
+  worldHooks.sheltered = () => sheltered;
+
   // ---------------- crafting job ----------------
   const bar = document.createElement('div');
   bar.className = 'cr-bar';
@@ -235,6 +308,7 @@ export function installCraft(
   game.events.on('itemUsed', (e) => {
     const action = (e.use as { action?: string } | undefined)?.action;
     if (action === 'radio') playRadio();
+    else if (action === 'light') flashlightControl.toggle();
     else if (action === 'campfire') {
       if (placeCamp()) deps.toast(campText.placed);
       else {
@@ -284,6 +358,30 @@ export function installCraft(
         barFill.style.width = `${Math.min(100, (job.t / job.r.seconds) * 100)}%`;
       }
       if (cardT > 0 && (cardT -= dt) <= 0) card.classList.remove('on');
+      if ((shelterT -= dt) <= 0) {
+        shelterT = 0.25;
+        checkShelter();
+      }
+      if (flashlightControl.on) {
+        if (!lightItems()) flashlightControl.on = false;
+        else {
+          if (charge <= 0) {
+            if (lo.consume(LIGHT.batteryItem, 1) > 0) {
+              charge = LIGHT.batterySeconds;
+              warned = false;
+              deps.toast(campText.newBattery);
+            } else {
+              flashlightControl.on = false;
+              deps.toast(campText.lightDead);
+            }
+          }
+          charge = Math.max(0, charge - dt);
+          if (!warned && charge < LIGHT.warnSeconds && lo.count(LIGHT.batteryItem) === 0) {
+            warned = true;
+            deps.toast(campText.lightLow);
+          }
+        }
+      }
       if (!late) {
         late = true;
         // Registered from inside a tick so it runs after the camera rig (which sets the FOV each frame).
@@ -333,15 +431,22 @@ export function installCraft(
   const api = {
     screen,
     litNear,
-    serialize: (): WorldToolsSave => ({ camps: [...camps.values()].map((c) => ({ ...c.rec })), radio: radioIdx }),
-    load(d: WorldToolsSave) {
+    serialize: (): WorldToolsSave => ({ camps: [...camps.values()].map((c) => ({ ...c.rec })), radio: radioIdx, pumps: [...pumps], charge, carFuel: worldHooks.carFuel.get() }),
+    load(save: WorldToolsSave, version = WORLDTOOLS_VERSION) {
+      const d = migrateWorldTools(save, version);
       for (const id of [...camps.keys()]) removeCamp(id);
-      for (const c of d.camps ?? []) spawnCamp({ ...c });
-      radioIdx = d.radio ?? 0;
+      for (const c of d.camps) spawnCamp({ ...c });
+      radioIdx = d.radio;
+      d.pumps.forEach((l, i) => i < pumps.length && (pumps[i] = l));
+      charge = d.charge;
+      if (d.carFuel.length) worldHooks.carFuel.set(d.carFuel);
+      flashlightControl.on = false;
       job = null;
     },
     placeCamp,
     camps: () => [...camps.values()].map((c) => c.rec),
+    pumps,
+    charge: () => charge,
     recipes: RECIPES.length,
   };
   try {

@@ -40,3 +40,44 @@ export const BINOCULARS = { key: 'KeyZ', zoom: 3.2, item: 'binoculars' };
 
 /** The handheld radio: seconds a broadcast card stays up. */
 export const RADIO = { cardSeconds: 9 };
+
+/** Vehicle fuel. A full tank lasts about 25 minutes of flat-out driving; a jerrycan (20 L) about 7. */
+export const VEHICLE_FUEL = {
+  /** Fraction of the tank a car starts with (and spawns with): enough to leave the yard, not to roam forever. */
+  startFraction: 0.55,
+  /** Litres per second with the engine on and not pushing (idling in gear), and extra at full throttle. */
+  idleLPerS: 0.006,
+  driveLPerS: 0.045,
+  /** Hold time to pour a can into the tank, s, and litres poured per second. */
+  refuelSeconds: 3,
+  pourLPerS: 12,
+  /** HUD gauge turns amber below this fraction. */
+  lowFraction: 0.2,
+};
+
+/** Route 9 fuel stop pumps (positions from data/outskirts.ts 'pump island'; finite: no pump refills itself). */
+export const PUMPS = {
+  spots: [
+    { x: -14, z: 152.4 },
+    { x: -14, z: 155.6 },
+  ],
+  /** Litres each pump still holds at the start. */
+  reserveLiters: 100,
+  fillSeconds: 4,
+  reach: 2.6,
+};
+
+/** Fuel found in a jerrycan from loot: this share of a full can, rolled. */
+export const JERRYCAN_LOOT = { min: 0, max: 0.6 };
+
+/** Light sources (flashlight, headlamp, lantern). The L key and the hotbar toggle the beam; batteries power it. */
+export const LIGHT = {
+  /** Usable when worn or when bound to the hotbar (a quick slot). */
+  items: ['flashlight_a', 'headlamp', 'camping_lantern'],
+  batteryItem: 'battery',
+  /** Seconds of light one battery gives, and what a new game starts charged with. */
+  batterySeconds: 900,
+  startSeconds: 900,
+  /** Toast a warning at this many seconds left. */
+  warnSeconds: 60,
+};

@@ -5,7 +5,7 @@ import type { ItemInstance, RecipeDef } from '../../content/data/types';
 import { craftText as T } from '../../content/text/crafting';
 import { itemText } from '../../content/text/items';
 import { assetUrl } from '../../engine/assetUrl';
-import { check, damagedWeapons, type Missing, type Station } from '../../systems/crafting';
+import { check, damagedWeapons, equippedUse, type Missing, type Station } from '../../systems/crafting';
 import type { Loadout } from '../../systems/loadout';
 import './inventory.css';
 import './craft.css';
@@ -50,6 +50,8 @@ export class CraftScreen {
   private tab: RecipeDef['category'] = 'medical';
   private sel: RecipeDef | null = null;
   private target: ItemInstance | null = null;
+  /** The recipe whose Craft button is waiting for a second click because it would use up equipped gear. */
+  private confirm: RecipeDef | null = null;
 
   constructor(private lo: Loadout, private hooks: CraftHooks, parent: HTMLElement) {
     this.root.hidden = true;
@@ -95,7 +97,7 @@ export class CraftScreen {
     const tabs = h('div', 'cr-tabs');
     for (const c of RECIPE_CATEGORIES) {
       const b = h('button', c === this.tab ? 'on' : '', T.categories[c] ?? c);
-      b.onclick = () => ((this.tab = c), (this.sel = null), (this.target = null), this.render());
+      b.onclick = () => ((this.tab = c), (this.sel = null), (this.target = null), (this.confirm = null), this.render());
       tabs.append(b);
     }
     list.append(tabs);
@@ -109,7 +111,7 @@ export class CraftScreen {
       const text = h('div');
       text.append(h('b', '', recipeName(r)), h('small', '', r.inputs.map((i) => `${i.count > 1 ? i.count + '× ' : ''}${name(i.item)}`).join(', ')));
       row.append(icon(r.outputs[0]?.item ?? 'repair_kit'), text, h('span', 'dot'));
-      row.onclick = () => ((this.sel = r), (this.target = null), this.render());
+      row.onclick = () => ((this.sel = r), (this.target = null), (this.confirm = null), this.render());
       list.append(row);
     }
     wrap.append(list);
@@ -127,7 +129,7 @@ export class CraftScreen {
     col.append(h('h2', '', T.makes), big);
     col.append(h('h3', '', T.needs));
     for (const i of r.inputs) {
-      const have = this.lo.count(i.item);
+      const have = this.lo.countAll(i.item);
       const row = h('div', `cr-need ${have >= i.count ? 'ok' : 'bad'}`);
       row.append(h('span', '', name(i.item)), h('span', '', `${have} / ${i.count}`));
       col.append(row);
@@ -135,7 +137,7 @@ export class CraftScreen {
     if (r.tools?.length) {
       col.append(h('h3', '', T.tools));
       for (const g of r.tools) {
-        const ok = g.some((x) => this.lo.count(x) > 0);
+        const ok = g.some((x) => this.lo.countAll(x) > 0);
         const row = h('div', `cr-need ${ok ? 'ok' : 'bad'}`);
         row.append(h('span', '', g.map(name).join(' / ')), h('span', '', ok ? '✓' : '✕'));
         col.append(row);
@@ -164,11 +166,16 @@ export class CraftScreen {
       col.append(box);
     }
     const miss = check(this.lo, r, st, this.target);
-    const go = h('button', 'cr-go', miss.length ? T.cantCraft : T.craft) as HTMLButtonElement;
+    const worn = miss.length ? [] : equippedUse(this.lo, r);
+    const asking = this.confirm === r && worn.length > 0;
+    const go = h('button', 'cr-go', miss.length ? T.cantCraft : asking ? T.confirm(worn.map((w) => name(w.defId)).join(', ')) : T.craft) as HTMLButtonElement;
     go.disabled = miss.length > 0;
     go.title = miss.map((m) => this.missingText(m)).join(', ');
+    if (worn.length && !asking) col.append(h('div', 'cr-foot', T.usesEquipped(worn.map((w) => name(w.defId)).join(', '))));
     go.onclick = () => {
       if (check(this.lo, r, this.hooks.stations(), this.target).length) return;
+      if (equippedUse(this.lo, r).length && this.confirm !== r) return ((this.confirm = r), this.render());
+      this.confirm = null;
       this.hooks.begin(r, this.target);
       this.close();
     };
