@@ -355,6 +355,12 @@ const B = {
     box(g, 1.2, 0.5, 0.55, 0, 0, 0, c); box(g, 1.0, 0.18, 0.56, 0, 0, 0, '#d8c58a'); box(g, 0.3, 0.1, 0.57, -0.4, 0, 0, '#2a2d30');
     return g;
   },
+  note(c) {
+    const g = G();
+    box(g, 0.9, 0.04, 1.1, 0, 0, 0, c, { rough: 0.9, ry: 0.1 }); for (let i = 0; i < 4; i++) box(g, 0.6 - i * 0.05, 0.01, 0.04, 0, 0.03, -0.3 + i * 0.2, '#3a3a3a', { ry: 0.1 });
+    box(g, 0.9, 0.03, 1.1, 0.05, -0.03, 0.04, '#cfc4a0', { ry: -0.05 });
+    return g;
+  },
   torch(c) {
     const g = G();
     cyl(g, 0.1, 1.3, 0, 0, 0, c, { r2: 0.08 }); sph(g, 0.2, 0, 0.72, 0, '#3a2a1a', { sy: 1.3 }); sph(g, 0.17, 0, 0.95, 0, '#ff9b3a', { sy: 1.8 });
@@ -430,6 +436,7 @@ const MAP = {
   bandolier: ['pouch', { w: 1.3, h: 0.45, d: 0.15, strap: true }], construction_vest: ['vest'], cowboy_hat: ['hat', { wide: true, tall: 0.9 }], motorcycle_helmet: ['helmet', { visor: true }], scarf: ['mask', { bandana: true }],
   canned_corn: ['can', { tab: true }], sardines: ['can', { h: 0.28, r: 0.4, tab: true }], trail_mix: ['bag', { label: '#c9a46a' }], honey_jar: ['jar', { cap: '#e9d9a0', label: '#d99a1f' }], energy_gel: ['bag', { label: '#c9d92f' }],
   iced_tea: ['bottle', { label: '#e0c9a0', cap: '#2a2d30' }], sterile_gauze: ['matches'], headlamp: ['glasses', { clear: true }], camping_lantern: ['jerry'], glow_stick: ['flare'],
+  note_maple_sick: ['note'], note_school_roll: ['note'], note_camp_diary: ['note'], note_crash_log: ['note'], note_ranger_log: ['note'],
   torch: ['torch'], campfire_kit: ['logs'], cooking_pot: ['pot'], purification_tablets: ['bottle', { r: 0.22, h: 0.5, label: '#cfe4ea', cap: '#3a8ad9' }], sterile_bandage: ['bag', { label: '#eef2f4' }],
   hot_soup: ['can', { tab: true }], hot_chili: ['can', { tab: true }], hot_noodles: ['can', { r: 0.34, h: 0.5 }], spear: ['spear'], nail_bat: ['nailbat'],
   baseball_bat: ['bat'], machete: ['machete', {}], fire_axe: ['axe'],

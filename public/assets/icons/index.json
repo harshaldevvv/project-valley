@@ -190,6 +190,11 @@
   "mag_revolver_a",
   "ammo_12ga",
   "ammo_308",
-  "ammo_357"
+  "ammo_357",
+  "note_maple_sick",
+  "note_school_roll",
+  "note_camp_diary",
+  "note_crash_log",
+  "note_ranger_log"
  ]
 }

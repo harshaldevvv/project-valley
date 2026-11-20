@@ -134,4 +134,10 @@ export const itemTextMore: Record<string, T> = {
   hot_noodles: t('Hot Noodles', 'Noodles+', 'Noodles in boiled water. It is not much, and it is the best meal of the week.'),
   spear: t('Spear', 'Spear', 'A knife lashed to a plank. It reaches further than it should and breaks sooner than you hope.'),
   nail_bat: t('Nail Bat', 'Nail Bat', 'A bat with a handful of nails driven through the barrel. It stays in whatever it hits for a moment.'),
+  // Quest notes
+  note_maple_sick: t('Note: Nightstand', 'Note', 'A folded page in shaky handwriting. Use it to read it.'),
+  note_school_roll: t('Evacuation Register', 'Register', 'A school register with names ticked off. Use it to read it.'),
+  note_camp_diary: t('Camp Diary Page', 'Diary', 'A torn page from a camper diary. Use it to read it.'),
+  note_crash_log: t('Medevac Flight Log', 'Flt Log', 'A grease-stained flight log. Use it to read it.'),
+  note_ranger_log: t('Ranger Log', 'Rngr Log', 'A weathered ranger log book. Use it to read it.'),
 };

@@ -63,7 +63,7 @@ export interface ItemDef {
     /** Instant body warmth, 0..100 points (hot food and drink). It fades back toward what the weather and clothes allow. */
     warmth?: number;
     /** Custom effect run by the world layer when the timer completes: 'radio' plays a broadcast, 'campfire' places a camp. */
-    action?: 'radio' | 'campfire' | 'light';
+    action?: 'radio' | 'campfire' | 'light' | 'read';
     /** Not consumed by use (the radio). */
     keep?: boolean;
   };

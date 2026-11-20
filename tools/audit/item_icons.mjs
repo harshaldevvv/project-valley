@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { launch } from './browser.mjs';
 const forceArg = process.argv.includes('--force') ? process.argv[process.argv.indexOf('--force') + 1] : '';
+const onlyArg = process.argv.includes('--only') ? process.argv[process.argv.indexOf('--only') + 1].split(',') : null; // id prefixes: render just those (leave other agents' items alone)
 const idxPath = 'public/assets/icons/index.json';
 const idx = JSON.parse(readFileSync(idxPath, 'utf8'));
 const browser = await launch();
@@ -15,7 +16,7 @@ await page.goto('http://localhost:5188/tools/audit/item_icons.html');
 await page.waitForFunction(() => window.ready, null, { timeout: 120000 });
 const all = await page.evaluate(() => window.itemIds);
 const force = forceArg === 'all' ? all : forceArg ? forceArg.split(',') : [];
-const todo = all.filter((id) => !idx.ids.includes(id) || force.includes(id));
+const todo = all.filter((id) => (!idx.ids.includes(id) || force.includes(id)) && (!onlyArg || onlyArg.some((p) => id.startsWith(p))));
 console.log('rendering', todo.length, 'of', all.length);
 for (const id of todo) {
   const r = await page.evaluate((i) => window.renderIcon(i), id);

@@ -11,6 +11,7 @@ import { vehicleText as T } from '../../content/text/vehicles';
 import { VEHICLE_FUEL } from '../../content/data/tools';
 import { burn } from '../../systems/fuel';
 import { worldHooks } from '../../systems/worldHooks';
+import { questBus } from '../../systems/questBus';
 
 /**
  * Data-driven cars (one VehicleDef row = one car on the track): Rapier DynamicRayCastVehicleController,
@@ -224,6 +225,7 @@ export class Vehicles {
         }
         car.fuel = Math.min(car.def.fuelLiters, car.fuel + got);
         car.stalledToast = false;
+        questBus.emit('refuel');
         this.ctx.playerAnim?.oneshot('interact_search', 0.1);
         this.ctx.sfx('search_rustle', car.trunkPos);
         this.ctx.game.events.emit('toast', { text: T.refueled(Math.round(got)) });

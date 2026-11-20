@@ -15,6 +15,8 @@ import { canCut, cutLock } from './crafting';
 import { newItem, newItems } from './inventory';
 import { installSave } from './installSave';
 import { installCraft, WORLDTOOLS_VERSION, type WorldToolsSave } from './installCraft';
+import { installQuests } from './installQuests';
+import { QUEST_SAVE_VERSION, type QuestSave } from './quests';
 import { installSurvival, type DeathBag } from './installSurvival';
 import { Loadout, SAVE_VERSION, type LoadoutSave } from './loadout';
 import type { Piece } from './build';
@@ -220,6 +222,8 @@ export async function installSystems(game: Game): Promise<void> {
   });
   const craft = installCraft(game, lo, { sfx, toast, screens: otherScreens });
   (window as unknown as { __craft: typeof craft }).__craft = craft; // Playwright/debug hook
+  const questApi = installQuests(game, lo, { sfx, toast, screens: otherScreens });
+  (window as unknown as { __quests: typeof questApi }).__quests = questApi; // Playwright/debug hook
   const saves = installSave(game, { toast, info: () => ({ gameDay: m2.survival.gameDay, playtimeS: Math.round(m2.survival.clock) }) });
   const buildApi = game.build as unknown as { serialize(): Piece[]; load(l: Piece[]): void };
   saves.section('difficulty', { version: 1, save: () => ({ ...difficulty }), load: (d) => Object.assign(difficulty, d) });
@@ -236,12 +240,14 @@ export async function installSystems(game: Game): Promise<void> {
   });
   saves.section('deathbags', { version: 1, save: () => m2.bags.serialize(), load: (d) => m2.bags.load(d as DeathBag[]) });
   saves.section('survival', { version: SURVIVAL_SAVE_VERSION, save: () => m2.survival.serialize(), load: (d, v) => m2.survival.load(d as SurvivalSave, v) });
+  saves.section('quests', { version: QUEST_SAVE_VERSION, save: () => questApi.serialize(), load: (d, v) => questApi.load(d as QuestSave, v) });
   saves.section('worldtools', { version: WORLDTOOLS_VERSION, save: () => craft.serialize(), load: (d, v) => craft.load(d as WorldToolsSave, v) });
 
   game.events.on('playerDied', () => {
     screen.close();
     lockpick.close();
     craft.screen.close();
+    questApi.ui.close();
     if (game.build.active) game.build.toggle();
   });
 

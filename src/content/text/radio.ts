@@ -17,3 +17,16 @@ export const radioLines: string[] = [
   'We are not asking you to be brave. We are asking you to be careful. They are not the same thing, and one of them lasts longer.',
   '...three, two, one. Battery low. This is Relay Seven, signing off for the night. Light a fire if you have one. Sleep if you can.',
 ];
+
+/**
+ * Broadcasts that only come through at a place (the radio picks by the nearest point of interest, then falls back to the
+ * general list). Keyed by poi id (data/pois.ts).
+ */
+export const radioAt: Record<string, string[]> = {
+  fuel: ['Route Nine. The pumps give a little at a time. Do not be greedy and do not be seen, and the truck will start.'],
+  maple: ['Maple Street. If a porch light is on, someone left it on for somebody. Do not take their light.'],
+  farm: ['Hollow Creek. There is salt in the barn and tin in the cellar. Eat hot and eat quiet.'],
+  camp: ['Pinewood. They kept a fire every night. If you can, keep it for them.'],
+  crash: ['Medevac Two, this is Relay Seven. Medevac Two, this is Relay Seven. ...Nobody is going to answer. I know. I keep trying.'],
+  ranger: ['Relay Seven, loud and clear. You made it up the ridge. I have been waiting weeks for a voice that was not mine. Stay on the air. We are building something from here.'],
+};

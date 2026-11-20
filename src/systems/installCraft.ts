@@ -19,6 +19,9 @@ import { check, perform, type Station } from './crafting';
 import { newItem, newItems } from './inventory';
 import type { Loadout } from './loadout';
 import { worldHooks } from './worldHooks';
+import { questBus } from './questBus';
+import { POIS } from '../content/data/pois';
+import { radioAt } from '../content/text/radio';
 
 /**
  * World side of the survival layer: campfires (lay from a kit, light, feed, warm, cook), the crafting panel and its timed
@@ -140,6 +143,7 @@ export function installCraft(
           if (ig.consumed) lo.consume(ig.item, 1);
           rec.lit = true;
           rec.fuel = CAMPFIRE.burnSeconds;
+          questBus.emit('campfire_lit');
           deps.toast(campText.lit);
           deps.sfx('item_pickup', root.position);
         } else if (lo.count('wood_planks') > 0 && rec.fuel < CAMPFIRE.maxSeconds - CAMPFIRE.plankSeconds) {
@@ -204,6 +208,7 @@ export function installCraft(
         const put = fuel.fill(lo, Math.min(pumps[i], fuel.space(lo)));
         if (put <= 0) return deps.sfx('build_invalid');
         pumps[i] -= put;
+        questBus.emit('pump');
         deps.sfx('search_rustle');
         deps.toast(campText.pumped(Math.round(put)));
       },
@@ -219,6 +224,11 @@ export function installCraft(
     return have.size > 0;
   };
   flashlightControl.available = () => lightItems() && (charge > 0 || lo.count(LIGHT.batteryItem) > 0);
+  const rawSet = flashlightControl.set.bind(flashlightControl);
+  flashlightControl.set = (v: boolean) => {
+    rawSet(v);
+    if (flashlightControl.on) questBus.emit('light_on'); // the L key and the hotbar both count for quests
+  };
   flashlightControl.denied = () => deps.toast(!lightItems() ? campText.noLight2 : campText.noBattery);
   let warned = false;
 
@@ -293,8 +303,13 @@ export function installCraft(
   game.ui.appendChild(card);
   let cardT = 0;
   function playRadio() {
-    const line = radioLines[radioIdx % radioLines.length];
-    radioIdx++;
+    // At a place the radio picks up that place's broadcast first, then the general list
+    const at = feet();
+    const poi = POIS.find((p) => Math.hypot(p.x - at.x, p.z - at.z) <= p.radius);
+    const local = poi && radioAt[poi.id];
+    const line = local ? local[0] : radioLines[radioIdx % radioLines.length];
+    if (!local) radioIdx++;
+    questBus.emit('radio', { poi: poi?.id });
     card.innerHTML = '';
     const head = document.createElement('small');
     head.textContent = radioStation;
@@ -348,6 +363,7 @@ export function installCraft(
           const made = perform(lo, r, worldHooks.stations(), target);
           if (made) {
             deps.sfx('item_pickup');
+            questBus.emit('craft', { recipe: r.id });
             deps.toast(r.repair && target ? craftText.repaired(nameOf(target.defId)) : craftText.made(made.length ? nameOf(made[0].defId) : recipeName(r)));
           }
         }

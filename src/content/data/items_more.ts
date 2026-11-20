@@ -160,4 +160,11 @@ export const MORE_ITEMS: ItemDef[] = [
   { id: 'hot_noodles', kind: 'food', w: 1, h: 1, stack: 1, iconSwatch: '#e0b040', value: 12, use: { seconds: 3, food: 34, water: 8, warmth: 22, sound: 'item_pickup' } },
   { id: 'spear', kind: 'weapon', w: 1, h: 4, stack: 1, slots: ['melee'], iconSwatch: '#a07a4a', value: 45 },
   { id: 'nail_bat', kind: 'weapon', w: 1, h: 4, stack: 1, slots: ['melee'], rarity: 'uncommon', iconSwatch: '#8a6a3a', value: 55 },
+
+  // ---------- Quest notes (data/quests.ts QUEST_PLACED): readable, kept, never sold for anything ----------
+  { id: 'note_maple_sick', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
+  { id: 'note_school_roll', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
+  { id: 'note_camp_diary', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
+  { id: 'note_crash_log', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
+  { id: 'note_ranger_log', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
 ];
