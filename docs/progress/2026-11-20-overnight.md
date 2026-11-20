@@ -6,14 +6,14 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 
 ## A. Character (top priority)
 - [x] A1 Find the "3,000 model library": it is the Polyfork catalog (3,446 CC BY 4.0 GLBs, 204 rigged characters, Mixamo skeleton). Index cached at `D:/AI3D/polyfork/catalog.json`.
-- [~] A2 Pick a low-poly hero close to the poster survivor (dark jacket, backpack, gloves) from Polyfork; contact sheet `D:/AI3D/polyfork/sheet.png`.
-- [ ] A3 Rig bridge: Polyfork skeleton renamed to our bone names + sockets (hand_R/L, head, back), our survivor clips retargeted onto it (`tools/audit/retarget_pf.py` approach).
-- [ ] A4 Hero in game as default player; old survivor kept behind a flag.
+- [x] A2 Pick a low-poly hero close to the poster survivor (dark jacket, backpack, gloves) from Polyfork; contact sheet `D:/AI3D/polyfork/sheet.png`.
+- [x] A3 Rig bridge: Polyfork skeleton renamed to our bone names + sockets (hand_R/L, head, back), our survivor clips retargeted onto it (`tools/audit/retarget_pf.py` approach).
+- [x] A4 Hero in game as default player; old survivor kept behind a flag.
 - [ ] A5 Animations: compare our clips vs Polyfork native Idle/Walk/Run; pick the better per clip; fix foot sliding, arm swing, transitions.
-- [ ] A6 Rifle and pistol hold (third person): both hands on the gun, no wrist bends, aim offset works.
-- [ ] A7 Knife hold: blade forward from a natural wrist angle (TP and FP).
-- [ ] A8 First person: no seeing inside the hand/arm (near plane, arm placement, back faces), sleeves match the hero.
-- [ ] A9 Backpack, helmets and gear on the new hero (Polyfork backpacks/helmets attach to sockets).
+- [x] A6 Rifle and pistol hold (third person): both hands on the gun, no wrist bends, aim offset works.
+- [x] A7 Knife hold: blade forward from a natural wrist angle (TP and FP).
+- [x] A8 First person: no seeing inside the hand/arm (near plane, arm placement, back faces), sleeves match the hero.
+- [x] A9 Backpack, helmets and gear on the new hero (Polyfork backpacks/helmets attach to sockets).
 - [ ] A10 Check hands and joints in first, second and third person on every clip (memory rule), screenshots in `docs/audit/screenshots/wip/`.
 
 ## B. Controls and feel
@@ -22,10 +22,10 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 - [ ] B3 Wall-slide along long walls loses speed at corners: check.
 
 ## C. Weapons and audio
-- [ ] C1 Silent gunshots sometimes: own shots play as 2D (not HRTF at the muzzle), weapon sounds preloaded before play starts, layered shot (body + tail + mech).
-- [ ] C2 Better CC0 gun sounds (pistol, rifle, shotgun, reloads, dry fire, casings), logged in credits.
-- [ ] C3 Knife and melee whoosh/impact sounds.
-- [ ] C4 More guns from Polyfork (shotgun "scattergun", bolt-action rifle, pistol) wired with stats.
+- [x] C1 Silent gunshots sometimes: own shots play as 2D (not HRTF at the muzzle), weapon sounds preloaded before play starts, layered shot (body + tail + mech).
+- [x] C2 Better CC0 gun sounds (pistol, rifle, shotgun, reloads, dry fire, casings), logged in credits.
+- [x] C3 Knife and melee whoosh/impact sounds.
+- [~] C4 More guns from Polyfork (shotgun "scattergun", bolt-action rifle, pistol) wired with stats.
 
 ## D. World / demo map
 - [ ] D1 Bigger demo area beyond the yard, same theme (Polyfork buildings, vehicles, props).
@@ -45,4 +45,7 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 - [ ] F3 Credits for every new third-party file.
 
 ## Log
+- 05:20 Hero chosen: Polyfork "Student with Backpack" (closest to the poster survivor: backpack, dark trousers), 4.5k tris. `tools/audit/retarget_pf_hero.py` retargets our 42 survivor clips (arm directions from child joints, 180 deg turn baked into the rest pose). Mixamo bone aliases fixed body post (aim offset, foot IK, lean) and the upper-body layer, which silently did nothing on Mixamo rigs before (also true for the old `?hero=1`).
+- 05:50 Hero outfit: 44 Polyfork parts (`chr_hero_pf_parts.glb`) shown by worn items (`src/content/data/heroParts.ts`, `src/gameplay/outfit/pfOutfit.ts`). FP arm colours follow coat and gloves.
+- Agents: audio/FP (own shots 2D, priority voices, CC0 Free Firearm Sound Library shots + tails, reloads, knife sounds; FP arms double-sided; knife wrist re-posed), items (~113 new items, icons, themed loot), world (in progress).
 - 05:10 Movement stop-start fixed and committed (6e48af9).
