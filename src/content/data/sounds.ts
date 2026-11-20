@@ -26,7 +26,7 @@ export interface SoundDef {
 export const preloadFirst = [
   'pistol_shot', 'pistol_tail', 'rifle_shot', 'rifle_tail', 'shotgun_shot', 'shotgun_tail', 'dry_fire',
   'reload_mag_out', 'reload_mag_in', 'bolt_rack', 'casing_tink', 'hit_body', 'hit_head', 'hit_marker', 'kill_confirm',
-  'melee_swing', 'melee_hit', 'impact_wood', 'impact_concrete', 'impact_metal', 'impact_dirt',
+  'melee_swing', 'melee_hit', 'knife_hit', 'impact_wood', 'impact_concrete', 'impact_metal', 'impact_dirt',
 ];
 
 const k = (name: string, n = 5) => Array.from({ length: n }, (_, i) => `kenney/${name}_${String(i).padStart(3, '0')}.ogg`);
@@ -35,16 +35,16 @@ const ui = (files: string[], volume = 0.5): SoundDef => ({ files, volume, refDis
 
 export const sounds: Record<string, SoundDef> = {
   // weapons
-  pistol_shot: { files: ['gun/pistol_cz.wav', 'gun/pistol_22.wav'], volume: 0.9, refDistance: 4, maxDistance: 400, jitter: 0.04, priority: true, tail: 'pistol_tail', tailVolume: 0.5, tailDelayS: 0.03, synth: 'noise' },
-  rifle_shot: { files: ['gun/rifle_sks.wav', 'gun/rifle_mosin.wav', 'gun/rifle_magnum.wav'], volume: 1, refDistance: 5, maxDistance: 500, jitter: 0.04, priority: true, tail: 'rifle_tail', tailVolume: 0.55, tailDelayS: 0.03, synth: 'noise' },
-  shotgun_shot: { files: ['gun/shotgun.wav'], volume: 0.62, refDistance: 5, maxDistance: 450, jitter: 0.04, priority: true, tail: 'shotgun_tail', tailVolume: 0.5, tailDelayS: 0.03, synth: 'noise' },
-  pistol_tail: { files: ['gun/pistol_22.wav'], volume: 0.5, refDistance: 12, maxDistance: 500, jitter: 0.04, priority: true, synth: 'noise' },
-  rifle_tail: { files: ['gun/rifle_mosin.wav'], volume: 0.55, refDistance: 14, maxDistance: 600, jitter: 0.04, priority: true, synth: 'noise' },
-  shotgun_tail: { files: ['gun/shotgun.wav'], volume: 0.4, refDistance: 14, maxDistance: 500, jitter: 0.04, priority: true, synth: 'noise' },
+  pistol_shot: { files: ['gun/pistol_1911.ogg', 'gun/pistol_ppq.ogg'], volume: 0.9, refDistance: 4, maxDistance: 400, jitter: 0.04, priority: true, tail: 'pistol_tail', tailVolume: 0.5, tailDelayS: 0.03, synth: 'noise' },
+  rifle_shot: { files: ['gun/rifle_ak.ogg', 'gun/rifle_ar15.ogg', 'gun/rifle_sks2.ogg'], volume: 1, refDistance: 5, maxDistance: 500, jitter: 0.04, priority: true, tail: 'rifle_tail', tailVolume: 0.55, tailDelayS: 0.03, synth: 'noise' },
+  shotgun_shot: { files: ['gun/shotgun_nova.ogg', 'gun/shotgun_m12.ogg'], volume: 0.8, refDistance: 5, maxDistance: 450, jitter: 0.04, priority: true, tail: 'shotgun_tail', tailVolume: 0.5, tailDelayS: 0.03, synth: 'noise' },
+  pistol_tail: { files: ['gun/pistol_tail.ogg'], volume: 0.5, refDistance: 12, maxDistance: 500, jitter: 0.04, priority: true, synth: 'noise' },
+  rifle_tail: { files: ['gun/rifle_tail.ogg'], volume: 0.55, refDistance: 14, maxDistance: 600, jitter: 0.04, priority: true, synth: 'noise' },
+  shotgun_tail: { files: ['gun/shotgun_tail.ogg'], volume: 0.4, refDistance: 14, maxDistance: 500, jitter: 0.04, priority: true, synth: 'noise' },
   dry_fire: { files: ['kenney/metalClick.ogg'], volume: 1.0, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
-  reload_mag_out: { files: ['kenney/metalLatch.ogg'], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
-  reload_mag_in: { files: k('impactPlate_light'), volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
-  bolt_rack: { files: ['kenney/drawKnife1.ogg', 'kenney/drawKnife2.ogg', 'kenney/drawKnife3.ogg'], volume: 1.6, refDistance: 1, maxDistance: 20, jitter: 0.04, synth: 'click' },
+  reload_mag_out: { files: ['gun/reload_out_ar.ogg', 'gun/reload_out_pistol.ogg', 'kenney/metalLatch.ogg'], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
+  reload_mag_in: { files: ['gun/reload_in_ar.ogg', 'gun/reload_in_pistol.ogg', ...k('impactPlate_light').slice(0, 2)], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
+  bolt_rack: { files: ['gun/bolt_cock.ogg', 'kenney/drawKnife1.ogg'], volume: 0.9, refDistance: 1, maxDistance: 20, jitter: 0.04, synth: 'click' },
   // hit feedback
   hit_body: { files: [...k('impactPunch_medium'), 'gen/flesh_1.ogg', 'gen/flesh_2.ogg', 'gen/flesh_3.ogg', 'gen/flesh_4.ogg'], volume: 0.7, refDistance: 2, maxDistance: 40, jitter: 0.06, synth: 'thud' },
   hit_head: { files: [...k('impactMining'), 'gen/head_pop.ogg', 'gen/flesh_2.ogg'], volume: 0.8, refDistance: 2, maxDistance: 40, jitter: 0.05, synth: 'thud' },
@@ -68,7 +68,8 @@ export const sounds: Record<string, SoundDef> = {
   zombie_death: { files: z(16, 17, 18, 21), volume: 0.85, refDistance: 2, maxDistance: 60, jitter: 0.05, synth: 'hum' },
   heartbeat: { files: [], volume: 0.7, refDistance: 1, maxDistance: 1, jitter: 0.03, synth: 'thud' },
   // melee
-  melee_swing: { files: ['gen/swing_1.ogg', 'gen/swing_2.ogg', 'gen/swing_3.ogg'], volume: 0.5, refDistance: 1, maxDistance: 15, jitter: 0.1, synth: 'whoosh' },
+  melee_swing: { files: ['melee/swing_1.ogg', 'melee/swing_2.ogg', 'melee/swing_3.ogg', 'melee/swing_4.ogg', 'melee/swing_5.ogg'], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.1, synth: 'whoosh' },
+  knife_hit: { files: ['melee/knife_stab_1.ogg', 'melee/knife_stab_2.ogg'], volume: 0.85, refDistance: 2, maxDistance: 30, jitter: 0.06, synth: 'thud' },
   melee_hit: { files: [...k('impactPunch_heavy'), 'gen/flesh_3.ogg', 'gen/flesh_1.ogg', 'gen/flesh_4.ogg'], volume: 0.85, refDistance: 2, maxDistance: 30, jitter: 0.06, synth: 'thud' },
   // vehicles
   car_engine_loop: { files: ['car/Car_Engine_Loop.ogg'], volume: 0.45, refDistance: 4, maxDistance: 120, loop: true, synth: 'hum' },

@@ -147,7 +147,7 @@ export class Melee {
             z.hitstop = def ? def.hitstopKill : 0.13;
             this.ctx.zombies.die(z, _d, true);
             this.ctx.hud.hitMarker(true, true);
-            this.ctx.sfx('melee_hit', z.curr);
+            this.ctx.sfx(def && def.id === 'knife_a' ? 'knife_hit' : 'melee_hit', z.curr);
             this.ctx.sfx('kill_confirm');
             this.ctx.rig.addTrauma(0.35);
             _p.copy(z.curr).setY(z.curr.y + 1.2);
@@ -241,7 +241,7 @@ export class Melee {
     });
     this.ctx.fx.impact(_p, _n, h.surface, _d, this.heavy ? 1.6 : 1.1);
     this.ctx.fx.freeze(this.heavy ? def.hitstopHeavy : def.hitstopLight); // FX pop on hitstop release
-    this.ctx.sfx('melee_hit', _p, { pitchJitter: 0.08 });
+    this.ctx.sfx(def.id === 'knife_a' ? 'knife_hit' : 'melee_hit', _p, { pitchJitter: 0.08 });
     this.ctx.rig.addTrauma(this.heavy ? 0.3 : 0.18);
     this.ctx.rig.kick(0, this.heavy ? -1.5 : -0.8);
     const w = this.ctx.weapons.item;

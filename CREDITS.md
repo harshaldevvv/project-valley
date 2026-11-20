@@ -31,6 +31,10 @@ funding from NSF EIA-0196217.
 | Reload, bolt, crates, cloth, item pickup | [RPG Audio](https://kenney.nl/assets/rpg-audio) | Kenney |
 | Pistol and rifle shots | [Gunshots](https://opengameart.org/content/gunshots) | kurt |
 | Pistol, rifle and shotgun shots | [Gunshot Sounds](https://opengameart.org/content/gunshot-sounds) | tabasco |
+| Pistol, rifle and shotgun shots and tails (1911, PPQ, AK-47, AR-15, SKS, Nova, Model 12) | [The Free Firearm Sound Library](https://opengameart.org/content/the-free-firearm-sound-library) | Ben Jaszczak et al. |
+| Magazine and bolt sounds | [Gun reload sounds](https://opengameart.org/content/gun-reload-sounds) | Joaken |
+| Knife and melee swings | [20 Sword Sound Effects](https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes), [3 melee sounds](https://opengameart.org/content/3-melee-sounds) | StarNinjas, qubodup |
+| Knife stab | [150 Combat Sound Effects](https://opengameart.org/content/150-combat-sound-effects) (Kenney RPG Audio) | Kenney, MedicineStorm |
 | Zombie groans, alerts, attacks, deaths | [Zombies Sound Pack](https://opengameart.org/content/zombies-sound-pack) | artisticdude |
 | Zombie groans | [Undead Moans](https://opengameart.org/content/undead-moans) | AntumDeluge |
 | Zombie groans | [Zombie moans](https://opengameart.org/content/zombie-moans) | darsycho |
