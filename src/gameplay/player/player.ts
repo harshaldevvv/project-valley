@@ -318,7 +318,11 @@ export class Player implements PlayerView {
   }
 
   private get lookSensMul() {
-    return this.ctx.weapons ? 1 + (L.adsSensitivityMul - 1) * this.ctx.weapons.adsEased : 1;
+    const w = this.ctx.weapons;
+    if (!w) return 1;
+    // Magnified optics (4x scope, red dot) slow the look in proportion to the zoom, so aim feels the same at any FOV
+    const optic = 1 + ((w.adsFovMul ?? 1) - 1) * w.adsEased;
+    return (1 + (L.adsSensitivityMul - 1) * w.adsEased) * optic;
   }
 
   private footstep() {
