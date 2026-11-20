@@ -66,3 +66,25 @@ export function listRecipes(lo: Loadout, stations: ReadonlySet<Station>) {
 
 /** Value of a recipe side, for the no-free-money test. */
 export const valueOf = (list: { item: string; count: number }[]) => list.reduce((s, i) => s + (ITEMS[i.item]?.value ?? 0) * i.count, 0);
+
+/** The first carried instance of an item (for tools that wear down). */
+export function findItem(lo: Loadout, id: string): ItemInstance | null {
+  let found: ItemInstance | null = null;
+  for (const { grid } of lo.playerGrids()) forEachItem(grid, (gi) => !found && gi.item.defId === id && (found = gi.item), true);
+  return found;
+}
+
+/** Cut a lock open with bolt cutters: wears the tool (it snaps at 0 durability). Returns false if not possible. */
+export function cutLock(lo: Loadout, lockLevel: number, maxLock: number, wear: number, tools: string[]): boolean {
+  if (lockLevel > maxLock) return false;
+  for (const id of tools) {
+    const it = findItem(lo, id);
+    if (!it) continue;
+    it.durability = Math.max(0, (it.durability ?? 1) - wear);
+    if (it.durability <= 0.0001) lo.consume(id, 1);
+    else lo.changed();
+    return true;
+  }
+  return false;
+}
+export const canCut = (lo: Loadout, lockLevel: number, maxLock: number, tools: string[]) => lockLevel <= maxLock && tools.some((t) => lo.count(t) > 0);

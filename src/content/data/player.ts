@@ -88,6 +88,8 @@ export const survivalFeel = {
   limpSpeedMul: 0.92, // extra stride unevenness on top of mods.moveSpeed
   bleedDripEvery: 1.4, // s between blood drips on the ground (heavy: half)
   needLow: 25, // bars turn amber below this
+  frostFrom: 55, // warmth where the frosty screen edge starts (the cold status)
+  frostFull: 5, // ... and where it is at full strength
   bagMarkerMax: 400, // m: hide the bag marker beyond this
 };
 

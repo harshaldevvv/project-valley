@@ -98,11 +98,20 @@ export class SurvivalGlue {
     }
   }
 
-  /** Armour rating covering a hit zone: helmet for the head, rig/vest for the body (ItemDef.armour). */
+  /**
+   * Armour rating covering a hit zone. Head: helmet. Body: vest/rig plus whatever the torso garment adds (a leather or
+   * military jacket is 1). Limb: trousers plus boots. The game only reports 'limb' for crawlers biting the legs (zombies.ts
+   * has no per-limb hit location, only head / body / limb by height), so arms and hands count as body hits and gloves
+   * carry no armour yet. Sums are capped at 3 (3 = infection-proof, data/survival.ts WOUNDS.infection.armourImmune).
+   */
   private armour(zone: 'head' | 'body' | 'limb') {
     const lo = probe(this.ctx.game, 'loadout', 'equipped');
-    const it = zone === 'head' ? lo?.equipped('head') : zone === 'body' ? lo?.equipped('armor') : null;
-    return it ? (ITEMS[it.defId]?.armour ?? 0) : 0;
+    const rate = (slot: 'head' | 'armor' | 'torso' | 'legs' | 'feet') => {
+      const it = lo?.equipped(slot);
+      return it ? (ITEMS[it.defId]?.armour ?? 0) : 0;
+    };
+    const sum = zone === 'head' ? rate('head') : zone === 'body' ? rate('armor') + rate('torso') : rate('legs') + rate('feet');
+    return Math.min(3, sum);
   }
 
   /** A zombie hit landed: systems rolls bleeding / infection / fracture. */

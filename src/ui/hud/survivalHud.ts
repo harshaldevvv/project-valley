@@ -10,13 +10,13 @@ import { probe, type Ctx } from '../../gameplay/ctx';
  * when off screen). DOM writes only on change.
  */
 const CSS = `
-.hud .needs{display:grid;grid-template-columns:repeat(3,minmax(64px,1fr));gap:10px;margin-top:10px}
+.hud .needs{display:grid;grid-template-columns:repeat(4,minmax(54px,1fr));gap:10px;margin-top:10px}
 .hud .need{display:grid;grid-template-columns:16px 1fr;grid-template-rows:auto 7px;column-gap:5px;row-gap:2px;align-items:center}
 .hud .need svg{grid-row:1/3;width:16px;height:16px;fill:#e8ecef;opacity:.9}
 .hud .need .nl{font:600 10px system-ui;letter-spacing:1px;opacity:.8}
 .hud .need .bar{margin-top:0;height:7px;background:#0009;box-shadow:inset 0 0 0 1px #ffffff40}
 .hud .need .bar b{background:#9fc4a0}
-.hud .need.water .bar b{background:#8fb8d8}.hud .need.rest .bar b{background:#b8a8d8}
+.hud .need.water .bar b{background:#8fb8d8}.hud .need.rest .bar b{background:#b8a8d8}.hud .need.warm .bar b{background:#e8b070}.hud .need.warm.low .bar b{background:#78b4e8}.hud .need.warm.low svg{fill:#78b4e8}
 .hud .need.low .bar b{background:#e0a030}.hud .need.low svg{fill:#e0a030;opacity:1}
 .hud .need.zero .bar b,.hud .need.zero svg{animation:hudflash .7s steps(2,start) infinite}
 @keyframes hudflash{to{opacity:.15}}
@@ -24,6 +24,7 @@ const CSS = `
 .hud .chip{display:flex;align-items:center;gap:4px;padding:2px 7px 2px 4px;border-radius:10px;background:#000a;font:600 11px system-ui;letter-spacing:.3px}
 .hud .chip svg{width:14px;height:14px}
 .hud .chip.bad{box-shadow:inset 0 0 0 1px #ff503c88}.hud .chip.good{box-shadow:inset 0 0 0 1px #8fd08a88}
+.hud .frost{position:absolute;inset:0;background:radial-gradient(ellipse at center,#0000 30%,#b4dcff88 68%,#eaf6fff0 100%);opacity:0;pointer-events:none;transition:opacity .8s}
 .hud .bleed{position:absolute;inset:0;background:radial-gradient(ellipse at center,#0000 50%,#a0000088 100%);opacity:0;pointer-events:none}
 .hud .clock{position:absolute;left:24px;top:20px;display:flex;align-items:center;gap:7px;padding:4px 10px 4px 8px;border-radius:12px;background:#000a;font:700 13px system-ui;letter-spacing:.5px}
 .hud .clock svg{width:16px;height:16px}
@@ -35,6 +36,7 @@ const ICONS: Record<string, string> = {
   hunger: '<svg viewBox="0 0 16 16"><path d="M8 3c3.5 0 5.5 2.4 5.5 5.6S11.2 14 8 14 2.5 11.8 2.5 8.6 4.5 3 8 3z"/><path d="M8 3c.3-1.3 1.2-2 2.4-2.1-.2 1.2-1 2-2.4 2.1z"/></svg>',
   thirst: '<svg viewBox="0 0 16 16"><path d="M8 1.5c2.5 3.6 4.5 6.1 4.5 8.4A4.5 4.5 0 0 1 3.5 9.9C3.5 7.6 5.5 5.1 8 1.5z"/></svg>',
   fatigue: '<svg viewBox="0 0 16 16"><path d="M10.5 2.2A6 6 0 1 0 13.8 10 4.8 4.8 0 0 1 10.5 2.2z"/></svg>',
+  warmth: '<svg viewBox="0 0 16 16"><path d="M8 1.5c1 2 3.8 3.8 3.8 7A3.8 3.8 0 0 1 8 14.3a3.8 3.8 0 0 1-3.8-5.8c.5.9 1.2 1.4 1.9 1.5C5.6 7.4 6.6 3.6 8 1.5z"/></svg>',
 };
 const STATUS: Record<string, { icon: string; color: string; good?: boolean }> = {
   bleeding: { icon: '<path d="M8 2c2.2 3.2 4 5.4 4 7.4a4 4 0 0 1-8 0C4 7.4 5.8 5.2 8 2z"/>', color: '#e0402e' },
@@ -44,6 +46,8 @@ const STATUS: Record<string, { icon: string; color: string; good?: boolean }> = 
   well_fed: { icon: '<path d="M7 3h2v4h4v2H9v4H7V9H3V7h4z"/>', color: '#8fd08a', good: true },
   starving: { icon: '<path d="M2 7h12a6 6 0 0 1-12 0z"/>', color: '#e0a030' },
   dehydrated: { icon: '<path d="M8 2c2.2 3.2 4 5.4 4 7.4a4 4 0 0 1-8 0C4 7.4 5.8 5.2 8 2zm0 3.2C6.6 7.3 5.5 8.6 5.5 9.4a2.5 2.5 0 0 0 5 0C10.5 8.6 9.4 7.3 8 5.2z"/>', color: '#e0a030' },
+  cold: { icon: '<path d="M8 1.5v13M2.4 4.7l11.2 6.6M2.4 11.3l11.2-6.6" stroke="#8fc4f0" stroke-width="1.6" stroke-linecap="round" fill="none"/>', color: '#8fc4f0' },
+  freezing: { icon: '<path d="M8 1.5v13M2.4 4.7l11.2 6.6M2.4 11.3l11.2-6.6" stroke="#dff0ff" stroke-width="1.6" stroke-linecap="round" fill="none"/><circle cx="8" cy="8" r="2.4" fill="#dff0ff"/>', color: '#dff0ff' },
   exhausted: { icon: '<path d="M3 3h6v1.5L5.3 8H9v1.5H3V8l3.7-3.5H3zM9.5 9h4v1l-2.3 2.5h2.3V14h-4v-1l2.3-2.5H9.5z"/>', color: '#b8a8d8' },
 };
 
@@ -56,10 +60,11 @@ const el = (cls: string, parent: HTMLElement, tag = 'div') => {
 const _v = new Vector3();
 
 export class SurvivalHud {
-  private needs: { key: 'hunger' | 'thirst' | 'fatigue'; box: HTMLElement; fill: HTMLElement; cls: string; w: string }[] = [];
+  private needs: { key: 'hunger' | 'thirst' | 'fatigue' | 'warmth'; box: HTMLElement; fill: HTMLElement; cls: string; w: string }[] = [];
   private chips: HTMLElement;
   private chipKey = '';
   private bleed: HTMLElement;
+  private frost: HTMLElement;
   private bag: HTMLElement;
   private bagLbl: HTMLElement;
   private time = 0;
@@ -71,7 +76,7 @@ export class SurvivalHud {
     style.textContent = CSS;
     document.head.appendChild(style);
     const row = el('needs', bars);
-    for (const [key, cls] of [['hunger', 'food'], ['thirst', 'water'], ['fatigue', 'rest']] as const) {
+    for (const [key, cls] of [['hunger', 'food'], ['thirst', 'water'], ['fatigue', 'rest'], ['warmth', 'warm']] as const) {
       const box = el(`need ${cls}`, row);
       box.title = T[key];
       box.innerHTML = ICONS[key];
@@ -82,6 +87,8 @@ export class SurvivalHud {
     this.chips = el('chips', bars);
     this.bleed = el('bleed', root);
     root.insertBefore(this.bleed, root.firstChild);
+    this.frost = el('frost', root);
+    root.insertBefore(this.frost, root.firstChild);
     this.clock = el('clock', root);
     this.bag = el('bag', root);
     el('', this.bag, 'i');
@@ -139,6 +146,9 @@ export class SurvivalHud {
     const p = this.ctx.player;
     const beat = Math.pow(Math.max(0, Math.sin(this.time * Math.PI * (heavy ? 2.6 : 2))), 6);
     this.bleed.style.opacity = bleeding && !p.dead ? ((heavy ? 0.35 : 0.2) + beat * (heavy ? 0.55 : 0.4)).toFixed(2) : '0';
+    // Cold: a frosty screen edge that grows as warmth falls (nothing at all while warm)
+    const chill = Math.max(0, Math.min(1, (SF.frostFrom - s.warmth) / (SF.frostFrom - SF.frostFull)));
+    this.frost.style.opacity = p.dead ? '0' : chill.toFixed(2);
     // Death bag marker
     const bags = this.ctx.survival.bags();
     const cam = this.ctx.game.camera;

@@ -169,6 +169,16 @@
   "sterile_gauze",
   "headlamp",
   "camping_lantern",
-  "glow_stick"
+  "glow_stick",
+  "torch",
+  "campfire_kit",
+  "cooking_pot",
+  "purification_tablets",
+  "sterile_bandage",
+  "hot_soup",
+  "hot_chili",
+  "hot_noodles",
+  "spear",
+  "nail_bat"
  ]
 }

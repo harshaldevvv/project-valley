@@ -2,6 +2,8 @@ import { Box3, Vector3 } from 'three';
 import { BUILD } from '../content/data/build';
 import { BODY_BY_VARIANT, CONTAINER_INTERACT, CONTAINERS } from '../content/data/containers';
 import { INVENTORY, ITEMS } from '../content/data/items';
+import { CUT } from '../content/data/tools';
+import { toolText } from '../content/text/crafting';
 import { containerText } from '../content/text/containers';
 import { inventoryText as T, lockpickText, survivalText } from '../content/text/ui';
 import type { Game } from '../core/game';
@@ -9,12 +11,14 @@ import { installBuildMode } from '../ui/build/buildMode';
 import { createPickupView } from '../ui/inventory/pickups';
 import { InventoryScreen, containerName, itemName } from '../ui/inventory/screen';
 import { LockpickScreen } from '../ui/lockpick/lockpick';
+import { canCut, cutLock } from './crafting';
 import { newItem, newItems } from './inventory';
 import { installSave } from './installSave';
+import { installCraft, type WorldToolsSave } from './installCraft';
 import { installSurvival, type DeathBag } from './installSurvival';
 import { Loadout, SAVE_VERSION, type LoadoutSave } from './loadout';
 import type { Piece } from './build';
-import type { SurvivalSave } from './survival';
+import { SURVIVAL_SAVE_VERSION, type SurvivalSave } from './survival';
 import { difficulty } from '../content/data/difficulty';
 
 /** systems-builder: items, inventory + UI, loot containers, loadout, build mode. Fills game.loadout/inventory/build. */
@@ -117,15 +121,23 @@ export async function installSystems(game: Game): Promise<void> {
         if (type === 'death_bag') return survivalText.recoverBag;
         if (c.locked) {
           const n = lo.count('lockpick');
-          return n > 0 ? `${T.pickLock} (${T.lockpickWord} ×${n})` : T.locked;
+          if (n > 0) return `${T.pickLock} (${T.lockpickWord} ×${n})`;
+          return canCut(lo, def.lock, CUT.maxLock, CUT.tools) ? toolText.cutLock : T.locked;
         }
         return c.searched || def.searchSeconds === 0 ? `${T.act.open} ${name}` : `${verb} ${name}`;
       },
-      holdSeconds: () => (cc().locked || cc().searched ? 0 : def.searchSeconds),
+      holdSeconds: () => (cc().locked ? (lo.count('lockpick') <= 0 && canCut(lo, def.lock, CUT.maxLock, CUT.tools) ? CUT.seconds : 0) : cc().searched ? 0 : def.searchSeconds),
       onInteract: () => {
         const c = cc();
         if (c.locked) {
-          if (lo.count('lockpick') <= 0) return sfx('build_invalid');
+          if (lo.count('lockpick') <= 0) {
+            // No picks: bolt cutters snap an easy lock (slow, no minigame, they wear down).
+            if (!cutLock(lo, def.lock, CUT.maxLock, CUT.wear, CUT.tools)) return sfx('build_invalid');
+            c.locked = false;
+            sfx('crate_open', position);
+            toast(lockpickText.opened);
+            return game.inventory.openContainer(id);
+          }
           picking = id;
           return lockpick.open(def.lock);
         }
@@ -206,6 +218,8 @@ export async function installSystems(game: Game): Promise<void> {
     containerInteract,
     closeContainer: (id) => screen.container === id && screen.close(),
   });
+  const craft = installCraft(game, lo, { sfx, toast, screens: otherScreens });
+  (window as unknown as { __craft: typeof craft }).__craft = craft; // Playwright/debug hook
   const saves = installSave(game, { toast, info: () => ({ gameDay: m2.survival.gameDay, playtimeS: Math.round(m2.survival.clock) }) });
   const buildApi = game.build as unknown as { serialize(): Piece[]; load(l: Piece[]): void };
   saves.section('difficulty', { version: 1, save: () => ({ ...difficulty }), load: (d) => Object.assign(difficulty, d) });
@@ -221,11 +235,13 @@ export async function installSystems(game: Game): Promise<void> {
     },
   });
   saves.section('deathbags', { version: 1, save: () => m2.bags.serialize(), load: (d) => m2.bags.load(d as DeathBag[]) });
-  saves.section('survival', { version: 1, save: () => m2.survival.serialize(), load: (d) => m2.survival.load(d as SurvivalSave) });
+  saves.section('survival', { version: SURVIVAL_SAVE_VERSION, save: () => m2.survival.serialize(), load: (d, v) => m2.survival.load(d as SurvivalSave, v) });
+  saves.section('worldtools', { version: 1, save: () => craft.serialize(), load: (d) => craft.load(d as WorldToolsSave) });
 
   game.events.on('playerDied', () => {
     screen.close();
     lockpick.close();
+    craft.screen.close();
     if (game.build.active) game.build.toggle();
   });
 

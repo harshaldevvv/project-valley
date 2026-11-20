@@ -21,7 +21,7 @@ export const CAMPFIRE = {
     { item: 'torch', consumed: true },
   ],
   /** Real-time warm light: one pooled point light moves to the nearest lit fire. */
-  light: { color: '#ff9a4a', intensity: 90, distance: 16 },
+  light: { color: '#ff9a4a', intensity: 24, distance: 14 },
   /** Fires kept in a save (a placed fire is forgotten past this). */
   max: 6,
 };

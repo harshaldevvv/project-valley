@@ -10,6 +10,9 @@ import { itemName } from '../ui/inventory/screen';
 import { autoPlace, defOf } from './inventory';
 import type { Loadout } from './loadout';
 import { Survival } from './survival';
+import { weather } from '../engine/weather';
+import { wornWarmth } from './warmth';
+import { worldHooks } from './worldHooks';
 
 /**
  * M2 glue: survival needs/status (game.survival), timed item use, the death bag. Pure rules live in
@@ -51,6 +54,7 @@ export function installSurvival(
     heal: (n) => player()?.heal(n),
     isNight,
     days,
+    env: () => ({ night: time()?.night ?? 0, rain: weather.rain, ...wornWarmth(lo.equipment), fire: worldHooks.fireNear() }),
     statusChanged: (id, active, stage) => {
       game.events.emit('statusChanged', { id, active, stage });
       // Wounds announce themselves; derived needs states are for the HUD icons only.

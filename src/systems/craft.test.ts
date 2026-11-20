@@ -6,7 +6,8 @@ import { WARMTH } from '../content/data/survival';
 import { radioLines } from '../content/text/radio';
 import { itemText } from '../content/text/items';
 import { createRng } from '../engine/rng';
-import { canCraft, check, damagedWeapons, perform, valueOf, type Station } from './crafting';
+import { canCraft, canCut, check, cutLock, damagedWeapons, perform, valueOf, type Station } from './crafting';
+import { CUT } from '../content/data/tools';
 import { newItem } from './inventory';
 
 import { Loadout } from './loadout';
@@ -316,5 +317,27 @@ describe('tool items', () => {
       expect(d.warmth ?? 0, d.id).toBeGreaterThan(0);
     }
     expect(ITEMS.puffer_jacket.warmth!).toBeGreaterThan(ITEMS.flannel_shirt.warmth!);
+  });
+});
+
+describe('bolt cutters', () => {
+  it('cut easy locks, not hard ones, wear down, and snap at the end', () => {
+    const lo = kit();
+    expect(canCut(lo, 1, CUT.maxLock, CUT.tools)).toBe(false); // none carried
+    put(lo, 'bolt_cutters');
+    expect(canCut(lo, CUT.maxLock, CUT.maxLock, CUT.tools)).toBe(true);
+    expect(canCut(lo, CUT.maxLock + 1, CUT.maxLock, CUT.tools)).toBe(false);
+    expect(cutLock(lo, CUT.maxLock + 1, CUT.maxLock, CUT.wear, CUT.tools)).toBe(false);
+    for (let i = 0; i < Math.round(1 / CUT.wear) - 1; i++) expect(cutLock(lo, 1, CUT.maxLock, CUT.wear, CUT.tools)).toBe(true);
+    expect(lo.count('bolt_cutters')).toBe(1);
+    expect(cutLock(lo, 1, CUT.maxLock, CUT.wear, CUT.tools)).toBe(true); // the tenth cut
+    expect(lo.count('bolt_cutters')).toBe(0);
+  });
+});
+
+describe('limb armour data', () => {
+  it('jackets, trousers and boots can carry armour 1; the sum stays under the infection-proof line unless it is a plate', () => {
+    for (const id of ['military_jacket', 'leather_jacket', 'police_jacket', 'tactical_pants', 'combat_boots']) expect(ITEMS[id].armour, id).toBe(1);
+    expect(ITEMS.tactical_pants.armour! + ITEMS.combat_boots.armour!).toBeLessThan(3);
   });
 });
