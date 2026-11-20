@@ -1,3 +1,4 @@
+import { requestLock } from './input';
 import { BufferAttribute, BufferGeometry, LineSegments, Vector3, type InstancedBufferGeometry, type InstancedMesh, type Mesh } from 'three';
 import { LineBasicNodeMaterial } from 'three/webgpu';
 import type { Game } from '../core/game';
@@ -40,7 +41,7 @@ export async function installEngine(game: Game) {
   let menu: ReturnType<typeof installMenu> | null = null; // created last; the debug panel's relock reads it
   // --- debug panel -------------------------------------------------------------------------
   const panel = createDebugPanel(game.events, () => {
-    if (menu?.mode === 'playing') void game.renderer.domElement.requestPointerLock()?.catch?.(() => {});
+    if (menu?.mode === 'playing') requestLock(game.renderer.domElement);
   });
   game.debug = panel;
 

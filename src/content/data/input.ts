@@ -20,6 +20,8 @@ export const keys = {
   sidearm: 'Digit3',
   melee: 'Digit4',
   shove: 'KeyV',
+  throwAim: 'KeyN', // hold to aim the selected throwable (arc preview), release to throw
+  throwCycle: 'KeyM',
   interact: 'KeyE',
   vehicle: 'KeyF',
   horn: 'KeyH', // in a vehicle; on foot H opens the help overlay
@@ -38,3 +40,15 @@ export const look = {
   pitchMin: -1.35,
   pitchMax: 1.2,
 };
+
+/**
+ * Pointer lock switch. OFF during development: the game never captures the mouse, the cursor stays free to leave the
+ * window, and moving the mouse over the game view turns the camera. Turn `enabled` on for production (normal FPS mouse
+ * capture). `?lock=1` turns it on for one session, `?lock=0` off.
+ */
+export const pointerLock = {
+  enabled: false,
+};
+const lockParam = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('lock') : null;
+if (lockParam === '1') pointerLock.enabled = true;
+if (lockParam === '0') pointerLock.enabled = false;

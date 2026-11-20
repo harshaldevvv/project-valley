@@ -1,3 +1,5 @@
+import { pointerLock } from '../../content/data/input';
+import { requestLock } from '../../engine/input';
 import { CatmullRomCurve3, MathUtils, Quaternion, Vector3, Matrix4 } from 'three';
 import type { Game } from '../../core/game';
 import { yard } from '../../content/data/yard';
@@ -399,11 +401,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
 
   // --- transitions ---------------------------------------------------------------------------
   const lock = () => {
-    try {
-      void game.renderer.domElement.requestPointerLock()?.catch?.(() => {});
-    } catch {
-      /* not allowed without a gesture; the canvas click locks later */
-    }
+    requestLock(game.renderer.domElement); // no-op while the dev pointer-lock switch is off
   };
   const play = (station?: MenuStation) => {
     if (station) station.go();
@@ -471,7 +469,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
   hint.hidden = true;
   document.body.appendChild(hint);
   setInterval(() => {
-    hint.hidden = !(mode === 'playing' && !blend && !document.pointerLockElement && !game.input.blocked);
+    hint.hidden = !pointerLock.enabled || !(mode === 'playing' && !blend && !document.pointerLockElement && !game.input.blocked);
   }, 200);
 
   renderNav();
