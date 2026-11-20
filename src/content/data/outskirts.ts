@@ -12,6 +12,7 @@
  *        |  crash site (-110..-40, 235..290)    camp (15..70, 246..290)    ranger ridge (120..155, 240..290)
  */
 import { TOWN_BUILDINGS, TOWN_CLEAR, TOWN_PADS, TOWN_PLACED, TOWN_ROADS, TOWN_SIGNS } from './outskirts_town';
+import { OUTPOST_BUILDINGS, OUTPOST_CLEAR, OUTPOST_PADS, OUTPOST_PLACED, OUTPOST_ROADS, OUTPOST_SIGNS } from './outskirts_outpost';
 export type SurfaceTag = 'grass' | 'dirt' | 'concrete' | 'wood' | 'metal' | 'rubber' | 'chainlink';
 
 /** The flat, playable plateau (terrain.ts blends the hills back in over `blend` m beyond it). */
@@ -576,3 +577,11 @@ PLACED.push(...TOWN_PLACED);
 BUILDINGS.push(...TOWN_BUILDINGS);
 POI_SIGNS.push(...TOWN_SIGNS);
 CLEAR_RECTS.push(...TOWN_CLEAR);
+
+// ---------------------------------------------------------------- the army outpost east of the farm (outskirts_outpost.ts)
+ROADS.push(...OUTPOST_ROADS);
+PADS.push(...OUTPOST_PADS);
+PLACED.push(...OUTPOST_PLACED);
+BUILDINGS.push(...OUTPOST_BUILDINGS);
+POI_SIGNS.push(...OUTPOST_SIGNS);
+CLEAR_RECTS.push(...OUTPOST_CLEAR);

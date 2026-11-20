@@ -296,6 +296,16 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Wooden Crate by Polyfork | https://polyfork.dev/asset/wooden-crate-b9c96a |
 | Yellow School Bus by Polyfork | https://polyfork.dev/asset/yellow-school-bus-0fd3b6 |
 | Pickup Truck by Polyfork | https://polyfork.dev/asset/pickup-truck-a34bf2 |
+| Water Bowser by Polyfork | https://polyfork.dev/asset/water-bowser-f6768c |
+| Field Radio Set by Polyfork | https://polyfork.dev/asset/field-radio-set-b6f3fd |
+| Ground Power Unit by Polyfork | https://polyfork.dev/asset/ground-power-unit-326361 |
+| Site Cabin by Polyfork | https://polyfork.dev/asset/site-cabin-e9ee10 |
+| Helipad Marking Decal by Polyfork | https://polyfork.dev/asset/helipad-marking-decal-e697dd |
+| Camouflage Net Canopy by Polyfork | https://polyfork.dev/asset/camouflage-net-canopy-ce6249 |
+| Flagpole by Polyfork | https://polyfork.dev/asset/flagpole-7b7806 |
+| Antenna Mast by Polyfork | https://polyfork.dev/asset/antenna-mast-0954b0 |
+| Anti-Aircraft Searchlight by Polyfork | https://polyfork.dev/asset/anti-aircraft-searchlight-ba3f07 |
+| Lookout Watchtower by Polyfork | https://polyfork.dev/asset/lookout-watchtower-f1a5ce |
 | Teen Zombie by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/teen-zombie-b5bb27 |
 | Shambling Ghoul by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/shambling-ghoul-256f2f |
 | Police Officer by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/police-officer-1cc379 |

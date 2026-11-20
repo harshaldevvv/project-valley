@@ -8,7 +8,7 @@ import { FILL_SPOTS } from './outskirts_fill';
  * is a data/containers.ts id; `theme` is a CONTAINER_THEMES key (what the spot is for), so a table can be re-pointed per theme.
  * Zombie zones are data only: the zombie system may read `poiZombieZones` to place hordes.
  */
-export type PoiTheme = 'gas' | 'farm' | 'house' | 'police' | 'camp' | 'school' | 'medical' | 'diner' | 'ranger' | 'road' | 'town';
+export type PoiTheme = 'gas' | 'farm' | 'house' | 'police' | 'camp' | 'school' | 'medical' | 'diner' | 'ranger' | 'road' | 'town' | 'military';
 export interface PoiContainer {
   type: string;
   theme: string;
@@ -33,7 +33,8 @@ export interface PoiDef {
   reason: string;
   /** outdoor containers (indoor ones come from the building defs) */
   containers: PoiContainer[];
-  zombies: { x: number; z: number; radius: number; count: number }[];
+  /** `soldier` (0..1): share of a zone's zombies that are dead soldiers (army sites) */
+  zombies: { x: number; z: number; radius: number; count: number; soldier?: number }[];
 }
 
 const c = (type: string, theme: string, x: number, z: number, yaw: number, model: string | null, y?: number): PoiContainer => ({ type, theme, x, z, yaw, model, ...(y ? { y } : {}) });
@@ -155,6 +156,23 @@ export const POIS: PoiDef[] = [
     reason: 'The town police station: lockers, desks and a locked armory with the best guns and ammo outside the army sites.',
     containers: [c('car_trunk', 'police', -122.4, 134.6, -1.5, null), c('car_trunk', 'police', -125.2, 133.6, 1.9, null)],
     zombies: [{ x: -119, z: 122, radius: 4, count: 3 }, { x: -119, z: 135, radius: 8, count: 3 }],
+  },
+  // Camp Harlan, the army outpost east of the farm (outskirts_outpost.ts)
+  {
+    id: 'outpost', theme: 'military', tier: 3, x: 132, z: 117, radius: 28, landmark: 'watchtower',
+    reason: 'An overrun army outpost: barracks footlockers, a locked armory, and the motor pool. Its garrison still walks the fence.',
+    containers: [
+      c('car_trunk', 'military', 134.2, 126.6, 0.05, null),
+      c('car_trunk', 'military', 143.6, 127, 0.08, null),
+      c('military_crate', 'military', 131.4, 118.8, 0.3, null),
+      c('military_footlocker', 'military', 113.4, 114.6, 0.2, null),
+    ],
+    zombies: [
+      { x: 132, z: 118, radius: 16, count: 6, soldier: 0.75 },
+      { x: 127, z: 108.6, radius: 4, count: 3, soldier: 0.9 },
+      { x: 144, z: 108, radius: 2.2, count: 2, soldier: 1 },
+      { x: 100, z: 118, radius: 6, count: 2, soldier: 0.5 },
+    ],
   },
   // micro-POIs (models in outskirts_fill.ts)
   {

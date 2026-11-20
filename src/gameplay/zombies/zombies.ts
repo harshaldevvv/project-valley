@@ -277,7 +277,8 @@ export class Zombies {
         this.poiS.center.set(x, 1, z);
         if (this.poiFrustum.intersectsSphere(this.poiS)) continue; // never pop in view
         this.poiBusy = true;
-        this.spawn(new Vector3(x, 0.05, z), this.ctx.rand() * Math.PI * 2, this.pickVariant(zone.tier, night))
+        const soldier = zone.soldier && this.ctx.rand() < zone.soldier && hasAsset(zombieDefs.pfz_soldier?.model ?? '') ? 'pfz_soldier' : null; // army sites: dead soldiers
+        this.spawn(new Vector3(x, 0.05, z), this.ctx.rand() * Math.PI * 2, soldier ?? this.pickVariant(zone.tier, night))
           .then((zb) => zone.list.push(zb))
           .catch(() => undefined)
           .finally(() => (this.poiBusy = false));

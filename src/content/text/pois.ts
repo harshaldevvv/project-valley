@@ -14,6 +14,7 @@ export const poiText: Record<string, { name: string; hook: string }> = {
   stand: { name: 'Hunting Stand', hook: 'Best view in the west. Worst place to be seen.' },
   memorial: { name: 'Roadside Memorial', hook: 'Fresh candles. Fresher tracks.' },
   ranger: { name: 'Ranger Ridge', hook: 'See everything. Be seen by everything.' },
+  outpost: { name: 'Camp Harlan', hook: 'The army held the fence. Then the fence held the army.' },
 };
 
 /** Danger label printed on the entrance sign, by tier. */
