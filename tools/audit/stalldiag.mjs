@@ -36,20 +36,25 @@ const out = await page.evaluate(async () => {
       last = key;
     }
   };
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  const start = p.curr.clone();
-  if (window.__start) start.set(window.__start[0], 0.1, window.__start[1]);
-  for (let k = 0; k < 8; k++) {
-    p.teleport(start.clone(), (k * Math.PI) / 4);
-    p.setLook((k * Math.PI) / 4, 0);
-    g.ctx.controls.press('KeyW', true);
-    await sleep(3200);
-    g.ctx.controls.press('KeyW', false);
-    await sleep(300);
-  }
-  return log;
+  window.__log = log;
+  window.__start0 = window.__start ? [window.__start[0], window.__start[1]] : [p.curr.x, p.curr.z];
+  return null;
 });
-console.log('stall spots', out.length);
-console.log(out.slice(0, 25).join('\n'));
+const dist = [];
+// Real key presses (ctx.controls.press only drives mouse buttons)
+for (let k = 0; k < 8; k++) {
+  await page.evaluate((k) => { const g = window.__gp; g.teleport(window.__start0[0], window.__start0[1], (k * Math.PI) / 4); g.setLook((k * Math.PI) / 4, 0); }, k);
+  const a = await page.evaluate(() => [window.__gp.ctx.player.curr.x, window.__gp.ctx.player.curr.z]);
+  await page.keyboard.down('KeyW');
+  await page.waitForTimeout(3200);
+  await page.keyboard.up('KeyW');
+  const bpos = await page.evaluate(() => [window.__gp.ctx.player.curr.x, window.__gp.ctx.player.curr.z]);
+  dist.push(Math.hypot(bpos[0] - a[0], bpos[1] - a[1]).toFixed(1));
+  await page.waitForTimeout(300);
+}
+const out2 = await page.evaluate(() => window.__log);
+
+console.log('stall spots', out2.length, 'metres walked per direction', dist.join(' '));
+console.log(out2.slice(0, 25).join('\n'));
 console.log('errors', JSON.stringify(errs.slice(0, 4)));
 await browser.close();

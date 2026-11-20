@@ -18,8 +18,8 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 
 ## B. Controls and feel
 - [x] B1 Stop-start while walking on flat ground (velocity was zeroed by any blocked tick; now wall-slide only). `tools/audit/walkdiag.mjs`: speed dips 29 -> 0.
-- [ ] B2 Sprint/stop/turn smoothness pass (accel curves, turn-in-place, camera lag).
-- [x] B3 Stall check: `tools/audit/stalldiag.mjs` walks 8 directions from spawn, 0 ticks where the body moves under half its speed.
+- [~] B2 Smoothness: sprint verified steady 5.8 m/s with stamina drain (`tools/audit/sprintdiag.mjs`); turn-in-place and camera lag not yet tuned.
+- [x] B3 Stall check (corrected: the first version of `tools/audit/stalldiag.mjs` never moved the player, so its 0 meant nothing). Real causes found later: heightfield cell edges stopped the player for one tick every few metres; fixed with FIX_INTERNAL_EDGES + a floor-only retry (route stall ticks ~200 -> 9 in `outskirtswalk.mjs`). The fixed `stalldiag.mjs` walks ~11 m per direction with real key presses: 1 stop, at a real wall.
 
 ## C. Weapons and audio
 - [x] C1 Silent gunshots sometimes: own shots play as 2D (not HRTF at the muzzle), weapon sounds preloaded before play starts, layered shot (body + tail + mech).
