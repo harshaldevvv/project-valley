@@ -17,7 +17,7 @@ const DRESS: Record<string, { surface: Surface; solid: boolean; at: Spot[] }> = 
   car_pickup: { surface: 'metal', solid: true, at: [{ x: 30, z: -76, yaw: -0.4 }, { x: -22, z: 52, yaw: 1.5 }] },
   car_jeep: { surface: 'metal', solid: true, at: [{ x: 84, z: 18, yaw: 0.2 }, { x: -86, z: -64, yaw: 2.9 }] },
   car_cruiser: { surface: 'metal', solid: true, at: [{ x: -9, z: 113, yaw: 0.25 }, { x: 14, z: 118, yaw: -0.3 }] },
-  barricade_police: { surface: 'wood', solid: true, at: [{ x: -6.5, z: 108, yaw: 0.1 }, { x: 6.5, z: 108, yaw: -0.15 }, { x: 0, z: 112, yaw: 3.14 }] },
+  barricade_police: { surface: 'wood', solid: true, at: [{ x: -6.5, z: 108, yaw: 0.1 }, { x: 6.5, z: 108, yaw: -0.15 }] },
   barrier_jersey: { surface: 'concrete', solid: true, at: [{ x: -11, z: 106, yaw: 1.4 }, { x: 11, z: 106, yaw: 1.7 }, { x: -13, z: 103, yaw: 0.2 }, { x: 13, z: 103, yaw: -0.2 }] },
   barricade_field: { surface: 'wood', solid: true, at: [{ x: 38, z: -40, yaw: 0.4 }, { x: -52, z: 22, yaw: -0.8 }] },
   cone: { surface: 'rubber', solid: false, at: [{ x: -3, z: 103, yaw: 0 }, { x: 3, z: 103, yaw: 0 }, { x: -2, z: 106, yaw: 0 }, { x: 2.5, z: 106.5, yaw: 0 }, { x: 40, z: 22, yaw: 0 }, { x: 43, z: 24, yaw: 0 }] },

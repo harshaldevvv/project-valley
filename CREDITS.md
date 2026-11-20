@@ -159,6 +159,111 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Tree Stump by Polyfork | https://polyfork.dev/asset/tree-stump-00f3bf |
 | Tyre Stack by Polyfork | https://polyfork.dev/asset/tyre-stack-ad4692 |
 | Young Pine by Polyfork | https://polyfork.dev/asset/young-pine-0d7695 |
+| Air Ambulance Helicopter by Polyfork | https://polyfork.dev/asset/air-ambulance-helicopter-ed9acc |
+| Ambulance Van by Polyfork | https://polyfork.dev/asset/ambulance-van-29919a |
+| Auto Repair Garage by Polyfork | https://polyfork.dev/asset/auto-repair-garage-b91464 |
+| Backyard Barbecue Grill by Polyfork | https://polyfork.dev/asset/backyard-barbecue-grill-84d4ef |
+| Backyard Doghouse by Polyfork | https://polyfork.dev/asset/backyard-doghouse-50a492 |
+| Backyard Garden Shed by Polyfork | https://polyfork.dev/asset/backyard-garden-shed-38d79f |
+| Bocage Hedgerow Section by Polyfork | https://polyfork.dev/asset/bocage-hedgerow-section-4c3126 |
+| Camp Cooler by Polyfork | https://polyfork.dev/asset/camp-cooler-8ba941 |
+| Camper-van by Polyfork | https://polyfork.dev/asset/camper-van-8d10e2 |
+| Campground Pine Stand by Polyfork | https://polyfork.dev/asset/campground-pine-stand-0bf4f2 |
+| Campsite Picnic Table by Polyfork | https://polyfork.dev/asset/campsite-picnic-table-361d51 |
+| Canvas Ridge Tent by Polyfork | https://polyfork.dev/asset/canvas-ridge-tent-f0df0d |
+| Cattle Wagon by Polyfork | https://polyfork.dev/asset/cattle-wagon-0d3070 |
+| Chain-Link Fence Run by Polyfork | https://polyfork.dev/asset/chain-link-fence-run-6c3d68 |
+| Chicken Coop by Polyfork | https://polyfork.dev/asset/chicken-coop-371f97 |
+| Corn Crop by Polyfork | https://polyfork.dev/asset/corn-crop-b71f2f |
+| Crash Barrier Run by Polyfork | https://polyfork.dev/asset/crash-barrier-run-b47d1d |
+| Czech Hedgehog by Polyfork | https://polyfork.dev/asset/czech-hedgehog-d77ae5 |
+| Depot Fuel Tank by Polyfork | https://polyfork.dev/asset/depot-fuel-tank-55a00e |
+| Detached Garage by Polyfork | https://polyfork.dev/asset/detached-garage-38a178 |
+| Diner-sign by Polyfork | https://polyfork.dev/asset/diner-sign-ab5f0a |
+| Dome Tent by Polyfork | https://polyfork.dev/asset/dome-tent-9ee59d |
+| Fallen Log by Polyfork | https://polyfork.dev/asset/fallen-log-1685fb |
+| Family Crossover SUV by Polyfork | https://polyfork.dev/asset/family-crossover-suv-42027f |
+| Farm Gate by Polyfork | https://polyfork.dev/asset/farm-gate-8ab320 |
+| Feed Sack by Polyfork | https://polyfork.dev/asset/feed-sack-c84641 |
+| Field Hospital Marquee by Polyfork | https://polyfork.dev/asset/field-hospital-marquee-8cf79b |
+| Field rock by Polyfork | https://polyfork.dev/asset/field-rock-5e37c6 |
+| Fire Hydrant by Polyfork | https://polyfork.dev/asset/fire-hydrant-b68b17 |
+| Forest Outhouse by Polyfork | https://polyfork.dev/asset/forest-outhouse-e968d1 |
+| Garbage Truck by Polyfork | https://polyfork.dev/asset/garbage-truck-a7ffbf |
+| Gas-pump by Polyfork | https://polyfork.dev/asset/gas-pump-5014a8 |
+| Globe Gas Pump by Polyfork | https://polyfork.dev/asset/globe-gas-pump-b8e80d |
+| Grave Cross by Polyfork | https://polyfork.dev/asset/grave-cross-95b3e9 |
+| Greenhouse by Polyfork | https://polyfork.dev/asset/greenhouse-53ab6d |
+| Guardrail Section by Polyfork | https://polyfork.dev/asset/guardrail-section-68c3c4 |
+| Hammock on Posts by Polyfork | https://polyfork.dev/asset/hammock-on-posts-7d5c47 |
+| Haystack by Polyfork | https://polyfork.dev/asset/haystack-77b0dd |
+| Hearth Log Bench by Polyfork | https://polyfork.dev/asset/hearth-log-bench-c3c5ec |
+| Hollow Log by Polyfork | https://polyfork.dev/asset/hollow-log-329fd7 |
+| Large Boulder by Polyfork | https://polyfork.dev/asset/large-boulder-a29b99 |
+| Log Cabin by Polyfork | https://polyfork.dev/asset/log-cabin-4fac3b |
+| Log Store by Polyfork | https://polyfork.dev/asset/log-store-25e0b5 |
+| Loot Crate by Polyfork | https://polyfork.dev/asset/loot-crate-23dd3b |
+| Medicine Cabinet by Polyfork | https://polyfork.dev/asset/medicine-cabinet-a9f13d |
+| Medium Tank by Polyfork | https://polyfork.dev/asset/medium-tank-65da6b |
+| Mesh Site Fence Run by Polyfork | https://polyfork.dev/asset/mesh-site-fence-run-a798a0 |
+| Military Cargo Truck by Polyfork | https://polyfork.dev/asset/military-cargo-truck-652f66 |
+| Minefield Warning Sign by Polyfork | https://polyfork.dev/asset/minefield-warning-sign-296d9e |
+| Motel-sign by Polyfork | https://polyfork.dev/asset/motel-sign-21033b |
+| Newspaper Box by Polyfork | https://polyfork.dev/asset/newspaper-box-3f2c0e |
+| Nissen Hut by Polyfork | https://polyfork.dev/asset/nissen-hut-dafb56 |
+| Oil-drum by Polyfork | https://polyfork.dev/asset/oil-drum-386c30 |
+| One-Room Schoolhouse by Polyfork | https://polyfork.dev/asset/one-room-schoolhouse-107ec9 |
+| Orchard Apple Tree by Polyfork | https://polyfork.dev/asset/orchard-apple-tree-b21f85 |
+| Pay Phone Booth by Polyfork | https://polyfork.dev/asset/pay-phone-booth-b8a1db |
+| Picket Fence Run by Polyfork | https://polyfork.dev/asset/picket-fence-run-9310c1 |
+| Portable Toilet by Polyfork | https://polyfork.dev/asset/portable-toilet-a3f1a2 |
+| Pump Island Canopy by Polyfork | https://polyfork.dev/asset/pump-island-canopy-c3aa62 |
+| Pumpkin Crop by Polyfork | https://polyfork.dev/asset/pumpkin-crop-7de137 |
+| Ranger Station by Polyfork | https://polyfork.dev/asset/ranger-station-ef6407 |
+| Red Barn by Polyfork | https://polyfork.dev/asset/red-barn-d41683 |
+| Riding Lawn Tractor by Polyfork | https://polyfork.dev/asset/riding-lawn-tractor-09e93c |
+| Roadside Billboard by Polyfork | https://polyfork.dev/asset/roadside-billboard-c3c053 |
+| Roadside Farm Stand by Polyfork | https://polyfork.dev/asset/roadside-farm-stand-e218ca |
+| Rock Outcrop by Polyfork | https://polyfork.dev/asset/rock-outcrop-158ac3 |
+| Rolled plate silo by Polyfork | https://polyfork.dev/asset/rolled-plate-silo-42304a |
+| Route Shield Sign by Polyfork | https://polyfork.dev/asset/route-shield-sign-462947 |
+| RV Travel Trailer by Polyfork | https://polyfork.dev/asset/rv-travel-trailer-bd53d7 |
+| Salvage crate by Polyfork | https://polyfork.dev/asset/salvage-crate-3a7e1d |
+| Scarecrow by Polyfork | https://polyfork.dev/asset/scarecrow-334079 |
+| Scrap-built aeroplane by Polyfork | https://polyfork.dev/asset/scrap-built-aeroplane-65ac95 |
+| Security Gatehouse by Polyfork | https://polyfork.dev/asset/security-gatehouse-fd00c8 |
+| Sideline Medical Tent by Polyfork | https://polyfork.dev/asset/sideline-medical-tent-ce1649 |
+| Single-Storey Ranch House by Polyfork | https://polyfork.dev/asset/single-storey-ranch-house-3880ea |
+| Site Lighting Tower by Polyfork | https://polyfork.dev/asset/site-lighting-tower-674c45 |
+| Sleeping Bag by Polyfork | https://polyfork.dev/asset/sleeping-bag-730d7d |
+| Soda Vending Machine by Polyfork | https://polyfork.dev/asset/soda-vending-machine-4a5347 |
+| Soldiers' Tent by Polyfork | https://polyfork.dev/asset/soldiers-tent-4bd5b9 |
+| Speed Limit Sign by Polyfork | https://polyfork.dev/asset/speed-limit-sign-1c55a2 |
+| Split-Level House by Polyfork | https://polyfork.dev/asset/split-level-house-40fe1a |
+| Split-Rail Fence Run by Polyfork | https://polyfork.dev/asset/split-rail-fence-run-87da39 |
+| Station Lamp Post by Polyfork | https://polyfork.dev/asset/station-lamp-post-7d14dd |
+| Station-wagon-70s by Polyfork | https://polyfork.dev/asset/station-wagon-70s-11d67b |
+| Stone Fire Pit by Polyfork | https://polyfork.dev/asset/stone-fire-pit-4136b0 |
+| Stone Well by Polyfork | https://polyfork.dev/asset/stone-well-2b4717 |
+| Streamline Diner Car by Polyfork | https://polyfork.dev/asset/streamline-diner-car-de9777 |
+| Street Lamp by Polyfork | https://polyfork.dev/asset/street-lamp-136745 |
+| Street Tree by Polyfork | https://polyfork.dev/asset/street-tree-0d33f3 |
+| Suburban Pickup Truck by Polyfork | https://polyfork.dev/asset/suburban-pickup-truck-d15ea2 |
+| Sunflower by Polyfork | https://polyfork.dev/asset/sunflower-80ce15 |
+| Tank Wagon by Polyfork | https://polyfork.dev/asset/tank-wagon-d860fa |
+| Teardrop Trailer by Polyfork | https://polyfork.dev/asset/teardrop-trailer-580e25 |
+| Tire by Polyfork | https://polyfork.dev/asset/tire-ccf0eb |
+| Tow Truck by Polyfork | https://polyfork.dev/asset/tow-truck-7d04f8 |
+| Trailhead Sign by Polyfork | https://polyfork.dev/asset/trailhead-sign-aa29e1 |
+| Two-Burner Camp Stove by Polyfork | https://polyfork.dev/asset/two-burner-camp-stove-3e83f5 |
+| Two-Storey Family House by Polyfork | https://polyfork.dev/asset/two-storey-family-house-c63c4a |
+| Vending Machine by Polyfork | https://polyfork.dev/asset/vending-machine-471c29 |
+| Water Trough by Polyfork | https://polyfork.dev/asset/water-trough-318ee1 |
+| Wheat Crop by Polyfork | https://polyfork.dev/asset/wheat-crop-7e08e6 |
+| Wheelbarrow by Polyfork | https://polyfork.dev/asset/wheelbarrow-0f8406 |
+| Windpump Tower by Polyfork | https://polyfork.dev/asset/windpump-tower-1633a9 |
+| Wooden Crate by Polyfork | https://polyfork.dev/asset/wooden-crate-b9c96a |
+| Yellow School Bus by Polyfork | https://polyfork.dev/asset/yellow-school-bus-0fd3b6 |
 | Pickup Truck by Polyfork | https://polyfork.dev/asset/pickup-truck-a34bf2 |
 | Teen Zombie by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/teen-zombie-b5bb27 |
 | Shambling Ghoul by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/shambling-ghoul-256f2f |

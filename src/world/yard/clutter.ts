@@ -8,6 +8,8 @@ import { groundSurfaceAt } from '../surfaces';
 import { fbm, groundHeight } from './ground';
 import { underGenProp } from './genProps';
 import { underDress } from './dress';
+import { OUT } from '../../content/data/outskirts';
+import { underOutskirts } from '../outskirts/footprints';
 
 /**
  * Ground clutter (no colliders, no shadows): wind-swayed grass tufts on every grass patch of the Yard, plus
@@ -56,6 +58,16 @@ export function buildClutter(game: Game) {
       const x = gx + rng.range(-step, step) * 0.5, z = gz + rng.range(-step, step) * 0.5;
       if (groundSurfaceAt(x, z) !== 'grass' || !free(x, z)) continue;
       const dens = 0.35 + 0.65 * fbm(x * 0.05 + 40, z * 0.05);
+      if (rng.next() > dens) continue;
+      spots.push([x, z, rng.next()]);
+    }
+  }
+  // the outskirts plateau: a looser coat (grid 1.3 m) off the roads, pads and building footprints
+  for (let gx = OUT.x0 + 1; gx < OUT.x1 - 1; gx += 1.3) {
+    for (let gz = OUT.z0 + 3; gz < OUT.z1 - 1; gz += 1.3) {
+      const x = gx + rng.range(-0.65, 0.65), z = gz + rng.range(-0.65, 0.65);
+      if (groundSurfaceAt(x, z) !== 'grass' || underOutskirts(x, z, 0.5)) continue;
+      const dens = 0.3 + 0.6 * fbm(x * 0.05 + 40, z * 0.05);
       if (rng.next() > dens) continue;
       spots.push([x, z, rng.next()]);
     }

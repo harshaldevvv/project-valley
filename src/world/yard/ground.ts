@@ -5,8 +5,9 @@ import { swatchUV } from '../../engine/palette';
 import { Group, groups } from '../../engine/physics';
 import { tagTerrain } from '../surfaces';
 import type { Kit } from './kit';
+import { hillFactor, plateauDist } from '../outskirts/terrain';
 
-const EXTENT = 300; // land out to ±300 m so the horizon isn't a void
+const EXTENT = 360; // land out to ±360 m so the horizon isn't a void (the outskirts plateau reaches z = 300)
 const CELL = 5;
 
 // --- tiny value noise (deterministic) ---
@@ -39,7 +40,7 @@ function soft<T extends BufferGeometry>(g: T): T {
 /** Ground height: flat inside the walls (M1 has no navmesh), low rolling hills beyond. */
 export function groundHeight(x: number, z: number) {
   const d = Math.max(Math.abs(x), Math.abs(z));
-  return smoothstep(yard.half + 8, yard.half + 70, d) * (2 + 16 * fbm(x * 0.011 + 3, z * 0.011 + 7));
+  return smoothstep(yard.half + 8, yard.half + 70, d) * (2 + 16 * fbm(x * 0.011 + 3, z * 0.011 + 7)) * hillFactor(x, z);
 }
 
 /** Per-face ground swatch: big low-frequency patches (low-poly look). */
@@ -123,6 +124,7 @@ function buildTrees(kit: Kit) {
     const x = rng.range(-EXTENT + 10, EXTENT - 10), z = rng.range(-EXTENT + 10, EXTENT - 10);
     const d = Math.max(Math.abs(x), Math.abs(z));
     if (d < yard.half + 14) continue;
+    if (plateauDist(x, z) < 6) continue; // the outskirts plateau gets its own forest (outskirts/scatter.ts)
     if (fbm(x * 0.012 + 11, z * 0.012) < 0.42 - (d - 120) * 0.0012) continue; // clustered forest stands
     placed++;
     if (d < AI_TREE_RANGE) {

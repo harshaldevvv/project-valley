@@ -35,9 +35,7 @@ export const genProps: Prop[] = [
   { id: 'barn', x: 150, z: -70, yaw: 2.2, surface: 'wood', noCollide: true, r: 0 },
   { id: 'ruined_house', x: -140, z: 78, yaw: -0.9, surface: 'wood', noCollide: true, r: 0 },
   { id: 'ruined_house', x: 168, z: 52, yaw: 1.9, surface: 'wood', noCollide: true, r: 0 },
-  { id: 'gas_station', x: -22, z: 142, yaw: Math.PI, surface: 'concrete', noCollide: true, r: 0 },
   { id: 'small_church', x: -128, z: -125, yaw: 0.8, surface: 'wood', noCollide: true, r: 0 },
-  { id: 'water_tower', x: 128, z: 138, yaw: 0.3, surface: 'metal', noCollide: true, r: 0 },
   { id: 'farm_silo', x: -158, z: -28, yaw: 1.1, surface: 'metal', noCollide: true, r: 0 },
   // inside the ruined cabin (cabin.ts)
   { id: 'sofa_junk', x: -74.2, z: -34.4, yaw: 1.7, surface: 'wood', solid: true, r: 1.6 },

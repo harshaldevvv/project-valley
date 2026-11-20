@@ -27,6 +27,8 @@ import { buildPen } from './stations/pen';
 import { buildRange } from './stations/range';
 import { buildTrack } from './stations/track';
 import { buildWalls } from './walls';
+import { buildOutskirts } from '../outskirts';
+import { installOutskirtsCull } from '../outskirts/cull';
 
 /** environment-builder: builds the Yard (ground, walls, station areas, signage, props) and fills game.places. */
 export async function buildYard(game: Game): Promise<void> {
@@ -48,6 +50,7 @@ export async function buildYard(game: Game): Promise<void> {
   buildDoors(kit);
   await buildGenProps(kit);
   await buildDress(game, kit);
+  await buildOutskirts(kit, game);
   for (const p of lightPoles) kit.place(p);
   await kit.finish();
   finishSigns(kit);
@@ -62,6 +65,7 @@ export async function buildYard(game: Game): Promise<void> {
   await buildAiTrees(game);
   await buildWallDecals(game);
   buildLampPools(game);
+  installOutskirtsCull(game);
 }
 
 /** Gravel paths from the spawn hub to every station, plus the hub itself. */

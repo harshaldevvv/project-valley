@@ -1,3 +1,4 @@
+import { poiZombieZones } from '../../content/data/pois';
 import { yard } from '../../content/data/yard';
 
 /**
@@ -22,4 +23,6 @@ export const yardSpawns = {
   car: { x: trackLoop.cx - trackLoop.hx, y: 0.1, z: trackLoop.cz + 6, yaw: 0 },
   /** Spawn zombies uniformly inside this circle (fence is 12 m from the centre). */
   penZombies: { x: pen.x, z: pen.z, radius: 8 },
+  /** Zombie zones in the outskirts (data/pois.ts): spawn `count` zombies uniformly inside each circle; `tier` 1..3 is the danger level. */
+  outskirtsZones: poiZombieZones,
 };
