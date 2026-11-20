@@ -73,6 +73,8 @@ export const bodyFacing = {
   inPlaceTriggerDeg: 100, // camera this far from the body (standing) → turn-in-place step
   inPlaceTurnDeg: 300,
   easing: 12, // 1/s exponential approach (capped by the turn rates)
+  turnAccelDeg: 5400, // deg/s² body turn acceleration (move / turn): 540°/s in 0.1 s, eases into turns
+  aimTurnAccelDeg: 12000, // deg/s² while aiming/firing: 900°/s in 0.075 s (snappy but no one-frame jump)
   headLookDeg: 70, // head look-at toward the camera, clamped
   raiseS: 0.18, // low-ready → aim
   lowerS: 0.3, // aim → low-ready
@@ -123,6 +125,7 @@ export const cameraFeel = {
   maxShakeDeg: 3,
   fovKickRecover: 0.12, // s
   hurtTrauma: 0.4,
+  hurtPunchDeg: 1.6, // view punch (pitch up) per hit, × damage scale 0.5..1.5
 };
 
 /** Default player hero chr_hero_pf (Polyfork student-with-backpack + flannel gloves): first-person arm colours. */

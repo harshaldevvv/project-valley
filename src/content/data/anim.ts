@@ -34,6 +34,9 @@ export const anim = {
   speedMatchClamp: [0.8, 1.25] as [number, number],
   /** Per model: leg length / survivor leg length (clip ground speeds are measured on the survivor). chr_hero_pf 0.81 / 0.845 m. */
   strideScale: { chr_hero_pf: 0.96 } as Record<string, number>,
+  /** Per model and clip, overrides strideScale where the measured foot travel differs (tools/audit/footratio.mjs:
+   *  hero crouch_walk feet travel 0.88 of the body speed at 0.96). */
+  strideScaleClip: { chr_hero_pf: { crouch_walk: 0.85 } } as Record<string, Record<string, number>>,
   /** 1D forward blend nodes (clip names; speeds come from clipMeta). */
   survivorForward: ['idle', 'walk', 'run', 'sprint'],
   survivorCrouch: ['crouch_idle', 'crouch_walk'],
@@ -41,6 +44,10 @@ export const anim = {
   survivorStrafeWalk: ['walk', 'walk_back', 'strafe_left', 'strafe_right'],
   survivorStrafeRun: ['run', 'run_back', 'run_strafe_left', 'run_strafe_right'],
   survivorIdles: ['idle', 'idle_b', 'idle_c'],
+  /** Aimed 2D set, orientation warping: forward/back clips cover ±warpFwdDeg around their axis (keyboard diagonals
+   *  play forward/back with the hips twisted 45°), strafe clips the rest; clips cross-fade over warpBlendDeg at the edges. */
+  warpFwdDeg: 52.5,
+  warpBlendDeg: 10,
   /** Zombie gait pools for spawn variety (pick one per instance, random start phase, timeScale 0.85–1.15). */
   zombieWalks: ['z_walk', 'z_walk_b', 'z_walk_c', 'z_walk_d', 'z_walk_limp', 'z_walk_limp_r', 'z_walk_drag', 'z_walk_drag_r', 'z_walk_drunk', 'z_walk_old', 'z_walk_bent'],
   zombieRuns: ['z_run', 'z_run_b'],
@@ -69,6 +76,27 @@ export const animPost = {
   footIKReach: 0.3,
   pelvisMax: 0.25,
   pelvisHalflife: 0.06,
+  // Foot locking: a foot that touches down is pinned in the world (two-bone IK) until it lifts, so the short
+  // contact of the retargeted clips doesn't glide (tools/audit/footratio.mjs)
+  footLock: true,
+  footLockEnterH: 0.03, // m above the foot's lowest height in the clip: below this the foot counts as planted
+  footLockExitExtra: 0.03, // m extra before a planted foot counts as lifted
+  footLockMaxErr: 0.15, // m: safety release when the pinned foot drifts this far from where the clip wants it
+  footLockMinHold: 0.07, // s a lock holds before the toe-off test runs (the landing glide is still fast)
+  footLockReleaseSpeed: 1.6, // m/s: the clip's foot moving this fast over the ground = toe-off, release
+  footLockMinSpeed: 0.2, // m/s body speed
+  footLockMaxSpeed: 7.5,
+  footLockInHL: 0.015, // s weight half-life when planting (near instant)
+  footLockOutHL: 0.05, // s when lifting: the foot catches up with the clip over ~3 frames
+  // Reactions: second-order springs (overshoot a little, then settle)
+  reactHz: 4.5, // spring frequency for flinch + landing dip
+  reactDamping: 0.45, // 1 = no overshoot
+  flinchDeg: 9, // upper-body snap away from a hit (scaled by damage, cap ×1.6)
+  landDipPerMps: 0.012, // m of pelvis dip per m/s of fall speed
+  landDipMax: 0.11,
+  hitClipMaxSpeed: 0.5, // m/s: above this a hit is procedural only (the full-body clip would freeze the legs)
+  landClipMaxSpeed: 1.5, // m/s horizontal: same for the hard-landing clip
+  accelSmoothHL: 0.04, // s: speed is smoothed before differentiating for the acceleration lean
   // Turn in place (§3.5): threshold, the upper body absorbs the rest
   turnTriggerDeg: 80,
 };

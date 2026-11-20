@@ -2,6 +2,7 @@ import { Vector3 } from 'three';
 import type { Collider, KinematicCharacterController, RigidBody } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
 import { health as HD, movement as M, stamina as SD } from '../../content/data/player';
+import { animPost as AP } from '../../content/data/anim';
 import { look as L } from '../../content/data/input';
 import { yard } from '../../content/data/yard';
 import type { PlayerView } from '../../core/contracts';
@@ -129,7 +130,8 @@ export class Player implements PlayerView {
     if (this.dead || this.godMode || this.invulnT > 0 || this.inVehicle) return false;
     this.hp = Math.max(0, this.hp - amount);
     this.invulnT = HD.hitIframes;
-    if (this.hp > 0) this.ctx.playerAnim?.oneshot('hit_react', 0.05);
+    // Moving: the procedural flinch (bodyPost) reads alone; the full-body clip would freeze the running legs
+    if (this.hp > 0 && Math.hypot(this.vel.x, this.vel.z) < AP.hitClipMaxSpeed) this.ctx.playerAnim?.oneshot('hit_react', 0.05);
     this.ctx.game.events.emit('playerDamaged', { amount, from: from ? from.clone() : null });
     if (this.hp <= 0) {
       this.dead = true;
@@ -337,7 +339,7 @@ export class Player implements PlayerView {
   private land(speed: number) {
     this.lastFall = speed;
     this.landed = Math.min(1, speed / 12);
-    if (speed > 4) this.ctx.playerAnim?.oneshot('land', 0.05);
+    if (speed > 4 && Math.hypot(this.vel.x, this.vel.z) < AP.landClipMaxSpeed) this.ctx.playerAnim?.oneshot('land', 0.05); // running on: bodyPost's dip only
     this.ctx.sfx('jump_land', this.curr, { volume: Math.min(1, 0.3 + speed / 12) });
     if (speed > 3) this.ctx.fx.footDust(this.curr, Math.min(1, speed / 8), this.surfaceBelow() === 'grass');
     if (speed > M.hardLandSpeed) this.ctx.game.events.emit('noise', { position: this.curr.clone(), radius: M.landNoise, source: 'land' });

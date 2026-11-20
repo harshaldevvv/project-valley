@@ -15,6 +15,8 @@ const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 export class BodyFacing {
   yaw = 0;
   prevYaw = 0;
+  /** Body turn rate (rad/s): accel-limited so turns ease in instead of starting at full speed (no snaps). */
+  yawVel = 0;
   turningInPlace = false;
 
   constructor(private ctx: Ctx) {
@@ -33,6 +35,7 @@ export class BodyFacing {
     if (this.ctx.rig.firstPerson || p.inVehicle || p.dead || p.locked && this.ctx.melee.phase !== 'finisher') {
       if (!p.dead) this.yaw = p.yaw;
       this.prevYaw = this.yaw;
+      this.yawVel = 0;
       return;
     }
     const sp = Math.hypot(p.vel.x, p.vel.z);
@@ -60,6 +63,7 @@ export class BodyFacing {
         anim.oneshot(diff > 0 ? 'turn_left_90' : 'turn_right_90', 0.06);
       }
       this.turningInPlace = anim.turning;
+      this.yawVel = 0;
       return;
     } else {
       const diff = Math.abs(wrap(p.yaw - this.yaw));
@@ -70,10 +74,19 @@ export class BodyFacing {
         if (diff < 5 * DEG) this.turningInPlace = false;
       }
     }
+    // Wanted turn rate: exponential approach (easing), capped by the gait's max rate and by what can still brake
+    // in time; the actual rate follows it with limited angular acceleration (ease-in, no frame-one jump).
     const d = wrap(target - this.yaw);
-    const eased = d * Math.min(1, BF.easing * dt);
-    const max = rate * DEG * dt;
-    this.yaw = wrap(this.yaw + Math.max(-max, Math.min(max, eased)));
+    const acc = (this.aiming && !p.sprinting ? BF.aimTurnAccelDeg : BF.turnAccelDeg) * DEG;
+    const ad = Math.abs(d);
+    const want = Math.sign(d) * Math.min(rate * DEG, ad * BF.easing, Math.sqrt(2 * acc * ad));
+    this.yawVel += Math.max(-acc * dt, Math.min(acc * dt, want - this.yawVel));
+    let step = this.yawVel * dt;
+    if (step * d > 0 && Math.abs(step) >= ad) {
+      step = d; // arrive exactly, never overshoot
+      this.yawVel = want;
+    }
+    this.yaw = wrap(this.yaw + step);
   }
 
   /** Interpolated yaw for rendering. */

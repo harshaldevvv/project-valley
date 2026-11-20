@@ -20,6 +20,10 @@ const _pq = new Quaternion();
 const _a = new Vector3();
 const _b = new Vector3();
 const _c = new Vector3();
+const _lk = new Vector3();
+const _lf0 = new Vector3();
+const _lf1 = new Vector3();
+const _fq = new Quaternion();
 const _t = new Vector3();
 const _v = new Vector3();
 const _w = new Vector3();
@@ -45,6 +49,14 @@ interface Leg {
   thigh: Object3D;
   shin: Object3D;
   foot: Object3D;
+  /** Foot lock: lowest foot height seen (root space), pinned world point, blend weight. */
+  minH: number;
+  locked: boolean;
+  lock: Vector3;
+  w: number;
+  /** Where the clip put the foot last frame (world) and how long the current lock has held (s). */
+  prev: Vector3;
+  age: number;
 }
 
 export class BodyPost {
@@ -59,7 +71,14 @@ export class BodyPost {
   private pelvis = 0;
   private lastYaw = 0;
   private lastSpeed = 0;
+  private smoothSpeed = 0;
   private ray;
+  // reaction springs: flinch (pitch back, roll) and landing dip, each [x, v]
+  private flP = [0, 0];
+  private flR = [0, 0];
+  private dip = [0, 0];
+  private airVy = 0;
+  private wasGrounded = true;
 
   constructor(private ctx: Ctx, private root: Object3D, anim: PlayerAnimator) {
     this.hips = anim.bone('hips');
@@ -71,9 +90,36 @@ export class BodyPost {
       const thigh = anim.bone(`thigh_${s}`);
       const shin = anim.bone(`shin_${s}`);
       const foot = anim.bone(`foot_${s}`);
-      if (thigh && shin && foot) this.legs.push({ thigh, shin, foot });
+      if (thigh && shin && foot) this.legs.push({ thigh, shin, foot, minH: Infinity, locked: false, lock: new Vector3(), w: 0, prev: new Vector3(), age: 0 });
     }
     this.ray = new ctx.game.phys.R.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 });
+    // Hit flinch: upper body snaps away from the hit direction (front hit → back, side hit → roll away)
+    ctx.game.events.on('playerDamaged', ({ amount, from }) => {
+      const pl = ctx.player;
+      if (pl.dead || pl.inVehicle) return;
+      const k = Math.min(1.6, 0.6 + amount / 25) * P.flinchDeg * DEG;
+      let fx = 0;
+      let fz = 1;
+      if (from) {
+        const dx = from.x - pl.position.x;
+        const dz = from.z - pl.position.z;
+        const y = root.rotation.y;
+        const l = Math.hypot(dx, dz) || 1;
+        fx = (dx * Math.cos(y) - dz * Math.sin(y)) / l; // hit source, body right
+        fz = (-dx * Math.sin(y) - dz * Math.cos(y)) / l; // hit source, body forward
+      }
+      const w = 2 * Math.PI * P.reactHz;
+      this.flP[1] += k * w * fz; // velocity impulse: peaks near k
+      this.flR[1] -= k * w * fx * 0.7; // + roll about forward = lean right; lean away from the source
+    });
+  }
+
+  private react(s: number[], dt: number) {
+    const w = 2 * Math.PI * P.reactHz;
+    s[1] += (-w * w * s[0] - 2 * P.reactDamping * w * s[1]) * dt;
+    s[0] += s[1] * dt;
+    if (Math.abs(s[0]) < 1e-5 && Math.abs(s[1]) < 1e-4) s[0] = s[1] = 0;
+    return s[0];
   }
 
   /**
@@ -86,13 +132,23 @@ export class BodyPost {
     _r.set(Math.cos(bodyYaw), 0, -Math.sin(bodyYaw)); // body right
     _f.set(-Math.sin(bodyYaw), 0, -Math.cos(bodyYaw)); // body forward
 
+    // ---- orientation warp (aimed diagonals): legs face the travel direction, spine + chest undo it for the torso
+    const warp = this.ctx.playerAnim?.hipWarp ?? 0;
+    if (Math.abs(warp) > 1e-4 && this.hips) {
+      rotateWorld(this.hips, UP, warp);
+      if (this.spine) rotateWorld(this.spine, UP, -warp * (this.chest ? 0.5 : 1));
+      if (this.chest) rotateWorld(this.chest, UP, -warp * (this.spine ? 0.5 : 1));
+    }
+
     // ---- lean (turn rate × speed → roll; acceleration → pitch)
     let dy = bodyYaw - this.lastYaw;
     dy = Math.atan2(Math.sin(dy), Math.cos(dy));
     this.lastYaw = bodyYaw;
     const sp = Math.hypot(p.vel.x, p.vel.z);
-    const acc = (sp - this.lastSpeed) / dt;
-    this.lastSpeed = sp;
+    // smooth first: the sim moves at 60 Hz, a faster display would see speed in steps (jittery lean)
+    this.smoothSpeed = spring(this.smoothSpeed, sp, dt, P.accelSmoothHL);
+    const acc = (this.smoothSpeed - this.lastSpeed) / dt;
+    this.lastSpeed = this.smoothSpeed;
     const omega = dy / dt;
     this.roll = spring(this.roll, clamp(P.leanTurn * sp * omega, -P.leanMaxDeg * DEG, P.leanMaxDeg * DEG), dt, P.leanHalflife);
     this.pitchLean = spring(this.pitchLean, clamp(P.leanAccel * acc, -P.leanAccelMaxDeg * DEG, P.leanAccelMaxDeg * DEG), dt, P.leanHalflife);
@@ -103,6 +159,21 @@ export class BodyPost {
     if (this.spine) {
       rotateWorld(this.spine, _f, -this.roll * 0.6);
       rotateWorld(this.spine, _r, -this.pitchLean * 0.6);
+    }
+
+    // ---- hit flinch (springed, overshoots a touch and settles)
+    const sub = Math.min(dt, 1 / 30);
+    const fp = this.react(this.flP, sub);
+    const fr = this.react(this.flR, sub);
+    if (fp || fr) {
+      if (this.spine) {
+        rotateWorld(this.spine, _r, fp * 0.55);
+        rotateWorld(this.spine, _f, fr * 0.55);
+      }
+      if (this.chest) {
+        rotateWorld(this.chest, _r, fp * 0.45);
+        rotateWorld(this.chest, _f, fr * 0.45);
+      }
     }
 
     // ---- aim offsets (gun up) / head look (gun down)
@@ -127,8 +198,77 @@ export class BodyPost {
       if (this.head) rotateWorld(this.head, _w, lp * 0.6);
     }
 
-    // ---- foot IK + pelvis
+    // ---- foot IK + pelvis, landing dip, then foot locking
     this.footIK(dt, sp);
+    this.landDip(sub);
+    this.footLock(dt, sp);
+  }
+
+  /** Pelvis dips on touch-down in proportion to the fall speed and springs back; knees bend to keep the feet. */
+  private landDip(dt: number) {
+    const p = this.ctx.player;
+    if (!p.grounded) this.airVy = Math.min(this.airVy, p.vy);
+    else if (!this.wasGrounded) {
+      const fall = -this.airVy;
+      if (fall > 1.5) this.dip[1] -= Math.min(P.landDipMax, fall * P.landDipPerMps) * 2 * Math.PI * P.reactHz;
+      this.airVy = 0;
+    }
+    this.wasGrounded = p.grounded;
+    const d = this.react(this.dip, dt);
+    if (Math.abs(d) < 1e-4 || !this.hips || this.legs.length !== 2 || !p.grounded) return;
+    const feet = [this.legs[0].foot.getWorldPosition(_lf0), this.legs[1].foot.getWorldPosition(_lf1)];
+    this.hips.getWorldPosition(_a);
+    _a.y += Math.max(-P.landDipMax * 1.2, Math.min(0.03, d));
+    this.hips.position.copy(this.hips.parent!.worldToLocal(_a));
+    this.hips.updateMatrixWorld(true);
+    for (let k = 0; k < 2; k++) this.solve(this.legs[k], feet[k]);
+  }
+
+  /**
+   * Pin each foot in the world from touch-down to lift-off and bend the leg to it, so feet never glide while the
+   * clip's short contact window and the speed match disagree by a few cm. Weight springs in fast, out over ~3 frames.
+   */
+  private footLock(dt: number, sp: number) {
+    const p = this.ctx.player;
+    const anim = this.ctx.playerAnim;
+    const on =
+      P.footLock && this.legs.length === 2 && p.grounded && !p.vault && !p.dead && !p.inVehicle && !(anim?.fullBody ?? false) &&
+      sp > P.footLockMinSpeed && sp < P.footLockMaxSpeed;
+    const rootY = this.root.position.y;
+    for (const L of this.legs) {
+      L.foot.getWorldPosition(_t);
+      const h = _t.y - rootY;
+      // lowest height in the clip, relaxing slowly so a crouch / new clip re-learns it
+      L.minH = Math.min(h, L.minH + dt * 0.01);
+      // hysteresis: plant below enterH, lift above enterH + exitExtra (heel-toe roll raises the ankle mid-contact)
+      const planted = h < L.minH + P.footLockEnterH + (L.locked ? P.footLockExitExtra : 0);
+      // toe-off: once the lock has held a moment, the clip's foot starting to travel over the ground means lift-off
+      // (the ankle rises only slowly while the toe pivots, so height alone releases late and the foot snaps)
+      const clipSpeed = Math.hypot(_t.x - L.prev.x, _t.z - L.prev.z) / dt;
+      L.prev.copy(_t);
+      L.age = L.locked ? L.age + dt : 0;
+      const liftOff = L.locked && L.age > P.footLockMinHold && clipSpeed > P.footLockReleaseSpeed;
+      if (!on || !planted || liftOff) L.locked = false;
+      else if (!L.locked) {
+        L.locked = true;
+        // re-plant where the foot is drawn now (still blending out of the last lock), so nothing pops
+        L.lock.set(_t.x + (L.lock.x - _t.x) * L.w, _t.y, _t.z + (L.lock.z - _t.z) * L.w);
+      }
+      if (L.locked && Math.hypot(L.lock.x - _t.x, L.lock.z - _t.z) > P.footLockMaxErr) L.locked = false;
+      L.w = spring(L.w, L.locked ? 1 : 0, dt, L.locked ? P.footLockInHL : P.footLockOutHL);
+      if (L.w < 0.01) {
+        if (!L.locked) L.w = 0;
+        continue;
+      }
+      // keep the clip's height, pin the ground position
+      _lk.set(_t.x + (L.lock.x - _t.x) * L.w, _t.y, _t.z + (L.lock.z - _t.z) * L.w);
+      if (_lk.distanceToSquared(_t) < 1e-6) continue;
+      L.foot.getWorldQuaternion(_fq); // the planted foot keeps the clip's orientation (no toe swing from the IK)
+      this.solve(L, _lk);
+      L.foot.parent!.getWorldQuaternion(_pq);
+      L.foot.quaternion.copy(_pq.invert().multiply(_fq));
+      L.foot.updateMatrixWorld(true);
+    }
   }
 
   private footIK(dt: number, sp: number) {

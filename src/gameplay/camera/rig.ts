@@ -43,6 +43,8 @@ export class CameraRig {
 
   constructor(private ctx: Ctx) {
     this.ball = new ctx.game.phys.R.Ball(C.collisionRadius);
+    // Getting hit: a view punch (head snaps back) scaled by the damage; the HUD adds the trauma shake
+    ctx.game.events.on('playerDamaged', ({ amount }) => this.kick(0, C.hurtPunchDeg * Math.min(1.5, 0.5 + amount / 30)));
   }
 
   addTrauma(t: number) {

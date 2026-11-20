@@ -73,12 +73,12 @@ export class PlayerAnimator {
 
   constructor(private ch: Character) {
     this.mixer = ch.mixer!;
-    this.hips = ch.root.getObjectByName('hips') ?? null;
+    this.hips = ch.root.getObjectByName('hips') ?? ch.root.getObjectByName(MIXAMO.hips) ?? null; // Mixamo rigs: turn root motion
     const meta = clipMeta.chr_survivor_a;
     for (const [name, action] of ch.actions) {
       const clip = action.getClip();
       // Clip ground speeds are measured on the survivor rig; a rig with shorter legs covers less ground per cycle
-      const k = A.strideScale[ch.root.name] ?? 1;
+      const k = A.strideScaleClip[ch.root.name]?.[name] ?? A.strideScale[ch.root.name] ?? 1;
       const m0 = meta[name] ?? {};
       const m = m0.speed !== undefined && k !== 1 ? { ...m0, speed: m0.speed * k } : m0;
       const lo = m.upperBody ? null : this.mixer.clipAction(half(clip, false));
@@ -140,8 +140,15 @@ export class PlayerAnimator {
     const a = this.acts.get(name);
     if (!a) return;
     this.start(name, timeScale);
-    if (a.meta.upperBody) this.upperShot = name;
+    if (a.meta.upperBody) (this.upperShot = name), (this.upperTS = timeScale), (this.pauseT = 0);
     else (this.lastFull = a), (this.full = { name, hold, holdAt: holdAtFrac > 0 ? holdAtFrac * (a.up ?? a.lo)!.getClip().duration : 0, onEnd });
+  }
+
+  /** Hitstop on the hero: the upper one-shot (melee swing) nearly stops for `seconds`, then resumes. */
+  private pauseT = 0;
+  private upperTS = 1;
+  hitPause(seconds: number) {
+    this.pauseT = Math.max(this.pauseT, seconds);
   }
 
   /** Old overlay API: restart = upper one-shot (fire, reload, draw, holster); weights are owned by the carry layer. */
@@ -190,6 +197,14 @@ export class PlayerAnimator {
     this.hips.quaternion.premultiply(_hq.setFromAxisAngle(_hv, -already));
   }
   private hips: Object3D | null = null;
+  /** Orientation warp for the aimed 2D set (rad, world-up rotation of the hips; bodyPost applies it). */
+  hipWarp = 0;
+  private hipWarpT = 0;
+
+  /** A full-body one-shot (jump, land, hit, turn…) owns the legs. */
+  get fullBody() {
+    return !!this.full || this.fullW > 0.05;
+  }
 
   get turning() {
     return !!this.full && this.full.name.startsWith('turn_');
@@ -206,13 +221,33 @@ export class PlayerAnimator {
       return;
     }
     if (i.strafe && !i.sprinting) {
-      // 2D: cardinal weights from the body-frame direction, walk set ↔ run set by speed, idle below walking speed
-      const cx = Math.abs(i.dirX);
-      const cy = Math.abs(i.dirY);
-      const n = cx + cy || 1;
-      const dirs = [i.dirY > 0 ? cy / n : 0, i.dirY < 0 ? cy / n : 0, i.dirX < 0 ? cx / n : 0, i.dirX > 0 ? cx / n : 0];
-      const walkRef = dirs[0] * speedOf('walk') + dirs[1] * speedOf('walk_back') + dirs[2] * speedOf('strafe_left') + dirs[3] * speedOf('strafe_right');
-      const runRef = dirs[0] * speedOf('run') + dirs[1] * speedOf('run_back') + dirs[2] * speedOf('run_strafe_left') + dirs[3] * speedOf('run_strafe_right');
+      // 2D, orientation warping: play the nearest cardinal clip (forward / back / left / right, short cross-fades only
+      // near the sector edges) and twist the hips toward the travel direction by the rest (`hipWarp`, applied in
+      // bodyPost; the spine counter-twists so the aim holds). Blending forward + strafe clips for a keyboard diagonal
+      // skated ~1 m/s: the two clips plant the same foot at different phases.
+      const th = Math.atan2(i.dirX, i.dirY); // 0 forward, + right
+      const card = [0, Math.PI, -Math.PI / 2, Math.PI / 2]; // [fwd, back, left, right] like the clip sets
+      const halfW = [A.warpFwdDeg, A.warpFwdDeg, 90 - A.warpFwdDeg, 90 - A.warpFwdDeg].map((d) => (d * Math.PI) / 180);
+      const band = (A.warpBlendDeg * Math.PI) / 180;
+      const d = [0, 0, 0, 0];
+      const rel = [0, 0, 0, 0];
+      let sum = 0;
+      for (let k = 0; k < 4; k++) {
+        rel[k] = Math.atan2(Math.sin(th - card[k]), Math.cos(th - card[k]));
+        d[k] = Math.max(0, Math.min(1, (halfW[k] + band / 2 - Math.abs(rel[k])) / band));
+        sum += d[k];
+      }
+      let warp = 0;
+      for (let k = 0; k < 4; k++) {
+        d[k] /= sum || 1;
+        warp += d[k] * rel[k];
+      }
+      this.hipWarpT = i.speed > 0.2 ? -warp : 0; // world-up rotation (+ = left) that maps the clip's direction onto travel
+      const refOf = (set4: string[]) => d.reduce((acc, w, k) => acc + w * speedOf(set4[k]), 0);
+      const walkRef = refOf(A.survivorStrafeWalk);
+      const runRef = refOf(A.survivorStrafeRun);
+      const W = { d };
+      const R = { d };
       const move = Math.min(1, sp / Math.max(0.3, walkRef));
       // QA-087: walk and run back/strafe clips have different contact timings, so blending them mid-stride skates.
       // Use the walk set while it can be speed-matched (ts ≤ max), the run set once it can (ts ≥ min); blend only
@@ -222,8 +257,8 @@ export class PlayerAnimator {
       const runBottom = runRef * lo;
       const r = runBottom > walkTop ? Math.max(0, Math.min(1, (sp - walkTop) / (runBottom - walkTop))) : sp >= (walkTop + runBottom) / 2 ? 1 : 0;
       set(A.survivorIdles[0], 1 - move);
-      A.survivorStrafeWalk.forEach((c, k) => set(c, dirs[k] * move * (1 - r)));
-      A.survivorStrafeRun.forEach((c, k) => set(c, dirs[k] * move * r));
+      A.survivorStrafeWalk.forEach((c, k) => set(c, W.d[k] * move * (1 - r)));
+      A.survivorStrafeRun.forEach((c, k) => set(c, R.d[k] * move * r));
       return;
     }
     // 1D forward: linear between the two neighbouring nodes
@@ -246,7 +281,9 @@ export class PlayerAnimator {
     // ---- targets
     const loco = this.locoT;
     loco.clear();
+    this.hipWarpT = 0;
     this.loco(loco, sp);
+    this.hipWarp = spring(this.hipWarp, this.full ? 0 : this.hipWarpT, dt, 0.09);
     const carry = this.carryT;
     carry.clear();
     if (i.carry !== 'none') {
@@ -259,6 +296,8 @@ export class PlayerAnimator {
     // Upper one-shot finished?
     if (this.upperShot) {
       const a = this.acts.get(this.upperShot)!.up!;
+      this.pauseT = Math.max(0, this.pauseT - dt);
+      a.timeScale = this.pauseT > 0 ? this.upperTS * 0.05 : this.upperTS;
       if (a.time >= a.getClip().duration - 1e-3 || !a.isRunning()) this.upperShot = null;
     }
     // Full one-shot finished / held?

@@ -241,6 +241,7 @@ export class Melee {
     });
     this.ctx.fx.impact(_p, _n, h.surface, _d, this.heavy ? 1.6 : 1.1);
     this.ctx.fx.freeze(this.heavy ? def.hitstopHeavy : def.hitstopLight); // FX pop on hitstop release
+    this.ctx.playerAnim?.hitPause((this.heavy ? def.hitstopHeavy : def.hitstopLight) * 0.7); // TP: the hero's swing stalls on contact too
     this.ctx.sfx(def.id === 'knife_a' ? 'knife_hit' : 'melee_hit', _p, { pitchJitter: 0.08 });
     this.ctx.rig.addTrauma(this.heavy ? 0.3 : 0.18);
     this.ctx.rig.kick(0, this.heavy ? -1.5 : -0.8);
