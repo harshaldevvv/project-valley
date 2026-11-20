@@ -1,6 +1,7 @@
 import type { LootTable, Rarity } from './types';
 import { GUN_LOOT, GUN_RACK } from './loot_guns';
 import { THROW_LOOT } from './loot_throw';
+import { ATTACH_LOOT } from './loot_attach';
 
 /**
  * Loot tables (principles §9): POI-themed, at least 60% of each table's weight is items specific to that kind of place;
@@ -683,5 +684,6 @@ list.push({ id: 'weapon_rack_b', rolls: [0, 0], entries: [], guaranteed: GUN_RAC
 // M4 guns (data/loot_guns.ts) join the themed tables by id
 for (const t of list) if (GUN_LOOT[t.id]) t.entries.push(...GUN_LOOT[t.id]);
 for (const t of list) if (THROW_LOOT[t.id]) t.entries.push(...THROW_LOOT[t.id]); // throwables (data/loot_throw.ts)
+for (const t of list) if (ATTACH_LOOT[t.id]) t.entries.push(...ATTACH_LOOT[t.id]); // attachments (data/loot_attach.ts)
 
 export const LOOT: Record<string, LootTable> = Object.fromEntries(list.map((t) => [t.id, t]));

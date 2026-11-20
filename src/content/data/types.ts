@@ -109,6 +109,8 @@ export interface ItemInstance {
   rounds?: number;
   /** Weapons: the inserted magazine. */
   mag?: ItemInstance | null;
+  /** Weapons: mounted attachments by slot (item ids; data/attachments.ts). */
+  attach?: Record<string, string>;
   /** Containers/backpacks: their contents. */
   contents?: GridItem[];
   /** Sub-grid contents, one array per ItemDef.pockets entry. */

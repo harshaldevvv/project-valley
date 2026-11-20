@@ -2,6 +2,7 @@ import './melee_extra';
 import { MORE_ITEMS } from './items_more';
 import { GUN_ITEMS } from './items_guns';
 import { THROW_ITEMS } from './items_throw';
+import { ATTACH_ITEMS } from './items_attach';
 import type { ItemDef } from './types';
 
 /**
@@ -95,6 +96,7 @@ const list: ItemDef[] = [
   ...MORE_ITEMS,
   ...GUN_ITEMS,
   ...THROW_ITEMS,
+  ...ATTACH_ITEMS,
 ];
 
 export const ITEMS: Record<string, ItemDef> = Object.fromEntries(list.map((d) => [d.id, d]));

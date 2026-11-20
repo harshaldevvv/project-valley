@@ -10,6 +10,9 @@ import {
   autoPlace, autoPlaceInto, canPlace, sortGrid, canStack, containsItem, defOf, findFree, footprint, gridsOf, hasStorage, mergeInto, newItems, place, removeItem, splitStack, type Grid,
 } from '../../systems/inventory';
 import { EQUIP_SLOTS, WEAPON_SLOTS, type Loadout } from '../../systems/loadout';
+import { attachDefs, type AttachSlot } from '../../content/data/attachments';
+import { attachText } from '../../content/text/items_attach';
+import { canMount, mount, unmount } from '../../systems/attachments';
 import './inventory.css';
 
 /**
@@ -696,6 +699,24 @@ export class InventoryScreen {
     return true;
   }
 
+  /** Equipped guns an attachment item can be mounted on. */
+  private mountTargets(att: ItemInstance): ItemInstance[] {
+    if (!attachDefs[att.defId]) return [];
+    return (['primary', 'secondary', 'sidearm'] as SlotName[]).map((s) => this.lo.equipment[s]).filter((g): g is ItemInstance => !!g && canMount(g, att.defId));
+  }
+  private mountOn(gun: ItemInstance, att: ItemInstance, src: Src): boolean {
+    this.take(src, att);
+    const old = mount(gun, att.defId);
+    if (old) for (const it of newItems(old, 1)) this.toPlayer(it) || this.lo.drop(it);
+    return true;
+  }
+  private unmountFrom(gun: ItemInstance, slot: AttachSlot): boolean {
+    const it = unmount(gun, slot);
+    if (!it) return false;
+    this.toPlayer(it) || this.lo.drop(it);
+    return true;
+  }
+
   private openBag(item: ItemInstance) {
     if (!this.bags.includes(item)) this.bags.push(item);
     return false;
@@ -718,6 +739,8 @@ export class InventoryScreen {
     if (src.kind === 'slot') opts.push([T.act.unequip, () => (this.take(src, item), this.toPlayer(item) || this.lo.drop(item), true)]);
     if (hasStorage(item) && src.kind !== 'slot') opts.push([T.act.open, () => this.openBag(item)]);
     if (d.unpack) opts.push([T.act.unpack, () => this.unpack(item, src)]);
+    for (const gun of this.mountTargets(item)) opts.push([attachText.attach(itemName(gun.defId)), () => this.mountOn(gun, item, src)]);
+    for (const slot of ['optic', 'muzzle'] as AttachSlot[]) if (item.attach?.[slot]) opts.push([attachText.detach(itemName(item.attach[slot])), () => this.unmountFrom(item, slot)]);
     if (d.kind === 'magazine' && (item.rounds ?? 0) < (d.capacity ?? 0) && this.lo.count(d.ammo!) > 0) opts.push([T.act.load, () => this.loadFromInventory(item)]);
     if (d.kind === 'magazine' && (item.rounds ?? 0) > 0) opts.push([T.act.unload, () => this.lo.unloadMagazine(item) > 0]);
     if (item.mag) opts.push([T.act.unmag, () => (this.lo.removeMagazine(item), true)]);
@@ -764,6 +787,7 @@ export class InventoryScreen {
     const wd = weaponDefs[it.defId];
     const ewd = eqD ? weaponDefs[eqD.id] : undefined;
     if (wd) rows.push([S.caliber, wd.caliber], [S.damage, String(wd.damage), ewd && wd.damage - ewd.damage], [S.rpm, `${wd.rpm} rpm`, ewd && wd.rpm - ewd.rpm]);
+    if (it.attach && Object.keys(it.attach).length) rows.push([attachText.row, Object.values(it.attach).map(itemName).join(', ')]);
     if (it.mag !== undefined) rows.push([S.magazine, it.mag ? `${it.mag.rounds ?? 0} / ${defOf(it.mag).capacity}` : S.none]);
     if (hasStorage(it)) {
       // "6×6 + 2×4 + 2×4 (60 cells)" — compare total cells with what's worn in that slot.

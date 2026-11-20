@@ -157,7 +157,7 @@ export class CameraRig {
     cam.position.copy(_cam);
     cam.rotation.set(p.pitch + w.recoilPitch, p.yaw + w.recoilYaw, 0, 'YXZ');
     const base = this.firstPerson ? C.fovFp : C.fovHip;
-    this.finish(dt, base + (base * C.fovAdsMul - base) * ads);
+    this.finish(dt, base + (base * (w.adsFovMul ?? C.fovAdsMul) - base) * ads);
   }
 
   private finish(_dt: number, fov?: number) {

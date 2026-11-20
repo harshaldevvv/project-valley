@@ -112,7 +112,7 @@ export const GUN_DEFS: Record<string, WeaponDef> = {
     bloomMax: 5.5,
     reloadTacticalS: 1.9,
     reloadEmptyS: 2.4,
-    magazines: ['mag_smg_a'],
+    magazines: ['mag_smg_a', 'mag_smg_ext'],
     noise: 115,
     durabilityPerShot: 0.0004,
   },

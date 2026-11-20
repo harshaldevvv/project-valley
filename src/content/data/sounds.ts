@@ -30,7 +30,7 @@ export interface SoundDef {
 export const preloadFirst = [
   'pistol_shot', 'pistol_tail', 'revolver_shot', 'bolt_shot', 'smg_shot', 'pump_rack', 'bolt_cycle', 'rifle_shot', 'rifle_tail', 'shotgun_shot', 'shotgun_tail', 'dry_fire',
   'reload_mag_out', 'reload_mag_in', 'bolt_rack', 'casing_tink', 'hit_body', 'hit_head', 'hit_marker', 'kill_confirm',
-  'melee_swing', 'melee_hit', 'knife_hit', 'explosion', 'frag_crack', 'molotov_burst', 'glass_break', 'flare_ignite', 'impact_wood', 'impact_concrete', 'impact_metal', 'impact_dirt',
+  'melee_swing', 'melee_hit', 'knife_hit', 'explosion', 'frag_crack', 'molotov_burst', 'glass_break', 'flare_ignite', 'suppressed_pistol', 'suppressed_rifle', 'impact_wood', 'impact_concrete', 'impact_metal', 'impact_dirt',
 ];
 
 const k = (name: string, n = 5) => Array.from({ length: n }, (_, i) => `kenney/${name}_${String(i).padStart(3, '0')}.ogg`);
@@ -84,6 +84,8 @@ export const sounds: Record<string, SoundDef> = {
   molotov_burst: { files: ['throw/whoomp.ogg'], volume: 0.9, refDistance: 6, maxDistance: 160, jitter: 0.05, tail: 'glass_break', tailVolume: 0.7, tailDelayS: 0, tailGapS: 0.1, synth: 'thud' },
   glass_break: { files: ['throw/glass_1.ogg', 'throw/glass_2.ogg', 'throw/glass_3.ogg'], volume: 0.9, refDistance: 4, maxDistance: 120, jitter: 0.06, synth: 'click' },
   flare_ignite: { files: ['throw/flare.ogg'], volume: 0.7, refDistance: 4, maxDistance: 80, jitter: 0.04, synth: 'noise' },
+  suppressed_pistol: { files: ['gun/supp_pistol.ogg'], volume: 0.6, refDistance: 3, maxDistance: 90, jitter: 0.05, priority: true, synth: 'noise' },
+  suppressed_rifle: { files: ['gun/supp_rifle.ogg'], volume: 0.65, refDistance: 3, maxDistance: 110, jitter: 0.05, priority: true, synth: 'noise' },
   melee_hit: { files: [...k('impactPunch_heavy'), 'gen/flesh_3.ogg', 'gen/flesh_1.ogg', 'gen/flesh_4.ogg'], volume: 0.85, refDistance: 2, maxDistance: 30, jitter: 0.06, synth: 'thud' },
   // vehicles
   car_engine_loop: { files: ['car/Car_Engine_Loop.ogg'], volume: 0.45, refDistance: 4, maxDistance: 120, loop: true, synth: 'hum' },

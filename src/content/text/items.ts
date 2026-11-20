@@ -1,6 +1,7 @@
 import { itemTextMore } from './items_more';
 import { itemTextGuns } from './items_guns';
 import { itemTextThrow } from './items_throw';
+import { itemTextAttach } from './items_attach';
 
 /** Player-facing item text, keyed by item id. `short` is the grid-tile label (max 8 chars). */
 export const itemText: Record<string, { name: string; short: string; description: string }> = {
@@ -327,4 +328,5 @@ export const itemText: Record<string, { name: string; short: string; description
   ...itemTextMore,
   ...itemTextGuns,
   ...itemTextThrow,
+  ...itemTextAttach,
 };

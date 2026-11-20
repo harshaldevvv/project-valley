@@ -1,6 +1,7 @@
 import { AdditiveBlending, BoxGeometry, BufferGeometry, Color, CylinderGeometry, Group as G3, IcosahedronGeometry, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PointLight, RingGeometry, Vector3 } from 'three';
 import type { Collider, RigidBody } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
+import { surfaceOf } from '../../world/surfaces';
 import { throwDefs, throwOrder, throwTuning as T, type ThrowDef } from '../../content/data/throwables';
 import { itemText } from '../../content/text/items';
 import { throwText } from '../../content/text/throw';
@@ -13,6 +14,8 @@ import { Zombie } from '../zombies/zombies';
  * impact (fire patch / noise lure); flares burn and lure. Everything audible goes through the 'noise' event, so the
  * zombie AI needs no special cases. Tuning: data/throwables.ts.
  */
+const isMesh = (c: Collider) => (surfaceOf(c.handle) as string | null) === 'chainlink';
+const notMesh = (c: Collider) => !isMesh(c);
 const WORLD = Group.STATIC | Group.TERRAIN | Group.BUILD | Group.VEHICLE;
 const UP = new Vector3(0, 1, 0);
 const _o = new Vector3();
@@ -172,7 +175,7 @@ export class Throwables {
     const { R } = ctx.game.phys;
     this.ray = new R.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
     const n = T.previewSteps + 1;
-    this.dots = new InstancedMesh(new IcosahedronGeometry(0.035, 0), new MeshBasicMaterial({ color: '#f6f2dc', transparent: true, opacity: 0.9, depthTest: false }), n);
+    this.dots = new InstancedMesh(new IcosahedronGeometry(0.06, 1), new MeshBasicMaterial({ color: '#fff6c8', transparent: true, opacity: 1, depthTest: false }), n);
     this.dots.frustumCulled = false;
     this.dots.renderOrder = 20;
     this.dots.visible = false;
@@ -277,7 +280,7 @@ export class Throwables {
       const len = step.length();
       this.ray.origin = pp;
       this.ray.dir = this.sd.copy(step).divideScalar(len);
-      const h = world.castRay(this.ray, len, true, undefined, groups(Group.PROJECTILE, WORLD | Group.ZOMBIE), this.ctx.player.collider);
+      const h = world.castRay(this.ray, len, true, undefined, groups(Group.PROJECTILE, WORLD | Group.ZOMBIE), this.ctx.player.collider, undefined, notMesh);
       if (h) {
         pp.addScaledVector(this.sd, h.timeOfImpact);
         hit = true;
@@ -372,9 +375,18 @@ export class Throwables {
     if (this.countOf(id) <= 0) this.sel = 0;
   }
 
+  /** Wire fences stop nothing a bullet passes: take them out of the thrown bodies' collision filter (cheap, idempotent). */
+  private openFences() {
+    const { world } = this.ctx.game.phys;
+    world.forEachCollider((c) => {
+      if (isMesh(c)) c.setCollisionGroups(c.collisionGroups() & ~Group.DEBRIS);
+    });
+  }
+
   private spawn(id: string) {
     const def = throwDefs[id];
     const { R, world } = this.ctx.game.phys;
+    this.openFences();
     const sp = this.sp, sv = this.sv;
     this.launch(def, sp, sv);
     const body = world.createRigidBody(
@@ -533,14 +545,18 @@ export class Throwables {
     ctx.rig.addTrauma(F.trauma * Math.max(0, 1 - cam / 45));
     ctx.rig.kick(2 * Math.max(0, 1 - cam / 40), -2);
     this.flash(origin, 0.45);
-    // Fireball: a burst of additive flame blobs flying out, a rising dark smoke column, sparks and dirt
-    for (let k = 0; k < 40; k++) {
-      const a = this.rnd(0, Math.PI * 2), e = this.rnd(-0.2, 1), sp = this.rnd(2.5, 9);
-      this.flames.spawn(origin, Math.cos(a) * sp, e * sp * 0.8 + 1.5, Math.sin(a) * sp, this.rnd(0.35, 0.85), this.rnd(0.9, 1.8), 0.9, 0, k % 3 ? '#ffc850' : '#fff0b0', '#d02a05');
+    // Fireball: a filled, bright core that swells, flame blobs spread through the whole ball (not a shell), then a smoke column
+    for (let k = 0; k < 6; k++) {
+      this.flames.spawn(_c.set(origin.x + this.rnd(-0.3, 0.3), origin.y + this.rnd(0, 0.5), origin.z + this.rnd(-0.3, 0.3)), 0, this.rnd(0.5, 1.5), 0, this.rnd(0.45, 0.7), this.rnd(1.6, 2.4), 1.2, 0, '#fff6c0', '#ff9a30');
     }
-    for (let k = 0; k < 18; k++) {
-      const a = this.rnd(0, Math.PI * 2), sp = this.rnd(0.5, 3.5);
-      this.smoke.spawn(origin, Math.cos(a) * sp, this.rnd(1.5, 4.5), Math.sin(a) * sp, this.rnd(1.6, 3.2), this.rnd(1.2, 2.4), 1.8, 0.2, '#585049', '#1c1a19');
+    for (let k = 0; k < 70; k++) {
+      const a = this.rnd(0, Math.PI * 2), r = Math.sqrt(this.ctx.rand()) * 1.5, e = this.rnd(0, 1.8);
+      const sp = this.rnd(0.4, 2.2);
+      this.flames.spawn(_c.set(origin.x + Math.cos(a) * r, origin.y + e * 0.6, origin.z + Math.sin(a) * r), Math.cos(a) * sp, this.rnd(0.6, 3), Math.sin(a) * sp, this.rnd(0.4, 0.95), this.rnd(0.7, 1.3), this.rnd(1, 1.9), 0, k % 3 ? '#ffc850' : '#ffe6a0', '#c8280a');
+    }
+    for (let k = 0; k < 22; k++) {
+      const a = this.rnd(0, Math.PI * 2), sp = this.rnd(0.3, 2.5);
+      this.smoke.spawn(_c.set(origin.x, origin.y + this.rnd(0.2, 1.2), origin.z), Math.cos(a) * sp, this.rnd(1.5, 4.5), Math.sin(a) * sp, this.rnd(1.8, 3.4), this.rnd(1.2, 2.6), 1.8, 0.2, '#585049', '#1c1a19');
     }
     ctx.fx.impact(origin, UP, 'metal', null, 3);
     ctx.fx.impact(origin, UP, 'dirt', null, 2.5);

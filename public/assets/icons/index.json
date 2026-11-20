@@ -200,6 +200,12 @@
   "molotov",
   "glass_bottle",
   "flare",
-  "fuel_can"
+  "fuel_can",
+  "red_dot",
+  "scope_4x",
+  "suppressor",
+  "mag_rifle_ext",
+  "mag_pistol_ext",
+  "mag_smg_ext"
  ]
 }

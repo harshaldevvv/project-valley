@@ -11,6 +11,11 @@ import { probe, type Ctx, type Surface } from '../ctx';
 import { addBloom, decayBloom, easeOutCubic, falloffMul, recoilKick, recover, shotInterval, spreadDeg } from './math';
 import { makeWeaponModel, type WeaponModel } from './models';
 import { Viewmodel, type FpKind } from './viewmodel';
+import { optics as O } from '../../content/data/attachments';
+import { attachOf } from '../../systems/attachments';
+import { defOf } from '../../systems/inventory';
+import { OpticsOverlay } from '../../ui/hud/optics';
+import { syncParts } from './attachParts';
 
 /**
  * Weapons runtime (principles §3/§4): fire (semi/auto, RPM cap), per-tick segment-raycast ballistics,
@@ -88,6 +93,8 @@ export class Weapons {
   private shotIdx = 0;
   private sinceShot = 9;
   private cooldown = 0;
+  private opticsUi: OpticsOverlay | null = null;
+  private attKey = new Map<string, string>();
   private cycleT = -1; // pump / bolt: time to the cycle sound after a shot
   private sinceSprint = 9;
   private semiBuffered = 0;
@@ -179,6 +186,17 @@ export class Weapons {
   get recoilYaw() {
     return this.recoilY + this.swayY;
   }
+  /** Mounted optic / muzzle attachment of the held gun (data/attachments.ts). */
+  get optic() {
+    return attachOf(this.item, 'optic');
+  }
+  get muzzleAtt() {
+    return attachOf(this.item, 'muzzle');
+  }
+  /** ADS field-of-view multiplier of the mounted optic; null = iron sights (the camera rig uses its own default). */
+  get adsFovMul(): number | null {
+    return this.optic?.fovMul ?? null;
+  }
   /** Viewmodel clip family for the held item. */
   get fpKind(): FpKind {
     return this.isMelee ? 'knife' : this.def?.class === 'pistol' ? 'pistol' : 'rifle';
@@ -196,10 +214,10 @@ export class Weapons {
   /** Rounds in the magazine + chamber, and the reserve (HUD). */
   ammo(): { mag: number; chamber: number; reserve: number } | null {
     if (!this.item || !this.def) return null;
-    const magId = Array.isArray(this.def.magazines) ? this.def.magazines[0] : '';
+    const mags = Array.isArray(this.def.magazines) ? this.def.magazines : [];
     let reserve = 0;
     try {
-      reserve = this.sandbox ? Infinity : this.loadout.count(magId);
+      reserve = this.sandbox ? Infinity : mags.reduce((n, id) => n + this.loadout.count(id), 0);
     } catch {
       reserve = 0;
     }
@@ -394,12 +412,13 @@ export class Weapons {
     const it = this.item;
     const def = this.def;
     if (!it || !def || this.reload || !this.ready) return;
-    const cap = weaponFeel[def.id]?.magSize ?? 30;
+    const base = weaponFeel[def.id]?.magSize ?? 30;
+    const cap = it.mag ? (defOf(it.mag.defId).capacity ?? base) : base; // the inserted magazine's own size (extended mags)
     if ((it.mag?.rounds ?? 0) >= cap - (it.rounds ? 0 : 1)) return; // full
-    const magId = Array.isArray(def.magazines) ? def.magazines[0] : '';
+    const magIds = Array.isArray(def.magazines) ? def.magazines : [];
     let have = 1;
     try {
-      have = this.sandbox ? 1 : this.loadout.count(magId);
+      have = this.sandbox ? 1 : magIds.reduce((n, id) => n + this.loadout.count(id), 0);
     } catch {
       have = 0;
     }
@@ -414,6 +433,16 @@ export class Weapons {
     this.vm.play(`fp_${this.fpKind}_reload`, { seconds: this.reload.total });
     this.ctx.hud.clearToast(EMPTY_TOAST);
     this.adsT = Math.min(this.adsT, 0.3);
+  }
+
+  /** Put the held gun's attachments on its models (rebuilt when the record changes). */
+  private syncAttach(id: string, m: { tp: WeaponModel; fp: WeaponModel }) {
+    const key = JSON.stringify(this.item?.attach ?? {});
+    if (this.attKey.get(id) === key) return;
+    this.attKey.set(id, key);
+    const cls = this.def?.class ?? 'rifle';
+    syncParts(m.tp, this.item?.attach, cls);
+    syncParts(m.fp, this.item?.attach, cls);
   }
 
   private stepReload(dt: number) {
@@ -532,15 +561,17 @@ export class Weapons {
     this.sinceShot = 0;
 
     // Juice: sound (+ mechanical layer), flash/light, shake, FOV kick, punch, model kick, shell, smoke
-    this.ctx.sfx(feel.sound, _muz, { pitchJitter: 0.04, volume: 1, twoD: true }); // own shot: 2D, no HRTF panner at the muzzle
+    const sup = this.muzzleAtt;
+    const shotSound = sup?.shotSound ? (sup.shotSound[def.class] ?? sup.shotSound.default) : feel.sound;
+    this.ctx.sfx(shotSound, _muz, { pitchJitter: 0.04, volume: 1, twoD: true }); // own shot: 2D, no HRTF panner at the muzzle
     this.ctx.rig.addTrauma(feel.trauma);
     this.ctx.rig.kick(feel.fovKick, feel.viewPunch);
     this.kickT = 1;
     this.ctx.playerAnim?.overlay(`fire_${def.class === 'pistol' ? 'pistol' : 'rifle'}`, 1, true);
     if (this.adsEased < 0.5) this.vm.play(`fp_${this.fpKind}_fire`); // ADS fire is code recoil only (arms contract)
     this.pendingFlash = true;
-    this.ctx.game.events.emit('shot', { by: 'player', weaponId: def.id, origin: _muz.clone(), dir: _d.clone(), noise: def.noise });
-    this.ctx.game.events.emit('noise', { position: _muz.clone(), radius: def.noise, source: 'shot' });
+    this.ctx.game.events.emit('shot', { by: 'player', weaponId: def.id, origin: _muz.clone(), dir: _d.clone(), noise: def.noise * (sup?.noiseMul ?? 1) });
+    this.ctx.game.events.emit('noise', { position: _muz.clone(), radius: def.noise * (sup?.noiseMul ?? 1), source: 'shot' });
   }
 
   private spawnBullet(from: Vector3, dir: Vector3, def: WeaponDef) {
@@ -650,8 +681,13 @@ export class Weapons {
     const rk = r ? r.t / r.total : 0;
     const reloadTilt = r ? Math.sin(Math.min(1, rk) * Math.PI) : 0;
     const melee = ctx.melee;
+    const od = !this.item || this.isMelee || hidden ? 'none' : (this.optic?.overlay ?? 'none');
+    (this.opticsUi ??= new OpticsOverlay()).set(od, this.adsEased);
 
     if (m) {
+      this.syncAttach(this.item!.defId, m);
+      const extMag = !!this.item?.mag && /_ext$/.test(this.item.mag.defId);
+      for (const mm of [m.tp.mag, m.fp.mag]) if (mm) mm.scale.y = extMag ? O.extMagScale : 1;
       // Magazine hidden between mag-out and mag-in
       const magOut = !!r && rk > 0.2 && rk < B.magCommitAt;
       if (m.tp.mag) m.tp.mag.visible = !magOut;
@@ -673,11 +709,11 @@ export class Weapons {
         const ho = fpArms.hipOffset[this.fpKind] ?? [0, 0, 0];
         vp.position.set(
           ho[0] * (1 - a) + this.swayLag.x * 0.25 * (1 - a) + Math.cos(p.stepPhase) * fpArms.bob * bob,
-          ho[1] * (1 - a) - this.swayLag.y * 0.25 * (1 - a) + Math.abs(Math.sin(p.stepPhase)) * fpArms.bob * bob - this.sprintT * 0.04 + ((fpArms.adsSightRef[this.fpKind] ?? m.fp.sightY) - m.fp.sightY) * a, // ADS: bring this gun's sight line to the height the clips are authored for
+          ho[1] * (1 - a) - this.swayLag.y * 0.25 * (1 - a) + Math.abs(Math.sin(p.stepPhase)) * fpArms.bob * bob - this.sprintT * 0.04 + ((fpArms.adsSightRef[this.fpKind] ?? m.fp.sightY) - m.fp.sightY) * a - (this.optic?.rise ?? 0) * a, // ADS: bring this gun's sight line to the height the clips are authored for
           ho[2] * (1 - a) + this.kickT * fpArms.kickBack - a * (fpArms.adsForward[this.fpKind] ?? 0),
         );
         vp.rotation.set(this.kickT * fpArms.kickPitch - this.sprintT * fpArms.sprintTuck * 0.5, this.swayLag.x * (1 - a * 0.7) + this.sprintT * fpArms.sprintTuck, this.sprintT * 0.2);
-        this.vm.pivot.visible = !hidden && fp;
+        this.vm.pivot.visible = !hidden && fp && !(od === 'scope' && a > O.showAbove);
         const cyc = weaponFeel[this.item?.defId ?? '']?.cycle;
         const span = this.def ? shotInterval(this.def.rpm) : 1;
         const pk = cyc && this.sinceShot < span ? Math.min(1, Math.max(0, (this.sinceShot - span * 0.15) / (span * 0.7))) : 0;
@@ -751,7 +787,7 @@ export class Weapons {
       muz.getWorldPosition(_muz);
       const wfx = weaponFx[this.item!.defId];
       const ads = fp && this.adsEased > 0.5;
-      ctx.fx.muzzle(_muz, this.flashDir, (wfx?.flashLen ?? 0.3) * (fp ? 0.8 : 1.4), ads);
+      ctx.fx.muzzle(_muz, this.flashDir, (wfx?.flashLen ?? 0.3) * (fp ? 0.8 : 1.4) * (this.muzzleAtt?.flashMul ?? 1), ads);
       // Smoke: every Nth shot of a burst, a little ahead of the barrel and never right in the lens
       _p.copy(_muz).addScaledVector(this.flashDir, 0.25);
       if (wfx && !ads && this.shotIdx % wfx.smokeEvery === 0 && _p.distanceTo(ctx.game.camera.position) > 1.0) ctx.fx.smokePuff(_p, this.flashDir, this.def?.class === 'pistol' ? 1 : 2);
