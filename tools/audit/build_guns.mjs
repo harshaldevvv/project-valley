@@ -157,8 +157,10 @@ if (want('wpn_shotgun_a')) {
   // barrel is +Z in the source: turn it to -Z, then move the pistol grip (about z=-0.155, y=0.13 after the turn: +0.155) to the origin
   mat4.rotateY(m, m, Math.PI); mat4.translate(m, m, [0, -0.13, 0.155]);
   const dark = srgb('#2b2e33'), light = srgb('#5a5f66');
-  b.addDoc(doc, m, (c, mat) => (mat === 'crystal' ? dark : mat === 'metal' ? c.map((v, i) => v * 0.55 + dark[i] * 0.15) : c));
-  await write('wpn_shotgun_a', b, { grip: [0, 0, 0], muzzle: [0, 0.075, -0.63], sight: [0, 0.14, -0.3], support: [0, 0.03, -0.4] }, null, null);
+  // the Polyfork palette is saturated blue: turn its cool metal into gun-metal grey, keep brass (warm) and the red/brown matte parts
+  const grey = (c) => { const l = (0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2]) * 1.0 + 0.01; return [l * 0.95, l * 0.97, l * 1.05]; };
+  b.addDoc(doc, m, (c, mat) => (mat === 'crystal' ? dark : mat === 'metal' && c[0] <= c[2] * 1.5 ? grey(c) : c));
+  await write('wpn_shotgun_a', b, { grip: [0, 0, 0], muzzle: [0, 0.075, -0.63], sight: [0, 0.19, -0.3], support: [0, 0.03, -0.4] }, null, null);
 }
 
 // ---------------- Bolt-action hunting rifle (Polyfork) ----------------

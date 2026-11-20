@@ -79,6 +79,8 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 
 | Model | Page |
 |---|---|
+| Scattergun by Polyfork (pump shotgun `wpn_shotgun_a`: turned to face -Z, grip moved to the origin, cool metal recoloured to gun-metal grey, crystal parts darkened; `tools/audit/build_guns.mjs`) | https://polyfork.dev/asset/scattergun-66b775 |
+| Bolt Action Rifle by Polyfork (hunting rifle `wpn_bolt_a`: turned to face -Z, scaled to 92 %, grip moved to the origin; `tools/audit/build_guns.mjs`) | https://polyfork.dev/asset/bolt-action-rifle-2f1793 |
 | Student with Backpack by Polyfork (player hero `chr_hero_pf`: our survivor animation clips retargeted onto its skeleton by `tools/audit/retarget_pf_hero.py`, turned to face -Z, meshes joined, backpack kept as a separate part) | https://polyfork.dev/asset/student-with-backpack-65d2b4 |
 | Player in Flannel by Polyfork (gloves part only, worn by the player hero) | https://polyfork.dev/asset/player-in-flannel-d0bae4 |
 | Infantry Rifleman by Polyfork (wearable parts for the player hero: hat_infantry, bottom_infantry, feet_combat, belt_webbing; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/infantry-rifleman-c1c0a5 |

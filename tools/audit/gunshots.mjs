@@ -7,14 +7,10 @@ mkdirSync(OUT, { recursive: true });
 const only = process.argv[2];
 const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
-// No HMR socket: other agents edit files while this runs, and a Vite full-reload would destroy the page mid-test.
-await page.route('**/@vite/client', (r) => r.fulfill({ contentType: 'text/javascript', body: 'export function createHotContext(){return {accept(){},dispose(){},prune(){},invalidate(){},on(){},send(){}}};export function updateStyle(){};export function removeStyle(){};export const injectQuery=(u)=>u;' }));
 const errs = [];
-page.on('console', (m) => console.log('C', m.type(), m.text().slice(0, 160)));
 page.on('crash', () => console.log('CRASH'));
 page.on('pageerror', (e) => errs.push(String(e).slice(0, 300)));
 page.on('console', (m) => (m.type() === 'error' || /audio|model/i.test(m.text())) && errs.push(m.text().slice(0, 200)));
-page.on('framenavigated', (f) => f === page.mainFrame() && console.log('NAV', f.url()));
 await page.goto('http://localhost:5188/?play');
 await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 180000 });
 await page.waitForTimeout(2500);
@@ -34,9 +30,22 @@ for (const [id, slotName, mag, slot] of guns) {
     return cap;
   }, [id, slotName, mag, slot]);
   await page.waitForTimeout(1800);
-  await page.evaluate(() => { const g = window.__gp; g.ctx.rig.mode = 'tp'; g.setLook(0, 0); });
-  await page.waitForTimeout(500);
+  // third person: orbit the camera to the front-right of the hero so the held gun is in view (low-ready, then raised)
+  await page.evaluate(() => {
+    const g = window.__gp; g.ctx.rig.mode = 'tp'; g.setLook(0, 0);
+    const rig = g.ctx.rig; if (!rig.__r) rig.__r = rig.render;
+    rig.render = () => {
+      const p = g.ctx.player, cam = g.ctx.game.camera, y = p.yaw, fx = -Math.sin(y), fz = -Math.cos(y), rx = Math.cos(y), rz = -Math.sin(y);
+      cam.position.set(p.curr.x + fx * 1.7 + rx * 1.1, p.curr.y + 1.35, p.curr.z + fz * 1.7 + rz * 1.1);
+      cam.lookAt(p.curr.x + fx * 0.25, p.curr.y + 1.15, p.curr.z + fz * 0.25); cam.updateMatrixWorld(true);
+    };
+  });
+  await page.waitForTimeout(700);
   await page.screenshot({ path: `${OUT}/gun_${id}_tp.png` });
+  await page.evaluate(() => window.__gp.mouse(2, true)); await page.waitForTimeout(800);
+  await page.screenshot({ path: `${OUT}/gun_${id}_tp_aim.png` });
+  await page.evaluate(() => { const g = window.__gp; g.mouse(2, false); g.ctx.rig.render = g.ctx.rig.__r; });
+  await page.waitForTimeout(400);
   await page.evaluate(() => { const g = window.__gp; g.ctx.rig.mode = 'fp'; });
   await page.waitForTimeout(700);
   await page.screenshot({ path: `${OUT}/gun_${id}_fp.png` });
