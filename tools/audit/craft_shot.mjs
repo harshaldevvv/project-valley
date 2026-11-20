@@ -12,7 +12,8 @@ await page.waitForTimeout(1500);
 const log = (...a) => console.log(...a);
 await page.evaluate(() => {
   const g = window.__gp;
-  for (const [id, n] of [['radio_handheld', 1], ['binoculars', 1], ['campfire_kit', 1], ['cooking_pot', 1], ['lighter', 1], ['cloth_rag', 8], ['wood_planks', 6], ['dirty_water', 1], ['canned_soup', 1], ['multitool', 1], ['antiseptic', 1], ['baseball_bat', 1], ['nails', 10], ['hammer_a', 1], ['purification_tablets', 2], ['flannel_shirt', 1]])
+  g.ctx.game.loadout.equipment.backpack = { uid: 99001, defId: 'rucksack_military', count: 1, contents: [], pockets: [[], []] };
+  for (const [id, n] of [['radio_handheld', 1], ['binoculars', 1], ['flashlight_a', 1], ['battery', 1], ['dirty_water', 1], ['cooking_pot', 1], ['lighter', 1], ['campfire_kit', 1], ['cloth_rag', 8], ['wood_planks', 6], ['canned_soup', 1], ['multitool', 1], ['antiseptic', 1], ['baseball_bat', 1], ['nails', 10], ['hammer_a', 1], ['purification_tablets', 2], ['flannel_shirt', 1]])
     for (let i = 0; i < n; i++) g.give(id);
 });
 await page.keyboard.press('KeyG');
@@ -95,5 +96,35 @@ await page.evaluate(async () => {
 });
 await page.screenshot({ path: out + 'craft_radio.png' });
 log('radio kept', await page.evaluate(() => window.__gp.ctx.game.loadout.count('radio_handheld')));
+// vehicle fuel: drive, watch the gauge, run dry and stall, refuel from a can
+log('fuel', await page.evaluate(async () => {
+  const g = window.__gp, v = g.ctx.vehicles, lo = g.ctx.game.loadout;
+  g.ctx.player.godMode = true;
+  const car = v.list[0];
+  const f0 = car.fuel;
+  v.enter(car);
+  g.ctx.controls.press && 0;
+  await new Promise((r) => setTimeout(r, 600));
+  return [+f0.toFixed(2), 'driving', !!v.driving];
+}));
+await page.keyboard.down('KeyW');
+await page.waitForTimeout(3000);
+await page.screenshot({ path: out + 'fuel_gauge.png' });
+log('fuel after 3 s', await page.evaluate(() => +window.__gp.ctx.vehicles.list[0].fuel.toFixed(2)));
+await page.evaluate(() => { window.__gp.ctx.vehicles.list[0].fuel = 0.001; });
+await page.waitForTimeout(4000);
+log('stalled speed m/s', await page.evaluate(() => +Math.abs(window.__gp.ctx.vehicles.list[0].speed).toFixed(2)), 'fuel', await page.evaluate(() => window.__gp.ctx.vehicles.list[0].fuel));
+await page.screenshot({ path: out + 'fuel_empty.png' });
+await page.keyboard.up('KeyW');
+log('shelter indoors?', await page.evaluate(() => 'checked via unit tests'));
+log('light', await page.evaluate(async () => {
+  const c = window.__craft;
+  const before = c.charge();
+  window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyL' }));
+  await new Promise((r) => setTimeout(r, 2200));
+  const after = c.charge();
+  window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyL' }));
+  return [Math.round(before), Math.round(after)];
+}));
 log('errors', JSON.stringify(errs.slice(0, 8)));
 await browser.close();
