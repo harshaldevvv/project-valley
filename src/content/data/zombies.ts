@@ -83,16 +83,30 @@ export const zombieDefs: Record<string, ZombieDef> = {
   pf_scientist: { ...zombieDefsBase.shambler, id: 'pf_scientist', headY: 1.38, model: 'zmb_pf_scientist_a', scale: 1.03, hp: 105 },
   pf_soldier: { ...zombieDefsBase.shambler, id: 'pf_soldier', headY: 1.38, model: 'zmb_pf_soldier_a', scale: 1.0, hp: 170, legHp: 90, helmetMul: 0.6 },
   pf_ground: { ...zombieDefsBase.shambler, id: 'pf_ground', headY: 1.38, model: 'zmb_pf_ground_a', scale: 1.0, hp: 130 },
+  // Zombified Polyfork civilians (tools/audit/build_pfz.sh: vertex-colour corpse skin, faded clothes, blood), same style as the hero
+  pfz_farmer: { ...zombieDefsBase.shambler, id: 'pfz_farmer', headY: 1.38, model: 'zmb_pfz_farmer_a', scale: 1.0, hp: 120 },
+  pfz_trucker: { ...zombieDefsBase.shambler, id: 'pfz_trucker', headY: 1.38, model: 'zmb_pfz_trucker_a', scale: 1.04, hp: 140 },
+  pfz_police: { ...zombieDefsBase.shambler, id: 'pfz_police', headY: 1.38, model: 'zmb_pfz_police_a', scale: 1.02, hp: 150 },
+  pfz_worker: { ...zombieDefsBase.shambler, id: 'pfz_worker', headY: 1.38, model: 'zmb_pfz_worker_a', scale: 1.02, hp: 140, helmetMul: 0.8 },
+  pfz_nurse: { ...zombieDefsBase.shambler, id: 'pfz_nurse', headY: 1.38, model: 'zmb_pfz_nurse_a', scale: 0.97, hp: 105 },
+  pfz_hiker: { ...zombieDefsBase.shambler, id: 'pfz_hiker', headY: 1.38, model: 'zmb_pfz_hiker_a', scale: 1.0, hp: 125 },
+  pfz_resident: { ...zombieDefsBase.shambler, id: 'pfz_resident', headY: 1.38, model: 'zmb_pfz_resident_a', scale: 1.0, hp: 110 },
+  pfz_waitress: { ...zombieDefsBase.shambler, id: 'pfz_waitress', headY: 1.38, model: 'zmb_pfz_waitress_a', scale: 0.96, hp: 100 },
+  pfz_soldier: { ...zombieDefsBase.shambler, id: 'pfz_soldier', headY: 1.38, model: 'zmb_pfz_soldier_a', scale: 1.03, hp: 170, legHp: 90, helmetMul: 0.6 },
+  pfz_patient: { ...zombieDefsBase.shambler, id: 'pfz_patient', headY: 1.38, model: 'zmb_pfz_patient_a', scale: 0.98, hp: 95 },
+  pfz_hoodie: { ...zombieDefsBase.shambler, id: 'pfz_hoodie', headY: 1.38, model: 'zmb_pfz_hoodie_a', scale: 1.0, hp: 105 },
+  pfz_firefighter: { ...zombieDefsBase.shambler, id: 'pfz_firefighter', headY: 1.38, model: 'zmb_pfz_firefighter_a', scale: 1.04, hp: 160, helmetMul: 0.7 },
   civilian_f: { ...zombieDefsBase.shambler, id: 'civilian_f', model: 'zmb_civilian_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.93, hp: 110 },
 };
 
 const MIXES: Record<string, Record<string, number>> = {
   orig: { shambler: 0.4, worker: 0.25, civilian_f: 0.2, soldier: 0.15 },
   ai: { ai_civilian: 0.14, ai_hazmat: 0.12, ai_soldier: 0.12, ai_nurse: 0.12, ai_worker: 0.12, ai_police: 0.12, ai_hoodie: 0.13, ai_suit: 0.13 },
+  pfz: { pfz_farmer: 0.09, pfz_trucker: 0.09, pfz_police: 0.08, pfz_worker: 0.08, pfz_nurse: 0.08, pfz_hiker: 0.08, pfz_resident: 0.11, pfz_waitress: 0.08, pfz_soldier: 0.07, pfz_patient: 0.07, pfz_hoodie: 0.1, pfz_firefighter: 0.07 },
   pf: { pf_teen: 0.14, pf_ghoul: 0.12, pf_police: 0.12, pf_worker: 0.12, pf_farmer: 0.12, pf_scientist: 0.12, pf_soldier: 0.13, pf_ground: 0.13 },
 };
-/** Which zombie set spawns: `?chars=orig` (default, the procedural originals), `?chars=ai` (local AI models) or `?chars=pf` (Polyfork catalog characters with our clips retargeted). */
-export const charSet = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('chars')) || 'orig';
+/** Which zombie set spawns: `?chars=pfz` (default since 2026-11-20: zombified Polyfork civilians, same style as the hero), `?chars=orig` (the procedural originals), `?chars=ai` (local AI models) or `?chars=pf` (clean Polyfork characters). */
+export const charSet = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('chars')) || 'pfz';
 /** Spawn mix (weights, seeded RNG) of the chosen set. */
 export const zombieMix: Record<string, number> = MIXES[charSet] ?? MIXES.orig;
 

@@ -32,7 +32,7 @@ export function prefetchModels(): Promise<void> {
   Cache.enabled = true;
   const list = [
     ...Object.entries(manifest as Record<string, { url: string; bytes?: number }>)
-      .filter(([id]) => !/^zmb_(ai|pf)_/.test(id) || id.startsWith(`zmb_${charSet}_`)) // only download the zombie set being played
+      .filter(([id]) => !/^zmb_(ai|pf|pfz)_/.test(id) || id.startsWith(`zmb_${charSet}_`)) // only download the zombie set being played
       .map(([, e]) => e),
     ...genModels.map(([id, bytes]) => ({ url: genModelPath(id), bytes })),
   ];

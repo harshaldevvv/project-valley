@@ -670,5 +670,190 @@
       "chr_hero_pf_parts_LOD0": 0
     },
     "bytes": 873528
+  },
+  "wpn_revolver_a": {
+    "url": "/assets/models/wpn/wpn_revolver_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_revolver_a_LOD0": 172
+    },
+    "bytes": 23968
+  },
+  "wpn_smg_a": {
+    "url": "/assets/models/wpn/wpn_smg_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_smg_a_LOD0": 188,
+      "wpn_smg_a_MAG": 24
+    },
+    "bytes": 30120
+  },
+  "wpn_shotgun_a": {
+    "url": "/assets/models/wpn/wpn_shotgun_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_shotgun_a_LOD0": 864
+    },
+    "bytes": 115368
+  },
+  "wpn_bolt_a": {
+    "url": "/assets/models/wpn/wpn_bolt_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_bolt_a_LOD0": 658
+    },
+    "bytes": 88196
+  },
+  "wpn_mag_revolver_a": {
+    "url": "/assets/models/wpn/wpn_mag_revolver_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_mag_revolver_a_LOD0": 152
+    },
+    "bytes": 21232
+  },
+  "wpn_mag_smg_a": {
+    "url": "/assets/models/wpn/wpn_mag_smg_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_mag_smg_a_LOD0": 24
+    },
+    "bytes": 4308
+  },
+  "wpn_mag_shotgun_a": {
+    "url": "/assets/models/wpn/wpn_mag_shotgun_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_mag_shotgun_a_LOD0": 256
+    },
+    "bytes": 34956
+  },
+  "wpn_mag_bolt_a": {
+    "url": "/assets/models/wpn/wpn_mag_bolt_a.glb",
+    "category": "wpn",
+    "tris": {
+      "wpn_mag_bolt_a_LOD0": 112
+    },
+    "bytes": 15940
+  },
+  "zmb_pfz_farmer_a": {
+    "url": "/assets/models/zmb/zmb_pfz_farmer_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_farmer_a_LOD0": 4875,
+      "zmb_pfz_farmer_a_LOD1": 2437,
+      "zmb_pfz_farmer_a_LOD2": 975
+    },
+    "bytes": 869016
+  },
+  "zmb_pfz_trucker_a": {
+    "url": "/assets/models/zmb/zmb_pfz_trucker_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_trucker_a_LOD0": 4559,
+      "zmb_pfz_trucker_a_LOD1": 2279,
+      "zmb_pfz_trucker_a_LOD2": 911
+    },
+    "bytes": 846912
+  },
+  "zmb_pfz_police_a": {
+    "url": "/assets/models/zmb/zmb_pfz_police_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_police_a_LOD0": 3499,
+      "zmb_pfz_police_a_LOD1": 1749,
+      "zmb_pfz_police_a_LOD2": 699
+    },
+    "bytes": 799072
+  },
+  "zmb_pfz_worker_a": {
+    "url": "/assets/models/zmb/zmb_pfz_worker_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_worker_a_LOD0": 3717,
+      "zmb_pfz_worker_a_LOD1": 1858,
+      "zmb_pfz_worker_a_LOD2": 743
+    },
+    "bytes": 811356
+  },
+  "zmb_pfz_nurse_a": {
+    "url": "/assets/models/zmb/zmb_pfz_nurse_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_nurse_a_LOD0": 3115,
+      "zmb_pfz_nurse_a_LOD1": 1557,
+      "zmb_pfz_nurse_a_LOD2": 623
+    },
+    "bytes": 787788
+  },
+  "zmb_pfz_hiker_a": {
+    "url": "/assets/models/zmb/zmb_pfz_hiker_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_hiker_a_LOD0": 3777,
+      "zmb_pfz_hiker_a_LOD1": 1888,
+      "zmb_pfz_hiker_a_LOD2": 755
+    },
+    "bytes": 812256
+  },
+  "zmb_pfz_resident_a": {
+    "url": "/assets/models/zmb/zmb_pfz_resident_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_resident_a_LOD0": 3047,
+      "zmb_pfz_resident_a_LOD1": 1523,
+      "zmb_pfz_resident_a_LOD2": 609
+    },
+    "bytes": 781196
+  },
+  "zmb_pfz_waitress_a": {
+    "url": "/assets/models/zmb/zmb_pfz_waitress_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_waitress_a_LOD0": 4069,
+      "zmb_pfz_waitress_a_LOD1": 2034,
+      "zmb_pfz_waitress_a_LOD2": 813
+    },
+    "bytes": 848208
+  },
+  "zmb_pfz_soldier_a": {
+    "url": "/assets/models/zmb/zmb_pfz_soldier_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_soldier_a_LOD0": 3479,
+      "zmb_pfz_soldier_a_LOD1": 1739,
+      "zmb_pfz_soldier_a_LOD2": 695
+    },
+    "bytes": 798516
+  },
+  "zmb_pfz_patient_a": {
+    "url": "/assets/models/zmb/zmb_pfz_patient_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_patient_a_LOD0": 2959,
+      "zmb_pfz_patient_a_LOD1": 1479,
+      "zmb_pfz_patient_a_LOD2": 591
+    },
+    "bytes": 778116
+  },
+  "zmb_pfz_hoodie_a": {
+    "url": "/assets/models/zmb/zmb_pfz_hoodie_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_hoodie_a_LOD0": 2981,
+      "zmb_pfz_hoodie_a_LOD1": 1490,
+      "zmb_pfz_hoodie_a_LOD2": 596
+    },
+    "bytes": 780432
+  },
+  "zmb_pfz_firefighter_a": {
+    "url": "/assets/models/zmb/zmb_pfz_firefighter_a.glb",
+    "category": "zmb",
+    "tris": {
+      "zmb_pfz_firefighter_a_LOD0": 3767,
+      "zmb_pfz_firefighter_a_LOD1": 1883,
+      "zmb_pfz_firefighter_a_LOD2": 753
+    },
+    "bytes": 814624
   }
 }

@@ -100,6 +100,18 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Lake Angler by Polyfork (wearable parts for the player hero: coat_fishvest, feet_rubber; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/lake-angler-1c4740 |
 | Backpacker by Polyfork (wearable parts for the player hero: back_big; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/backpacker-f56207 |
 | Paramedic by Polyfork (wearable parts for the player hero: back_satchel; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/paramedic-b0f358 |
+| Farmer by Polyfork (zombie `zmb_pfz_farmer_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/farmer-304a43 |
+| Trucker by Polyfork (zombie `zmb_pfz_trucker_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/trucker-9266a8 |
+| Police Officer by Polyfork (zombie `zmb_pfz_police_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/police-officer-1cc379 |
+| Construction Worker by Polyfork (zombie `zmb_pfz_worker_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/construction-worker-c1ad8c |
+| Ward Nurse by Polyfork (zombie `zmb_pfz_nurse_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/ward-nurse-84b61d |
+| Hiker by Polyfork (zombie `zmb_pfz_hiker_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/hiker-3d1a41 |
+| Suburban Resident by Polyfork (zombie `zmb_pfz_resident_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/suburban-resident-a9db9c |
+| Diner Waitress by Polyfork (zombie `zmb_pfz_waitress_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/diner-waitress-60f6a1 |
+| Infantry Rifleman by Polyfork (zombie `zmb_pfz_soldier_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/infantry-rifleman-c1c0a5 |
+| Patient in Gown by Polyfork (zombie `zmb_pfz_patient_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/patient-in-gown-fdab75 |
+| Student in a Hoodie by Polyfork (zombie `zmb_pfz_hoodie_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/student-in-a-hoodie-7c8223 |
+| Firefighter by Polyfork (zombie `zmb_pfz_firefighter_a`: vertex colours zombified by `tools/audit/zombify_pf.py`, held props removed, our zombie clips retargeted) | https://polyfork.dev/asset/firefighter-b13b36 |
 | Abandoned Shopping Trolley by Polyfork | https://polyfork.dev/asset/abandoned-shopping-trolley-3de6cb |
 | Alcove Bookcase by Polyfork | https://polyfork.dev/asset/alcove-bookcase-83894d |
 | Alpine Hay Barn by Polyfork | https://polyfork.dev/asset/alpine-hay-barn-3965e5 |
