@@ -110,7 +110,8 @@ export const PICKUP_MODELS = {
     sports_drink: 'item_bottle', thermos: 'item_bottle', dirty_water: 'item_bottle', juice_box: 'item_box_small', peanut_butter: 'item_bottle',
     tourniquet: 'item_bag_soft', saline_bag: 'item_bag_soft', first_aid_pouch: 'item_bag_soft', mag_pouch: 'item_bag_soft', tool_roll: 'item_bag_soft',
     tackle_box: 'item_box_small', battery: 'item_box_small', matches: 'item_box_small', screws: 'item_box_small', sheet_metal: 'item_box_small',
-    ammo_762_box: 'item_box_small',
+    ammo_762_box: 'item_box_small', sterile_gauze: 'item_box_small', energy_gel: 'item_bag_soft', trail_mix: 'item_bag_soft', sardines: 'item_can', canned_corn: 'item_can',
+    honey_jar: 'item_bottle', iced_tea: 'item_bottle', glow_stick: 'item_bottle', headlamp: 'item_bag_soft', bandolier: 'item_bag_soft', scarf: 'item_bag_soft',
   } as Record<string, string>,
   /**
    * Own world models (Polyfork, CC BY 4.0, credited in CREDITS.md), loaded straight from public/assets/models/item/<file>.glb.
@@ -137,6 +138,7 @@ export const PICKUP_MODELS = {
     riot_helmet: { file: 'steel-helmet-f5aa7d', size: 0.3, upright: true },
     radio_handheld: { file: 'field-radio-set-b6f3fd', size: 0.3 },
     tackle_box: { file: 'tool-case-d92909', size: 0.4 },
+    camping_lantern: { file: 'camping-lantern-21d14b', size: 0.26, upright: true },
   } as Record<string, { file: string; size: number; upright?: boolean }>,
   byKind: {
     backpack: 'item_backpack_generic', clothing: 'item_bag_soft', food: 'item_can', drink: 'item_can',

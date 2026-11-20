@@ -71,4 +71,6 @@ export const ITEM_PARTS: Record<string, [string, number]> = {
   hunting_vest: ['vest', 1], fishing_vest: ['vest', 1], chest_rig: ['vest', 0], stab_vest: ['vest', 2], kevlar_vest: ['vest', 2], plate_carrier: ['vest', 0],
   bucket_hat: ['cap', 3], hunting_cap: ['cap', 1], hard_hat: ['helmet_steel', 1], bike_helmet: ['helmet_steel', 2], riot_helmet: ['helmet_steel', 3],
   sunglasses: ['glasses', 0], safety_goggles: ['goggles', 0],
+  kids_backpack: ['backpack_school', 0], assault_pack: ['backpack_kit', 0], hydration_pack: ['backpack_school', 0], bandolier: ['vest', 1], construction_vest: ['vest', 1],
+  cowboy_hat: ['cap', 2], motorcycle_helmet: ['helmet_steel', 3],
 };

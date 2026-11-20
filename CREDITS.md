@@ -165,6 +165,7 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Steel Helmet by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/steel-helmet-f5aa7d |
 | Field Radio Set by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/field-radio-set-b6f3fd |
 | Tool Case by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/tool-case-d92909 |
+| Camping Lantern by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/camping-lantern-21d14b |
 
 (The drivable truck `veh_pickup_pf.glb` is the Pickup Truck above, converted with `tools/audit/pf_vehicle.mjs`: rotated to this game's front axis and re-pivoted wheels.)
 

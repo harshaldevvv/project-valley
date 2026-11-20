@@ -151,6 +151,24 @@
   "ammo_762_box",
   "baseball_bat",
   "machete",
-  "fire_axe"
+  "fire_axe",
+  "kids_backpack",
+  "assault_pack",
+  "hydration_pack",
+  "bandolier",
+  "construction_vest",
+  "cowboy_hat",
+  "motorcycle_helmet",
+  "scarf",
+  "canned_corn",
+  "sardines",
+  "trail_mix",
+  "honey_jar",
+  "energy_gel",
+  "iced_tea",
+  "sterile_gauze",
+  "headlamp",
+  "camping_lantern",
+  "glow_stick"
  ]
 }
