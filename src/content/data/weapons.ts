@@ -184,6 +184,8 @@ export const handling = {
   } as Record<string, { hip: [number, number, number]; adsZ: number }>,
   /** Weapon rotation in the skinned SOCKET_hand_R (radians XYZ); tune live if the rig's socket axes change. */
   gripRot: [0, 0, 0] as [number, number, number],
+  /** Knives and tools in the third-person hand: tipped so the blade points forward (hammer grip), not along the forearm. */
+  gripRotMelee: [1.35, 0, 0] as [number, number, number],
 };
 
 /**
@@ -197,10 +199,10 @@ export const fpArms = {
     rifle: { dur: 2.4, magOut: 0.5, magDrop: 0.78, magGrab: 1.02, magIn: 1.42, bolt: 1.72 },
     pistol: { dur: 1.9, magOut: 0.3, magDrop: 0.3, magGrab: 0.62, magIn: 1.08, bolt: 1.42 },
   } as Record<string, { dur: number; magOut: number; magDrop: number; magGrab: number; magIn: number; bolt: number }>,
-  knifeHit: { light: 0.2, heavy: 0.55 }, // s into fp_knife_light / fp_knife_heavy
-  shoveHit: 0.2,
   /** Extra wrist rotation on hand_R per held item id (rad, x/y/z in hand-bone space; +Y is along the forearm). */
   wrist: { knife_a: [0.45, 0, 0] } as Record<string, [number, number, number]>,
+  knifeHit: { light: 0.2, heavy: 0.55 }, // s into fp_knife_light / fp_knife_heavy
+  shoveHit: 0.2,
   fade: 0.08, // s crossfade between clips
   kickBack: 0.03, // m code recoil on the rig (ADS fire has no clip)
   kickPitch: 0.04, // rad

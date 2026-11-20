@@ -81,6 +81,25 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 |---|---|
 | Student with Backpack by Polyfork (player hero `chr_hero_pf`: our survivor animation clips retargeted onto its skeleton by `tools/audit/retarget_pf_hero.py`, turned to face -Z, meshes joined, backpack kept as a separate part) | https://polyfork.dev/asset/student-with-backpack-65d2b4 |
 | Player in Flannel by Polyfork (gloves part only, worn by the player hero) | https://polyfork.dev/asset/player-in-flannel-d0bae4 |
+| Infantry Rifleman by Polyfork (wearable parts for the player hero: hat_infantry, bottom_infantry, feet_combat, belt_webbing; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/infantry-rifleman-c1c0a5 |
+| Construction Worker by Polyfork (wearable parts for the player hero: hat_hardhat, coat_hivis, bottom_work; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/construction-worker-c1ad8c |
+| Firefighter by Polyfork (wearable parts for the player hero: hat_firefighter, coat_firefighter, hands_tactical; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/firefighter-b13b36 |
+| Trucker by Polyfork (wearable parts for the player hero: hat_trucker, bottom_jeans; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/trucker-9266a8 |
+| Police Officer by Polyfork (wearable parts for the player hero: hat_police, bottom_police; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/police-officer-1cc379 |
+| Park Ranger by Polyfork (wearable parts for the player hero: hat_ranger; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/park-ranger-c1697e |
+| Outlaw by Polyfork (wearable parts for the player hero: hat_cowboy, coat_duster, neck_bandana; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/outlaw-e0fd6a |
+| Skier by Polyfork (wearable parts for the player hero: hat_beanie, eyes_goggles, coat_skier, hands_winter; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/skier-e7ad44 |
+| Hiker by Polyfork (wearable parts for the player hero: hat_bucket, coat_hiker, feet_hiker, back_hiker; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/hiker-3d1a41 |
+| Field Medic by Polyfork (wearable parts for the player hero: hat_medic, back_medic; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/field-medic-fd8919 |
+| Highway Patrol Officer by Polyfork (wearable parts for the player hero: eyes_sunglasses, belt_duty; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/highway-patrol-officer-e81282 |
+| Village Mechanic by Polyfork (wearable parts for the player hero: eyes_workgoggles, belt_tools; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/village-mechanic-508a0a |
+| Mountaineer by Polyfork (wearable parts for the player hero: coat_mountain; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/mountaineer-13df29 |
+| Forest Ranger by Polyfork (wearable parts for the player hero: coat_ranger, feet_ranger; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/forest-ranger-6906b0 |
+| Squad Officer by Polyfork (wearable parts for the player hero: coat_police; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/squad-officer-e5c52b |
+| Student In A Hoodie by Polyfork (wearable parts for the player hero: coat_hoodie; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/student-in-a-hoodie-7c8223 |
+| Lake Angler by Polyfork (wearable parts for the player hero: coat_fishvest, feet_rubber; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/lake-angler-1c4740 |
+| Backpacker by Polyfork (wearable parts for the player hero: back_big; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/backpacker-f56207 |
+| Paramedic by Polyfork (wearable parts for the player hero: back_satchel; `chr_hero_pf_parts.glb`) | https://polyfork.dev/asset/paramedic-b0f358 |
 | Abandoned Shopping Trolley by Polyfork | https://polyfork.dev/asset/abandoned-shopping-trolley-3de6cb |
 | Alcove Bookcase by Polyfork | https://polyfork.dev/asset/alcove-bookcase-83894d |
 | Alpine Hay Barn by Polyfork | https://polyfork.dev/asset/alpine-hay-barn-3965e5 |

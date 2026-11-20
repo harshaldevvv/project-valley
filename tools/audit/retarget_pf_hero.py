@@ -173,17 +173,16 @@ bpy.data.objects.remove(src, do_unlink=True)
 for x in src_actions: bpy.data.actions.remove(x)
 
 meshes = [o for o in scene.objects if o.type == 'MESH']
-pack = [o for o in meshes if o.name.startswith('attach-back-mesh')]
-for o in pack: o.name = nid + '_BACKPACK'; o.data.name = nid + '_BACKPACK'
-body = [o for o in meshes if o not in pack]
-for o in scene.objects: o.select_set(False)
-for o in body: o.select_set(True)
-bpy.context.view_layer.objects.active = body[0]
-if len(body) > 1: bpy.ops.object.join()
-lod0 = bpy.context.view_layer.objects.active
-lod0.name = nid + '_LOD0'; lod0.data.name = nid + '_LOD0'
+# One mesh per outfit slot (<id>_BODY, _HAIR, _TOP, _COAT, _BOTTOM, _FEET, _HANDS, _BACKPACK...), so worn items can swap or
+# hide them at runtime (src/gameplay/outfit/pfOutfit.ts). Mesh_0 is the base body.
+for o in meshes:
+    slot = 'BODY' if o.name.startswith('Mesh_0') else o.name.replace('extra-', '').replace('attach-', '').split('-mesh')[0].upper()
+    if slot == 'BACK': slot = 'BACKPACK'
+    o.name = nid + '_' + slot; o.data.name = o.name
+lod0 = next(o for o in meshes if o.name.endswith('_BODY'))
 tri = lambda o: sum(len(p.vertices) - 2 for p in o.data.polygons)
 l1 = l2 = lod0
+print('SLOTS', ' '.join(f"{o.name}:{tri(o)}" for o in meshes))
 tgt.name = nid + '_rig'
 for o in list(scene.objects):  # stray empties (e.g. the survivor import's root)
     if o.type == 'EMPTY' and o.parent_type != 'BONE' and not o.children: bpy.data.objects.remove(o, do_unlink=True)

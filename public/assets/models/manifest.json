@@ -661,6 +661,14 @@
     "tris": {
       "chr_hero_pf_LOD0": 4485
     },
-    "bytes": 1123876
+    "bytes": 1131956
+  },
+  "chr_hero_pf_parts": {
+    "url": "/assets/models/chr/chr_hero_pf_parts.glb",
+    "category": "chr",
+    "tris": {
+      "chr_hero_pf_parts_LOD0": 0
+    },
+    "bytes": 873528
   }
 }

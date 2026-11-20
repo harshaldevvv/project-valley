@@ -1,0 +1,21 @@
+// node tools/audit/knifeshots.mjs <tag>   headless: third-person knife idle, mid-swing, and a side view (camera yawed 90 deg)
+import { launch } from './browser.mjs';
+const [tag = 'kn'] = process.argv.slice(2);
+const browser = await launch();
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = [];
+page.on('pageerror', (e) => errs.push(String(e).slice(0, 300)));
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 180000 });
+await page.waitForTimeout(2000);
+await page.mouse.click(640, 360);
+const gp = (f, a) => page.evaluate(f, a);
+await gp(() => { const g = window.__gp; g.ctx.player.godMode = true; g.sandbox(); g.ctx.weapons.select(3); });
+await page.waitForTimeout(1500);
+const sh = (n) => page.screenshot({ path: `docs/audit/screenshots/wip/${tag}_${n}.png`, clip: { x: 340, y: 120, width: 600, height: 560 } });
+await sh('idle');
+await gp(() => window.__gp.mouse(0, true)); await page.waitForTimeout(60); await gp(() => window.__gp.mouse(0, false));
+await page.waitForTimeout(170); await sh('swing1');
+await page.waitForTimeout(150); await sh('swing2');
+console.log('errors', JSON.stringify(errs.slice(0, 4)));
+await browser.close();

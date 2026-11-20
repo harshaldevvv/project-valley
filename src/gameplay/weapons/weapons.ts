@@ -702,7 +702,8 @@ export class Weapons {
       // TP model sits in the hand; kick slides it back along the barrel
       if (ctx.playerChar.skinned) {
         m.tp.root.position.set(0, 0, this.kickT * 0.04);
-        m.tp.root.rotation.set(H.gripRot[0] + this.kickT * 0.1, H.gripRot[1], H.gripRot[2]);
+        const g = this.isMelee ? H.gripRotMelee : H.gripRot;
+        m.tp.root.rotation.set(g[0] + this.kickT * 0.1, g[1], g[2]);
       } else {
         // Rifles slide back so the stock reaches the shoulder (placeholder rig has no elbows)
         m.tp.root.position.set(0, 0, this.kickT * 0.05 + (this.def?.class === 'pistol' || this.isMelee ? 0 : 0.28));

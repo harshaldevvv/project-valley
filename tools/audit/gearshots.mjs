@@ -1,0 +1,24 @@
+// node tools/audit/gearshots.mjs <tag> <item,item,...>   headless: give wearables, unarmed hero from behind and (camera turned) from the front
+import { launch } from './browser.mjs';
+const [tag = 'gear', items = ''] = process.argv.slice(2);
+const browser = await launch();
+const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = [];
+page.on('pageerror', (e) => errs.push(String(e).slice(0, 300)));
+page.on('console', (m) => m.type() === 'error' && errs.push(m.text().slice(0, 200)));
+await page.goto('http://localhost:5188/?play');
+await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 180000 });
+await page.waitForTimeout(2000);
+await page.mouse.click(640, 360);
+const gp = (f, a) => page.evaluate(f, a);
+await gp(() => { window.__gp.ctx.player.godMode = true; });
+for (const i of items.split(',').filter(Boolean)) await gp((i) => window.__gp.give(i), i);
+await page.waitForTimeout(1200);
+const clip = { x: 380, y: 140, width: 520, height: 560 };
+await page.screenshot({ path: `docs/audit/screenshots/wip/${tag}_back.png`, clip });
+await gp(() => { const p = window.__gp.ctx.player; p.setLook(p.yaw + Math.PI, -0.15); });
+await page.waitForTimeout(120);
+await page.screenshot({ path: `docs/audit/screenshots/wip/${tag}_front.png`, clip });
+console.log('worn', await gp(() => { const r = []; window.__gp.ctx.playerChar.root.traverse((o) => { if (o.isSkinnedMesh && o.visible) r.push(o.name.replace('chr_hero_pf_', '')); }); return r.join(','); }));
+console.log('errors', JSON.stringify(errs.slice(0, 5)));
+await browser.close();

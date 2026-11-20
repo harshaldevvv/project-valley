@@ -3,7 +3,7 @@ import { BodyFacing } from './player/facing';
 import { installSaves } from './saves';
 import { SurvivalGlue } from './player/survivalGlue';
 import type { Game } from '../core/game';
-import { cameraFeel, health, heroLook, movement, stamina } from '../content/data/player';
+import { cameraFeel, health, movement, stamina } from '../content/data/player';
 import { ballistics, meleeDefs, shove, weaponDefs } from '../content/data/weapons';
 import { horde, senses, zombieDefs } from '../content/data/zombies';
 import { fxTuning } from '../content/data/fx';
@@ -13,6 +13,7 @@ import { vehicles as vehicleDefs } from '../content/data/vehicles';
 import { Hud } from '../ui/hud/hud';
 import { applyPose, makeCharacter } from './animstand/character';
 import { bindOutfit } from './outfit/bind';
+import { bindPfOutfit } from './outfit/pfOutfit';
 import { newItem } from '../systems/inventory';
 import { PlayerAnimator } from './animstand/locomotion';
 import { BodyPost } from './player/bodyPost';
@@ -63,7 +64,8 @@ export async function installGameplay(game: Game): Promise<void> {
   ctx.playerAnim = bodyAnim;
   const post = bodyAnim ? new BodyPost(ctx, body.root, bodyAnim) : null;
   // Backpack mesh follows the backpack slot (asset node <id>_BACKPACK)
-  const pack = body.root.getObjectByName(`${charId}_BACKPACK`);
+  // (the Polyfork hero's pack is driven by its outfit, pfOutfit.ts)
+  const pack = charId === 'chr_hero_pf' ? undefined : body.root.getObjectByName(`${charId}_BACKPACK`);
   const syncPack = () => {
     const lo = probe(game, 'loadout', 'equipped');
     if (pack && lo) pack.visible = !!lo.equipped('backpack');
@@ -96,7 +98,7 @@ export async function installGameplay(game: Game): Promise<void> {
   let faded = false;
   await ctx.weapons.init(body.hand);
   if (hero) await bindOutfit(game, body.root, ctx.weapons.vm);
-  else if (charId === 'chr_hero_pf') ctx.weapons.vm?.setLook(heroLook.fpSleeve, heroLook.fpGlove); // FP arms match the hero's shirt and gloves
+  else if (charId === 'chr_hero_pf') await bindPfOutfit(game, body.root, charId, ctx.weapons.vm); // worn gear shows on the hero
   await Promise.all([ctx.targets.init(), ctx.vehicles.init(), ctx.animStand.init()]);
 
   const perf = game.perf;
