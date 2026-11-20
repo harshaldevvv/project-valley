@@ -11,5 +11,5 @@ export const SAVE = {
   persistAfterS: 15 * 60,
   slots: ['auto', 'quick', 'manual-1', 'manual-2', 'manual-3'],
   /** Section apply order on load: world state, then containers/contents, then the player. Unlisted sections follow. */
-  loadOrder: ['world.time', 'difficulty', 'build.pieces', 'inventory', 'deathbags', 'survival', 'worldtools', 'quests', 'npc', 'vehicles', 'corpses', 'player'],
+  loadOrder: ['world.time', 'difficulty', 'build.pieces', 'inventory', 'deathbags', 'survival', 'worldtools', 'quests', 'npc', 'horde', 'vehicles', 'corpses', 'player'],
 };

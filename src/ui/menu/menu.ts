@@ -4,7 +4,10 @@ import { CatmullRomCurve3, MathUtils, Quaternion, Vector3, Matrix4 } from 'three
 import type { Game } from '../../core/game';
 import { yard } from '../../content/data/yard';
 import { controlsHelp } from '../../content/text/controls';
-import { loadingTips } from '../../content/text/tips';
+import { loadingTips, pauseCardTitle, settingsText as ST } from '../../content/text/tips';
+import { HORDE_NIGHT } from '../../content/data/zombie_arch';
+import { installHints } from './hints';
+import { keyList } from './keys';
 import { applyPreset, difficulty, DIFFICULTY_PRESETS, type DeathPenalty } from '../../content/data/difficulty';
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from './settings';
 import { MENU_CSS } from './style';
@@ -38,7 +41,18 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
   document.head.appendChild(style);
 
   const settings = loadSettings();
-  opts.applySettings(settings);
+  /** Settings the menu applies itself (data tables, not the render pipeline). `?lock=1/0` beats the saved choice. */
+  const lockParam = new URLSearchParams(location.search).get('lock');
+  const applyOwn = (s: Settings) => {
+    if (lockParam === null) pointerLock.enabled = s.captureMouse;
+    if (!pointerLock.enabled && document.pointerLockElement) document.exitPointerLock();
+    HORDE_NIGHT.enabled = s.hordeNight;
+  };
+  const apply = (s: Settings) => {
+    opts.applySettings(s);
+    applyOwn(s);
+  };
+  apply(settings);
 
   const root = document.createElement('div');
   root.id = 'menu';
@@ -54,6 +68,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       <nav class="mn-nav"></nav>
     </div>
     <section class="mn-panel" hidden><header><h2></h2><button class="mn-x" aria-label="${T.back}">&times;</button></header><div class="mn-body"></div></section>
+    <aside class="mn-card" aria-label="${pauseCardTitle}"><h3>${pauseCardTitle}</h3><div class="mn-krows"></div></aside>
     <footer class="mn-tip"><b>${T.tip}</b><span></span></footer>
     <div class="mn-ver">v0.0.1 &middot; ${game.backend.toUpperCase()}</div>`;
   document.body.appendChild(root);
@@ -62,6 +77,17 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
   const panelTitle = panel.querySelector('h2') as HTMLElement;
   const body = panel.querySelector('.mn-body') as HTMLElement;
   const tipText = root.querySelector('.mn-tip span') as HTMLElement;
+  const keyRows = (el: HTMLElement) => {
+    for (const [action, key] of keyList()) {
+      const r = document.createElement('div');
+      r.className = 'krow';
+      r.innerHTML = '<span></span><kbd></kbd>';
+      r.querySelector('span')!.textContent = action;
+      r.querySelector('kbd')!.textContent = key;
+      el.append(r);
+    }
+  };
+  keyRows(root.querySelector('.mn-card .mn-krows') as HTMLElement);
 
   const sfx = (id: string) => {
     try {
@@ -164,7 +190,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     const f = document.createElement('div');
     f.className = 'mn-settings';
     const commit = () => {
-      opts.applySettings(settings);
+      apply(settings);
       saveSettings(settings);
     };
     const slider = (key: 'fov' | 'sensitivity' | 'shake' | 'renderScale' | 'volume' | 'music' | 'ambience', label: string, min: number, max: number, step: number, fmt: (v: number) => string) => {
@@ -182,7 +208,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       };
       f.append(row);
     };
-    const check = (key: 'shadows' | 'fxaa' | 'look' | 'ao' | 'shafts' | 'reduceFlashing' | 'bgMuted', label: string) => {
+    const check = (key: 'shadows' | 'fxaa' | 'look' | 'ao' | 'shafts' | 'reduceFlashing' | 'bgMuted' | 'captureMouse' | 'hordeNight', label: string) => {
       const row = document.createElement('label');
       row.className = 'row toggle';
       row.innerHTML = `<span>${label}</span><input type="checkbox"><i></i>`;
@@ -211,6 +237,8 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     check('ao', S.ao);
     check('shafts', S.shafts);
     check('reduceFlashing', S.reduceFlashing);
+    check('captureMouse', ST.captureMouse);
+    check('hordeNight', ST.hordeNight);
     {
       // segmented control (QA-048): native radios, styled; arrow keys work as usual
       const row = document.createElement('div');
@@ -236,7 +264,15 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       commit();
       showPage('settings');
     }, 'quiet small');
-    f.append(reset);
+    const btns = document.createElement('div');
+    btns.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px 24px';
+    btns.append(reset, button(ST.hintsReset, () => hints.reset(), 'quiet small', 'hints-reset'));
+    f.append(btns);
+    const keysBox = document.createElement('div');
+    keysBox.className = 'mn-keys';
+    keysBox.innerHTML = `<h3>${ST.keysTitle}</h3><div class="mn-krows"></div>`;
+    keyRows(keysBox.querySelector('.mn-krows') as HTMLElement);
+    f.append(keysBox);
     return f;
   };
 
@@ -471,6 +507,8 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
   setInterval(() => {
     hint.hidden = !pointerLock.enabled || !(mode === 'playing' && !blend && !document.pointerLockElement && !game.input.blocked);
   }, 200);
+
+  const hints = installHints(game, () => mode === 'playing' && !blend);
 
   renderNav();
   if (new URLSearchParams(location.search).has('play')) {

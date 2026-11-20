@@ -69,6 +69,8 @@ export const DAY_NIGHT = {
 
 /** Horde night lite: every N in-game days, at night, a horde converges on where the player is. */
 export const HORDE_NIGHT = {
+  /** Off = no horde nights at all (the Settings menu toggles this; HordeNight.step checks it). */
+  enabled: true,
   everyDays: 3,
   /** In-game hours: warning, start, and the dawn it ends at. */
   warnHour: 21,

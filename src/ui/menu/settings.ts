@@ -19,10 +19,12 @@ export interface Settings {
   bgMuted: boolean; // mutes music + ambience, keeps game sounds
   reduceFlashing: boolean; // accessibility: no muzzle light, fewer/dimmer flashes
   gore: 'full' | 'reduced' | 'off';
+  captureMouse: boolean; // pointer lock while playing (data/input pointerLock.enabled); ?lock=1/0 overrides for a session
+  hordeNight: boolean; // horde nights on/off (data/zombie_arch HORDE_NIGHT.enabled)
 }
 
 const KEY = 'pv.settings.v1';
-export const DEFAULT_SETTINGS: Settings = { fov: 70, sensitivity: 1, shake: 0.7, renderScale: 1, shadows: true, fxaa: true, look: true, ao: true, shafts: true, volume: 0.8, music: 0.4, ambience: 0.6, bgMuted: false, reduceFlashing: false, gore: 'full' };
+export const DEFAULT_SETTINGS: Settings = { fov: 70, sensitivity: 1, shake: 0.7, renderScale: 1, shadows: true, fxaa: true, look: true, ao: true, shafts: true, volume: 0.8, music: 0.4, ambience: 0.6, bgMuted: false, reduceFlashing: false, gore: 'full', captureMouse: false, hordeNight: true };
 
 export function loadSettings(): Settings {
   try {

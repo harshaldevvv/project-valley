@@ -48,6 +48,14 @@ export const MENU_CSS = `
 #menu .mn-btn.station{font-size:15px;letter-spacing:.12em;text-align:left;padding:16px 14px;border:1px solid var(--line);border-radius:3px;background:rgba(255,255,255,.02)}
 #menu .mn-btn.station:hover{padding-left:14px;border-color:var(--accent);background:rgba(217,164,65,.08)}
 #menu .mn-btn.station::before{display:none}
+#menu .mn-card{display:none;position:absolute;right:clamp(24px,5vw,80px);bottom:64px;width:min(440px,calc(100vw - 48px));padding:12px 14px;border:1px solid var(--line);border-radius:4px;background:rgba(10,12,11,.6)}
+#menu.is-paused .mn-card{display:block}
+#menu.is-paused .mn-panel:not([hidden])~.mn-card{display:none}
+#menu .mn-card h3,#menu .mn-keys h3{margin:0 0 8px;font:600 11px/1 var(--display);letter-spacing:.28em;text-transform:uppercase;color:var(--accent)}
+#menu .mn-krows{display:grid;grid-template-columns:1fr 1fr;column-gap:18px}
+#menu .krow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:3px 0;font-size:12.5px;color:var(--dim);border-bottom:1px solid rgba(255,255,255,.04)}
+#menu .krow kbd{padding:3px 6px}
+#menu .mn-keys{margin-top:14px}
 #menu .mn-controls{columns:2 200px;column-gap:28px}
 #menu .mn-controls>div{break-inside:avoid;margin-bottom:16px}
 #menu .mn-controls h3{margin:0 0 6px;font:600 12px/1 var(--display);letter-spacing:.28em;text-transform:uppercase;color:var(--accent)}
@@ -97,6 +105,6 @@ body:has(#menu:not(.hidden)) #perf,body:has(#menu:not(.hidden)) #ui,body.mn-blen
  #menu .mn-tip{bottom:10px;font-size:12.5px}#menu .mn-sub{font-size:13px}}
 @media (max-width:1100px) and (min-width:821px){#menu .mn-panel{width:min(520px,calc(100vw - 460px));min-width:340px}
  #menu .mn-sub{max-width:300px}}
-@media (max-width:820px){#menu .mn-panel{top:auto;bottom:70px;transform:none;max-height:55vh}#menu .mn-left{justify-content:flex-start;padding-top:8vh}}
+@media (max-width:820px){#menu.is-paused .mn-card{display:none}#menu .mn-panel{top:auto;bottom:70px;transform:none;max-height:55vh}#menu .mn-left{justify-content:flex-start;padding-top:8vh}}
 @media (prefers-reduced-motion:reduce){#menu *{transition:none!important}}
 `;

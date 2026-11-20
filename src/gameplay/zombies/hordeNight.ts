@@ -99,6 +99,19 @@ export class HordeNight {
   }
 
   step(dt: number) {
+    if (!HN.enabled) {
+      // switched off in Settings: call off a horde in progress quietly (no reward, no fail) and count its night as done
+      if (this.state.phase !== 'idle') {
+        if (this.active) {
+          for (const z of this.members) if (z.alive) this.zombies.dismiss(z);
+          this.state.done.push(this.state.day);
+        }
+        this.state.phase = 'idle';
+        this.reset();
+      }
+      this.draw(0);
+      return;
+    }
     const t = this.time();
     const ev = hordeStep(this.state, t.day, t.hours);
     if (ev === 'warn') {
