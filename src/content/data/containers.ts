@@ -30,6 +30,7 @@ const list: ContainerDef[] = [
   { id: 'office_desk', grid: { w: 4, h: 3 }, searchSeconds: 2, lootTable: 'office_desk', tier: 1, lock: 0 },
   // Sandbox rack: fixed kit, refilled on every open (an M1-only faucet, never ship it to the real world).
   { id: 'weapon_rack', grid: { w: 8, h: 6 }, searchSeconds: 0, lootTable: 'weapon_rack', lock: 0, refillOnOpen: true },
+  { id: 'weapon_rack_b', grid: { w: 8, h: 7 }, searchSeconds: 0, lootTable: 'weapon_rack_b', lock: 0, refillOnOpen: true }, // range: the M4 guns
   // Bodies (searchable). Zombie corpses register at runtime from the zombieKilled event.
   { id: 'body_survivor', grid: { w: 5, h: 4 }, searchSeconds: 3, lootTable: 'body_survivor', lock: 0 },
   { id: 'body_zombie', grid: { w: 4, h: 3 }, searchSeconds: 2, lootTable: 'body_zombie', lock: 0 },

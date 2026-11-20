@@ -41,6 +41,11 @@ export async function buildRange(kit: Kit) {
   const rackObj = await kit.model(rack); // keeps the GUNS part (always visible: the rack refills)
   kit.game.places.containers.push({ id: 'range_weapon_rack', type: 'weapon_rack', object: rackObj, position: new Vector3(rack.x, 0, rack.z) });
 
+  // Second rack: the shotgun, hunting rifle, revolver and SMG (data/loot_guns.ts GUN_RACK)
+  const rack2 = { ...rack, x: rack.x - 2.2 };
+  const rack2Obj = await kit.model(rack2);
+  kit.game.places.containers.push({ id: 'range_weapon_rack_b', type: 'weapon_rack_b', object: rack2Obj, position: new Vector3(rack2.x, 0, rack2.z) });
+
   // Targets: plate (left) + dummy (right) at each distance, distance line and marker post.
   for (const d of S.targetDistances) {
     const tz = front - d;

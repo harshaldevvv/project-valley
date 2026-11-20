@@ -7,8 +7,6 @@ import type { WeaponFeel } from './weapons';
  * (shell carrier, stripper clip, speedloader, stick mag) so they ride on the existing reload flow.
  * Item rows: data/items_guns.ts. Models: tools/audit/build_guns.mjs. Loot: data/loot_guns.ts.
  */
-const cal = (c: string) => c as WeaponDef['caliber']; // '.357' is not in the Caliber union yet (types.ts is shared)
-
 export const GUN_DEFS: Record<string, WeaponDef> = {
   shotgun_a: {
     id: 'shotgun_a',
@@ -67,7 +65,7 @@ export const GUN_DEFS: Record<string, WeaponDef> = {
   revolver_a: {
     id: 'revolver_a',
     class: 'pistol',
-    caliber: cal('.357'),
+    caliber: '.357',
     fireModes: ['semi'],
     rpm: 150,
     damage: 58,
@@ -121,7 +119,7 @@ export const GUN_DEFS: Record<string, WeaponDef> = {
 };
 
 export const GUN_FEEL: Record<string, WeaponFeel> = {
-  shotgun_a: { model: 'wpn_shotgun_a', sound: 'shotgun_shot', drawMs: 650, trauma: 0.3, fovKick: 2.4, viewPunch: 2.2, kickBack: 0.06, recoverFrac: 0.9, magSize: 6, fallbackSize: [0.06, 0.2, 0.95], cycle: { sound: 'pump_rack', at: 0.5 } },
+  shotgun_a: { model: 'wpn_shotgun_a', sound: 'shotgun_shot', drawMs: 650, trauma: 0.3, fovKick: 2.4, viewPunch: 2.2, kickBack: 0.06, recoverFrac: 0.9, magSize: 6, fallbackSize: [0.06, 0.2, 0.95], cycle: { sound: 'pump_rack', at: 0.35 } },
   bolt_a: { model: 'wpn_bolt_a', sound: 'bolt_shot', drawMs: 700, trauma: 0.28, fovKick: 2.2, viewPunch: 2.4, kickBack: 0.07, recoverFrac: 0.9, magSize: 5, fallbackSize: [0.05, 0.18, 1.0], cycle: { sound: 'bolt_cycle', at: 0.45 } },
   revolver_a: { model: 'wpn_revolver_a', sound: 'revolver_shot', drawMs: 400, trauma: 0.2, fovKick: 1.6, viewPunch: 2, kickBack: 0.045, recoverFrac: 1, magSize: 6, fallbackSize: [0.04, 0.14, 0.26] },
   smg_a: { model: 'wpn_smg_a', sound: 'smg_shot', drawMs: 450, trauma: 0.1, fovKick: 1, viewPunch: 0.7, kickBack: 0.025, recoverFrac: 1, magSize: 30, fallbackSize: [0.05, 0.15, 0.5] },

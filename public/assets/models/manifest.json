@@ -686,7 +686,7 @@
       "wpn_smg_a_LOD0": 188,
       "wpn_smg_a_MAG": 24
     },
-    "bytes": 30120
+    "bytes": 30124
   },
   "wpn_shotgun_a": {
     "url": "/assets/models/wpn/wpn_shotgun_a.glb",
@@ -694,7 +694,7 @@
     "tris": {
       "wpn_shotgun_a_LOD0": 864
     },
-    "bytes": 115368
+    "bytes": 115372
   },
   "wpn_bolt_a": {
     "url": "/assets/models/wpn/wpn_bolt_a.glb",

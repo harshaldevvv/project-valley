@@ -1,4 +1,4 @@
-import { AnimationAction, AnimationClip, BufferAttribute, Color, DoubleSide, Euler, LoopOnce, LoopRepeat, Material, Matrix4, MeshStandardMaterial, Object3D, Quaternion, type AnimationMixer, type SkinnedMesh } from 'three';
+import { AnimationAction, AnimationClip, BufferAttribute, Color, DoubleSide, Euler, LoopOnce, LoopRepeat, Material, Matrix4, MeshStandardMaterial, Object3D, Quaternion, Vector3, type AnimationMixer, type SkinnedMesh } from 'three';
 import { hasAsset } from '../../engine/assets';
 import { loadModel } from '../../engine/models';
 import { fpArms as F } from '../../content/data/weapons';
@@ -11,6 +11,39 @@ import type { WeaponModel } from './models';
  * the base with its *_L tracks stripped. Code adds sway/bob/kick on a pivot (ADS fire has no clip).
  */
 const _wq = new Quaternion();
+const _a = new Vector3(), _b = new Vector3(), _c = new Vector3(), _t = new Vector3(), _u = new Vector3(), _p = new Vector3(), _n = new Vector3();
+const _q1 = new Quaternion(), _q2 = new Quaternion(), _q3 = new Quaternion();
+
+/** Swing bone `bone` (world) so the direction to `from` points at `to`, keeping its roll. */
+function aim(bone: Object3D, child: Object3D, to: Vector3) {
+  bone.updateWorldMatrix(true, false);
+  child.getWorldPosition(_n);
+  bone.getWorldPosition(_u);
+  _q1.setFromUnitVectors(_n.sub(_u).normalize(), _p.copy(to).sub(_u).normalize());
+  bone.getWorldQuaternion(_q2);
+  _q2.premultiply(_q1);
+  (bone.parent ? bone.parent.getWorldQuaternion(_q3).invert() : _q3.identity()).multiply(_q2);
+  bone.quaternion.copy(_q3);
+  bone.updateWorldMatrix(false, true);
+}
+/** Two-bone IK for the left arm: elbow keeps the side it had in the clip. */
+function reach(A: Object3D, B: Object3D, C: Object3D, target: Vector3) {
+  A.updateWorldMatrix(true, true);
+  A.getWorldPosition(_a); B.getWorldPosition(_b); C.getWorldPosition(_c);
+  const l1 = _a.distanceTo(_b), l2 = _b.distanceTo(_c);
+  const d = Math.min(Math.max(_a.distanceTo(target), Math.abs(l1 - l2) + 1e-3), l1 + l2 - 1e-3);
+  _u.copy(target).sub(_a).normalize();
+  _p.copy(_b).sub(_a);
+  _p.addScaledVector(_u, -_p.dot(_u));
+  if (_p.lengthSq() < 1e-8) _p.set(0, -1, 0);
+  _p.normalize();
+  const a = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+  _t.copy(_a).addScaledVector(_u, a).addScaledVector(_p, h); // new elbow
+  const tip = _c.copy(_a).addScaledVector(_u, d);
+  const elbow = _t.clone();
+  aim(A, B, elbow);
+  aim(B, C, tip);
+}
 const _we = new Euler();
 
 export type FpKind = 'pistol' | 'rifle' | 'knife';
@@ -40,6 +73,8 @@ export class Viewmodel {
   private shotW = 0;
   private leftOnly = false;
   private held = new Map<string, Held>();
+  private support = new Map<string, Object3D | null>(); // per gun: its SOCKET_support (the left-hand point)
+  private weaponRoots = new Map<string, Object3D>();
   ready = false;
 
   async init(camera: Object3D) {
@@ -112,6 +147,8 @@ export class Viewmodel {
     sock.add(w.root);
     w.root.position.set(0, 0, 0);
     w.root.rotation.set(0, 0, 0);
+    this.support.set(id, w.sockets?.get('support') ?? null);
+    this.weaponRoots.set(id, w.root);
     const magL = this.sockets.get('mag_L');
     const wMagSock = w.sockets?.get('mag');
     if (kind === 'knife' || !magL || !w.mag || !wMagSock) return;
@@ -206,7 +243,7 @@ export class Viewmodel {
     if (held.weaponMag) held.weaponMag.visible = state === 'in';
   }
 
-  update(dt: number, ads: number, itemId: string | null) {
+  update(dt: number, ads: number, itemId: string | null, pump = 0) {
     if (!this.ready) return;
     const fadeK = Math.min(1, dt / F.fade);
     if (this.shot) {
@@ -233,6 +270,32 @@ export class Viewmodel {
     const wr = itemId ? F.wrist[itemId] : undefined;
     const hand = this.sockets.get('weapon')?.parent;
     if (wr && hand) hand.quaternion.multiply(_wq.setFromEuler(_we.set(wr[0], wr[1], wr[2])));
+    if (itemId) this.leftHand(itemId, pump);
     if (itemId) this.magChoreo(itemId);
+  }
+
+  /**
+   * The arm clips put the left hand on the AK's handguard. Other long guns carry their own SOCKET_support; the hand is
+   * moved by the difference (two-bone IK on the left arm) so it sits on the shotgun pump, rifle stock or SMG handguard.
+   * `pump` (0..1..0) slides the hand back along the barrel and forward again (pump / bolt cycle).
+   */
+  private leftHand(itemId: string, pump: number) {
+    const sock = this.support.get(itemId), root = this.weaponRoots.get(itemId);
+    const hand = this.sockets.get('support_L')?.parent;
+    if (!sock || !root || !hand || this.kind !== 'rifle' || this.leftOnly) return;
+    if (this.shot && /reload|draw|holster/.test(this.shot.getClip().name)) return; // those clips move the left hand on purpose
+    const off = F.support[itemId] ?? [0, 0, 0];
+    const forearm = hand.parent, upper = forearm?.parent;
+    if (!forearm || !upper) return;
+    this.pivot.updateMatrixWorld(true);
+    const ref = F.supportRef;
+    hand.getWorldPosition(_t); // where the clip put the hand: on the reference rifle's handguard
+    _c.set(ref[0], ref[1], ref[2]).applyMatrix4(root.matrixWorld); // that point in the current gun's frame
+    sock.getWorldPosition(_a);
+    _a.sub(_c); // gun's own support point minus the reference point, in world space
+    _b.set(off[0], off[1], off[2] + pump * F.pumpTravel).transformDirection(root.matrixWorld); // data offset + pump slide
+    const target = _t.add(_a).add(_b);
+    if (_a.lengthSq() < 1e-6 && _b.lengthSq() < 1e-6) return;
+    reach(upper, forearm, hand, target.clone());
   }
 }

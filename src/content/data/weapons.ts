@@ -217,6 +217,12 @@ export const fpArms = {
   sprintTuck: 0.35, // rad
   /** ADS: slide the rig forward along the sight line (keeps the sight centred, shrinks the receiver; QA-041). */
   adsForward: { rifle: 0, pistol: 0 } as Record<string, number>,
+  /** Reference left-hand point the rifle arm clips are authored for (the AK's SOCKET_support, grip-local). */
+  supportRef: [0, 0.082, -0.327] as [number, number, number],
+  /** Extra left-hand offset per gun id (grip-local m: x right, y up, z back), on top of its own SOCKET_support. */
+  support: { shotgun_a: [0, -0.01, 0.0], bolt_a: [0, 0, 0], smg_a: [0, 0, 0] } as Record<string, [number, number, number]>,
+  /** Pump / bolt cycle: how far the left hand slides back along the barrel (m). */
+  pumpTravel: 0.09,
   /** Sight-line height above the grip (m) the arms clips are authored for, per FP kind: other guns shift to match when aiming. */
   adsSightRef: { rifle: 0.162, pistol: 0.086 } as Record<string, number>,
   /** Hip: extra rig offset (m, camera space) so the rifle stock doesn't run into the corner (QA-041). */

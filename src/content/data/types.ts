@@ -10,7 +10,7 @@ export type SlotName =
   | 'primary' | 'secondary' | 'sidearm' | 'melee'
   /** M2: secure pouch (kept on death). */
   | 'pouch';
-export type Caliber = '9mm' | '.45acp' | '5.56' | '7.62' | '.308' | '12ga';
+export type Caliber = '9mm' | '.45acp' | '5.56' | '7.62' | '.308' | '12ga' | '.357';
 
 export interface ItemDef {
   id: string;

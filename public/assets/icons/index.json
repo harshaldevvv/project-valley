@@ -179,6 +179,17 @@
   "hot_chili",
   "hot_noodles",
   "spear",
-  "nail_bat"
+  "nail_bat",
+  "shotgun_a",
+  "bolt_a",
+  "smg_a",
+  "revolver_a",
+  "mag_shotgun_a",
+  "mag_bolt_a",
+  "mag_smg_a",
+  "mag_revolver_a",
+  "ammo_12ga",
+  "ammo_308",
+  "ammo_357"
  ]
 }

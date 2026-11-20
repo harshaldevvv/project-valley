@@ -3,6 +3,13 @@
  * LootTable.entries; weights compare with the entries already in each table). Magazines spawn partly filled.
  * Themes: police lockers and house closets hold the pistol-calibre guns, barns and camps the hunting guns, military the SMG.
  */
+/** Second range rack (data/containers.ts `weapon_rack_b`): the four M4 guns loaded, spare magazines and ammo. Refills on open. */
+export const GUN_RACK = [
+  { item: 'shotgun_a', count: 1, rounds: -1 }, { item: 'bolt_a', count: 1, rounds: -1 }, { item: 'smg_a', count: 1, rounds: -1 }, { item: 'revolver_a', count: 1, rounds: -1 },
+  { item: 'mag_shotgun_a', count: 2, rounds: -1 }, { item: 'mag_bolt_a', count: 3, rounds: -1 }, { item: 'mag_smg_a', count: 2, rounds: -1 }, { item: 'mag_revolver_a', count: 3, rounds: -1 },
+  { item: 'ammo_12ga', count: 24 }, { item: 'ammo_308', count: 20 }, { item: 'ammo_357', count: 24 },
+];
+
 type E = { item: string; weight: number; count: [number, number] };
 const e = (item: string, weight: number, lo = 1, hi = 1): E => ({ item, weight, count: [lo, hi] });
 

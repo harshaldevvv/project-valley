@@ -438,9 +438,9 @@ const MAP = {
 };
 const KIND = { food: ['can', { tab: true }], drink: ['bottle', {}], medical: ['kit', {}], tool: ['multitool', {}], material: ['brick', {}], clothing: ['jacket', {}], backpack: ['pack', {}], container: ['pouch', {}], valuable: ['brick', {}], misc: ['pouch', {}], ammo: ['box_ammo', {}], magazine: ['brick', { w: 0.35, h: 1, d: 0.7 }], weapon: ['bat', {}] };
 
-function fitCamera(obj, aspect) {
+function fitCamera(obj, aspect, side = false) {
   const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 100);
-  cam.position.set(1.5, 1.35, 2.2); cam.lookAt(0, 0, 0);
+  cam.position.set(1.5, 1.35, 2.2); if (side) cam.position.set(3, 0.25, 0.15); cam.lookAt(0, 0, 0);
   obj.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(obj);
   const ctr = box.getCenter(new THREE.Vector3());
@@ -478,13 +478,18 @@ window.renderIcon = async (id) => {
   const fill = new THREE.DirectionalLight(0x9fb4d0, 0.7); fill.position.set(-3, 1, 1); scene.add(fill);
   let obj, src = 'proc';
   if (PICKUP_MODELS.files[id] && !PROC_ICON.has(id)) { try { obj = await glbObject(id); src = 'glb'; } catch (e) { obj = null; } }
+  let side = false;
+  // Guns and magazines with a built wpn_* model (tools/audit/build_guns.mjs): the model itself, side on, barrel to the right
+  if (!obj && d.model && /^wpn_/.test(d.model) && (d.kind === 'weapon' || d.kind === 'magazine')) {
+    try { obj = (await loader.loadAsync(`/assets/models/wpn/${d.model}.glb`)).scene; side = d.kind === 'weapon'; src = 'wpn'; if (d.kind === 'magazine') obj.rotation.set(0, -0.6, 0); } catch (e) { obj = null; }
+  }
   if (!obj) {
     const [name, opt] = MAP[id] ?? KIND[d.kind];
     obj = B[name](d.iconSwatch ?? '#888', { ...(opt ?? {}) });
   }
   scene.add(obj);
   const lw = d.w, lh = d.h, long = Math.max(lw, lh), S = 128, W = Math.round((S * lw) / long), H = Math.round((S * lh) / long);
-  const cam = fitCamera(obj, W / H);
+  const cam = fitCamera(obj, W / H, side);
   R.setSize(W * 2, H * 2); R.setClearColor(0x000000, 0);
   R.render(scene, cam);
   const c2 = document.createElement('canvas'); c2.width = W; c2.height = H;

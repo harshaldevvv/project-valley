@@ -147,7 +147,7 @@ if (want('wpn_smg_a')) {
   b.box(0, 0.05, -0.285, 0.036, 0.03, 0.1, black);                      // handguard
   b.box(0, 0.075, 0.012, 0.02, 0.02, 0.02, steel);                      // charging handle
   m.box(0, -0.065, -0.02, 0.022, 0.15, 0.04, steelDark, 0.1); m.box(0, -0.147, -0.012, 0.026, 0.012, 0.046, black, 0.1);
-  await write('wpn_smg_a', b, { grip: [0, 0, 0], muzzle: [0, 0.062, -0.478], sight: [0, 0.115, -0.01], support: [0, 0.06, -0.29], mag: [0, 0.03, -0.12] }, m, [0, 0.03, -0.12]);
+  await write('wpn_smg_a', b, { grip: [0, 0, 0], muzzle: [0, 0.062, -0.478], sight: [0, 0.115, -0.01], support: [0, 0.03, -0.285], mag: [0, 0.03, -0.12] }, m, [0, 0.03, -0.12]);
 }
 
 // ---------------- Pump shotgun (Polyfork "Scattergun", recoloured) ----------------
@@ -160,7 +160,7 @@ if (want('wpn_shotgun_a')) {
   // the Polyfork palette is saturated blue: turn its cool metal into gun-metal grey, keep brass (warm) and the red/brown matte parts
   const grey = (c) => { const l = (0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2]) * 1.0 + 0.01; return [l * 0.95, l * 0.97, l * 1.05]; };
   b.addDoc(doc, m, (c, mat) => (mat === 'crystal' ? dark : mat === 'metal' && c[0] <= c[2] * 1.5 ? grey(c) : c));
-  await write('wpn_shotgun_a', b, { grip: [0, 0, 0], muzzle: [0, 0.075, -0.63], sight: [0, 0.19, -0.3], support: [0, 0.03, -0.4] }, null, null);
+  await write('wpn_shotgun_a', b, { grip: [0, 0, 0], muzzle: [0, 0.075, -0.63], sight: [0, 0.19, -0.3], support: [0, 0.036, -0.41] }, null, null);
 }
 
 // ---------------- Bolt-action hunting rifle (Polyfork) ----------------
@@ -172,7 +172,7 @@ if (want('wpn_bolt_a')) {
   mat4.rotateY(m2, m2, Math.PI / 2); mat4.scale(m2, m2, [S, S, S]); mat4.translate(m2, m2, [-GX, -GY, 0]);
   b2.addDoc(doc, m2, null);
   const bb = b2.bounds();
-  await write('wpn_bolt_a', b2, { grip: [0, 0, 0], muzzle: [0, 0.14 * S, bb.mn[2] + 0.005], sight: [0, 0.17 * S, -0.3], support: [0, 0.1, -0.35] }, null, null);
+  await write('wpn_bolt_a', b2, { grip: [0, 0, 0], muzzle: [0, 0.14 * S, bb.mn[2] + 0.005], sight: [0, 0.17 * S, -0.3], support: [0, 0.04, -0.42] }, null, null);
 }
 
 // ---------------- Magazines (world models) ----------------

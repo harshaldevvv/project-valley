@@ -678,7 +678,10 @@ export class Weapons {
         );
         vp.rotation.set(this.kickT * fpArms.kickPitch - this.sprintT * fpArms.sprintTuck * 0.5, this.swayLag.x * (1 - a * 0.7) + this.sprintT * fpArms.sprintTuck, this.sprintT * 0.2);
         this.vm.pivot.visible = !hidden && fp;
-        this.vm.update(dt, a, this.item?.defId ?? null);
+        const cyc = weaponFeel[this.item?.defId ?? '']?.cycle;
+        const span = this.def ? shotInterval(this.def.rpm) : 1;
+        const pk = cyc && this.sinceShot < span ? Math.min(1, Math.max(0, (this.sinceShot - span * 0.15) / (span * 0.7))) : 0;
+        this.vm.update(dt, a, this.item?.defId ?? null, Math.sin(pk * Math.PI));
       }
       // Legacy FP viewmodel (no arms asset): hip/ADS lerp, sway lag, bob, kick, holster dip, reload tilt
       const fpd = H.fp[this.isMelee ? 'knife' : this.def?.class === 'pistol' ? 'pistol' : 'rifle'];
