@@ -2,6 +2,8 @@ import type { BufferGeometry } from 'three';
 import { buildingWorld } from '../../content/data/pois';
 import type { BuildingDef, Opening, Placed } from '../../content/data/outskirts';
 import type { SurfaceTag } from '../../content/data/outskirts';
+import { BUILDINGS } from '../../content/data/outskirts';
+import type { DoorDef } from '../yard/doors';
 import { boxG, panelG, triG, xform } from './geo';
 
 /**
@@ -153,4 +155,17 @@ export function buildBuilding(b: BuildingDef, ctx: BuildCtx): BuildResult {
   const m = xform(b.x, b.z, b.yaw);
   for (const g of geos) g.applyMatrix4(m);
   return { geos, items };
+}
+
+/** One hinged door per house, shop and workshop: the first full-height opening in the front wall, hinged on its left jamb, swinging out. */
+export function buildingDoors(): DoorDef[] {
+  const out: DoorDef[] = [];
+  for (const b of BUILDINGS) {
+    if (b.kind === 'shed') continue;
+    const o = b.front.find((f) => f.sill === 0 && f.w <= 1.2);
+    if (!o) continue;
+    const hinge = buildingWorld(b, o.u - o.w / 2 + 0.01, b.d / 2 - T / 2);
+    out.push({ hx: hinge.x, hz: hinge.z, dx: Math.cos(b.yaw), dz: -Math.sin(b.yaw), ox: Math.sin(b.yaw), oz: Math.cos(b.yaw), w: o.w - 0.04 });
+  }
+  return out;
 }

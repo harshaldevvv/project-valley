@@ -1,4 +1,5 @@
 import { BUILDINGS, MAPLE_DZ as M, type BuildingDef } from './outskirts';
+import { FILL_SPOTS } from './outskirts_fill';
 
 /**
  * Points of interest in the outskirts south of the Yard (plain data). Metres, north = -Z.
@@ -7,7 +8,7 @@ import { BUILDINGS, MAPLE_DZ as M, type BuildingDef } from './outskirts';
  * is a data/containers.ts id; `theme` is a CONTAINER_THEMES key (what the spot is for), so a table can be re-pointed per theme.
  * Zombie zones are data only: the zombie system may read `poiZombieZones` to place hordes.
  */
-export type PoiTheme = 'gas' | 'farm' | 'house' | 'police' | 'camp' | 'school' | 'medical' | 'diner' | 'ranger';
+export type PoiTheme = 'gas' | 'farm' | 'house' | 'police' | 'camp' | 'school' | 'medical' | 'diner' | 'ranger' | 'road';
 export interface PoiContainer {
   type: string;
   theme: string;
@@ -137,6 +138,27 @@ export const POIS: PoiDef[] = [
     ],
     zombies: [{ x: 124, z: 262, radius: 14, count: 6 }],
   },
+
+  // micro-POIs (models in outskirts_fill.ts)
+  {
+    id: 'bus', theme: 'road', tier: 1, x: -22, z: 240, radius: 9, landmark: 'city-bus',
+    reason: 'A city bus that broke down on the crash-site road: luggage and a cooler left behind.',
+    containers: [c('camp_stash', 'camp', -20.8, 242.4, 0.4, 'camp-cooler'), c('duffel', 'camp', -24.5, 236.4, 0.8, 'kit-bag'), c('car_trunk', 'road', -16.3, 239.6, 1.6, null)],
+    zombies: [{ x: -22, z: 240, radius: 6, count: 3 }],
+  },
+  {
+    id: 'stand', theme: 'camp', tier: 1, x: -84, z: 231, radius: 9, landmark: 'splay-leg-lookout-tower',
+    reason: 'A hunting stand with a cold camp at its foot: a stash and a duffel, and a view over the whole west side.',
+    containers: [c('camp_stash', 'camp', -82.4, 232.4, 0.3, 'camp-cooler'), c('duffel', 'camp', -85.4, 229.6, 1.1, 'kit-bag')],
+    zombies: [{ x: -84, z: 232, radius: 7, count: 2 }],
+  },
+  {
+    id: 'memorial', theme: 'road', tier: 1, x: 10, z: 199, radius: 8, landmark: 'roadside-capilla-shrine',
+    reason: 'A roadside shrine with offerings left in a bag: someone still comes here, or someone did.',
+    containers: [c('duffel', 'camp', 8.0, 203.4, 0.4, 'kit-bag'), c('camp_stash', 'camp', 12.6, 198.4, 0.2, 'camp-cooler')],
+    zombies: [{ x: 10, z: 199, radius: 5, count: 2 }],
+  },
+
 ];
 
 /** Building-local (u, v) to world x, z (local +v is the front wall; yaw as in BuildingDef). */
@@ -155,5 +177,24 @@ for (const b of BUILDINGS) {
     poiSpots.push({ type: k.type, theme: k.theme, x: w.x, z: w.z, yaw: b.yaw + (k.yaw ?? 0), ...(k.y ? { y: k.y } : {}), model: k.model, poi: b.poi, id: `${b.id}_${i}`, building: b.id });
   });
 }
+for (const f of FILL_SPOTS) poiSpots.push(f);
 export const poiById: Record<string, PoiDef> = Object.fromEntries(POIS.map((p) => [p.id, p]));
 export const poiZombieZones = POIS.flatMap((p) => p.zombies.map((z) => ({ ...z, poi: p.id, tier: p.tier })));
+
+/** Streaming zombie population for the outskirts zones (read by gameplay/zombies Zombies.updatePoiSpawns). */
+export const POI_SPAWN = {
+  /** a zone fills when the player is within this + its radius (m) */
+  activate: 85,
+  /** beyond this distance an unseen zone is emptied again (the zombies go back to nothing; corpses stay) */
+  despawn: 160,
+  /** never closer to the player than this, never inside the camera frustum */
+  minFromPlayer: 24,
+  /** tier 1..3 multiplies a zone's `count` (danger rises with distance from the start) */
+  tierScale: { 1: 0.7, 2: 1, 3: 1.5 } as Record<number, number>,
+  /** alive outskirts zombies at once (the yard's own cap, horde.maxAlive, still applies) */
+  cap: 22,
+  /** seconds between spawn checks */
+  interval: 0.7,
+  /** a zone that was cleared stays empty until the player has left and this many seconds passed */
+  respawnS: 240,
+};

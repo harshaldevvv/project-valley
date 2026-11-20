@@ -8,5 +8,11 @@ export const poiText: Record<string, { name: string; hook: string }> = {
   diner: { name: 'Crossroads Diner', hook: 'Open 24 hours, once.' },
   camp: { name: 'Pinewood Camp', hook: 'Campers came to wait it out.' },
   crash: { name: 'Medevac Crash Site', hook: 'It went down carrying the cure, or so the radio said.' },
+  bus: { name: 'Broken-Down Bus', hook: 'Somebody got out and ran.' },
+  stand: { name: 'Hunting Stand', hook: 'Best view in the west. Worst place to be seen.' },
+  memorial: { name: 'Roadside Memorial', hook: 'Fresh candles. Fresher tracks.' },
   ranger: { name: 'Ranger Ridge', hook: 'See everything. Be seen by everything.' },
 };
+
+/** Danger label printed on the entrance sign, by tier. */
+export const tierLabel: Record<number, string> = { 1: 'Low risk', 2: 'Dangerous', 3: 'Extreme danger' };

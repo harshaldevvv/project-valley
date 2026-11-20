@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { Game } from '../../core/game';
 import { CONTAINER_THEMES, CONTAINERS } from '../../content/data/containers';
 import { BUILDINGS, FIELDS, OUT, PADS, PLACED, ROADS, type Placed, type SurfaceTag } from '../../content/data/outskirts';
+import { FILL } from '../../content/data/outskirts_fill';
 import { poiSpots } from '../../content/data/pois';
 import { pfWorldMaterial } from '../../engine/palette';
 import { addGroundRegion } from '../surfaces';
@@ -10,6 +11,9 @@ import type { Kit } from '../yard/kit';
 import { buildBuilding } from './buildings';
 import { loadPfm } from './models';
 import { footprints } from './footprints';
+import { buildDoors } from '../yard/doors';
+import { buildingDoors } from './buildings';
+import { buildPoiSigns } from './poiSigns';
 import { buildScatter } from './scatter';
 
 /**
@@ -19,6 +23,8 @@ import { buildScatter } from './scatter';
  */
 const UP = new Vector3(0, 1, 0);
 /** models whose open side is local -Z (the bar-back shelf: its black back panel is on +Z), turned round so yaw means "front toward" like the rest */
+/** models whose vertex colours are near black (the bar-back shelf interior, the brick garage) are brightened a little */
+const DEFAULT_LIFT: Record<string, number> = { 'back-bar-shelf-unit': 3, 'auto-repair-garage': 3.2 };
 const FRONT_MINUS_Z = new Set(['back-bar-shelf-unit']);
 
 const surfaceFor = (k: string): SurfaceTag => {
@@ -79,6 +85,7 @@ export async function buildOutskirts(kit: Kit, game: Game) {
     const s = p.s ?? 1;
     const g = m.geo.clone();
     if (FRONT_MINUS_Z.has(p.k)) p = { ...p, yaw: p.yaw + Math.PI };
+    if (!p.lift && DEFAULT_LIFT[p.k]) p = { ...p, lift: DEFAULT_LIFT[p.k] };
     if (p.lift) { const col = g.getAttribute('color'); for (let n = 0; n < col.count * 3; n++) (col.array as Float32Array)[n] *= p.lift; }
     g.applyMatrix4(new Matrix4().compose(new Vector3(p.x, p.y ?? 0, p.z), new Quaternion().setFromAxisAngle(UP, p.yaw), new Vector3(s, s, s)));
     push(p.chunk, g);
@@ -97,7 +104,7 @@ export async function buildOutskirts(kit: Kit, game: Game) {
     }
   };
 
-  const items: Placed[] = [...PLACED];
+  const items: Placed[] = [...PLACED, ...FILL];
   for (const b of BUILDINGS) {
     footprints.push({ x: b.x, z: b.z, r: Math.hypot(b.w, b.d) / 2 + 2 });
     const r = buildBuilding(b, ctx);
@@ -177,5 +184,7 @@ export async function buildOutskirts(kit: Kit, game: Game) {
     game.scene.add(mesh);
   }
 
+  buildPoiSigns(kit);
+  buildDoors(kit, buildingDoors());
   await buildScatter(kit, game);
 }

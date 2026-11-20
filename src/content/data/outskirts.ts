@@ -127,7 +127,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
     add(c, 'globe-gas-pump', -14.35, z, Math.PI / 2);
     add(c, 'gas-pump', -13.65, z, -Math.PI / 2);
   }
-  add(c, 'auto-repair-garage', -51, 160, Math.PI / 2, { lift: 2 });
+  add(c, 'auto-repair-garage', -51, 160, Math.PI / 2);
   add(c, 'depot-fuel-tank', -42, 141, 0);
   add(c, 'roadside-billboard', 11, 146, Math.PI);
   add(c, 'diner-sign', -6, 141, Math.PI);
@@ -548,4 +548,18 @@ export const CLEAR_RECTS: [number, number, number, number][] = [
   [8, 80, 244, 296], // camp
   [-110, -36, 236, 296], // crash site
   [100, 156, 244, 290], // ranger
+];
+
+// ---------------------------------------------------------------- POI entrance signs
+/** A sign board at x,z; the lettering faces `toward` (where the traveller comes from) and, on the back, the other way. */
+export const POI_SIGNS: { poi: string; x: number; z: number; toward: [number, number] }[] = [
+  { poi: 'checkpoint', x: 5.8, z: 106.5, toward: [5.8, 90] },
+  { poi: 'fuel', x: -6.2, z: 135.5, toward: [-6.2, 110] },
+  { poi: 'maple', x: -8.5, z: 192.4, toward: [10, 192.4] },
+  { poi: 'school', x: -131.5, z: 192.6, toward: [-110, 192.6] },
+  { poi: 'farm', x: 90, z: 159.4, toward: [60, 159.4] },
+  { poi: 'diner', x: 14, z: 226.6, toward: [-6, 226.6] },
+  { poi: 'camp', x: 8.2, z: 253, toward: [-6, 253] },
+  { poi: 'crash', x: -34, z: 244.3, toward: [0, 244.3] },
+  { poi: 'ranger', x: 82, z: 229.6, toward: [60, 229.6] },
 ];

@@ -10,6 +10,8 @@ import { surfaceOf } from '../../world/surfaces';
 import { vehicleText } from '../../content/text/vehicles';
 import { yard } from '../../content/data/yard';
 import { yardSpawns } from '../../world/yard/spawns';
+import { POI_SPAWN, poiZombieZones } from '../../content/data/pois';
+import { footprints } from '../../world/outskirts/footprints';
 import type { Ctx, HitInfo, HitResult, Hittable, Zone } from '../ctx';
 import { AnimationController, applyPose, makeCharacter, newPose, type Character } from '../animstand/character';
 import { createCrowd, type Crowd } from '../../engine/crowd';
@@ -163,6 +165,81 @@ export class Zombies {
       const a = this.ctx.rand() * Math.PI * 2;
       const r = Math.sqrt(this.ctx.rand()) * c.radius;
       await this.spawn(new Vector3(c.x + Math.cos(a) * r, 0.05, c.z + Math.sin(a) * r), this.ctx.rand() * Math.PI * 2, this.pickVariant());
+    }
+  }
+
+
+  /** Streaming outskirts population (data/pois.ts zones + POI_SPAWN): fills zones near the player out of sight, empties far ones. */
+  private poiZones = poiZombieZones.map((z) => ({ ...z, list: [] as Zombie[], killed: 0, cool: 0 }));
+  private poiT = 0;
+  private poiBusy = false;
+  private poiFrustum = new Frustum();
+  private poiM = new Matrix4();
+  private poiS = new Sphere(new Vector3(), 1.4);
+  /** Zombies of the outskirts zones alive right now (for tests and the perf overlay). */
+  get poiAlive() {
+    let n = 0;
+    for (const z of this.poiZones) for (const q of z.list) if (q.alive) n++;
+    return n;
+  }
+  updatePoiSpawns(dt: number) {
+    this.poiT += dt;
+    if (this.poiT < POI_SPAWN.interval) return;
+    this.poiT = 0;
+    const p = this.ctx.player;
+    if (p.dead) return;
+    const px = p.curr.x, pz = p.curr.z;
+    for (const zone of this.poiZones) {
+      zone.list = zone.list.filter((q) => {
+        if (q.alive) return true;
+        zone.killed++;
+        return false;
+      });
+      if (zone.cool > 0) zone.cool -= POI_SPAWN.interval;
+      const d = Math.hypot(zone.x - px, zone.z - pz);
+      if (d > POI_SPAWN.despawn) {
+        for (const q of zone.list) {
+          this.remove(q);
+          const k = this.list.indexOf(q);
+          if (k >= 0) this.list.splice(k, 1);
+        }
+        zone.list = [];
+        if (zone.killed > 0) { zone.cool = POI_SPAWN.respawnS; zone.killed = 0; } // cleared zones refill after a while
+      }
+    }
+    if (this.poiBusy) return;
+    const cam = this.ctx.game.camera;
+    cam.updateMatrixWorld();
+    this.poiFrustum.setFromProjectionMatrix(this.poiM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+    const dist = (zn: { x: number; z: number }) => Math.hypot(zn.x - px, zn.z - pz);
+    const want = (zn: { count: number; tier: number }) => Math.max(1, Math.round(zn.count * (POI_SPAWN.tierScale[zn.tier] ?? 1)));
+    if (this.alive >= HD.maxAlive || this.poiAlive >= POI_SPAWN.cap) {
+      // full: free the farthest populated zone (out of sight) for a nearer one that is short of zombies
+      const needy = this.poiZones.filter((zn) => zn.cool <= 0 && dist(zn) < POI_SPAWN.activate + zn.radius && zn.list.length + zn.killed < want(zn)).sort((a, b) => dist(a) - dist(b))[0];
+      const far = this.poiZones.filter((zn) => zn.list.length && (!needy || dist(zn) > dist(needy) + 40) && !zn.list.some((q) => { this.poiS.center.set(q.curr.x, q.curr.y + 1, q.curr.z); return this.poiFrustum.intersectsSphere(this.poiS); })).sort((a, b) => dist(b) - dist(a))[0];
+      if (needy && far) {
+        for (const q of far.list) { this.remove(q); const k = this.list.indexOf(q); if (k >= 0) this.list.splice(k, 1); }
+        far.list = [];
+      }
+      return;
+    }
+    for (const zone of this.poiZones) {
+      if (zone.cool > 0 || Math.hypot(zone.x - px, zone.z - pz) > POI_SPAWN.activate + zone.radius) continue;
+      if (zone.list.length + zone.killed >= want(zone)) continue;
+      for (let tries = 0; tries < 12; tries++) {
+        const a = this.ctx.rand() * Math.PI * 2, r = Math.sqrt(this.ctx.rand()) * zone.radius;
+        const x = zone.x + Math.cos(a) * r, z = zone.z + Math.sin(a) * r;
+        if (Math.hypot(x - px, z - pz) < POI_SPAWN.minFromPlayer) continue;
+        if (zone.radius > 3 && footprints.some((f) => Math.hypot(x - f.x, z - f.z) < f.r)) continue; // not inside a prop; the small zones are inside buildings on purpose
+        this.poiS.center.set(x, 1, z);
+        if (this.poiFrustum.intersectsSphere(this.poiS)) continue; // never pop in view
+        this.poiBusy = true;
+        this.spawn(new Vector3(x, 0.05, z), this.ctx.rand() * Math.PI * 2, this.pickVariant())
+          .then((zb) => zone.list.push(zb))
+          .catch(() => undefined)
+          .finally(() => (this.poiBusy = false));
+        return; // one per check keeps the frame cost flat
+      }
     }
   }
 
@@ -419,6 +496,7 @@ export class Zombies {
 
   // ------------------------------------------------------------- sim
   step(dt: number) {
+    this.updatePoiSpawns(dt);
     this.time += dt;
     this.tickN++;
     const p = this.ctx.player;
