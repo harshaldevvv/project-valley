@@ -97,6 +97,14 @@ export const animPost = {
   hitClipMaxSpeed: 0.5, // m/s: above this a hit is procedural only (the full-body clip would freeze the legs)
   landClipMaxSpeed: 1.5, // m/s horizontal: same for the hard-landing clip
   accelSmoothHL: 0.04, // s: speed is smoothed before differentiating for the acceleration lean
+  // Third-person melee swing layered on the hero's clip (driven by melee.swingVis: -1 wind-up .. +1 follow-through)
+  meleeTwistDeg: 28, // chest + spine yaw at full wind-up / follow-through (light)
+  meleeTwistHeavyDeg: 40,
+  meleeArmDeg: 38, // right upper arm horizontal arc on top
+  meleeDropDeg: 14, // chop: the arm drops through the follow-through
+  meleeSwingHL: 0.03, // s smoothing (no pop when the wind-up starts)
+  meleePauseLight: 0.07, // s the hero's swing stalls on contact (was hitstop × 0.7 ≈ 0.03, invisible)
+  meleePauseHeavy: 0.1,
   // Turn in place (§3.5): threshold, the upper body absorbs the rest
   turnTriggerDeg: 80,
 };

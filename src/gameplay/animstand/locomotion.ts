@@ -147,6 +147,9 @@ export class PlayerAnimator {
   /** Hitstop on the hero: the upper one-shot (melee swing) nearly stops for `seconds`, then resumes. */
   private pauseT = 0;
   private upperTS = 1;
+  get paused() {
+    return this.pauseT > 0;
+  }
   hitPause(seconds: number) {
     this.pauseT = Math.max(this.pauseT, seconds);
   }

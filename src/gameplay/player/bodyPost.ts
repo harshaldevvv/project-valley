@@ -63,6 +63,8 @@ export class BodyPost {
   private hips: Object3D | null;
   private spine: Object3D | null;
   private chest: Object3D | null;
+  private armR: Object3D | null;
+  private swing = 0;
   private neck: Object3D | null;
   private head: Object3D | null;
   private legs: Leg[] = [];
@@ -84,6 +86,7 @@ export class BodyPost {
     this.hips = anim.bone('hips');
     this.spine = anim.bone('spine');
     this.chest = anim.bone('chest');
+    this.armR = anim.bone('upper_arm_R');
     this.neck = anim.bone('neck');
     this.head = anim.bone('head');
     for (const s of ['L', 'R']) {
@@ -159,6 +162,20 @@ export class BodyPost {
     if (this.spine) {
       rotateWorld(this.spine, _f, -this.roll * 0.6);
       rotateWorld(this.spine, _r, -this.pitchLean * 0.6);
+    }
+
+    // ---- third-person melee swing: torso twist + right-arm arc on top of the clip, held during the hit pause
+    const m = this.ctx.melee;
+    const swinging = (m.phase === 'windup' || m.phase === 'active' || m.phase === 'recovery') && !p.dead;
+    if (!this.ctx.playerAnim?.paused) this.swing = spring(this.swing, swinging ? m.swingVis : 0, dt, P.meleeSwingHL);
+    if (Math.abs(this.swing) > 1e-3) {
+      const tw = this.swing * (m.heavy ? P.meleeTwistHeavyDeg : P.meleeTwistDeg) * DEG; // + = toward the left (follow-through)
+      if (this.spine) rotateWorld(this.spine, UP, tw * 0.4);
+      if (this.chest) rotateWorld(this.chest, UP, tw * 0.6);
+      if (this.armR) {
+        rotateWorld(this.armR, UP, this.swing * P.meleeArmDeg * DEG);
+        rotateWorld(this.armR, _r, -Math.max(0, this.swing) * P.meleeDropDeg * DEG);
+      }
     }
 
     // ---- hit flinch (springed, overshoots a touch and settles)

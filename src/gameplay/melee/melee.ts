@@ -1,6 +1,7 @@
 import { Object3D, Vector3 } from 'three';
 import { Group, groups } from '../../engine/physics';
 import { stamina as SD } from '../../content/data/player';
+import { animPost as AP } from '../../content/data/anim';
 import { finisher as FIN, fpArms as FA, meleeDefs, shove as SH, type MeleeDef } from '../../content/data/weapons';
 import type { Ctx } from '../ctx';
 import { surfaceOf } from '../../world/surfaces';
@@ -241,7 +242,7 @@ export class Melee {
     });
     this.ctx.fx.impact(_p, _n, h.surface, _d, this.heavy ? 1.6 : 1.1);
     this.ctx.fx.freeze(this.heavy ? def.hitstopHeavy : def.hitstopLight); // FX pop on hitstop release
-    this.ctx.playerAnim?.hitPause((this.heavy ? def.hitstopHeavy : def.hitstopLight) * 0.7); // TP: the hero's swing stalls on contact too
+    this.ctx.playerAnim?.hitPause(this.heavy ? AP.meleePauseHeavy : AP.meleePauseLight); // TP: the hero's swing stalls on contact too
     this.ctx.sfx(def.id === 'knife_a' ? 'knife_hit' : 'melee_hit', _p, { pitchJitter: 0.08 });
     this.ctx.rig.addTrauma(this.heavy ? 0.3 : 0.18);
     this.ctx.rig.kick(0, this.heavy ? -1.5 : -0.8);
