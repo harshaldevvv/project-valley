@@ -22,11 +22,11 @@ import { buildScatter } from './scatter';
  * solid model, searchable containers registered in game.places, and the forest scatter (scatter.ts).
  */
 const UP = new Vector3(0, 1, 0);
-/** models whose open side is local -Z (the bar-back shelf: its black back panel is on +Z), turned round so yaw means "front toward" like the rest */
-/** models whose vertex colours are near black (the bar-back shelf interior, the brick garage, the department store) are brightened.
+/** models whose vertex colours are near black (the brick garage, the department store) are brightened.
  *  lift k maps c -> 1 - (1 - c)^k: dark colours gain about k times, light ones approach 1 instead of blowing out (bloom). */
-const DEFAULT_LIFT: Record<string, number> = { 'back-bar-shelf-unit': 3, 'auto-repair-garage': 3.2, 'department-store': 2.6 };
-const FRONT_MINUS_Z = new Set(['back-bar-shelf-unit']);
+const DEFAULT_LIFT: Record<string, number> = { 'auto-repair-garage': 3.2, 'department-store': 2.6 };
+/** near-black vertex colours (max channel < 0.06) repainted: the bar-back shelf's back panel reads as a hole in every shop */
+const DARK_FILL: Record<string, [number, number, number]> = { 'back-bar-shelf-unit': [0.3, 0.22, 0.15] };
 
 const surfaceFor = (k: string): SurfaceTag => {
   if (/truck|van\b|car\b|suv|wagon|pickup|cruiser|jeep|tank|hatchback|sedan|trailer|bus$|helicopter|aeroplane|tower|lamp|pump|drum|barrier|gatehouse|canopy|dumpster|vending|booth|hydrant|trash|jerry|fence-run|ambulance|tractor|stove|cabinet|locker|filing|fridge|guardrail|crash/.test(k)) return 'metal';
@@ -85,8 +85,9 @@ export async function buildOutskirts(kit: Kit, game: Game) {
     if (!m) return;
     const s = p.s ?? 1;
     const g = m.geo.clone();
-    if (FRONT_MINUS_Z.has(p.k)) p = { ...p, yaw: p.yaw + Math.PI };
     if (!p.lift && DEFAULT_LIFT[p.k]) p = { ...p, lift: DEFAULT_LIFT[p.k] };
+    const fill = DARK_FILL[p.k];
+    if (fill) { const a = g.getAttribute('color').array as Float32Array; for (let n = 0; n < a.length; n += 3) if (Math.max(a[n], a[n + 1], a[n + 2]) < 0.06) a.set(fill, n); }
     if (p.lift) { const a = g.getAttribute('color').array as Float32Array; for (let n = 0; n < a.length; n++) a[n] = 1 - Math.pow(1 - Math.min(1, Math.max(0.06, a[n])), p.lift); }
     g.applyMatrix4(new Matrix4().compose(new Vector3(p.x, p.y ?? 0, p.z), new Quaternion().setFromAxisAngle(UP, p.yaw), new Vector3(s, s, s)));
     push(p.chunk, g);
