@@ -10,6 +10,7 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 - [x] A3 Rig bridge: Polyfork skeleton renamed to our bone names + sockets (hand_R/L, head, back), our survivor clips retargeted onto it (`tools/audit/retarget_pf.py` approach).
 - [x] A4 Hero in game as default player; old survivor kept behind a flag.
 - [~] A5 Animations (stride scale 0.96 for the hero's legs: planted-foot slip at jog 0.6 -> 0.48 m/s, `tools/audit/footslide.mjs`; original survivor 0.23): compare our clips vs Polyfork native Idle/Walk/Run; pick the better per clip; fix foot sliding, arm swing, transitions.
+  - Foot locking (two-bone IK pins planted feet), aimed diagonals by orientation warping, hero crouch stride 0.85 (730b014): planted slip jog 0.45/0.19 -> 0.06/0.03 m/s, sprint 0.39/0.28 -> 0.13/0.07, crouch 0.49/0.27 -> 0.19/0.25, aimed diagonal 0.96/0.70 -> 0.13/0.02 (`tools/audit/footratio.mjs`). Hit/land while moving: procedural flinch + pelvis dip (no frozen legs). TP knife swing: torso twist + arm arc, 70/100 ms hero hit pause (1576dfa, `feelshots.mjs`). Still open: Polyfork native clip compare, arm swing.
 - [x] A6 Rifle and pistol hold (third person): both hands on the gun, no wrist bends, aim offset works.
 - [x] A7 Knife hold: blade forward from a natural wrist angle (TP and FP).
 - [x] A8 First person: no seeing inside the hand/arm (near plane, arm placement, back faces), sleeves match the hero.
@@ -29,6 +30,7 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 ## B. Controls and feel
 - [x] B1 Stop-start while walking on flat ground (velocity was zeroed by any blocked tick; now wall-slide only). `tools/audit/walkdiag.mjs`: speed dips 29 -> 0.
 - [~] B2 Smoothness: sprint verified steady 5.8 m/s with stamina drain (`tools/audit/sprintdiag.mjs`); turn-in-place and camera lag not yet tuned.
+  - Turn-in-place now turns the hero (Mixamo 'Hips' lookup was missing); body yaw accel-limited: turn-onset jump 8.9 -> 1.6 deg/frame² (jog 180 flick), 12.8 -> 1.7 (sprint 90) (730b014, `tools/audit/turnprobe.mjs`). Camera lag still open.
 - [x] B3 Stall check (corrected: the first version of `tools/audit/stalldiag.mjs` never moved the player, so its 0 meant nothing). Real causes found later: heightfield cell edges stopped the player for one tick every few metres; fixed with FIX_INTERNAL_EDGES + a floor-only retry (route stall ticks ~200 -> 9 in `outskirtswalk.mjs`). The fixed `stalldiag.mjs` walks ~11 m per direction with real key presses: 1 stop, at a real wall.
 
 ## C. Weapons and audio
