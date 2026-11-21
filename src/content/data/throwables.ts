@@ -36,6 +36,7 @@ export const throwTuning = {
   cooldownS: 0.7,
   previewSteps: 46,
   previewDt: 0.045,
+  previewSkip: 3, // first preview dots hidden so the throwable in the hand shows (audit A13)
   breakSpeed: 3.2, // m/s of sudden speed change that counts as a hard impact
   maxLifeS: 12,
   frag: {
@@ -69,5 +70,32 @@ export const throwTuning = {
     lightColor: '#ff3a2a',
     lightIntensity: 4,
     lightRange: 20,
+  },
+};
+
+/**
+ * Hold pose while aiming a throwable (audit A13): the gun goes away, the right hand cocks back above the shoulder with the
+ * throwable in it, the left arm points at the target. TP is two-bone IK on the hero's arms (hand targets in body space,
+ * m from each shoulder: x right, y up, z forward); FP is the arms rig's knife idle with the rig lifted and tilted back.
+ */
+export const throwPose = {
+  inHL: 0.05, // s: blend into the pose
+  outHL: 0.04, // s: blend out (the throw swing takes over)
+  followS: 0.32, // s after the release the gun stays away while the throw swing plays
+  tp: {
+    handR: [0.12, 0.2, -0.16] as [number, number, number], // behind and above the right shoulder
+    poleR: [1, -0.4, -0.6] as [number, number, number], // elbow out to the side and back (body space)
+    handL: [0.12, -0.02, 0.42] as [number, number, number], // left arm out toward the target
+    poleL: [-0.6, -1, 0] as [number, number, number],
+    /** Throwable in SOCKET_hand_R (m, rad). */
+    itemPos: [0, -0.02, 0.06] as [number, number, number],
+    itemRot: [0, 0, 0] as [number, number, number],
+  },
+  fp: {
+    pivotPos: [0.08, 0.06, 0.1] as [number, number, number], // camera space: right, up and back toward the shoulder
+    pivotRot: [0.1, -0.2, -0.4] as [number, number, number], // rolled so the fist rises at the right edge
+    /** Throwable in the arms' SOCKET_knife (m, rad). */
+    itemPos: [0, 0, 0] as [number, number, number],
+    itemRot: [0, 0, 0] as [number, number, number],
   },
 };

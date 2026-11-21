@@ -108,4 +108,12 @@ export const animPost = {
   meleePauseHeavy: 0.1,
   // Turn in place (§3.5): threshold, the upper body absorbs the rest
   turnTriggerDeg: 80,
+  // Third-person support hand (audit A13): the rifle clips put the left hand at the AK's mag well; two-bone IK moves the
+  // wrist to the held gun's SOCKET_support (handguard / pump) plus this offset (gun-local m: x right, y up, z back)
+  tpSupportOffset: [-0.02, -0.09, 0.03] as [number, number, number],
+  tpSupportPole: [-0.4, -1, 0] as [number, number, number], // elbow pulled down and out (body space: x right, y up, z forward)
+  tpSupportProtractDeg: 24, // left clavicle swung forward so the arm reaches further down the handguard
+  tpSupportReach: 0.97, // share of the arm's length the wrist may be from the shoulder (a slight elbow bend stays)
+  tpSupportMaxBack: 0.16, // m the wrist may slide back from the socket toward the receiver when the arm is short
+  tpSupportLowReady: 1, // weight with the gun lowered (1 = the hand stays on the handguard), the raised gun is always 1
 };

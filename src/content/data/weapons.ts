@@ -230,6 +230,10 @@ export const fpArms = {
   /** Left hand rolled around the barrel (rad, + = under the handguard toward the eye) per gun id, else `default`: the arm
    *  clips wrap the hand round the far side of the handguard where the gun hides it (audit A10, tools/audit/handaudit.mjs). */
   supportRoll: { default: 0.6 } as Record<string, number>,
+  /** ADS: left hand rolled under the barrel (rad, like supportRoll) and offset (grip-local m) per gun id, where the ADS
+   *  clip's grip sits behind the gun from the eye (shotgun_a: the pump hid the whole hand; audit A13). */
+  supportRollAds: { shotgun_a: 1.0 } as Record<string, number>,
+  supportAds: { shotgun_a: [-0.06, -0.03, -0.04] } as Record<string, [number, number, number]>,
   /** Left elbow pulled down in camera space (IK pole weight, 0 = the clip's elbow): the hip offset slides the rig forward,
    *  which brings the left forearm's elbow end into view as a cut-off tube. */
   supportElbowDown: 2,

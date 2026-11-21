@@ -380,7 +380,7 @@ export class Viewmodel {
     if (w < 0.01) return;
     const off = F.support[itemId] ?? [0, 0, 0];
     const hip = w * (1 - ads); // the roll and elbow pull are hip-only: the ADS clip already shows the hand on the handguard
-    const roll = (F.supportRoll[itemId] ?? F.supportRoll.default) * hip;
+    const roll = (F.supportRoll[itemId] ?? F.supportRoll.default) * hip + (F.supportRollAds[itemId] ?? 0) * w * ads;
     const forearm = hand.parent, upper = forearm?.parent;
     if (!forearm || !upper) return;
     this.pivot.updateMatrixWorld(true);
@@ -389,7 +389,8 @@ export class Viewmodel {
     _c.set(ref[0], ref[1], ref[2]).applyMatrix4(root.matrixWorld); // that point in the current gun's frame
     sock.getWorldPosition(_a);
     _a.sub(_c); // gun's own support point minus the reference point, in world space
-    _b.set(off[0], off[1], off[2] + pump * F.pumpTravel).applyQuaternion(root.getWorldQuaternion(_q2)); // data offset + pump slide (metres: transformDirection would normalise it to 1 m)
+    const oa = F.supportAds[itemId], ka = w * ads; // ADS-only offset (lowers the hand out from under the pump)
+    _b.set(off[0] + (oa ? oa[0] * ka : 0), off[1] + (oa ? oa[1] * ka : 0), off[2] + (oa ? oa[2] * ka : 0) + pump * F.pumpTravel).applyQuaternion(root.getWorldQuaternion(_q2)); // data offset + pump slide (metres: transformDirection would normalise it to 1 m)
     const shift = _a.add(_b).multiplyScalar(w);
     if (shift.lengthSq() < 1e-6 && Math.abs(roll) < 1e-3 && F.supportElbowDown * hip <= 1e-3) return;
     const target = _t.clone().add(shift);

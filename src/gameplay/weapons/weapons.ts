@@ -16,6 +16,7 @@ import { attachOf } from '../../systems/attachments';
 import { defOf } from '../../systems/inventory';
 import { OpticsOverlay } from '../../ui/hud/optics';
 import { syncParts } from './attachParts';
+import { throwPose } from '../../content/data/throwables';
 
 /**
  * Weapons runtime (principles §3/§4): fire (semi/auto, RPM cap), per-tick segment-raycast ballistics,
@@ -122,6 +123,7 @@ export class Weapons {
   readonly fpHolder = new Object3D(); // child of the camera (legacy viewmodel, no arms)
   readonly vm = new Viewmodel();
   private legacyDummy = new Object3D();
+  private vmThrow = false; // FP arms are in the throwable hold pose (knife kind); restored to the gun's kind after
   private sprintT = 0;
   private trailOn = false;
   /** 0 = low-ready, 1 = raised to aim (third-person carry pose). */
@@ -396,7 +398,7 @@ export class Weapons {
       const pull = auto ? c.down('fire') || this.semiBuffered > 0 : this.semiBuffered > 0; // a quick tap still fires while the gun comes up
       const sprintOk = this.sinceSprint * 1000 >= def.sprintToFireMs;
       const raisedOk = this.ctx.rig.firstPerson || this.raiseT >= BF.fireReady; // TP: the barrel comes up first (~0.1 s)
-      if (pull && this.cooldown <= 0 && this.ready && sprintOk && !p.sprinting && raisedOk) {
+      if (pull && this.cooldown <= 0 && this.ready && sprintOk && !p.sprinting && raisedOk && !this.ctx.throwables?.holding) {
         this.semiBuffered = 0;
         this.fire(def);
       }
@@ -700,10 +702,28 @@ export class Weapons {
     const fp = ctx.rig.firstPerson && !ctx.player.inVehicle;
     const m = this.item ? this.models.get(this.item.defId) : undefined;
     const p = ctx.player;
-    const hidden = p.inVehicle || p.dead || this.isBuilding() || p.usingItem; // QA-083: weapon away while using an item
+    const away = p.inVehicle || p.dead || this.isBuilding() || p.usingItem; // QA-083: weapon away while using an item
+    const throwing = !away && !!ctx.throwables?.holding; // A13: the gun is put away while a throwable is held
+    const hidden = away || throwing;
     for (const [, mm] of this.models) {
       mm.fp.root.visible = !hidden && fp && mm === m;
       mm.tp.root.visible = !hidden && !fp && mm === m;
+    }
+    if (this.vm.ready) {
+      if (throwing) {
+        // FP throwable hold: knife idle (right hand closed round the item) with the rig lifted and tilted back to the shoulder
+        if (!this.vmThrow) this.vm.setKind('knife');
+        this.vmThrow = true;
+        const k = ctx.throwables.holdW, tp = throwPose.fp;
+        this.vm.pivot.position.set(tp.pivotPos[0] * k, tp.pivotPos[1] * k, tp.pivotPos[2] * k);
+        this.vm.pivot.rotation.set(tp.pivotRot[0] * k, tp.pivotRot[1] * k, tp.pivotRot[2] * k);
+        this.vm.pivot.visible = fp;
+        this.vm.update(dt, 0, null);
+      } else if (this.vmThrow) {
+        this.vmThrow = false;
+        this.vm.setKind(this.fpKind);
+      }
+      if (!m && !throwing) this.vm.pivot.visible = false;
     }
     // Switch/holster progress 0 drawn .. 1 lowered
     let lower = 0;
@@ -717,7 +737,7 @@ export class Weapons {
     const od = !this.item || this.isMelee || hidden ? 'none' : (this.optic?.overlay ?? 'none');
     (this.opticsUi ??= new OpticsOverlay()).set(od, this.adsEased);
 
-    if (m) {
+    if (m && !throwing) {
       this.syncAttach(this.item!.defId, m);
       const extMag = !!this.item?.mag && /_ext$/.test(this.item.mag.defId);
       for (const mm of [m.tp.mag, m.fp.mag]) if (mm) mm.scale.y = extMag ? O.extMagScale : 1;

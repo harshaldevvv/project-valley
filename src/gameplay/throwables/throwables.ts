@@ -2,7 +2,7 @@ import { AdditiveBlending, BoxGeometry, BufferGeometry, Color, CylinderGeometry,
 import type { Collider, RigidBody } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
 import { surfaceOf } from '../../world/surfaces';
-import { throwDefs, throwOrder, throwTuning as T, type ThrowDef } from '../../content/data/throwables';
+import { throwDefs, throwOrder, throwPose as TP, throwTuning as T, type ThrowDef } from '../../content/data/throwables';
 import { itemText } from '../../content/text/items';
 import { throwText } from '../../content/text/throw';
 import { probe, type Ctx } from '../ctx';
@@ -168,6 +168,14 @@ export class Throwables {
   private badge: HTMLDivElement | null = null;
   private badgeT = 0;
   private time = 0;
+  /** In-hand models while aiming (TP: hero's right hand, FP: arms' knife socket), one per item id and view. */
+  private inHand = new Map<string, Object3D>();
+  private followT = 0;
+  /** Hold pose weight 0..1 (bodyPost TP arms, Weapons FP arms); the gun is put away while `holding`. */
+  holdW = 0;
+  get holding() {
+    return this.aiming || !!this.pending || this.followT > 0;
+  }
   /** Debug/test hook: last explosion summary. */
   lastBlast: { zombies: number; killed: number; playerHurt: number } | null = null;
 
@@ -214,9 +222,28 @@ export class Throwables {
     }
   }
 
+  /** The selected throwable in the hero's right hand (TP) and the FP arms' hand, only while held. */
+  private showInHand(id: string | null) {
+    const fp = this.ctx.rig.firstPerson && !this.ctx.player.inVehicle;
+    for (const [k, o] of this.inHand) o.visible = !!id && k === `${id}:${fp ? 'fp' : 'tp'}`;
+    if (!id) return;
+    const key = `${id}:${fp ? 'fp' : 'tp'}`;
+    if (this.inHand.has(key)) return;
+    const parent = fp ? this.ctx.weapons.vm.socket('knife') : this.ctx.playerChar?.hand;
+    if (!parent) return;
+    const o = look(throwDefs[id]);
+    const d = fp ? TP.fp : TP.tp;
+    o.position.set(d.itemPos[0], d.itemPos[1], d.itemPos[2]);
+    o.rotation.set(d.itemRot[0], d.itemRot[1], d.itemRot[2]);
+    o.traverse((c) => (c.frustumCulled = false));
+    parent.add(o);
+    this.inHand.set(key, o);
+  }
+
   private cancelAim() {
     this.aiming = false;
     this.aimT = 0;
+    this.followT = 0;
     this.pending = null;
     this.dots.visible = this.marker.visible = false;
   }
@@ -272,7 +299,8 @@ export class Throwables {
     let count = 0;
     let hit = false;
     for (let i = 0; i <= n; i++) {
-      m.makeTranslation(pp.x, pp.y, pp.z);
+      if (i < T.previewSkip) m.makeScale(0, 0, 0); // the first dots would sit on the throwable in the hand
+      else m.makeTranslation(pp.x, pp.y, pp.z);
       this.dots.setMatrixAt(count++, m);
       if (i === n) break;
       vv.y -= 9.81 * T.previewDt;
@@ -339,6 +367,10 @@ export class Throwables {
       this.spawn(this.pending.id);
       this.pending = null;
     }
+    this.followT = Math.max(0, this.followT - dt);
+    const hold = this.aiming || !!this.pending;
+    this.holdW += ((hold ? 1 : 0) - this.holdW) * (1 - Math.exp((-0.6931 * dt) / (hold ? TP.inHL : TP.outHL)));
+    this.showInHand(hold ? (this.pending?.id ?? cur) : null);
     this.stepProjectiles(dt);
     this.stepFires(dt);
     this.stepLight(dt);
@@ -368,8 +400,9 @@ export class Throwables {
     if (!used && !this.ctx.weapons.sandbox) return;
     this.cd = T.cooldownS;
     this.pending = { id, t: T.windupS };
+    this.followT = T.windupS + TP.followS;
     this.ctx.playerAnim?.oneshot('melee_swing', 0.08);
-    this.ctx.weapons.vm.play('fp_shove', { timeScale: 1.5, leftOnly: true });
+    this.ctx.weapons.vm.play('fp_knife_light', { seconds: T.windupS + TP.followS }); // the right arm swings forward and lets go
     this.ctx.sfx('melee_swing', this.ctx.player.curr, { volume: 0.7, pitchJitter: 0.1 });
     this.ctx.rig.kick(0, -0.5);
     if (this.countOf(id) <= 0) this.sel = 0;

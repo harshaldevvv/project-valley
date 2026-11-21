@@ -3,6 +3,8 @@ import { Group, groups } from '../../engine/physics';
 import { animPost as P } from '../../content/data/anim';
 import type { Ctx } from '../ctx';
 import type { PlayerAnimator } from '../animstand/locomotion';
+import { reach } from '../animstand/ik';
+import { throwPose as TP } from '../../content/data/throwables';
 
 /**
  * Procedural pass after the mixer (research §3.3, 3.7, 3.8, 3.9), player only:
@@ -64,6 +66,12 @@ export class BodyPost {
   private spine: Object3D | null;
   private chest: Object3D | null;
   private armR: Object3D | null;
+  private armL: Object3D | null;
+  private clavL: Object3D | null;
+  private foreL: Object3D | null;
+  private handL: Object3D | null;
+  private foreR: Object3D | null;
+  private handR: Object3D | null;
   private swing = 0;
   private neck: Object3D | null;
   private head: Object3D | null;
@@ -87,6 +95,12 @@ export class BodyPost {
     this.spine = anim.bone('spine');
     this.chest = anim.bone('chest');
     this.armR = anim.bone('upper_arm_R');
+    this.armL = anim.bone('upper_arm_L');
+    this.clavL = anim.bone('shoulder_L');
+    this.foreL = anim.bone('forearm_L');
+    this.handL = anim.bone('hand_L');
+    this.foreR = anim.bone('forearm_R');
+    this.handR = anim.bone('hand_R');
     this.neck = anim.bone('neck');
     this.head = anim.bone('head');
     for (const s of ['L', 'R']) {
@@ -215,10 +229,71 @@ export class BodyPost {
       if (this.head) rotateWorld(this.head, _w, lp * 0.6);
     }
 
+    // ---- arms: support hand on the handguard, throwable hold pose
+    if (!p.dead && !p.inVehicle) {
+      this.supportHand(raise);
+      this.throwHold(bodyYaw);
+    }
+
     // ---- foot IK + pelvis, landing dip, then foot locking
     this.footIK(dt, sp);
     this.landDip(sub);
     this.footLock(dt, sp);
+  }
+
+  /** Body-space vector (x right, y up, z forward) to world. */
+  private bodyVec(v: readonly number[], out: Vector3) {
+    return out.set(0, 0, 0).addScaledVector(_r, v[0]).addScaledVector(UP, v[1]).addScaledVector(_f, v[2]);
+  }
+
+  /**
+   * Two-handed guns: the left wrist goes onto the handguard (audit A13; the clips grip the AK's mag well). The hero's arms
+   * are short for the gun, so the left shoulder comes forward (clavicle) and the wrist takes the farthest point along the
+   * barrel, from the gun's SOCKET_support back toward the receiver, that the arm reaches with a slight bend.
+   */
+  private supportHand(raise: number) {
+    const w = this.ctx.weapons;
+    if (!this.armL || !this.foreL || !this.handL || !w.item || w.isMelee || w.def?.class === 'pistol' || w.reload || w.switchPhase !== 'none') return;
+    if (this.ctx.melee.phase !== 'idle' || this.ctx.throwables?.holding || this.ctx.player.usingItem) return;
+    const k = P.tpSupportLowReady + (1 - P.tpSupportLowReady) * raise;
+    if (k < 0.01) return;
+    const gun = this.ctx.playerChar.hand.children.find((c) => c.visible && c.getObjectByName('SOCKET_support'));
+    const sock = gun?.getObjectByName('SOCKET_support');
+    if (!gun || !sock) return;
+    if (this.clavL) rotateWorld(this.clavL, UP, -P.tpSupportProtractDeg * DEG * k);
+    gun.updateWorldMatrix(true, true);
+    const gq = gun.getWorldQuaternion(_q);
+    const o = P.tpSupportOffset;
+    sock.getWorldPosition(_t).add(_v.set(o[0], o[1], o[2]).applyQuaternion(gq));
+    // reach limit: slide back along the barrel (+Z gun-local) until within tpSupportReach of the arm's length
+    this.armL.getWorldPosition(_a);
+    this.foreL.getWorldPosition(_b);
+    this.handL.getWorldPosition(_c);
+    const len = (_a.distanceTo(_b) + _b.distanceTo(_c)) * P.tpSupportReach;
+    _v.set(0, 0, 1).applyQuaternion(gq); // back along the barrel
+    for (let i = 0; i < 40 && _a.distanceTo(_t) > len; i++) {
+      if (i * 0.01 >= P.tpSupportMaxBack) break;
+      _t.addScaledVector(_v, 0.01);
+    }
+    _t.lerp(_c, 1 - k);
+    reach(this.armL, this.foreL, this.handL, _t, this.bodyVec(P.tpSupportPole, _w).multiplyScalar(k));
+  }
+
+  /** Throwable held (throwables.holdW): right hand cocked back above the shoulder, left arm out toward the target. */
+  private throwHold(bodyYaw: number) {
+    const k = this.ctx.throwables?.holdW ?? 0;
+    if (k < 0.01) return;
+    _r.set(Math.cos(bodyYaw), 0, -Math.sin(bodyYaw));
+    _f.set(-Math.sin(bodyYaw), 0, -Math.cos(bodyYaw));
+    const arm = (A: Object3D | null, B: Object3D | null, C: Object3D | null, hand: readonly number[], pole: readonly number[]) => {
+      if (!A || !B || !C) return;
+      A.getWorldPosition(_t).add(this.bodyVec(hand, _v));
+      C.getWorldPosition(_a);
+      _t.lerp(_a, 1 - k);
+      reach(A, B, C, _t, this.bodyVec(pole, _w).multiplyScalar(k));
+    };
+    arm(this.armR, this.foreR, this.handR, TP.tp.handR, TP.tp.poleR);
+    arm(this.armL, this.foreL, this.handL, TP.tp.handL, TP.tp.poleL);
   }
 
   /** Pelvis dips on touch-down in proportion to the fall speed and springs back; knees bend to keep the feet. */

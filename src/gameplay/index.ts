@@ -186,7 +186,7 @@ export async function installGameplay(game: Game): Promise<void> {
       if (bodyAnim) {
         // Locomotion input for the blend space (body frame), carry state for the upper layer
         const w = ctx.weapons;
-        const gun = !!w.item && !w.isMelee && !p.dead && !p.inVehicle;
+        const gun = !!w.item && !w.isMelee && !p.dead && !p.inVehicle && !ctx.throwables.holding; // A13: gun away while a throwable is held
         const raise = gun ? easeInOut(w.raiseT) : 0;
         const by = body.root.rotation.y;
         const sp = Math.hypot(p.vel.x, p.vel.z);
