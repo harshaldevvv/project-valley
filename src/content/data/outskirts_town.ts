@@ -75,6 +75,9 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
     furniture: [
       { k: 'metal-trash-can', u: -4.3, v: 4.0 }, { k: 'cardboard-delivery-box', u: -4.2, v: -4.2, yaw: 0.5 }, { k: 'cardboard-delivery-box', u: 4.2, v: -4.3, yaw: 1 },
       { k: 'dining-chair', u: -0.5, v: -4.0, yaw: 0.4 }, { k: 'bistro-table', u: 0.8, v: -4.0 },
+      // front room: a ransacked display aisle, dropped stock, the waiting chair kicked over
+      { k: 'cardboard-delivery-box', u: -4.2, v: 3.5, yaw: 0.3 }, { k: 'cardboard-delivery-box', u: -1.9, v: 2.1, yaw: 1.1 }, { k: 'dining-chair', u: 4.3, v: 3.4, yaw: 2.2 },
+      { k: 'area-rug', u: 0, v: 4.2, solid: false },
     ],
     containers: [
       { type: 'pharmacy_shelf', theme: 'medical', u: -3.4, v: -2.4, yaw: 0, model: 'back-bar-shelf-unit' },
@@ -83,6 +86,7 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
       { type: 'medical_cabinet', theme: 'medical', u: -3.8, v: -4.3, yaw: 0, model: 'dorm-wardrobe' },
       { type: 'bathroom_cabinet', theme: 'medical', u: 3.9, v: -4.3, yaw: 0, model: 'medicine-cabinet' },
       { type: 'office_desk', theme: 'office', u: 4.3, v: 0.3, yaw: -Math.PI / 2, model: 'filing-cabinet' },
+      { type: 'pharmacy_shelf', theme: 'medical', u: -3.2, v: 0.6, yaw: 0, model: 'back-bar-shelf-unit' },
     ],
   },
   {
@@ -118,6 +122,11 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
     furniture: [
       { k: 'sofa', u: 4.2, v: 4.0, yaw: Math.PI }, { k: 'bistro-table', u: -5.0, v: -1.0 }, { k: 'dining-chair', u: -5.6, v: -0.8, yaw: 1.4 }, { k: 'dining-chair', u: -4.4, v: -1.0, yaw: -1.6 },
       { k: 'metal-trash-can', u: 6.0, v: 4.6 }, { k: 'arc-floor-lamp', u: -6.2, v: 4.6 },
+      // front office: a duty desk, case files in boxes, a bookcase of binders
+      { k: 'bistro-table', u: 3.2, v: 0.6 }, { k: 'dining-chair', u: 3.2, v: -0.1, yaw: 0.2 }, { k: 'alcove-bookcase', u: 6.6, v: -0.9, yaw: -Math.PI / 2 },
+      { k: 'cardboard-delivery-box', u: 5.6, v: 2.2, yaw: 0.4 }, { k: 'cardboard-delivery-box', u: 5.9, v: 2.8, yaw: 1.2 },
+      // armory: a spilled ammo case on the floor
+      { k: 'ammo-crate', u: -0.4, v: -3.6, yaw: 0.7, solid: false },
     ],
     containers: [
       { type: 'police_locker', theme: 'police', u: -6.4, v: 0.4, yaw: Math.PI / 2, model: 'dorm-wardrobe' },
@@ -129,6 +138,7 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
       { type: 'military_footlocker', theme: 'military', u: -2.2, v: -4.5, yaw: 0, model: 'salvage-crate' },
       { type: 'cabinet_locked', theme: 'military', u: 0.2, v: -4.6, yaw: 0, model: 'back-bar-shelf-unit' },
       { type: 'cabinet_locked', theme: 'military', u: 2.4, v: -4.6, yaw: 0, model: 'back-bar-shelf-unit' },
+      { type: 'office_desk', theme: 'office', u: 4.2, v: 0.6, yaw: Math.PI, model: 'filing-cabinet' },
     ],
   },
   {
@@ -142,6 +152,9 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
     furniture: [
       { k: 'glass-door-drinks-fridge', u: -3.8, v: -4.3, yaw: 0 }, { k: 'glass-door-drinks-fridge', u: -2.6, v: -4.3, yaw: 0 }, { k: 'vending-machine', u: 4.0, v: -4.2, yaw: 0 },
       { k: 'abandoned-shopping-trolley', u: -1.0, v: 3.2, yaw: 0.6, solid: false }, { k: 'cardboard-delivery-box', u: 4.3, v: 4.0, yaw: 0.3 },
+      // stock dropped in the aisles, a second trolley on its side by the door
+      { k: 'cardboard-delivery-box', u: -2.3, v: -0.3, yaw: 0.8 }, { k: 'cardboard-delivery-box', u: 0.2, v: -0.4, yaw: 2.0 },
+      { k: 'abandoned-shopping-trolley', u: -3.9, v: 3.9, yaw: 2.4, solid: false }, { k: 'metal-trash-can', u: 1.8, v: 4.4 },
     ],
     containers: [
       { type: 'food_cupboard', theme: 'house', u: -3.5, v: -1.6, yaw: 0, model: 'back-bar-shelf-unit' },
@@ -149,6 +162,7 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
       { type: 'food_cupboard', theme: 'house', u: 1.3, v: -1.6, yaw: 0, model: 'back-bar-shelf-unit' },
       { type: 'kitchen_cupboard', theme: 'house', u: 3.9, v: -2.0, yaw: 0, model: 'counter' },
       { type: 'gas_register', theme: 'gas_station', u: 3.2, v: 2.3, yaw: 0, y: 1.0, model: 'register' },
+      { type: 'food_cupboard', theme: 'house', u: -3.5, v: 1.0, yaw: 0, model: 'back-bar-shelf-unit' },
     ],
   },
   {
@@ -162,6 +176,7 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
     roofBreak: { side: 'back', u0: -4, u1: 4 },
     furniture: [-7.5, -2.5, 2.5, 7.5].flatMap((c) => [
       { k: 'bed', u: c - 1.4, v: -2.4, yaw: 0 }, { k: 'dining-chair', u: c + 1.3, v: -0.8, yaw: 3.0 }, { k: 'area-rug', u: c, v: 0.5, solid: false },
+      { k: 'arc-floor-lamp', u: c - 2.0, v: 2.9 }, { k: c < 0 ? 'cardboard-delivery-box' : 'metal-trash-can', u: c + 1.9, v: 0.6, yaw: c * 0.3 },
     ]),
     containers: [-7.5, -2.5, 2.5, 7.5].flatMap((c, i) => [
       { type: 'nightstand', theme: 'house', u: c + 0.2, v: -3.0, yaw: 0, model: 'bedside-table' },

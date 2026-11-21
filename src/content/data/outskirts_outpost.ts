@@ -112,7 +112,10 @@ export const OUTPOST_BUILDINGS: BuildingDef[] = [
     left: [],
     right: [],
     counter: null,
-    furniture: [{ k: 'oil-drum', u: -3.3, v: 2.3 }],
+    furniture: [
+      { k: 'oil-drum', u: -3.3, v: 2.3 }, { k: 'ammo-crate', u: -3.2, v: 0.4, yaw: 0.3, solid: false }, { k: 'ammo-crate', u: -3.0, v: 0.9, yaw: 1.2, solid: false },
+      { k: 'bistro-table', u: 0.6, v: 0.4 }, { k: 'field-radio-set', u: 0.6, v: 0.4, y: 0.75, solid: false },
+    ],
     containers: [
       { type: 'cabinet_locked', theme: 'military', u: -2.6, v: -2.55, yaw: 0, model: 'back-bar-shelf-unit' },
       { type: 'cabinet_locked', theme: 'military', u: -0.4, v: -2.55, yaw: 0, model: 'back-bar-shelf-unit' },
