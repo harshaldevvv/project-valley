@@ -25,3 +25,25 @@
 .tr-row.poor .tr-name b { color: #aeb6ba; }
 .tr-empty { color: var(--dim); padding: 8px 4px; font-size: 13px; }
 .tr-note { min-height: 20px; text-align: center; color: #e0a090; font: 600 13px system-ui; margin-top: 4px; }
+/* UI polish round 2: keyboard selection, key bar, long names, cash and footer contrast */
+.dlg-choice.on { background: rgba(217, 178, 90, 0.14); border-color: rgba(217, 178, 90, 0.5); color: #fff; }
+.dlg-choice.on .dlg-n { color: #f0cf7a; }
+.dlg-choice:focus-visible { outline: 1px solid #d9b25a; outline-offset: 1px; }
+.dlg-keys { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); text-align: center; color: #a3adb2; font-size: 12.5px; }
+.dlg-keys kbd { font: 600 11px system-ui; color: #e4e8ea; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 3px; padding: 1px 5px; margin: 0 2px; }
+.tr-row { border: 1px solid transparent; }
+.tr-row.sel { border-color: rgba(217, 178, 90, 0.55); background: rgba(217, 178, 90, 0.1); }
+.tr-name { min-width: 0; display: flex; align-items: baseline; }
+.tr-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-name small { flex: none; }
+.tr-btn:not(:disabled):hover { background: #e9c770; }
+.tr-btn.alt:hover { background: rgba(255, 255, 255, 0.22); }
+.tr-row.poor .tr-btn:disabled { color: #b07a70; }
+.tr-foot { text-align: center; color: #8d979c; font-size: 12px; margin-top: 2px; }
+.tr-btn { min-width: 66px; text-align: center; }
+.tr-row > span:empty { width: 0; }
+.tr-wrap { max-height: calc(100vh - max(16px, 4vh) - 92px); }
+.tr-col { max-height: inherit; }
+.tr-root .inv-hint { bottom: 10px; }
+.dlg-box { width: clamp(480px, calc(100vw - 660px), 720px); max-width: 92vw; }
+@media (max-width: 1100px) { .dlg { bottom: calc(6vh + 150px); } }

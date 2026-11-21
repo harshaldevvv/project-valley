@@ -80,3 +80,9 @@
   .cr-need { font-size: 14px; }
   .cr-detail .big p { font-size: 13px; }
 }
+/* UI polish round 2: radio card drain line (keyframes in quests.css, repeated here so either file works alone) */
+.radio-card i { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: #7cc9a066; transform-origin: left; }
+.radio-card.on i { animation: card-drain linear forwards; }
+@keyframes card-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.radio-card { overflow: hidden; }
+@media (min-width: 1600px) { .radio-card { width: min(600px, 90vw); font-size: 16px; } }

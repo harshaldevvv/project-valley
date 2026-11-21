@@ -512,6 +512,18 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       showPage('main');
     } else if (mode === 'paused') resume();
   });
+  // Keyboard: Up/Down (or W/S) walk the menu entries; Enter/Space press the focused one (native button behaviour).
+  addEventListener('keydown', (e) => {
+    if (mode === 'playing' || !['ArrowDown', 'ArrowUp', 'KeyS', 'KeyW'].includes(e.code)) return;
+    const a = document.activeElement as HTMLElement | null;
+    if (a && panel.contains(a) && a.matches('input, select')) return; // sliders and segments keep their arrows
+    const btns = [...nav.querySelectorAll<HTMLButtonElement>('.mn-btn')];
+    if (!btns.length) return;
+    e.preventDefault();
+    const at = btns.indexOf(a as HTMLButtonElement);
+    const step = e.code === 'ArrowDown' || e.code === 'KeyS' ? 1 : -1;
+    btns[at < 0 ? (step > 0 ? 0 : btns.length - 1) : (at + step + btns.length) % btns.length].focus({ focusVisible: true } as FocusOptions);
+  });
   // Chrome eats the Esc that releases pointer lock, so losing the lock while playing also pauses.
   // Losing the lock pauses only if the lock was taken in this play session and held a moment. Within ~1 s of an Esc
   // unlock Chrome grants a new lock and revokes it ~15 ms later; that revoke used to re-pause Resume (QA-038).

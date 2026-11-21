@@ -1,6 +1,7 @@
 import { Vector3 } from 'three';
 import { POIS } from '../content/data/pois';
 import { QUEST_PLACED } from '../content/data/quests';
+import { NOTE_CARD } from '../content/data/tools';
 import { itemText } from '../content/text/items';
 import { noteText, questUi as T } from '../content/text/quests';
 import type { Game } from '../core/game';
@@ -79,9 +80,12 @@ export function installQuests(game: Game, lo: Loadout, deps: { sfx(id: string, a
     head.textContent = n.title;
     const body = document.createElement('div');
     body.textContent = n.body;
-    card.append(head, body);
+    const words = n.body.split(/s+/).length;
+    cardT = Math.min(NOTE_CARD.maxSeconds, Math.max(NOTE_CARD.minSeconds, words * NOTE_CARD.secondsPerWord));
+    const left = document.createElement('i'); // drains while the note is up, so the fade is no surprise
+    left.style.animationDuration = `${cardT}s`;
+    card.append(head, body, left);
     card.classList.add('on');
-    cardT = 14;
   }
 
   // ---------- feeding the rules ----------

@@ -3,7 +3,8 @@ import { ITEMS } from '../../content/data/items';
 import { TRADER } from '../../content/data/trade';
 import type { ItemInstance } from '../../content/data/types';
 import { itemText } from '../../content/text/items';
-import { choiceText, dialogueText, npcName, npcUi, tradeUi as T } from '../../content/text/npc';
+import { choiceText, dialogueText, npcName, tradeUi as T } from '../../content/text/npc';
+import { screenText as K } from '../../content/text/ui';
 import { assetUrl } from '../../engine/assetUrl';
 import type { Dialogue } from '../../systems/dialogue';
 import { buyPrice, cashOf, sellable, type TraderState } from '../../systems/trade';
@@ -53,6 +54,9 @@ export class NpcUi {
   private convo: { npc: string; d: Dialogue } | null = null;
   private trading: { lo: Loadout; st: TraderState } | null = null;
   private note = '';
+  /** Keyboard selection: the highlighted answer, and the trade row (column 0 = their stock, 1 = your pack). */
+  private sel = 0;
+  private tsel = { col: 0, row: 0 };
 
   constructor(private hooks: NpcUiHooks, parent: HTMLElement) {
     this.talk.hidden = true;
@@ -64,8 +68,21 @@ export class NpcUi {
         e.preventDefault();
         return this.closeAll();
       }
-      const m = /^Digit([1-9])$/.exec(e.code);
-      if (m && this.convo && !this.trading) this.pick(Number(m[1]) - 1);
+      if (this.trading) return this.tradeKey(e);
+      if (!this.convo) return;
+      const m = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
+      if (m) return this.pick(Number(m[1]) - 1);
+      const n = this.convo.d.choices().length;
+      if (!n) return;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') this.sel = (this.sel + 1) % n;
+      else if (e.code === 'ArrowUp' || e.code === 'KeyW') this.sel = (this.sel - 1 + n) % n;
+      else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') {
+        if (e.repeat) return;
+        e.preventDefault();
+        return this.pick(this.sel);
+      } else return;
+      e.preventDefault();
+      this.renderTalk();
     });
   }
 
@@ -80,6 +97,7 @@ export class NpcUi {
   startTalk(npc: string, d: Dialogue) {
     const wasOpen = this.isOpen;
     this.convo = { npc, d };
+    this.sel = 0;
     d.start();
     if (!wasOpen) {
       this.hooks.onOpenChange(true);
@@ -95,6 +113,7 @@ export class NpcUi {
     const choice = c.d.choices()[i];
     if (!choice) return;
     c.d.choose(choice.id);
+    this.sel = 0;
     if (!c.d.node) return this.closeAll();
     if (!this.tradeOpen) this.renderTalk();
   }
@@ -113,13 +132,24 @@ export class NpcUi {
     box.append(h('div', 'dlg-name', who ? `${who.name} · ${who.role}` : c.npc));
     box.append(h('div', 'dlg-say', dialogueText[c.d.def.id]?.[c.d.node] ?? ''));
     const list = h('div', 'dlg-choices');
-    c.d.choices().forEach((ch, i) => {
-      const b = h('button', 'dlg-choice');
+    const choices = c.d.choices();
+    if (this.sel >= choices.length) this.sel = 0;
+    choices.forEach((ch, i) => {
+      const b = h('button', `dlg-choice${i === this.sel ? ' on' : ''}`) as HTMLButtonElement;
+      b.tabIndex = -1; // keys are handled above; focus would steal Space/Enter from the game
       b.append(h('span', 'dlg-n', String(i + 1)), h('span', '', choiceText[c.d.def.id]?.[ch.id] ?? ch.id));
       b.onclick = () => this.pick(i);
+      b.onmouseenter = () => {
+        if (this.sel === i) return;
+        list.querySelector('.on')?.classList.remove('on');
+        b.classList.add('on');
+        this.sel = i;
+      };
       list.append(b);
     });
-    box.append(list, h('div', 'cr-foot', npcUi.hint));
+    const keys = h('div', 'dlg-keys');
+    keys.innerHTML = K.dlgKeys;
+    box.append(list, keys);
     this.talk.append(box);
   }
 
@@ -128,6 +158,7 @@ export class NpcUi {
     const wasOpen = this.isOpen;
     this.trading = { lo, st };
     this.note = '';
+    this.tsel = { col: 0, row: 0 };
     this.talk.hidden = true;
     this.shop.hidden = false;
     if (!wasOpen) {
@@ -148,24 +179,36 @@ export class NpcUi {
     const { lo, st } = t;
     this.shop.textContent = '';
     const wrap = h('div', 'tr-wrap');
+    const rows: HTMLElement[][] = [[], []];
     // their stock
     const left = h('div', 'inv-col tr-col');
     left.append(h('h2', '', `${T.title} · ${T.stock}`));
     left.append(h('div', 'tr-cash', `${T.till}: $${st.cash}`));
     if (!st.stock.length) left.append(h('div', 'tr-empty', T.empty));
+    // identical stacks share one row (three "Bottle of Water" rows read as a bug); Buy takes from the first stack
+    const stockRows = new Map<string, { i: number; n: number; extra: string }>();
     st.stock.forEach((it, i) => {
       const d = ITEMS[it.defId];
-      const price = buyPrice(d);
-      const row = h('div', `tr-row${cashOf(lo) < price ? ' poor' : ''}`);
-      const name = h('div', 'tr-name');
       const extra = it.rounds !== undefined && d.kind === 'magazine' ? ` (${it.rounds}/${d.capacity})` : it.fuel !== undefined ? ` (${it.fuel} L)` : it.durability !== undefined && it.durability < 0.99 ? ` (${Math.round(it.durability * 100)}%)` : '';
-      name.append(h('b', '', `${iname(it.defId)}${extra}`), h('small', '', it.count > 1 ? `×${it.count}` : ''));
+      const key = `${it.defId}|${extra}`;
+      const g = stockRows.get(key);
+      if (g) g.n += it.count;
+      else stockRows.set(key, { i, n: it.count, extra });
+    });
+    for (const { i, n, extra } of stockRows.values()) {
+      const it = st.stock[i];
+      const price = buyPrice(ITEMS[it.defId]);
+      const row = h('div', `tr-row${cashOf(lo) < price ? ' poor' : ''}`);
+      rows[0].push(row);
+      const name = h('div', 'tr-name');
+      name.append(h('b', '', `${iname(it.defId)}${extra}`), h('small', '', n > 1 ? `×${n}` : ''));
       const buyBtn = h('button', 'tr-btn', `${T.buy} $${price}`) as HTMLButtonElement;
       buyBtn.disabled = cashOf(lo) < price;
+      buyBtn.tabIndex = -1;
       buyBtn.onclick = () => this.act(this.hooks.buy(i, 1));
-      row.append(icon(it.defId), name, buyBtn);
+      row.append(icon(it.defId), name, buyBtn, h('span'));
       left.append(row);
-    });
+    }
     // your pack
     const right = h('div', 'inv-col tr-col');
     right.append(h('h2', '', T.yours));
@@ -184,10 +227,12 @@ export class NpcUi {
     for (const g of groups.values()) {
       const first = g.items[0];
       const row = h('div', 'tr-row');
+      rows[1].push(row);
       const name = h('div', 'tr-name');
       name.append(h('b', '', iname(first.defId)), h('small', '', g.n > 1 ? `×${g.n}` : ''));
       const one = h('button', 'tr-btn', `${T.sell} $${g.unit}`);
       one.onclick = () => this.act(this.hooks.sell(first, 1));
+      one.tabIndex = -1;
       row.append(icon(first.defId), name, one);
       if (g.n > 1) {
         const all = h('button', 'tr-btn alt', `${T.sellAll}`);
@@ -196,12 +241,53 @@ export class NpcUi {
           for (const it of [...g.items]) err = this.hooks.sell(it, it.count) ?? err;
           this.act(err);
         };
+        all.tabIndex = -1;
         row.append(all);
-      }
+      } else row.append(h('span')); // keeps every Sell button in one column
       right.append(row);
     }
     wrap.append(left, right);
-    this.shop.append(wrap, h('div', 'tr-note', this.note), h('div', 'cr-foot', `${T.hint} · till ${TRADER.cashPerDay}/day`));
+    // keyboard selection: stay in range as stacks sell out, hop columns when one is empty
+    const ts = this.tsel;
+    if (!rows[ts.col].length && rows[1 - ts.col].length) ts.col = 1 - ts.col;
+    ts.row = Math.max(0, Math.min(ts.row, rows[ts.col].length - 1));
+    const on = rows[ts.col][ts.row];
+    on?.classList.add('sel');
+    this.rows = rows;
+    rows.forEach((col, c) =>
+      col.forEach((r, i) => {
+        r.onmouseenter = () => {
+          this.shop.querySelector('.tr-row.sel')?.classList.remove('sel');
+          r.classList.add('sel');
+          this.tsel = { col: c, row: i };
+        };
+      }),
+    );
+    const keys = h('div', 'inv-hint');
+    keys.innerHTML = K.tradeKeys;
+    this.shop.append(wrap, h('div', 'tr-note', this.note), h('div', 'tr-foot', K.tradeFoot(TRADER.cashPerDay)), keys);
+    on?.scrollIntoView({ block: 'nearest' });
+  }
+
+  private rows: HTMLElement[][] = [[], []];
+  private tradeKey(e: KeyboardEvent) {
+    const ts = this.tsel;
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') ts.row++;
+    else if (e.code === 'ArrowUp' || e.code === 'KeyW') ts.row--;
+    else if (e.code === 'ArrowLeft' || e.code === 'KeyA' || e.code === 'ArrowRight' || e.code === 'KeyD') {
+      const to = e.code === 'ArrowLeft' || e.code === 'KeyA' ? 0 : 1;
+      if (to === ts.col || !this.rows[to].length) return;
+      ts.col = to;
+    } else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyE') {
+      if (e.repeat) return;
+      e.preventDefault();
+      (this.rows[ts.col][ts.row]?.querySelector('.tr-btn:not(:disabled)') as HTMLButtonElement | null)?.click();
+      return;
+    } else return;
+    e.preventDefault();
+    const n = this.rows[ts.col].length;
+    ts.row = n ? (ts.row + n) % n : 0;
+    this.renderShop();
   }
 
   // ---------------- close ----------------

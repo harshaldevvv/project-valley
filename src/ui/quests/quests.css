@@ -37,3 +37,10 @@ div.qj-ic { background: rgba(255, 255, 255, 0.12); border-radius: 3px; }
   background: #e8e0c8; color: #2a2620; font: 15px/1.55 Georgia, 'Times New Roman', serif; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55); opacity: 0; transition: opacity 0.3s; }
 .note-card.on { opacity: 1; }
 .note-card b { display: block; font: 700 12px system-ui; letter-spacing: 0.14em; text-transform: uppercase; color: #7a6a3a; margin-bottom: 8px; }
+/* UI polish round 2: paper card keeps paragraphs, fits 720p, shows how long it stays up */
+.note-card { max-height: 72vh; overflow: hidden; border-top: 3px solid #b39a5a; background: linear-gradient(180deg, #efe7cf, #e2d8bb); }
+.note-card div { white-space: pre-line; }
+.note-card i { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: #7a6a3a55; transform-origin: left; }
+.note-card.on i { animation: card-drain linear forwards; }
+@keyframes card-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (min-width: 1600px) { .note-card { width: min(600px, 90vw); font-size: 17px; } }

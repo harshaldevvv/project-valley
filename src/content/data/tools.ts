@@ -41,6 +41,9 @@ export const BINOCULARS = { key: 'KeyZ', zoom: 3.2, item: 'binoculars' };
 /** The handheld radio: seconds a broadcast card stays up. */
 export const RADIO = { cardSeconds: 9 };
 
+/** A read note stays up for its length: base seconds plus per word, clamped (was a flat 14 s: long notes vanished mid-read). */
+export const NOTE_CARD = { minSeconds: 8, maxSeconds: 30, secondsPerWord: 0.32 };
+
 /** Vehicle fuel. A full tank lasts about 25 minutes of flat-out driving; a jerrycan (20 L) about 7. */
 export const VEHICLE_FUEL = {
   /** Fraction of the tank a car starts with (and spawns with): enough to leave the yard, not to roam forever. */

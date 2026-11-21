@@ -296,6 +296,16 @@ Unthrottled (x1): every view holds 16.7 ms (vsync) on all presets. Render-thread
 - **After:** 174 frames (with heavy), all single steps, no clipping. The light hit now holds the blade at contact for 4 frames (clip 0.188 -> 0.191 s), then follows through; the heavy chop holds at 0.513 s. The air swing is unchanged. The clips still end before the melee recovery does (light 35 / 37 frames, heavy 47 / 56).
 - tsc clean, vitest 23 files / 197 tests pass (run on this PC: the laptop was unreachable).
 
+## UI polish round 2: HUD, dialogue/trade, note/radio, pause, death (2026-11-21)
+- **Audit:** `tools/audit/uishots.mjs` now also shoots the in-play HUD (hurt, toasts, prompt, hotbar), the trader conversation (hovered answer), the trade screen, the note and radio cards, the pause menu (Esc + Down) and the death screen (last: survivor death drops the pack). Sheets `docs/audit/screenshots/wip/ui_{before,after}_sheet_{1280,1920}.png`; before was shot from a detached HEAD worktree (the shared checkout briefly failed to load). 0 page errors, no clipped text, every panel fits at 1280x720 and 1920x1080.
+- **HUD:** new hotbar strip bottom centre (1-4 weapons with the held one lit, 5-9 quick items with counts, greyed and red at 0, dashed empty slots); it steps aside for open screens. Empty ammo box no longer shows as a bare square (melee-less, dead).
+- **Death:** card now says what was lost for the death penalty and counts down the respawn; vitals, toasts and the quest tracker fade behind it. Text in `hudText` (died, deathCost, respawnIn).
+- **Dialogue:** Up/Down (W/S) + Enter/E pick an answer, hover and keyboard share one selected state, kbd key bar; box narrows so it no longer overlaps the vitals panel at 1280.
+- **Trade:** identical stock stacks share one row (was three "Bottle of Water" rows); Buy/Sell buttons line up in one column; Up/Down rows, Left/Right columns, Enter buys or sells one; long names ellipsis; unaffordable Buy reads red; footer and key bar stay on screen at 720p (were cut off). Strings in `screenText` (ui.ts).
+- **Note / radio cards:** note stays up by length (`NOTE_CARD` in data/tools.ts, 8-30 s; was a flat 14 s), keeps paragraphs, max 72vh; both cards show a draining line so the fade is no surprise; larger at 1080p.
+- **Pause menu:** Up/Down (W/S) walk the entries with the focus marker; Enter/Space press them (sliders keep their arrows).
+- Not done (other owners): the "You died. Respawning..." toast in player.ts duplicates the card; the onboarding hint (hints.ts) still shows over the death card.
+
 ## Loon Lake -> Camp Harlan quest chain (3 side quests, a recipe unlock)
 
 - **Chain** (`data/quests.ts`, side, opens after `crash`): `lake_dock` go to Loon Lake, find the scanner crystal (camp office desk, `poi_lake_office_3`), give it to **Tobin**, a new fisherman NPC at the east-bank fire ring (`data/npc.ts`, reuses `chr_npc_hollis`); `harlan_static` read his scanner transcript (cabin A nightstand), go to Camp Harlan, use the radio inside the fence (new `radioAt.lake` / `radioAt.outpost` lines); `harlan_clear` 8 kills at the outpost, read the medic's letter (supply crate `poi_outpost_out2`), bring it to Tobin. Reward: `field_manual` + 1 IFAK + $80 (chain cash total now 340 of the 400 cap).
@@ -304,3 +314,4 @@ Unthrottled (x1): every view holds 16.7 ms (vsync) on all presets. Render-thread
 - **Tests:** chain walk-through, recipe-unlock data, and Tobin's dialogue cases. The quest-count cap is now 16, and the ranger-finale test expects only side quests left. The loot-reach test exempts quest-placed valueless items and the manual.
 - **Audit:** `tools/audit/questchain.mjs` plays all 13 quests (no new objective kinds needed). It also checks every recipe a quest-reward manual unlocks: blocked without it, crafted with it. Result: ALL QUESTS PLAYABLE, SAVE ROUND TRIP OK; IFAK locked without the manual, crafted with it.
 - tsc clean for these files (`src/core/game.ts` has another session's uncommitted `renderLabels` errors). vitest 23 files / 197 tests pass, run on this PC because the laptop was down.
+- tsc clean, vitest 23 files / 197 tests pass (run on this PC: the laptop was offline).

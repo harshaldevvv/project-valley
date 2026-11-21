@@ -9,6 +9,8 @@ import { SurvivalHud } from './survivalHud';
 import { ITEMS } from '../../content/data/items';
 import iconIndex from '../../../public/assets/icons/index.json';
 import { assetUrl } from '../../engine/assetUrl';
+import { difficulty } from '../../content/data/difficulty';
+import { itemText } from '../../content/text/items';
 
 const ICON_IDS = new Set(iconIndex.ids);
 
@@ -87,6 +89,30 @@ const CSS = `
 .hud-help p{margin:2px 0;font-weight:400}
 .hud-help kbd{display:inline-block;min-width:96px;white-space:nowrap;font:700 12px system-ui;opacity:.95}
 .hud .dead{position:absolute;inset:0;display:none;place-items:center;font:700 28px system-ui;background:#3008;letter-spacing:2px}
+/* UI polish round 2: death screen sub-lines, hotbar strip (1-4 weapons, 5-9 quick items) */
+.hud div.dead{align-content:center;justify-items:center;gap:22px}
+.hud .dead small{display:block;font:600 15px/1.4 var(--display);letter-spacing:.16em;text-indent:0;color:#e8ecef;text-shadow:0 1px 3px #000;animation:hud-fade .6s .7s both}
+.hud .dead small+small{font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent)}
+@keyframes hud-fade{from{opacity:0}to{opacity:1}}
+.hud .hb{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;align-items:flex-end;gap:4px;padding:5px;background:#0a0d0c99;border-radius:2px}
+.hud .hb .s{position:relative;width:44px;height:44px;border:1px solid #ffffff26;border-radius:2px;background:#0a0d0ccc;display:grid;place-items:center;overflow:hidden}
+.hud .hb .s.w{width:62px}
+.hud .hb .s.none em{max-width:100%;margin-top:9px;font-size:9px;letter-spacing:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hud .hb .s img{margin-top:4px}
+.hud .hb .s img{max-width:84%;max-height:84%;object-fit:contain;filter:drop-shadow(0 1px 2px #000a)}
+.hud .hb .s em{font:600 10px/1 var(--display);font-style:normal;letter-spacing:.06em;color:#cdd3c8;text-transform:uppercase;padding:0 3px;text-align:center}
+.hud .hb .s i{position:absolute;left:3px;top:2px;font:700 10px/1 var(--display);font-style:normal;color:#cdd3c8}
+.hud .hb .s b{position:absolute;right:3px;bottom:2px;font:700 11px/1 var(--display);color:#fff}
+.hud .hb .s.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),0 0 10px #d9a44155;background:#2a2110cc}
+.hud .hb .s.on i{color:var(--accent)}
+.hud .hb .s.none{border-style:dashed;opacity:.45}
+.hud .hb .s.out img{filter:grayscale(1) brightness(.6)}.hud .hb .s.out b{color:#e07468}
+.hud .hb .gap{width:1px;align-self:stretch;margin:2px 4px;background:#ffffff26}
+.hud .ammo:has(.n:empty):has(.w:empty){display:none}
+.hud .bars,.hud .toasts{transition:opacity .4s}
+.hud.is-dead .bars,.hud.is-dead .toasts{opacity:0}
+body.hud-dead .qt{display:none}
+@media (max-width:1100px){.hud .hb .s{width:38px;height:38px}.hud .hb .s.w{width:50px}}
 @media (max-width:600px){.hud-help>div{grid-template-columns:1fr 1fr}}
 `;
 
@@ -130,6 +156,13 @@ export class Hud {
   private range: HTMLElement;
   private help: HTMLElement;
   private dead: HTMLElement;
+  private deadCost: HTMLElement;
+  private deadT: HTMLElement;
+  private hb: HTMLElement;
+  private hbCells: HTMLElement[] = [];
+  private screens = new Set<string>(); // open full screens (dialogue, crafting, map...): the hotbar steps aside
+  private hbKey = '';
+  private hbT = 0;
   private cache = new Map<string, string>();
   private survival: SurvivalHud;
   private slotName = '';
@@ -173,7 +206,17 @@ export class Hud {
     this.help = el('hud-help', document.body);
     this.help.style.cssText = 'position:fixed;z-index:12';
     this.dead = el('dead', this.root);
-    this.dead.textContent = 'YOU DIED';
+    el('', this.dead, 'span').textContent = hudText.died;
+    this.deadCost = el('', this.dead, 'small');
+    this.deadT = el('', this.dead, 'small');
+    // Hotbar: weapon slots 1-4, then the quick items bound to 5-9
+    this.hb = el('hb', this.root);
+    for (let i = 0; i < 9; i++) {
+      if (i === 4) el('gap', this.hb);
+      const s = el(i < 4 ? 's w' : 's', this.hb);
+      el('', s, 'i').textContent = String(i + 1);
+      this.hbCells.push(s);
+    }
     const help = Object.values(textMods)[0]?.controlsHelp ?? FALLBACK_HELP;
     const box = el('', this.help);
     for (const g of help) {
@@ -191,7 +234,10 @@ export class Hud {
     // Hidden behind the title/pause menu (QA-017)
     ctx.game.events.on('uiScreen', ({ name, open }) => {
       if (name === 'menu') this.root.style.display = open ? 'none' : '';
+      else if (open) this.screens.add(name);
+      else this.screens.delete(name);
     });
+    ctx.game.events.on('playerRespawned', () => this.screens.clear());
     ctx.game.events.on('playerDamaged', ({ from }) => {
       this.wedgeT = 1;
       this.wedgeFrom = from ? { x: from.x, z: from.z } : null;
@@ -368,6 +414,54 @@ export class Hud {
     // Help overlay (H on foot)
     this.set('hd', this.help, 'display', this.helpOpen ? 'grid' : 'none');
     this.set('dd', this.dead, 'display', p.dead ? 'grid' : 'none');
+    if (this.cache.get('isdead') !== String(p.dead)) {
+      this.cache.set('isdead', String(p.dead));
+      this.root.classList.toggle('is-dead', p.dead); // vitals, toasts and the quest tracker step back behind the death card
+      document.body.classList.toggle('hud-dead', p.dead);
+    }
+    if (p.dead) {
+      this.set('dc', this.deadCost, 'text', hudText.deathCost[difficulty.deathPenalty] ?? '');
+      this.set('dt', this.deadT, 'text', hudText.respawnIn(Math.max(1, Math.ceil(p.deadT))));
+    }
+    this.renderHotbar(dt, hide || this.screens.size > 0);
+  }
+
+  /** Hotbar strip: weapons 1-4 (held one lit), quick items 5-9 with their counts (greyed when none left). Rebuilt on change. */
+  private renderHotbar(dt: number, hide: boolean) {
+    this.set('hbd', this.hb, 'display', hide ? 'none' : 'flex');
+    if (hide || (this.hbT -= dt) > 0) return;
+    this.hbT = 0.2; // counts walk the grids: 5 Hz is plenty
+    const lo = this.ctx.game.loadout;
+    const quick = (lo as unknown as { hotbar?: (string | null)[] }).hotbar ?? [];
+    const w = this.ctx.weapons;
+    const ids: (string | null)[] = [];
+    const cnt: number[] = [];
+    for (let i = 0; i < 4; i++) ids.push(lo.equipped(weaponSlots[i])?.defId ?? null), cnt.push(-1);
+    for (let i = 0; i < 5; i++) {
+      const id = quick[i] ?? null;
+      ids.push(id);
+      cnt.push(id ? lo.count(id) : -1);
+    }
+    const active = w.item ? w.slot : -1;
+    const key = `${ids.join(',')}|${cnt.join(',')}|${active}`;
+    if (key === this.hbKey) return;
+    this.hbKey = key;
+    ids.forEach((id, i) => {
+      const s = this.hbCells[i];
+      s.className = `s${i < 4 ? ' w' : ''}${id ? '' : ' none'}${i === active ? ' on' : ''}${cnt[i] === 0 ? ' out' : ''}`;
+      while (s.childNodes.length > 1) s.lastChild!.remove(); // keep the key number
+      if (!id) {
+        if (i < 4) el('', s, 'em').textContent = hudText.slotShort[i];
+        return;
+      }
+      if (ICON_IDS.has(id)) {
+        const im = document.createElement('img');
+        im.src = assetUrl(`assets/icons/${id}.png`);
+        im.alt = '';
+        s.append(im);
+      } else el('', s, 'em').textContent = itemText[id]?.short ?? itemText[id]?.name ?? id;
+      if (cnt[i] >= 0) el('', s, 'b').textContent = String(cnt[i]);
+    });
   }
 
   helpOpen = false;

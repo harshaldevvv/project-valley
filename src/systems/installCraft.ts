@@ -321,7 +321,9 @@ export function installCraft(
     head.textContent = radioStation;
     const body = document.createElement('div');
     body.textContent = line;
-    card.append(head, body);
+    const left = document.createElement('i'); // same drain line as the note card
+    left.style.animationDuration = `${RADIO.cardSeconds}s`;
+    card.append(head, body, left);
     card.classList.add('on');
     cardT = RADIO.cardSeconds;
   }

@@ -63,6 +63,13 @@ export const worldText = {
   doorClose: 'Close door',
 };
 
+/** Key bars and labels for the dialogue, trade and note cards (UI polish round 2). */
+export const screenText = {
+  dlgKeys: '<kbd>1</kbd>–<kbd>9</kbd> or <kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd> answer <kbd>Esc</kbd> leave',
+  tradeKeys: '<kbd>↑</kbd><kbd>↓</kbd> pick <kbd>←</kbd><kbd>→</kbd> stock / your pack <kbd>Enter</kbd> buy or sell one <kbd>Esc</kbd> back',
+  tradeFoot: (perDay: number) => `Prices include his margin · his till refills $${perDay} a day`,
+};
+
 /** Title / pause menu (engine-builder's src/ui/menu; narrative may reword). */
 export const menuText = {
   kicker: 'M2 · The Yard',
