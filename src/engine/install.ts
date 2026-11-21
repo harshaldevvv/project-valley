@@ -20,6 +20,7 @@ import { detectGpu } from './gpuinfo';
 import { menuText } from '../content/text/ui';
 import { createClock, type Clock } from './clock';
 import { createLamps } from './lamps';
+import { worldHooks } from '../systems/worldHooks';
 
 /**
  * engine-builder: installs game.debug (F1 panel), game.audio (Web Audio), post-processing (FXAA, render scale),
@@ -62,8 +63,16 @@ export async function installEngine(game: Game) {
   installWeather(game, post);
   game.debug.action('Weather', 'Rain on', () => (weather.override = true));
   game.debug.action('Weather', 'Rain off', () => (weather.override = false));
-  game.debug.action('Weather', 'Follow schedule', () => (weather.override = null));
+  game.debug.action('Weather', 'Follow schedule', () => { weather.override = null; weather.fogOverride = null; });
+  game.debug.action('Weather', 'Fog on', () => (weather.fogOverride = true));
+  game.debug.action('Weather', 'Fog off', () => (weather.fogOverride = false));
   const tod = createTimeOfDay(game);
+  game.addSystem({
+    name: 'indoorLight',
+    render(_a, dt) {
+      tod.indoor += ((worldHooks.sheltered() ? 1 : 0) - tod.indoor) * Math.min(1, dt * 3); // ~1 s; tod.set applies it at 10 Hz
+    },
+  });
   // game.time is live from install; the running clock (clock.ts) is created at start, once the world and saves exist.
   let clock: Clock | null = null;
   game.time = {

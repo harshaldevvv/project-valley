@@ -3,6 +3,7 @@ import { MeshBasicNodeMaterial } from 'three/webgpu';
 import { cameraPosition, dot, float, floor, fract, max, mix, normalize, positionWorld, pow, sin, smoothstep, step, uniform, vec3, vec2, time, mx_fractal_noise_float } from 'three/tsl';
 import type { Game } from '../core/game';
 import type { TimeOfDay } from './timeofday';
+import { weather } from './weather';
 
 /**
  * Sky dome (TSL): horizon→zenith gradient, sun glow + disc, at night a pale moon disc (the directional light is the
@@ -15,6 +16,7 @@ export function createSky(game: Game, tod: TimeOfDay) {
   const sunDir = uniform(new Vector3(0, 1, 0));
   const sunCol = uniform(new Color());
   const night = uniform(0);
+  const haze = uniform(0); // mist / rain: the dome fades to the fog colour, most at the horizon
 
   const dir = normalize(positionWorld.sub(cameraPosition));
   const up = max(dir.y, 0);
@@ -44,7 +46,9 @@ export function createSky(game: Game, tod: TimeOfDay) {
   const withClouds = mix(sky, cloudCol, cover.mul(0.82));
 
   const mat = new MeshBasicNodeMaterial({ side: BackSide, depthWrite: false, fog: false });
-  mat.colorNode = withClouds.add(disc.mul(float(1).sub(cover))).add(stars.mul(float(1).sub(cover)));
+  const clear = float(1).sub(cover).mul(float(1).sub(haze));
+  const dome = withClouds.add(disc.mul(clear)).add(stars.mul(clear));
+  mat.colorNode = mix(dome, horizon, haze.mul(float(1).sub(smoothstep(0.0, 0.9, up).mul(0.35))));
   mat.name = 'sky';
   const mesh = new Mesh(new SphereGeometry(450, 32, 16), mat);
   mesh.name = 'sky';
@@ -63,6 +67,7 @@ export function createSky(game: Game, tod: TimeOfDay) {
       sunDir.value.copy(game.sunDir);
       sunCol.value.copy(game.sun.color);
       night.value = tod.night;
+      haze.value = weather.haze;
     },
   });
   return mesh;
