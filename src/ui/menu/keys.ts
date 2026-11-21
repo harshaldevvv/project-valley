@@ -9,6 +9,7 @@ import { keyLabels as L } from '../../content/text/tips';
 export const fixedKeys = {
   craft: { code: 'KeyG', file: 'src/systems/installCraft.ts' },
   journal: { code: 'KeyJ', file: 'src/systems/installQuests.ts' },
+  map: { code: 'KeyK', file: 'src/systems/installMap.ts' },
   flashlight: { code: 'KeyL', file: 'src/engine/flashlight.ts' },
   inventory: { code: 'Tab', file: 'src/ui/inventory/screen.ts' },
   build: { code: 'KeyB', file: 'src/ui/build/buildMode.ts' },
@@ -30,6 +31,7 @@ export function keyList(): [string, string][] {
     [L.inventory, keyName(fixedKeys.inventory.code)],
     [L.craft, keyName(fixedKeys.craft.code)],
     [L.journal, keyName(fixedKeys.journal.code)],
+    [L.map, keyName(fixedKeys.map.code)],
     [L.throwAim, keyName(keys.throwAim)],
     [L.throwCycle, keyName(keys.throwCycle)],
     [L.binoculars, keyName(BINOCULARS.key)],

@@ -42,6 +42,7 @@ export const keyLabels = {
   inventory: 'Inventory',
   craft: 'Crafting',
   journal: 'Journal',
+  map: 'Map',
   throwAim: 'Aim and throw',
   throwCycle: 'Pick throwable',
   binoculars: 'Binoculars (hold)',

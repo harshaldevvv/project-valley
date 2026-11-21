@@ -1,0 +1,22 @@
+/** Map screen (K) text. Place names and hooks come from pois.ts; risk labels from tierLabel. */
+export const mapText = {
+  title: 'Map',
+  region: 'The Valley · south of the Yard',
+  yard: 'The Yard',
+  legend: 'Legend',
+  you: 'You',
+  quest: 'Quest target',
+  asphalt: 'Road',
+  dirt: 'Track',
+  water: 'Water',
+  unknown: 'Not found yet',
+  places: 'Places',
+  found: (n: number, of: number) => `${n} of ${of} found`,
+  none: 'Nothing found yet. Walk the roads: places mark themselves on the map once you see them up close.',
+  tracking: (quest: string) => `Tracking: ${quest}`,
+  noQuest: 'No quest target',
+  distance: (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m / 10) * 10} m`),
+  hint: '<kbd>K</kbd> close <kbd>↑</kbd><kbd>↓</kbd> pick a place · click a marker for details',
+  discovered: (name: string) => `Map: ${name} added`,
+  north: 'N',
+};

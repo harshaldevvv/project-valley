@@ -1,7 +1,7 @@
 /* Crafting panel: same dark panels as the inventory (inventory.css variables). */
 .cr-root { z-index: 21; }
 .cr-wrap { display: flex; gap: 14px; align-items: flex-start; max-height: calc(100vh - max(16px, 4vh) - 52px); }
-.cr-list { width: min(380px, 44vw); }
+.cr-list { width: min(410px, 46vw); }
 .cr-detail { width: min(360px, 44vw); }
 .cr-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
 .cr-tabs button {
@@ -54,3 +54,29 @@
   font: 14px/1.4 system-ui, 'Segoe UI', sans-serif; opacity: 0; transition: opacity 0.4s; }
 .radio-card.on { opacity: 1; }
 .radio-card small { display: block; color: #7cc9a0; font: 700 11px system-ui; letter-spacing: 0.16em; margin-bottom: 4px; }
+/* UI polish 2026-11-21: tabs fit one row, ready counts, readable disabled reason, swatch initials, roomier detail, 1080p scale */
+.cr-tabs { flex-wrap: nowrap; }
+.cr-tabs button { flex: 1 1 auto; padding: 6px 6px; font-size: 11.5px; letter-spacing: 0.04em; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+.cr-tabs button:hover { color: var(--text); }
+.cr-tabs button .n { min-width: 15px; padding: 1px 4px; border-radius: 8px; background: #5ec478; color: #10261a; font-size: 10.5px; letter-spacing: 0; box-sizing: border-box; }
+.cr-row .sw, .cr-detail .big .sw { display: grid; place-items: center; font: 800 16px system-ui; color: rgba(255, 255, 255, 0.85); text-shadow: 0 1px 2px #000;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); }
+.cr-detail .big .sw { width: 56px; height: 56px; border-radius: 5px; background: var(--sw, #555); font-size: 22px; flex: none; }
+.cr-detail .big { margin-bottom: 4px; }
+.cr-detail .big img { flex: none; }
+.cr-detail h3 { margin-top: 14px; }
+.cr-need span:first-child { padding-right: 10px; }
+.cr-need span:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cr-go:not(:disabled):hover { filter: brightness(1.1); }
+.cr-go:focus-visible, .cr-row:focus-visible, .cr-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cr-why { margin-top: 7px; padding: 6px 8px; border-radius: 4px; background: rgba(224, 116, 104, 0.1); border-left: 3px solid #e07468; color: #f0b3ab; font-size: 12px; line-height: 1.35; }
+.cr-warn { margin-top: 10px; padding: 6px 8px; border-radius: 4px; background: rgba(217, 178, 90, 0.1); border-left: 3px solid var(--accent); color: #ecd9a8; font-size: 12px; }
+.cr-row.no small { color: #7e888d; }
+@media (min-height: 1000px) {
+  .cr-list { width: min(440px, 44vw); }
+  .cr-detail { width: min(420px, 44vw); }
+  .cr-row b { font-size: 15px; }
+  .cr-row small { font-size: 12px; }
+  .cr-need { font-size: 14px; }
+  .cr-detail .big p { font-size: 13px; }
+}

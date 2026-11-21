@@ -1,7 +1,7 @@
 /** Crafting panel and tool-use text. Recipe names come from their output item (or the keys below). */
 export const craftText = {
   title: 'Crafting',
-  hint: 'G close · pick a recipe, then Craft',
+  hint: '<kbd>G</kbd> close <kbd>↑</kbd><kbd>↓</kbd> pick a recipe <kbd>Q</kbd><kbd>E</kbd> category <kbd>Enter</kbd> craft',
   categories: { medical: 'Medical', survival: 'Survival', cooking: 'Cooking', weapons: 'Weapons', gear: 'Gear' } as Record<string, string>,
   /** Names for recipes whose output is not what the player thinks of (repair, rags). */
   names: {
@@ -22,6 +22,7 @@ export const craftText = {
   confirm: (names: string) => `Confirm: uses up your equipped ${names}`,
   usesEquipped: (names: string) => `This would use up what you wear or wield: ${names}`,
   cantCraft: 'Missing something',
+  why: (list: string) => `Missing: ${list}`,
   pickWeapon: 'Pick a weapon to repair',
   noDamaged: 'Nothing needs repair',
   durability: (pct: number) => `${pct}%`,

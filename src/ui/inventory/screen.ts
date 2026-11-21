@@ -250,7 +250,8 @@ export class InventoryScreen {
     row.append(this.gridEl(`${gidBase}:0`, main));
     if (grids.length > 1) {
       const side = h('div', 'inv-pockets');
-      side.style.maxHeight = `calc(var(--cell) * ${main.h} + 2px)`;
+      // Pockets stack beside the main grid while their cells fit its height (gaps between them do not count)
+      side.style.maxHeight = `calc(var(--cell) * ${main.h} + ${8 * (grids.length - 1)}px)`; // gaps + borders
       grids.slice(1).forEach((g, i) => side.append(this.gridEl(`${gidBase}:${i + 1}`, g)));
       row.append(side);
     }
@@ -357,6 +358,14 @@ export class InventoryScreen {
     const t = this.tileFor(item.defId, this.badge(item), rotated);
     const n = (item.contents?.length ?? 0) + (item.pockets ?? []).reduce((s, p) => s + p.length, 0);
     if (n) t.append(h('span', 'bag', `▤ ${n}`));
+    // Worn gear: a thin condition bar along the top edge (green > 60%, amber > 25%, red below)
+    if (item.durability !== undefined && item.durability < 0.995) {
+      const bar = h('i', 'dur');
+      const pct = Math.max(0, Math.min(1, item.durability));
+      bar.style.setProperty('--d', String(pct));
+      bar.dataset.lvl = pct > 0.6 ? 'ok' : pct > 0.25 ? 'mid' : 'low';
+      t.append(bar);
+    }
     return t;
   }
 
@@ -787,6 +796,7 @@ export class InventoryScreen {
     const wd = weaponDefs[it.defId];
     const ewd = eqD ? weaponDefs[eqD.id] : undefined;
     if (wd) rows.push([S.caliber, wd.caliber], [S.damage, String(wd.damage), ewd && wd.damage - ewd.damage], [S.rpm, `${wd.rpm} rpm`, ewd && wd.rpm - ewd.rpm]);
+    if (it.durability !== undefined) rows.push([S.durability, `${Math.round(Math.max(0, it.durability) * 100)}%`]);
     if (it.attach && Object.keys(it.attach).length) rows.push([attachText.row, Object.values(it.attach).map(itemName).join(', ')]);
     if (it.mag !== undefined) rows.push([S.magazine, it.mag ? `${it.mag.rounds ?? 0} / ${defOf(it.mag).capacity}` : S.none]);
     if (hasStorage(it)) {

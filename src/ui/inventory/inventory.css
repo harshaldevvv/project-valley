@@ -1,6 +1,6 @@
 /* Inventory screen (systems-builder). Dark translucent panels over the live game; 46 px cells. */
 .inv-root {
-  --cell: clamp(48px, 7.2vh, 64px); /* 52 px at 720p, 64 px at 1080p+ */
+  --cell: clamp(48px, 7.2vh, 72px); /* 52 px at 720p, 72 px at 1080p+ (was capped at 64: the screen looked small on 1080p) */
   --line: rgba(255, 255, 255, 0.07);
   --panel: rgba(14, 17, 19, 0.86);
   --edge: rgba(255, 255, 255, 0.1);
@@ -85,6 +85,7 @@
 }
 .inv-grids { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; }
 .inv-grids.side { flex-wrap: nowrap; }
+.inv-grids > .inv-grid, .inv-pockets > .inv-grid { flex-shrink: 0; } /* never squeeze a grid under its items */
 .inv-pockets { display: flex; flex-direction: column; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
 /* Restricted pockets (mag pouches, medical bag): a faint diagonal hatch so they read as "special". */
 .inv-grid.only { background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px),
@@ -235,3 +236,18 @@
 .inv-item[data-rarity='rare'] { --rar: #4f8fe0; }
 .inv-item[data-rarity='epic'] { --rar: #a064d8; }
 .inv-item[data-rarity='legendary'] { --rar: #e0b040; }
+/* UI polish 2026-11-21: condition bar on worn gear, drag lift, tooltip size at 1080p */
+.inv-item .dur { position: absolute; left: 3px; right: 3px; bottom: 1px; height: 3px; border-radius: 2px; background: rgba(0, 0, 0, 0.55); pointer-events: none; }
+.inv-item .dur::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--d) * 100%); border-radius: 2px; background: #8fd18a; }
+.inv-item .dur[data-lvl='mid']::after { background: #e3b04b; }
+.inv-item .dur[data-lvl='low']::after { background: #e07468; }
+.inv-ghost { outline: 2px solid rgba(255, 255, 255, 0.55); transform: scale(1.04); transform-origin: top left; }
+@media (min-height: 1000px) {
+  .inv-root { font-size: 15px; }
+  .inv-item .n { font-size: 12.5px; }
+  .inv-item .c { font-size: 13.5px; }
+  .inv-tip { max-width: 330px; padding: 10px 12px; }
+  .inv-tip b { font-size: 16px; }
+  .inv-tip p { font-size: 14px; }
+  .inv-tip .s { font-size: 13.5px; }
+}

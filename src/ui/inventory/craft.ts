@@ -40,7 +40,8 @@ function icon(id: string, cls = '') {
     i.draggable = false;
     return i;
   }
-  const s = h('div', 'sw');
+  // No rendered icon yet: a swatch tile with the item's initial, so the row never shows an empty hole.
+  const s = h('div', `sw ${cls}`.trim(), (itemText[id]?.short ?? name(id)).charAt(0).toUpperCase());
   s.style.setProperty('--sw', ITEMS[id]?.iconSwatch ?? '#555');
   return s;
 }
@@ -53,10 +54,40 @@ export class CraftScreen {
   /** The recipe whose Craft button is waiting for a second click because it would use up equipped gear. */
   private confirm: RecipeDef | null = null;
 
+  /** Rows of the current tab in display order (ready first), for keyboard navigation. */
+  private order: RecipeDef[] = [];
+
   constructor(private lo: Loadout, private hooks: CraftHooks, parent: HTMLElement) {
     this.root.hidden = true;
     parent.appendChild(this.root);
     this.root.addEventListener('contextmenu', (e) => e.preventDefault());
+    addEventListener('keydown', (e) => this.onKey(e));
+  }
+
+  /** ↑/↓ pick a recipe, Q/E or ←/→ switch category, Enter crafts (same rules as the button). */
+  private onKey(e: KeyboardEvent) {
+    if (!this.isOpen || (e.repeat && e.code === 'Enter')) return;
+    const cats = RECIPE_CATEGORIES;
+    if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+      if (!this.order.length) return;
+      const i = this.sel ? this.order.indexOf(this.sel) : -1;
+      const n = this.order.length;
+      this.sel = this.order[e.code === 'ArrowDown' ? (i + 1) % n : (i - 1 + n) % n];
+      this.target = null;
+      this.confirm = null;
+    } else if (e.code === 'KeyQ' || e.code === 'KeyE' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+      const d = e.code === 'KeyE' || e.code === 'ArrowRight' ? 1 : -1;
+      this.tab = cats[(cats.indexOf(this.tab) + d + cats.length) % cats.length];
+      this.sel = this.target = this.confirm = null;
+    } else if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+      this.root.querySelector<HTMLButtonElement>('.cr-go:not(:disabled)')?.click();
+      e.preventDefault();
+      return;
+    } else return;
+    e.preventDefault();
+    this.hooks.sfx('ui_click');
+    this.render();
+    this.root.querySelector('.cr-row.sel')?.scrollIntoView({ block: 'nearest' });
   }
 
   get isOpen() {
@@ -95,16 +126,21 @@ export class CraftScreen {
     const list = h('div', 'inv-col cr-list');
     list.append(h('h2', '', T.title));
     const tabs = h('div', 'cr-tabs');
+    const isReady = (r: RecipeDef) => check(this.lo, r, st, null).filter((m) => m.kind !== 'target').length === 0;
     for (const c of RECIPE_CATEGORIES) {
       const b = h('button', c === this.tab ? 'on' : '', T.categories[c] ?? c);
+      // How many recipes in that category can be made right now
+      const n = RECIPES.filter((r) => r.category === c && isReady(r)).length;
+      if (n) b.append(h('span', 'n', String(n)));
       b.onclick = () => ((this.tab = c), (this.sel = null), (this.target = null), (this.confirm = null), this.render());
       tabs.append(b);
     }
     list.append(tabs);
     const rows = RECIPES.filter((r) => r.category === this.tab)
-      .map((r) => ({ r, ready: check(this.lo, r, st, null).filter((m) => m.kind !== 'target').length === 0 }))
+      .map((r) => ({ r, ready: isReady(r) }))
       .sort((a, b) => Number(b.ready) - Number(a.ready));
-    if (!rows.length) list.append(h('div', 'cr-foot', T.empty));
+    this.order = rows.map((x) => x.r);
+    if (!rows.length) list.append(h('div', 'inv-empty', T.empty));
     if (!this.sel || this.sel.category !== this.tab) this.sel = rows[0]?.r ?? null;
     for (const { r, ready } of rows) {
       const row = h('div', `cr-row${ready ? '' : ' no'}${r === this.sel ? ' sel' : ''}`);
@@ -116,7 +152,9 @@ export class CraftScreen {
     }
     wrap.append(list);
     if (this.sel) wrap.append(this.detail(this.sel, st));
-    this.root.append(wrap, h('div', 'cr-foot', T.hint));
+    const hint = h('div', 'inv-hint');
+    hint.innerHTML = T.hint; // our own text file, kbd markup only
+    this.root.append(wrap, hint);
   }
 
   private detail(r: RecipeDef, st: ReadonlySet<Station>) {
@@ -171,7 +209,7 @@ export class CraftScreen {
     const go = h('button', 'cr-go', miss.length ? T.cantCraft : asking ? T.confirm(worn.map((w) => name(w.defId)).join(', ')) : T.craft) as HTMLButtonElement;
     go.disabled = miss.length > 0;
     go.title = miss.map((m) => this.missingText(m)).join(', ');
-    if (worn.length && !asking) col.append(h('div', 'cr-foot', T.usesEquipped(worn.map((w) => name(w.defId)).join(', '))));
+    if (worn.length && !asking) col.append(h('div', 'cr-warn', T.usesEquipped(worn.map((w) => name(w.defId)).join(', '))));
     go.onclick = () => {
       if (check(this.lo, r, this.hooks.stations(), this.target).length) return;
       if (equippedUse(this.lo, r).length && this.confirm !== r) return ((this.confirm = r), this.render());
@@ -180,6 +218,8 @@ export class CraftScreen {
       this.close();
     };
     col.append(go);
+    // Why the button is off, readable without hovering (the title tooltip alone never shows on a controller or touch)
+    if (miss.length) col.append(h('div', 'cr-why', T.why(miss.map((m) => this.missingText(m)).join(' · '))));
     return col;
   }
 }
