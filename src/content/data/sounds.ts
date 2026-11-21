@@ -141,3 +141,6 @@ export const atmosphere = {
     groan: { level: 0.3, everyS: [45, 110] as [number, number], lowpassHz: 700 }, // a far-off zombie_groan file
   },
 };
+
+/** A heavy hit on the player muffles the world (principles §4: low-pass 800 Hz for 300 ms). Lighter hits leave it. */
+export const hurtMuffle = { minDamage: 15, hz: 800, holdS: 0.3, releaseS: 0.35 };

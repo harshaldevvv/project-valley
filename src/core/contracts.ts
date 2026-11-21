@@ -44,6 +44,8 @@ export interface AudioApi {
   loop(id: string, follow: Object3D, opts?: { volume?: number }): { setVolume(v: number): void; setRate(r: number): void; stop(): void };
   /** How dangerous the moment is, 0 calm .. 1 fight (zombies hunting the player nearby). Drives the music layers. */
   setDanger(level: number): void;
+  /** Muffle the world (sfx + ambience, not UI or music) through a low-pass at `hz`, held `holdS`, then opened over `releaseS`. */
+  muffle(hz: number, holdS: number, releaseS: number): void;
 }
 
 /** mechanics-builder: read-only view of the player for other teams. */

@@ -43,10 +43,13 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
   const ui = ctx.createGain();
   const music = ctx.createGain();
   const amb = ctx.createGain();
-  sfx.connect(master);
+  // world sounds pass a low-pass that is wide open (22 kHz) until something muffles them (a heavy hit on the player)
+  const muffleF = new BiquadFilterNode(ctx, { type: 'lowpass', frequency: 22000, Q: 0.7 });
+  sfx.connect(muffleF);
+  amb.connect(muffleF);
+  muffleF.connect(master);
   ui.connect(master);
   music.connect(master);
-  amb.connect(master);
   master.connect(ctx.destination);
   const applyVolumes = () => {
     master.gain.value = settings.master;
@@ -171,6 +174,14 @@ export function createAudio(settings: AudioSettings = { master: 0.8, sfx: 1, ui:
 
   const api: AudioApi = {
     setDanger: (level) => (danger = level),
+    muffle(hz, holdS, releaseS) {
+      const f = muffleF.frequency, t = ctx.currentTime;
+      f.cancelScheduledValues(t);
+      f.setValueAtTime(Math.max(hz, f.value), t);
+      f.exponentialRampToValueAtTime(hz, t + 0.02);
+      f.setValueAtTime(hz, t + 0.02 + holdS);
+      f.exponentialRampToValueAtTime(22000, t + 0.02 + holdS + releaseS);
+    },
     play(id, position, opts) {
       const def = lookup(id);
       if (!def) return;

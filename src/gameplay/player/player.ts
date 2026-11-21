@@ -4,6 +4,7 @@ import { Group, groups } from '../../engine/physics';
 import { health as HD, movement as M, stamina as SD } from '../../content/data/player';
 import { animPost as AP } from '../../content/data/anim';
 import { look as L } from '../../content/data/input';
+import { hurtMuffle as HM } from '../../content/data/sounds';
 import { yard } from '../../content/data/yard';
 import type { PlayerView } from '../../core/contracts';
 import type { Ctx } from '../ctx';
@@ -133,6 +134,7 @@ export class Player implements PlayerView {
     // Moving: the procedural flinch (bodyPost) reads alone; the full-body clip would freeze the running legs
     if (this.hp > 0 && Math.hypot(this.vel.x, this.vel.z) < AP.hitClipMaxSpeed) this.ctx.playerAnim?.oneshot('hit_react', 0.05);
     this.ctx.game.events.emit('playerDamaged', { amount, from: from ? from.clone() : null });
+    if (amount >= HM.minDamage) this.ctx.game.audio.muffle(HM.hz, HM.holdS, HM.releaseS);
     if (this.hp <= 0) {
       this.dead = true;
       this.deadT = HD.respawnDelay;
