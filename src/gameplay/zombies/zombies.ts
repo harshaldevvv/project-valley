@@ -1,7 +1,7 @@
 import { BufferAttribute, BufferGeometry, Frustum, LineBasicMaterial, LineSegments, Matrix4, Object3D, Sphere, Vector3 } from 'three';
 import type { Collider, KinematicCharacterController, RigidBody } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
-import { horde as HD, senses as SN, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
+import { crawlClips as CC, horde as HD, senses as SN, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
 import { hasAsset } from '../../engine/assets';
 import { fxTuning } from '../../content/data/fx';
 import { anim as A, clipMeta } from '../../content/data/anim';
@@ -480,7 +480,8 @@ export class Zombies {
     this.releaseToken(z);
     z.mode = 'stagger';
     z.modeT = t;
-    z.anim?.oneshot('z_stagger');
+    if (z.crawler) z.anim?.oneshot(CC.stagger, 0.15, false, 0, CC.staggerSpeed);
+    else z.anim?.oneshot('z_stagger');
   }
 
   die(z: Zombie, dir: Vector3, melee: boolean, quiet = false) {
@@ -500,14 +501,15 @@ export class Zombies {
     z.hp = 0;
     this.kills++;
     // Fall along the shot direction (ragdoll-lite)
-    z.fallDir = Math.atan2(-dir.x, -dir.z) + Math.PI;
+    z.fallDir = z.crawler ? z.yaw : Math.atan2(-dir.x, -dir.z) + Math.PI; // a crawler is already lying along its heading
     z.capsule.setEnabled(false);
     z.head.setEnabled(false);
     this.ctx.hits.delete(z.capsule.handle);
     this.ctx.hits.delete(z.head.handle);
     if (!quiet) this.ctx.sfx('zombie_death', z.curr, { pitchJitter: 0.1 });
     if (z.fling.lengthSq() === 0) this.groundPool(this.torso(z, _o)); // under the torso, not the feet
-    z.anim?.oneshot('z_death', z.headKill ? 0.04 : 0.1, true, z.def.deathHoldAt, (z.headKill ? fxTuning.headKillDeathSpeed : 1) * (0.8 + this.ctx.rand() * 0.55)); // each fall plays at its own speed
+    if (z.crawler) z.anim?.oneshot(CC.death, 0.15, true, CC.deathHoldAt, CC.deathSpeed); // already prone: stop crawling where it lies
+    else z.anim?.oneshot('z_death', z.headKill ? 0.04 : 0.1, true, z.def.deathHoldAt, (z.headKill ? fxTuning.headKillDeathSpeed : 1) * (0.8 + this.ctx.rand() * 0.55)); // each fall plays at its own speed
     if (melee) this.ctx.game.events.emit('noise', { position: z.curr.clone(), radius: 5, source: 'melee_kill' });
   }
 
@@ -770,7 +772,8 @@ export class Zombies {
               z.mode = 'windup';
               z.modeT = d.attackWindup * windupMul(this.night01());
               this.ctx.sfx('zombie_attack', z.curr, { pitchJitter: 0.08 });
-              z.anim?.oneshot('z_attack');
+              if (z.crawler) z.anim?.oneshot(CC.attack, 0.1, false, 0, CC.attackSpeed); // lunge along the ground, never up onto the knees
+              else z.anim?.oneshot('z_attack');
               break;
             }
           }

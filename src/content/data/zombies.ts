@@ -127,6 +127,21 @@ export const charSet = (typeof location !== 'undefined' && new URLSearchParams(l
 /** Spawn mix (weights, seeded RNG) of the chosen set. */
 export const zombieMix: Record<string, number> = MIXES[charSet] ?? MIXES.orig;
 
+/** Clips for a zombie on the ground (the crawler, or a walker whose legs gave out). There are no crawl attack or death
+ *  clips, so the standing z_attack / z_stagger / z_death would pull it up onto its knees: it lunges with a fast crawl
+ *  cycle instead and dies by freezing the crawl prone. */
+export const crawlClips = {
+  attack: 'z_crawl_b',
+  attackSpeed: 1.8,
+  /** Stagger: a short slowed crawl, still on the ground. */
+  stagger: 'z_crawl',
+  staggerSpeed: 0.5,
+  death: 'z_crawl',
+  /** Fraction of the crawl clip where the body freezes, and its playback speed until then. */
+  deathHoldAt: 0.35,
+  deathSpeed: 0.6,
+};
+
 export const senses = {
   coneDeg: 80,
   rangeDay: 25,

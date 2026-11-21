@@ -34,6 +34,7 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 
 ## Z. Zombies
 - [x] Z1 Zombified Polyfork set `pfz` (12 civilians: corpse skin, faded clothes, blood, held props removed; `tools/audit/build_pfz.sh`) is the default; `?chars=orig` keeps the old ones.
+- [x] Z2 Visual audit of every pfz type and the 4 archetypes (`tools/audit/zaudit.mjs <tag> [types]`: side-on ground-level film of walk-in, attack and death, plus a feet close-up; sheets `zc_<type>_sheet.png`). Plain pfz walkers: feet planted, no T-pose or pop, falls land flat. Fixed: the crawler (and any walker whose legs gave out) rose onto its knees for every attack, stagger and death, because those played the standing `z_attack` / `z_stagger` / `z_death`; now a fast `z_crawl_b` lunge, a slowed crawl, and a death that freezes the crawl prone along its heading (`crawlClips` in `content/data/zombies.ts`). `za_crawler_sheet.png` before, `zb_crawler_sheet.png` after.
 
 ## D. World / demo map
 - [ ] D1 Bigger demo area beyond the yard, same theme (Polyfork buildings, vehicles, props).
