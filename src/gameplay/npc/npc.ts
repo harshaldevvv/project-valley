@@ -45,6 +45,9 @@ interface Live {
   baseYaw: number;
   /** A gesture playing: the idle comes back when `t` runs out. */
   back: { gesture: AnimationAction; t: number } | null;
+  /** Talk loop, and whether the talk pose is on. */
+  talkA: AnimationAction | null;
+  talking: boolean;
 }
 
 const _q = new Quaternion();
@@ -178,7 +181,7 @@ export async function installNpcs(ctx: Ctx) {
         .setTranslation(where.x, 0.9, where.z)
         .setCollisionGroups(groups(PGroup.STATIC, 0xffff)),
     );
-    live.push({ def, root, mixer: inst.mixer, actions: inst.actions, idle, head, yaw: 0, pitch: 0, nextIdle: rnd(...NPC_FEEL.idleChangeS), snapped: false, pos, baseYaw: where.yaw, back: null });
+    live.push({ def, root, mixer: inst.mixer, actions: inst.actions, idle, head, yaw: 0, pitch: 0, nextIdle: rnd(...NPC_FEEL.idleChangeS), snapped: false, pos, baseYaw: where.yaw, back: null, talkA: inst.actions.get(def.talk ?? NPC_FEEL.talkClip) ?? null, talking: false });
     (live[live.length - 1] as Live & { col?: unknown }).col = col;
   }
 
@@ -211,13 +214,32 @@ export async function installNpcs(ctx: Ctx) {
           n.snapped = true;
         }
         n.mixer.update(dt);
+        // talk pose: loop the talk clip and turn the body to face the player; back to the idle and the spot's facing after
+        const talking = talkingTo === n.def.id;
+        if (talking !== n.talking) {
+          n.talking = talking;
+          const from = n.back?.gesture ?? (talking ? n.idle : n.talkA);
+          const to = talking ? n.talkA : n.idle;
+          if (from && to && from !== to) {
+            to.reset().play();
+            from.crossFadeTo(to, NPC_FEEL.talkBlend, false);
+          }
+          n.back = null;
+          n.nextIdle = rnd(...NPC_FEEL.idleChangeS);
+        }
+        {
+          const want = talking ? Math.atan2(-(p.x - n.root.position.x), -(p.z - n.root.position.z)) : n.baseYaw;
+          let d = want - n.root.rotation.y;
+          d = Math.atan2(Math.sin(d), Math.cos(d));
+          if (Math.abs(d) > 1e-3) n.root.rotation.y += d * (1 - Math.exp(-NPC_FEEL.talkTurn * dt));
+        }
         if (n.back && (n.back.t -= dt) <= 0 && n.idle) {
           n.idle.reset().play();
           n.back.gesture.crossFadeTo(n.idle, 0.4, false);
           n.back = null;
         }
         // idle variety: now and then a gesture (one shot) and back to the idle loop
-        if ((n.nextIdle -= dt) <= 0) {
+        if (!talking && (n.nextIdle -= dt) <= 0) {
           n.nextIdle = rnd(...NPC_FEEL.idleChangeS);
           const g = Math.random() < NPC_FEEL.gestureChance ? n.def.gestures[Math.floor(Math.random() * n.def.gestures.length)] : null;
           const a = g ? n.actions.get(g) : null;

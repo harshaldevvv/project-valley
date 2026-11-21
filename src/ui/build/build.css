@@ -15,6 +15,8 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 .build-bar[hidden] { display: none; }
+/* Narrower than ~1640 px the ~1000 px card row reaches over the bottom-left vitals panel: lift it clear. */
+@media (max-width: 1640px) { .build-bar { bottom: 168px; } }
 .build-bar .bt { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #d9b25a; }
 .build-bar .bt em { font-style: normal; color: #5ec478; margin-left: 8px; letter-spacing: 0.08em; }
 .build-bar .bps { display: flex; gap: 6px; }

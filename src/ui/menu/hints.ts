@@ -49,8 +49,18 @@ export function installHints(game: Game, playing: () => boolean) {
   el.setAttribute('role', 'status');
   el.style.cssText = 'position:fixed;left:50%;bottom:118px;transform:translateX(-50%);z-index:13;display:none;max-width:min(560px,90vw);padding:7px 14px;border-radius:3px;pointer-events:none;background:rgba(14,16,18,.86);border-left:3px solid #d9a441;color:#efe6d2;font:600 13px system-ui;text-align:center';
   document.body.appendChild(el);
-  // the sim (and step) stops while paused: hide a showing hint behind the menu, bring it back on resume
-  setInterval(() => (el.style.visibility = playing() ? 'visible' : 'hidden'), 200);
+  // Hidden (and its timer held) behind the pause menu, any open screen (dialogue, journal, craft...) and the build bar:
+  // it sits bottom centre, right where dialogue choices and build cards go.
+  const open = new Set<string>();
+  game.events.on('uiScreen', ({ name, open: o }) => (o ? open.add(name) : open.delete(name)));
+  const clear = () => {
+    try {
+      return playing() && open.size === 0 && !game.build?.active;
+    } catch {
+      return playing() && open.size === 0; // build not installed
+    }
+  };
+  setInterval(() => (el.style.visibility = clear() ? 'visible' : 'hidden'), 200);
 
   const persist = () => {
     try {
@@ -85,11 +95,12 @@ export function installHints(game: Game, playing: () => boolean) {
       }
       // display
       if (showLeft > 0) {
+        if (!clear()) return;
         showLeft -= step;
         if (showLeft <= 0) el.style.display = 'none';
         return;
       }
-      if (!queue.length || !playing()) return;
+      if (!queue.length || !clear()) return;
       const id = queue.shift()!;
       seen.add(id);
       persist();

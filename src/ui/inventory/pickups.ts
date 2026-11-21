@@ -1,5 +1,6 @@
 import { Box3, Group, Mesh, type Material, MeshStandardMaterial, Object3D, Vector3 } from 'three';
-import { PICKUP_MODELS } from '../../content/data/items';
+import { INVENTORY, PICKUP_MODELS } from '../../content/data/items';
+import { Group as PGroup, groups } from '../../engine/physics';
 import type { ItemDef, ItemInstance } from '../../content/data/types';
 import type { Game } from '../../core/game';
 import { assetUrl } from '../../engine/assetUrl';
@@ -66,6 +67,21 @@ function layFlat(obj: Object3D) {
 export function createPickupView(game: Game, lo: Loadout, onPickedUp: (item: ItemInstance, ok: boolean) => void) {
   const live = new Map<ItemInstance, { root: Object3D; unreg: () => void }>();
 
+  // Drops are placed at the player's feet height, but they land ahead of and around the player: off a porch edge,
+  // on a slope, while airborne. Snap each new pickup down (or up a step) onto the surface under it once.
+  let ray: InstanceType<Game['phys']['R']['Ray']> | null = null;
+  const surfaceY = (x: number, y: number, z: number): number | null => {
+    try {
+      const R = game.phys.R;
+      ray ??= new R.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 });
+      ray.origin = { x, y: y + INVENTORY.dropSnapUp, z };
+      const hit = game.phys.world.castRay(ray, INVENTORY.dropSnapUp + INVENTORY.dropSnapDown, true, undefined, groups(PGroup.PLAYER, PGroup.STATIC | PGroup.TERRAIN | PGroup.BUILD | PGroup.VEHICLE));
+      return hit ? y + INVENTORY.dropSnapUp - hit.timeOfImpact : null;
+    } catch {
+      return null; // physics not up yet
+    }
+  };
+
   function sync() {
     const now = new Set(lo.pickups.map((p) => p.item));
     for (const [item, v] of live)
@@ -77,6 +93,8 @@ export function createPickupView(game: Game, lo: Loadout, onPickedUp: (item: Ite
     for (const p of lo.pickups) {
       if (live.has(p.item)) continue;
       const d = defOf(p.item);
+      const sy = surfaceY(p.x, p.y, p.z);
+      if (sy !== null) p.y = sy;
       const root = new Group();
       root.name = `pickup_${d.id}`;
       root.position.set(p.x, p.y, p.z);

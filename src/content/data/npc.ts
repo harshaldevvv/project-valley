@@ -17,6 +17,8 @@ export interface NpcDef {
   /** Looped idle clips (a variant is picked at random each time) and rarer one-shot gestures. */
   idles: string[];
   gestures: string[];
+  /** Looped clip while you talk to them (default NPC_FEEL.talkClip). */
+  talk?: string;
 }
 
 export const NPCS: NpcDef[] = [
@@ -37,6 +39,11 @@ export const NPC_FEEL = {
   /** Seconds between idle changes (random in range), and the share that are a gesture instead of another idle. */
   idleChangeS: [7, 16] as [number, number],
   gestureChance: 0.35,
+  /** While you talk to them: this clip loops (pf_idle = hand at the chest, weight shifting), the body turns to face you
+   *  (follow rate 1/s) and turns back to its spot's facing afterwards; cross-fade seconds. */
+  talkClip: 'pf_idle',
+  talkTurn: 4,
+  talkBlend: 0.35,
   /** Interact reach (m) and hold time (s). */
   reach: 2.8,
   hold: 0,

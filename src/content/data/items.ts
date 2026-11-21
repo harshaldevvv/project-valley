@@ -167,6 +167,9 @@ export const INVENTORY = {
   vicinityW: 8,
   /** Dropped items land this far in front of the player, m. */
   dropAhead: 0.7,
+  /** Each new ground item is snapped onto the surface under it: ray from this far above its drop height down to this far below (m). */
+  dropSnapUp: 0.6,
+  dropSnapDown: 3,
   /** Hotbar keys 5..9 bind consumables by item id (by type, not by instance). */
   hotbar: ['bandage', 'canned_beans', 'water_bottle', 'flashlight_a', null] as (string | null)[],
   /** Order in which worn grids receive picked-up items. */
