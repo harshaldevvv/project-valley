@@ -69,7 +69,7 @@ except for the meshopt decoder that ships with three.js.
 | Ambient look: bloom, grade, clouds, grass, motes | original code | MIT |
 | Sound effects `public/assets/audio/gen/*.ogg` (melee swings, flesh impacts, headshot crack, body fall) | stable-audio3-sfx | Stability AI Community licence (free under about $1M annual revenue): check before a commercial release |
 | Optional scores `public/assets/audio/gen/music_*.ogg` (play with `?music=ai`; loop points crossfaded) | ACE-Step 1.5 XL | Apache-2.0; not yet listened to by the author of this change |
-| Loading screen key art `public/assets/art/keyart.jpg` | z-image-turbo | Apache-2.0 |
+| Loading screen key art `public/assets/art/keyart.webp` | z-image-turbo | Apache-2.0 |
 | Rain loop `public/assets/audio/gen/rain_loop.ogg` | stable-audio3-sfx | Stability AI Community licence |
 
 ## Polyfork catalog models (CC BY 4.0)
@@ -310,14 +310,14 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Antenna Mast by Polyfork | https://polyfork.dev/asset/antenna-mast-0954b0 |
 | Anti-Aircraft Searchlight by Polyfork | https://polyfork.dev/asset/anti-aircraft-searchlight-ba3f07 |
 | Lookout Watchtower by Polyfork | https://polyfork.dev/asset/lookout-watchtower-f1a5ce |
-| Teen Zombie by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/teen-zombie-b5bb27 |
-| Shambling Ghoul by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/shambling-ghoul-256f2f |
-| Police Officer by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/police-officer-1cc379 |
-| Construction Worker by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/construction-worker-c1ad8c |
-| Farmer by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/farmer-304a43 |
-| Senior Scientist by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/senior-scientist-631736 |
-| Infantry Rifleman by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/infantry-rifleman-c1c0a5 |
-| Groundworker by Polyfork (characters, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/groundworker-083f5c |
+| Teen Zombie by Polyfork (zombie `zmb_pf_teen_a` for `?chars=pf`, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/teen-zombie-b5bb27 |
+| Shambling Ghoul by Polyfork (zombie `zmb_pf_ghoul_a` for `?chars=pf`, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/shambling-ghoul-256f2f |
+| Police Officer by Polyfork (zombie `zmb_pf_police_a` for `?chars=pf`, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/police-officer-1cc379 |
+| Construction Worker by Polyfork (zombie `zmb_pf_worker_a` for `?chars=pf`, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/construction-worker-c1ad8c |
+| Farmer by Polyfork (zombie `zmb_pf_farmer_a` for `?chars=pf`, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/farmer-304a43 |
+| Senior Scientist by Polyfork (zombie `zmb_pf_scientist_a` for `?chars=pf`, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/senior-scientist-631736 |
+| Infantry Rifleman by Polyfork (zombie `zmb_pf_soldier_a` for `?chars=pf`, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/infantry-rifleman-c1c0a5 |
+| Groundworker by Polyfork (zombie `zmb_pf_ground_a` for `?chars=pf`, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/groundworker-083f5c |
 | Apple by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/apple-b15012 |
 | Bread Loaf by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/bread-loaf-0e0ab5 |
 | Chocolate Bar by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/chocolate-bar-284f07 |

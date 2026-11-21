@@ -216,7 +216,7 @@ describe('content wiring', () => {
     for (const [id, m] of Object.entries(PICKUP_MODELS.files)) {
       expect(ITEMS[id], id).toBeTruthy();
       expect(m.size).toBeGreaterThan(0.03);
-      expect(m.size).toBeLessThan(1.2);
+      expect(m.size).toBeLessThan(2); // long weapons (spear 1.5 m) lie full length
       expect(files.some((f) => f.endsWith(`/${m.file}.glb`)), m.file).toBe(true);
     }
   });
