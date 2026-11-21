@@ -305,7 +305,13 @@ export function installCraft(
   function playRadio() {
     // At a place the radio picks up that place's broadcast first, then the general list
     const at = feet();
-    const poi = POIS.find((p) => Math.hypot(p.x - at.x, p.z - at.z) <= p.radius);
+    // the place you are most inside (relative to its radius): the farm's wide radius reaches Camp Harlan's gate
+    let poi: (typeof POIS)[number] | undefined;
+    let best = 1;
+    for (const p of POIS) {
+      const f = Math.hypot(p.x - at.x, p.z - at.z) / p.radius;
+      if (f <= best) (best = f), (poi = p);
+    }
     const local = poi && radioAt[poi.id];
     const line = local ? local[0] : radioLines[radioIdx % radioLines.length];
     if (!local) radioIdx++;

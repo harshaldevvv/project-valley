@@ -29,4 +29,6 @@ export const radioAt: Record<string, string[]> = {
   camp: ['Pinewood. They kept a fire every night. If you can, keep it for them.'],
   crash: ['Medevac Two, this is Relay Seven. Medevac Two, this is Relay Seven. ...Nobody is going to answer. I know. I keep trying.'],
   ranger: ['Relay Seven, loud and clear. You made it up the ridge. I have been waiting weeks for a voice that was not mine. Stay on the air. We are building something from here.'],
+  lake: ['...Loon Lake, this is nobody. The dock is the safest place in the valley: they do not swim. Bring a line and be patient.'],
+  outpost: ['Harlan actual to any station. Harlan actual to any station. Convoy left north at dawn, day eleven. Gate is open. Medics went with it. The garrison stayed. Do not come for the garrison.'],
 };

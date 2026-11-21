@@ -167,4 +167,11 @@ export const MORE_ITEMS: ItemDef[] = [
   { id: 'note_camp_diary', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
   { id: 'note_crash_log', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
   { id: 'note_ranger_log', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
+  // Loon Lake -> Camp Harlan chain (lake_dock, harlan_static, harlan_clear)
+  { id: 'note_lake_scanner', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
+  { id: 'note_harlan_medic', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
+  /** Quest item: the scanner crystal Tobin needs (worthless to anyone else). */
+  { id: 'radio_crystal', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#9fb4bc', value: 0 },
+  /** Recipe unlock: a recipe that lists it as a tool (data/crafting.ts ifak) can be made while it is carried. Readable. */
+  { id: 'field_manual', kind: 'tool', w: 1, h: 2, stack: 1, rarity: 'rare', iconSwatch: '#5d6b4a', value: 40, use: { seconds: 1.5, keep: true, action: 'read', sound: 'search_rustle' } },
 ];

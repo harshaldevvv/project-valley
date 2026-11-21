@@ -158,6 +158,38 @@ describe('dialogue graph', () => {
     expect(w.items.antibiotics).toBe(1);
   });
 
+  it('Tobin: asks for the crystal, takes it, then the letter, and is different afterwards', () => {
+    const w = world();
+    const tenv = (): DialogueEnv => ({ ...env(w), objectives: () => [...w.giving].map((npc) => ({ type: 'give' as const, item: w.items.note_harlan_medic ? 'note_harlan_medic' : 'radio_crystal', npc })) });
+    expect(new Dialogue('tobin', 'tobin', tenv()).start()).toBe('first');
+    w.status.lake_dock = 'active';
+    w.giving.add('tobin');
+    expect(new Dialogue('tobin', 'tobin', tenv()).start()).toBe('waiting');
+    w.items.radio_crystal = 1;
+    const a = new Dialogue('tobin', 'tobin', tenv());
+    expect(a.start()).toBe('crystal');
+    a.choose('give');
+    expect(w.handed).toEqual(['tobin:radio_crystal']);
+    expect(a.node).toBe('listened');
+    w.status.lake_dock = 'done';
+    w.status.harlan_static = 'active';
+    w.giving.clear();
+    expect(new Dialogue('tobin', 'tobin', tenv()).start()).toBe('harlan');
+    w.status.harlan_static = 'done';
+    w.status.harlan_clear = 'active';
+    w.giving.add('tobin');
+    expect(new Dialogue('tobin', 'tobin', tenv()).start()).toBe('harlan'); // the give step, but no letter yet
+    w.items.note_harlan_medic = 1;
+    const b = new Dialogue('tobin', 'tobin', tenv());
+    expect(b.start()).toBe('letter');
+    b.choose('letter');
+    expect(w.handed).toEqual(['tobin:radio_crystal', 'tobin:note_harlan_medic']);
+    expect(w.items.note_harlan_medic).toBe(0);
+    w.status.harlan_clear = 'done';
+    w.giving.clear();
+    expect(new Dialogue('tobin', 'tobin', tenv()).start()).toBe('after');
+  });
+
   it('Hollis gives food once and trades rags for tuna once', () => {
     const w = world();
     w.flags.add('hollis_met');

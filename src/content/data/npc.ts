@@ -26,6 +26,8 @@ export const NPCS: NpcDef[] = [
   { id: 'eli', model: 'chr_npc_eli', role: 'survivor', poi: 'maple', at: { building: 'house_a', u: -2.8, v: 4.8 }, dialogue: 'eli', idles: ['idle'], gestures: ['interact_search'] },
   { id: 'hollis', model: 'chr_npc_hollis', role: 'survivor', poi: 'farm', at: { building: 'farmhouse', u: -1.3, v: 6.2 }, dialogue: 'hollis', idles: ['idle'], gestures: ['interact_search'] },
   { id: 'wren', model: 'chr_npc_wren', role: 'survivor', poi: 'ranger', at: { x: 127.6, z: 255.4, yaw: 0 }, dialogue: 'wren', idles: ['idle'], gestures: ['interact_search'] },
+  // Loon Lake: sits by the east-bank fire ring (outskirts_lake.ts pitch 3), facing the car park track; reuses Hollis's model
+  { id: 'tobin', model: 'chr_npc_hollis', role: 'survivor', poi: 'lake', at: { x: -118.4, z: 267.6, yaw: 0.6 }, dialogue: 'tobin', idles: ['idle'], gestures: ['interact_search'] },
 ];
 export const NPC_BY_ID: Record<string, NpcDef> = Object.fromEntries(NPCS.map((n) => [n.id, n]));
 
@@ -151,6 +153,33 @@ export const DIALOGUES: DialogueDef[] = [
       relay: { choices: [{ id: 'back', next: 'hub' }, { id: 'leave', next: 'end' }] },
       valley: { choices: [{ id: 'back', next: 'hub' }, { id: 'leave', next: 'end' }] },
       light: { choices: [{ id: 'back', next: 'hub' }, { id: 'leave', next: 'end' }] },
+    },
+  },
+  {
+    id: 'tobin',
+    entry: [
+      { when: [{ quest: 'harlan_clear', status: 'done' }], node: 'after' },
+      { when: [{ giving: 'tobin' }, { has: { item: 'note_harlan_medic', count: 1 } }], node: 'letter' },
+      { when: [{ giving: 'tobin' }, { has: { item: 'radio_crystal', count: 1 } }], node: 'crystal' },
+      { when: [{ giving: 'tobin' }, { quest: 'lake_dock', status: 'active' }], node: 'waiting' },
+      { when: [{ quest: 'harlan_static', status: 'active' }], node: 'harlan' },
+      { when: [{ quest: 'harlan_clear', status: 'active' }], node: 'harlan' },
+      { when: [{ flag: 'tobin_met', not: true }], node: 'first' },
+      { node: 'hub' },
+    ],
+    nodes: {
+      first: { choices: [{ id: 'who', effects: [{ set: 'tobin_met' }], next: 'dee' }, { id: 'leave', effects: [{ set: 'tobin_met' }], next: 'end' }] },
+      hub: { choices: [{ id: 'who', next: 'dee' }, { id: 'fish', next: 'fish' }, { id: 'leave', next: 'end' }] },
+      dee: { choices: [{ id: 'where', next: 'where' }, { id: 'leave', next: 'end' }] },
+      where: { choices: [{ id: 'leave', next: 'end' }] },
+      waiting: { choices: [{ id: 'where', next: 'where' }, { id: 'leave', next: 'end' }] },
+      crystal: { choices: [{ id: 'give', effects: [{ hand: { item: 'radio_crystal', count: 1 } }, { set: 'tobin_scanner' }], next: 'listened' }, { id: 'later', next: 'end' }] },
+      listened: { choices: [{ id: 'leave', next: 'end' }] },
+      harlan: { choices: [{ id: 'fish', next: 'fish' }, { id: 'leave', next: 'end' }] },
+      letter: { choices: [{ id: 'letter', effects: [{ hand: { item: 'note_harlan_medic', count: 1 } }, { set: 'tobin_letter' }], next: 'letter_read' }, { id: 'later', next: 'end' }] },
+      letter_read: { choices: [{ id: 'leave', next: 'end' }] },
+      after: { choices: [{ id: 'fish', next: 'fish' }, { id: 'leave', next: 'end' }] },
+      fish: { choices: [{ id: 'back', next: 'hub' }, { id: 'leave', next: 'end' }] },
     },
   },
 ];

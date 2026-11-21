@@ -71,6 +71,24 @@ export const questText: Record<string, QuestText> = {
     objectives: ['Go to Ranger Ridge', 'Read the ranger log', 'Use the radio at the lookout'],
     done: 'Seen from here, the valley is smaller. Relay Seven hears you now, and that is the end of the beginning.',
   },
+  lake_dock: {
+    title: 'The Dock at Loon Lake',
+    summary: 'A fisherman sleeps on the dock because the dead will not follow him onto the water. He is waiting for a voice on the scanner.',
+    objectives: ['Go to Loon Lake Campground', 'Find the scanner crystal (camp office desk)', 'Bring the crystal to Tobin by the east fire ring'],
+    done: 'The scanner hisses back to life. Tobin presses it to his ear and waves you off. Take the fish; he has more than he can eat.',
+  },
+  harlan_static: {
+    title: 'Static from Camp Harlan',
+    summary: 'Tobin heard the army channel and wrote down every word. The words point east, to the outpost past the farm.',
+    objectives: ['Read the scanner transcript (rental cabin A, nightstand)', 'Go to Camp Harlan', 'Use the radio inside the camp fence'],
+    done: 'The outpost is still broadcasting on a loop. Convoy gone north, medics with it. The garrison stayed behind, and still walks the fence.',
+  },
+  harlan_clear: {
+    title: 'Clear Camp Harlan',
+    summary: 'Whatever Dee left behind is inside the wire, and so is the garrison. Thin it out, then search the camp.',
+    objectives: ['Clear Camp Harlan (8 kills)', 'Find the letter in the supply crate and read it', 'Bring the letter to Tobin at Loon Lake'],
+    done: "Tobin reads the letter twice, then hands you a manual with a nurse's notes in the margins. Carry it and you can build trauma kits (IFAK) at the crafting menu.",
+  },
 };
 
 /** Fallback shown if a quest has no text yet. */
@@ -97,6 +115,18 @@ export const noteText: Record<string, { title: string; body: string }> = {
   note_ranger_log: {
     title: 'Ranger log, tower six',
     body: 'From up here you see the whole valley and every fire in it. I count eleven. One of them is yours. The relay at the base of the tower only needs a clear signal to carry past the hills. If you have a radio, use it from the platform. Say anything. Somebody in the next valley is listening and has been for weeks.',
+  },
+  note_lake_scanner: {
+    title: 'Scanner transcript',
+    body: 'Army channel, 21:40. "Camp Harlan to all stations. Convoy departs north at dawn. Medical staff travel with the convoy. Civilians, do not approach the fence after dark." Then a different voice, close to the mic: "Tobin, if this reaches the lake, I left something for you in the supply crate." Then static. It was Dee. I know it was Dee. Harlan is east, past the farm. Take a radio and listen there yourself.',
+  },
+  note_harlan_medic: {
+    title: 'Letter for Tobin',
+    body: 'Tobin. The convoy is leaving and I am going with it; they need every nurse they have. Do not come after me. The garrison is not right anymore, and they will not stay behind the fence much longer. I am leaving you my field manual. You always asked how I packed a trauma kit so fast. Page forty. A clean dressing, a tourniquet, antiseptic, rolled tight. Learn it, then teach it to someone. Keep the fire small. Dee.',
+  },
+  field_manual: {
+    title: 'Combat medic field manual, page 40',
+    body: 'Individual first aid kit (IFAK), field assembly: one sterile dressing, one tourniquet, one antiseptic. Fold the dressing flat, stage the tourniquet on top, tape the pouch shut so it opens one-handed. In the margin, in pencil: Dee says practise until you can do it in the dark. Carry this manual and the crafting menu will show you how.',
   },
 };
 

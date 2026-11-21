@@ -129,6 +129,41 @@ export const QUESTS: QuestDef[] = [
     ],
     rewards: [{ item: 'binoculars', count: 1 }, { item: 'plate_carrier', count: 1 }, { item: 'cash', count: 200 }],
   },
+  // ---- side chain: Loon Lake Campground -> Camp Harlan (opens once the crash road is walked; Tobin waits at the lake) ----
+  {
+    id: 'lake_dock',
+    requires: ['crash'],
+    side: true,
+    objectives: [
+      { type: 'goto', poi: 'lake' },
+      { type: 'collect', item: 'radio_crystal', count: 1, poi: 'lake' },
+      { type: 'give', item: 'radio_crystal', npc: 'tobin', poi: 'lake' },
+    ],
+    rewards: [{ item: 'sardines', count: 3 }, { item: 'water_jug', count: 1 }, { item: 'purification_tablets', count: 4 }],
+  },
+  {
+    id: 'harlan_static',
+    requires: ['lake_dock'],
+    side: true,
+    objectives: [
+      { type: 'read', note: 'note_lake_scanner', poi: 'lake' },
+      { type: 'goto', poi: 'outpost' },
+      { type: 'event', name: 'radio', poi: 'outpost' },
+    ],
+    rewards: [{ item: 'ammo_9mm', count: 30 }, { item: 'battery', count: 2 }],
+  },
+  {
+    id: 'harlan_clear',
+    requires: ['harlan_static'],
+    side: true,
+    objectives: [
+      { type: 'kill', count: 8, poi: 'outpost' },
+      { type: 'read', note: 'note_harlan_medic', poi: 'outpost' },
+      { type: 'give', item: 'note_harlan_medic', npc: 'tobin', poi: 'lake' },
+    ],
+    // the field manual unlocks the IFAK recipe (data/crafting.ts): the chain pays in know-how, not loot
+    rewards: [{ item: 'field_manual', count: 1 }, { item: 'ifak', count: 1 }, { item: 'cash', count: 80 }],
+  },
 ];
 
 export const QUEST_BY_ID: Record<string, QuestDef> = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
@@ -146,6 +181,9 @@ export const QUEST_PLACED: { container: string; item: string; count?: number }[]
   { container: 'poi_crash_out1', item: 'note_crash_log' },
   { container: 'poi_crash_out1', item: 'adrenaline_shot' },
   { container: 'poi_ranger_out1', item: 'note_ranger_log' },
+  { container: 'poi_lake_office_3', item: 'radio_crystal' }, // camp office desk
+  { container: 'poi_lake_cabin_a_0', item: 'note_lake_scanner' }, // rental cabin A nightstand
+  { container: 'poi_outpost_out2', item: 'note_harlan_medic' }, // the supply crate in the middle of Camp Harlan
 ];
 
 export const QUEST = {

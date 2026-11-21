@@ -16,6 +16,8 @@ const list: RecipeDef[] = [
   { id: 'bandage', category: 'medical', inputs: [{ item: 'cloth_rag', count: 4 }], seconds: 4, outputs: [{ item: 'bandage', count: 1 }] },
   { id: 'sterile_bandage', category: 'medical', inputs: [{ item: 'cloth_rag', count: 3 }, { item: 'antiseptic', count: 1 }], seconds: 4, outputs: [{ item: 'sterile_bandage', count: 1 }] },
   { id: 'splint', category: 'medical', inputs: [{ item: 'wood_planks', count: 2 }, { item: 'cloth_rag', count: 2 }], seconds: 5, outputs: [{ item: 'splint', count: 1 }] },
+  // Recipe unlock (quest harlan_clear): needs the medic's field manual carried, as a tool that is never used up.
+  { id: 'ifak', category: 'medical', inputs: [{ item: 'sterile_bandage', count: 1 }, { item: 'tourniquet', count: 1 }, { item: 'antiseptic', count: 1 }], tools: [['field_manual']], seconds: 6, outputs: [{ item: 'ifak', count: 1 }] },
   { id: 'first_aid_kit', category: 'medical', inputs: [{ item: 'bandage', count: 2 }, { item: 'antiseptic', count: 1 }, { item: 'cloth_rag', count: 1 }], seconds: 5, outputs: [{ item: 'first_aid_kit', count: 1 }] },
   // ---- rags from clothes ----
   { id: 'rags_flannel', category: 'medical', inputs: [{ item: 'flannel_shirt', count: 1 }], tools: [CUT], seconds: 3, outputs: [{ item: 'cloth_rag', count: 4 }] },

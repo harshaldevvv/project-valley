@@ -3,7 +3,7 @@
 // travel (teleport to the place), loot (take from the world container the item is in), use / read (timed item use),
 // craft (the crafting job), interact (pumps, campfire, car filler cap: the same onInteract the E key calls), talk (the
 // NPC dialogue, choices picked like the 1-9 keys), kill (zombies spawned at the place, killed through the normal death
-// path), wait (time runs fast). Logs each step and every dead end: an item the player cannot get in the world, a missing
+// path), wait (time runs fast). Then every recipe a quest-reward manual unlocks: locked without it, craftable with it. Logs each step and every dead end: an item the player cannot get in the world, a missing
 // line of text, an objective that never ticks, a reward not granted. A dead end is unblocked with the debug skip so the
 // rest of the chain is still checked. Then: save mid-quest, reload the page, load, compare. Exit 1 on any dead end.
 // URL=... overrides the dev server address.
@@ -410,6 +410,49 @@ for (const [qi, d] of defs.entries()) {
     if (!g || g.got < r.count) deadEnd(d.id, `reward ${r.item} x${r.count} not granted (${g ? '+' + g.got : 'never given'})`);
   }
   log(`  done; rewards ${d.rewards.map((r) => `${r.item} x${r.count}`).join(', ')}`);
+}
+
+// Recipe unlocks: a readable quest reward (a manual) that is the only tool a recipe accepts (field manual -> IFAK) must make that recipe craftable.
+const unlocks = await ev(async ([rewards]) => {
+  const { ITEMS } = await import('/src/content/data/items.ts');
+  const book = (id) => rewards.includes(id) && ITEMS[id]?.use?.action === 'read';
+  return window.__qc.RECIPES.filter((r) => (r.tools ?? []).some((g) => g.length === 1 && book(g[0]))).map((r) => ({ id: r.id, tool: r.tools.find((g) => g.length === 1 && book(g[0]))[0], out: r.outputs[0]?.item }));
+}, [defs.flatMap((d) => d.rewards.map((r) => r.item))]);
+if (!unlocks.length) finding('unlock', 'no quest reward unlocks a recipe');
+for (const u of unlocks) {
+  log(`\n=== recipe unlock: ${u.id} (needs ${u.tool})`);
+  await ev(([t, out]) => (window.__qc.keep.add(t), window.__qc.keep.add(out)), [u.tool, u.out]);
+  // the inputs are not what is checked here: put them in the pack (stowing, dropping junk if full)
+  const inputs = await ev(([id]) => window.__qc.RECIPES.find((r) => r.id === id).inputs, [u.id]);
+  for (const i of inputs)
+    await ev(async ([item, n]) => {
+      const { newItems } = await import('/src/systems/inventory.ts');
+      window.__qc.keep.add(item);
+      const short = n - window.__qc.count(item);
+      if (short > 0) for (const it of newItems(item, short)) window.__qc.stow(it);
+    }, [i.item, i.count]);
+  // the gate: without the manual the recipe reports it as a missing tool
+  const gate = () =>
+    ev(async ([id, t]) => {
+      const { check } = await import('/src/systems/crafting.ts');
+      const r = window.__qc.RECIPES.find((x) => x.id === id);
+      return check(window.__gp.ctx.game.loadout, r, new Set(), null).some((m) => m.kind === 'tool' && m.any.includes(t));
+    }, [u.id, u.tool]);
+  const carried = await ev(([t]) => window.__qc.count(t), [u.tool]);
+  if (!carried && !(await gate())) deadEnd('unlock', `${u.id} is craftable without ${u.tool}`);
+  // a full pack leaves the reward at the player's feet: pick it up like a player would
+  const has = carried || (await ev(([t]) => window.__qc.pickUp(t, 1), [u.tool]));
+  if (!has) {
+    deadEnd('unlock', `${u.tool} is not carried after its quest, so ${u.id} stays locked`);
+    continue;
+  }
+  if (await gate()) deadEnd('unlock', `${u.id} still asks for ${u.tool} while it is carried`);
+  const made = () => ev(([o]) => window.__qc.count(o) + window.__gp.ctx.game.loadout.pickups.filter((p) => p.item.defId === o).reduce((s, p) => s + p.item.count, 0), [u.out]);
+  const before = await made();
+  await craft('unlock', u.id);
+  const after = await made();
+  if (after <= before) deadEnd('unlock', `crafting ${u.id} with ${u.tool} made nothing (${before} -> ${after})`);
+  else log(`  locked without ${u.tool}: ${carried ? 'not checked (already carried)' : 'yes'}; crafted ${u.out}: ${before} -> ${after}`);
 }
 
 log(`\nitems dropped to make room: ${await ev(() => window.__qc.dropped.join(', ') || 'none')}`);

@@ -39,9 +39,9 @@ const goto = (w: World, poi: string) => {
 };
 
 describe('quest data', () => {
-  it('there are 8 to 12 quests with unique ids and a dependency graph that has no cycle and one starting quest', () => {
+  it('there are 8 to 16 quests with unique ids and a dependency graph that has no cycle and one starting quest', () => {
     expect(QUESTS.length).toBeGreaterThanOrEqual(8);
-    expect(QUESTS.length).toBeLessThanOrEqual(12);
+    expect(QUESTS.length).toBeLessThanOrEqual(16);
     expect(new Set(QUESTS.map((q) => q.id)).size).toBe(QUESTS.length);
     expect(QUESTS.filter((q) => q.requires.length === 0).map((q) => q.id)).toEqual(['wake']);
     const state = new Map<string, number>();
@@ -241,9 +241,10 @@ describe('progress rules', () => {
     goto(w, 'ranger');
     q.report({ type: 'event', name: 'radio', poi: 'ranger' });
     expect(q.state.ranger.status).toBe('done');
-    expect(q.active().map((x) => x.id)).toEqual(['school']); // only the side quest is left
+    expect(q.active().map((x) => x.id)).toEqual(['school', 'lake_dock']); // only side quests are left
+    expect(q.active().every((x) => x.side)).toBe(true);
     expect(q.tracked).toBe('school');
-    for (let i = 0; i < 5; i++) q.skip('school');
+    for (let n = 0; n < 40 && q.active().length; n++) for (const a of q.active()) q.skip(a.id);
     expect(q.active()).toEqual([]);
     expect(q.tracked).toBeNull();
   });
@@ -278,6 +279,51 @@ describe('progress rules', () => {
     goto(w, 'maple');
     q.tick();
     expect(q.current('maple')).toMatchObject({ type: 'collect' });
+  });
+
+  it('Loon Lake -> Camp Harlan: crystal to Tobin, the radio at the outpost, a kill count inside the wire, the letter back to Tobin', () => {
+    const w = world();
+    const { q } = mk(w);
+    through(q, 'ranger'); // the chain opens after the crash site
+    expect(q.state.lake_dock.status).toBe('active');
+    expect(QUEST_BY_ID.lake_dock.side && QUEST_BY_ID.harlan_static.side && QUEST_BY_ID.harlan_clear.side).toBe(true);
+    goto(w, 'lake');
+    q.tick();
+    expect(q.current('lake_dock')).toMatchObject({ type: 'collect', item: 'radio_crystal' });
+    expect(q.target('lake_dock')?.poi).toBe('lake');
+    w.items.radio_crystal = 1;
+    q.tick();
+    q.report({ type: 'give', npc: 'eli', item: 'radio_crystal' }); // wrong person
+    expect(q.state.lake_dock.status).toBe('active');
+    q.report({ type: 'give', npc: 'tobin', item: 'radio_crystal' });
+    expect(q.state.lake_dock.status).toBe('done');
+    q.report({ type: 'note', id: 'note_lake_scanner' });
+    goto(w, 'outpost');
+    q.tick();
+    q.report({ type: 'event', name: 'radio', poi: 'lake' }); // the radio at the lake does not count
+    expect(q.state.harlan_static.status).toBe('active');
+    q.report({ type: 'event', name: 'radio', poi: 'outpost' });
+    expect(q.state.harlan_static.status).toBe('done');
+    const lake = POIS.find((p) => p.id === 'lake')!;
+    const outpost = POIS.find((p) => p.id === 'outpost')!;
+    q.report({ type: 'kill', x: lake.x, z: lake.z }); // not inside the wire
+    expect(q.counter('harlan_clear')).toEqual([0, 8]);
+    for (let i = 0; i < 8; i++) q.report({ type: 'kill', x: outpost.x + 3, z: outpost.z - 2 });
+    expect(q.current('harlan_clear')).toMatchObject({ type: 'read', note: 'note_harlan_medic' });
+    q.report({ type: 'note', id: 'note_harlan_medic' });
+    q.report({ type: 'give', npc: 'tobin', item: 'note_harlan_medic' });
+    expect(q.state.harlan_clear.status).toBe('done');
+    expect(w.given.map((g) => g[0])).toContain('field_manual');
+  });
+
+  it('the chain reward unlocks a recipe: the field manual is a tool of a recipe, is only a quest reward, and reads as a note', () => {
+    const unlocked = Object.values(RECIPE_BY_ID).filter((r) => (r.tools ?? []).some((g) => g.length === 1 && g[0] === 'field_manual'));
+    expect(unlocked.map((r) => r.id)).toEqual(['ifak']);
+    expect(QUEST_BY_ID.harlan_clear.rewards.map((r) => r.item)).toContain('field_manual');
+    expect(QUESTS.filter((d) => d.rewards.some((r) => r.item === 'field_manual')).map((d) => d.id)).toEqual(['harlan_clear']);
+    expect(ITEMS.field_manual.use?.action).toBe('read');
+    expect(ITEMS.field_manual.use?.keep).toBe(true);
+    expect(noteText.field_manual?.body.length).toBeGreaterThan(20);
   });
 
   it('the whole chain can be finished by playing it through, and ends with no active quest', () => {

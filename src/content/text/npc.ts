@@ -8,6 +8,7 @@ export const npcName: Record<string, { name: string; role: string }> = {
   eli: { name: 'Eli', role: 'Survivor' },
   hollis: { name: 'Hollis', role: 'Farmer' },
   wren: { name: 'Wren', role: 'Ranger' },
+  tobin: { name: 'Tobin', role: 'Fisherman' },
 };
 
 export const dialogueText: Record<string, Record<string, string>> = {
@@ -42,6 +43,20 @@ export const dialogueText: Record<string, Record<string, string>> = {
     valley: 'From here: eleven fires. The farm, the camp, the diner. Maple Street keeps one on the porch. The checkpoint never goes out. Everything else is dark, and dark is where they are.',
     light: 'Take these. Glow sticks. Mark a door you have cleared, so the next person knows it is safe to open.',
   },
+  tobin: {
+    first: 'Stop there, by the fire ring. They do not come out on the dock, so that is where I sleep. I am Tobin. My ankle is no good, or I would not be sitting here talking to strangers.',
+    hub: 'Fish are biting. Nothing else is, if you are quiet.',
+    dee: 'Dee went to Camp Harlan. The army came on the scanner saying convoy, evacuation, medics. Dee is a nurse; of course Dee went. The scanner lost the army channel the next night. The crystal cracked.',
+    where: 'There is a spare crystal in the camp office, in the desk. Little tin can, says HARLAN on the lid. I cannot make the walk up the bank on this ankle. Bring it and I will listen for them.',
+    waiting: 'The office desk. A little tin can. I will keep the fire going.',
+    crystal: 'That is it. That is the one. Give it here, gently.',
+    listened: 'Static, then a voice. I got most of it. I wrote it all down in cabin A, on the nightstand; my hands shake too much to read it twice. Camp Harlan. Go and see. Please.',
+    harlan: 'Anything from Harlan? I keep the scanner on. It only says the same thing over and over.',
+    letter: "That is Dee's handwriting on the envelope. Read it to me? No. Give it here. I will read it myself.",
+    letter_read: 'North with the convoy. Alive, at least on the day this was written. And Dee left me the manual, as if I could learn it. You take it. You are the one walking around out there. Learn the trauma kit. Use it on people.',
+    after: 'I am staying at the lake. If Dee comes back, this is where Dee will look. Thank you for walking it for me.',
+    fish: 'Worms in the cooler, line on the rack. Cast past the reeds. If the water goes flat and quiet, reel in and walk away slowly.',
+  },
 };
 
 export const choiceText: Record<string, Record<string, string>> = {
@@ -75,6 +90,16 @@ export const choiceText: Record<string, Record<string, string>> = {
     light: 'Could I borrow some light?',
     back: 'Another question.',
     leave: 'I should go.',
+  },
+  tobin: {
+    who: 'Who is Dee?',
+    where: 'How can I help?',
+    give: 'Here. The crystal from the office.',
+    letter: 'I found a letter at Camp Harlan.',
+    later: 'Not yet. I will be back.',
+    fish: 'How is the fishing?',
+    back: 'Another question.',
+    leave: 'Stay safe on the dock.',
   },
 };
 

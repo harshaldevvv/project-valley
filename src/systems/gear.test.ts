@@ -4,6 +4,7 @@ import { CONTAINER_THEMES, CONTAINERS } from '../content/data/containers';
 import { difficulty } from '../content/data/difficulty';
 import { ITEMS, ITEM_RENAMES, PICKUP_MODELS } from '../content/data/items';
 import { LOOT } from '../content/data/loot';
+import { QUEST_PLACED } from '../content/data/quests';
 import { ITEM_PARTS, OUTFIT_PARTS, partsById } from '../content/data/outfit';
 import { WOUNDS } from '../content/data/survival';
 import { meleeDefs } from '../content/data/weapons';
@@ -231,7 +232,8 @@ describe('loot reach and balance', () => {
 
   it('every item that is not a starter or a derivative can be found in at least one loot table', () => {
     const crafted = RECIPES.flatMap((r) => r.outputs.map((o) => o.item)).filter((id) => ['hot_soup', 'hot_chili', 'hot_noodles', 'spear', 'nail_bat'].includes(id));
-    const exempt = new Set(['secure_pouch', ...crafted, ...Object.keys(ITEMS).filter((id) => id.startsWith('note_'))]); // starting kit only, or made only by crafting (cooked food, crafted weapons)
+    // starting kit only, made only by crafting (cooked food, crafted weapons), quest items placed for a quest, or a quest-only reward (the recipe-unlock manual)
+    const exempt = new Set(['secure_pouch', 'field_manual', ...crafted, ...QUEST_PLACED.map((p) => p.item).filter((id) => !ITEMS[id]?.value), ...Object.keys(ITEMS).filter((id) => id.startsWith('note_'))]);
     const never = Object.keys(ITEMS).filter((id) => !exempt.has(id) && !rolled.has(id));
     expect(never).toEqual([]);
   });

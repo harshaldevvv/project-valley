@@ -140,4 +140,8 @@ export const itemTextMore: Record<string, T> = {
   note_camp_diary: t('Camp Diary Page', 'Diary', 'A torn page from a camper diary. Use it to read it.'),
   note_crash_log: t('Medevac Flight Log', 'Flt Log', 'A grease-stained flight log. Use it to read it.'),
   note_ranger_log: t('Ranger Log', 'Rngr Log', 'A weathered ranger log book. Use it to read it.'),
+  note_lake_scanner: t('Scanner Transcript', 'Transcr', 'Pencil on the back of a campsite map: what the scanner heard. Use it to read it.'),
+  note_harlan_medic: t('Medic\'s Letter', 'Letter', 'A letter in a ration-box envelope, addressed to Tobin. Use it to read it.'),
+  radio_crystal: t('Scanner Crystal', 'Crystal', 'A quartz crystal in a tin can, tuned to one channel. Useless unless you own the scanner it fits.'),
+  field_manual: t('Medic\'s Field Manual', 'Manual', 'An army combat-medic manual, dog-eared at the trauma kit page. Carry it to craft IFAKs; use it to read it.'),
 };
