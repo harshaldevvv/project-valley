@@ -32,6 +32,19 @@ export const saveText = {
   corrupt: 'Save could not be loaded',
   partial: 'Part of this save could not be read and was skipped.',
   nothing: 'No save in that slot',
+  /** Save / load page in the title and pause menus (UI polish round 3). */
+  slots: { auto: 'Autosave', quick: 'Quicksave', 'manual-1': 'Slot 1', 'manual-2': 'Slot 2', 'manual-3': 'Slot 3', 'pre-horde': 'Before the horde' } as Record<string, string>,
+  empty: 'Empty',
+  day: 'Day {d}',
+  played: '{t} played',
+  load: 'Load',
+  save: 'Save here',
+  overwrite: 'Overwrite?',
+  confirmLoad: 'Lose unsaved progress?',
+  noneYet: 'No saves yet. The game autosaves every 5 minutes and whenever you leave the tab. F5 quick saves, F9 loads it.',
+  noneYetPaused: 'Nothing saved yet. Pick a slot to save into, or press F5 for a quick save.',
+  savedRow: 'Saved',
+  failed: 'That save could not be loaded. Try another slot.',
 };
 
 /** Survival / death text. */
@@ -72,20 +85,25 @@ export const screenText = {
 
 /** Title / pause menu (engine-builder's src/ui/menu; narrative may reword). */
 export const menuText = {
-  kicker: 'M2 · The Yard',
+  kicker: 'Early build',
   title: ['Project', 'Valley'],
-  subtitle: 'Survival sandbox: every mechanic, one walled yard.',
+  subtitle: 'Scavenge, build and hold out in a valley the dead have taken.',
   paused: 'Paused',
   tip: 'Tip',
   back: 'Back',
   captureMouse: 'Click to capture mouse',
   igpuNote: 'Your browser is running on integrated graphics, so FPS will be low. The browser picks the GPU, not the game: in Windows Settings > System > Display > Graphics, add your browser, choose High performance, then fully restart it. (The NVIDIA Control Panel setting does not change this for Chrome or Edge.)',
   dismiss: 'Dismiss',
-  nav: { play: 'Play', resume: 'Resume', stations: 'Jump to station', controls: 'Controls', settings: 'Settings', difficulty: 'Difficulty', quit: 'Quit to title' },
+  nav: { play: 'Play', continue: 'Continue', resume: 'Resume', saves: 'Load game', savesPaused: 'Save / load', stations: 'Jump to station', controls: 'Controls', settings: 'Settings', difficulty: 'Difficulty', quit: 'Quit to title' },
+  /** Small line under Continue: {day} {slot} {when}. */
+  continueSub: 'Day {day} · {slot} · {when}',
+  /** Panel key bar. */
+  panelKeys: '<kbd>↑</kbd><kbd>↓</kbd> move <kbd>←</kbd><kbd>→</kbd> change <kbd>Esc</kbd> back',
   settings: {
     fov: 'Field of view', sensitivity: 'Mouse sensitivity', shake: 'Camera shake', volume: 'Master volume', music: 'Music', ambience: 'Ambience', bgMuted: 'Mute music and ambience', renderScale: 'Render scale',
     shadows: 'Shadows', fxaa: 'Anti-aliasing (FXAA)', look: 'Cinematic look (bloom, grade)', ao: 'Ambient occlusion', shafts: 'Sun shafts', reduceFlashing: 'Reduce flashing',
     gore: 'Gore', goreFull: 'Full', goreReduced: 'Reduced', goreOff: 'Off', reset: 'Reset to defaults',
+    secControls: 'Camera and mouse', secAudio: 'Audio', secGraphics: 'Graphics', secGame: 'Gameplay and accessibility',
   },
   difficulty: {
     preset: 'Preset', story: 'Story', survivor: 'Survivor', hardcore: 'Hardcore',

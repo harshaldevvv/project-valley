@@ -1,4 +1,5 @@
-// node tools/audit/uishots.mjs [before|after] [port]   headless UI audit: inventory (Tab), tooltip, drag, crafting (G), map (K), HUD, dialogue + trade, note + radio cards, pause menu and death screen
+// node tools/audit/uishots.mjs [before|after] [port] [menu]   headless UI audit: loading screen, title menu, settings (quality presets),
+// save slots (empty + filled), difficulty, controls, first-time hint, then (unless 'menu') inventory (Tab), tooltip, drag, crafting (G), map (K), HUD, dialogue + trade, note + radio cards, pause menu and death screen
 // with a realistic loadout, at 1280x720 and 1920x1080. Writes docs/audit/screenshots/wip/ui_<stage>_<shot>_<w>.png and a
 // contact sheet ui_<stage>_sheet_<w>.png. One headless browser, never visible, no pointer lock. Run your own dev server
 // (npx vite --port 5195 --strictPort) so the owner's :5188 is untouched.
@@ -7,6 +8,7 @@ import { launch } from './browser.mjs';
 
 const stage = process.argv[2] ?? 'after';
 const port = process.argv[3] ?? '5195';
+const menuOnly = process.argv[4] === 'menu';
 const out = 'docs/audit/screenshots/wip/';
 const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
@@ -14,6 +16,117 @@ const errs = [];
 page.on('pageerror', (e) => errs.push(String(e).slice(0, 300)));
 page.on('console', (m) => m.type() === 'error' && errs.push(m.text().slice(0, 200)));
 await page.routeWebSocket(/.*/, () => {}); // other sessions' edits must not hot-reload this run
+const sizes = [[1280, 720], [1920, 1080]];
+const shots = [];
+const snap = async (name, w) => {
+  const p = `${out}ui_${stage}_${name}_${w}.png`;
+  await page.screenshot({ path: p });
+  shots.push([name, w, p]);
+};
+const key = async (code) => { await page.keyboard.press(code); await page.waitForTimeout(450); };
+const report = {};
+
+// ---------- menu phase: loading screen, title, settings, saves, difficulty, controls, first-time hint ----------
+// Auto quality already stepped down to Medium (as on a weak GPU), so the settings page shows Auto's pick.
+await page.addInitScript(() => {
+  if (sessionStorage.getItem('uishots.seeded')) return;
+  sessionStorage.setItem('uishots.seeded', '1');
+  localStorage.setItem('pv.settings.v1', JSON.stringify({ quality: 'auto', autoQuality: 'medium', renderScale: 0.85, ao: false, shafts: false }));
+});
+const panelReport = () => page.evaluate(() => {
+  const p = document.querySelector('#menu .mn-panel:not([hidden])');
+  if (!p) return { open: false };
+  const r = p.getBoundingClientRect();
+  const clipped = [...p.querySelectorAll('span, button, h2, h3, output, b')].filter((e) => e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflow !== 'visible' && getComputedStyle(e).textOverflow !== 'ellipsis').map((e) => e.textContent.slice(0, 30));
+  return { open: true, title: p.querySelector('h2')?.textContent, fits: r.top >= 0 && r.bottom <= innerHeight && r.right <= innerWidth, clipped: clipped.slice(0, 8), focus: document.activeElement?.closest('.row')?.querySelector('span')?.textContent ?? document.activeElement?.dataset?.act ?? document.activeElement?.textContent };
+});
+const openPage = async (act) => {
+  const b = await page.$(`#menu .mn-nav [data-act="${act}"]`);
+  if (!b) return false;
+  await b.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(450);
+  return true;
+};
+for (const [w, h] of sizes) {
+  await page.setViewportSize({ width: w, height: h });
+  // hold the model downloads a moment so the boot screen is still up for its shot (models come from cache otherwise)
+  const hold = async (route) => { await new Promise((r) => setTimeout(r, 2500)); await route.continue().catch(() => {}); };
+  await page.route(/\.glb(\?|$)/, hold);
+  await page.goto(`http://localhost:${port}/`, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => /Loading models/.test(document.querySelector('#boot .bt-status')?.textContent ?? ''), null, { timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(600);
+  await snap('loading', w);
+  await page.unroute(/\.glb(\?|$)/, hold);
+  await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30 && !document.getElementById('boot'), null, { timeout: 240000 });
+  await page.waitForTimeout(1500);
+  await key('ArrowDown');
+  await snap('title', w);
+  report[`title_${w}`] = await page.evaluate(() => ({
+    kicker: document.querySelector('#menu .mn-kicker')?.textContent, nav: [...document.querySelectorAll('#menu .mn-nav .mn-btn')].map((b) => b.dataset.act), focus: document.activeElement?.dataset?.act,
+  }));
+  if (await openPage('settings')) {
+    await key('ArrowDown');
+    await key('ArrowDown');
+    await snap('settings', w);
+    report[`settings_${w}`] = { ...(await panelReport()), quality: await page.evaluate(() => [...document.querySelectorAll('#menu .mn-hint, #menu .mn-qnote')].map((e) => e.textContent).join(' | ')) };
+    await page.evaluate(() => { const b = document.querySelector('#menu .mn-body'); b.scrollTop = b.scrollHeight; });
+    await page.waitForTimeout(200);
+    await snap('settings_end', w);
+    // player override: a manual change while on Auto
+    await page.evaluate(() => { const i = [...document.querySelectorAll('#menu .mn-settings .row.toggle')].find((r) => /shadow/i.test(r.textContent))?.querySelector('input'); i?.click(); });
+    await page.waitForTimeout(300);
+    await page.evaluate(() => document.querySelector('#menu .mn-seg[aria-label="Graphics quality"]')?.scrollIntoView({ block: 'center' }));
+    await page.waitForTimeout(200);
+    await snap('settings_override', w);
+    report[`settings_override_${w}`] = await page.evaluate(() => ({ stored: JSON.parse(localStorage.getItem('pv.settings.v1') ?? '{}').quality, note: [...document.querySelectorAll('#menu .mn-hint, #menu .mn-qnote')].map((e) => e.textContent).join(' | ') }));
+    await key('Escape');
+  }
+  if (await openPage('saves')) {
+    await snap('saves_empty', w);
+    report[`saves_empty_${w}`] = await panelReport();
+    await key('Escape');
+    await page.evaluate(async () => { const s = window.__gp.ctx.game.save; await s.save('auto'); await s.save('manual-1'); });
+    await page.waitForTimeout(400); // the menu re-reads the slot list after the 'saved' event
+    await openPage('saves');
+    await page.waitForTimeout(300);
+    await snap('saves', w);
+    report[`saves_${w}`] = { ...(await panelReport()), rows: await page.evaluate(() => [...document.querySelectorAll('#menu .mn-slot')].map((e) => e.innerText.replace(/s+/g, ' ').slice(0, 70))) };
+    await key('Escape');
+    await page.evaluate(() => new Promise((r) => { const q = indexedDB.databases ? indexedDB.databases() : Promise.resolve([]); q.then((dbs) => { for (const d of dbs) indexedDB.deleteDatabase(d.name); r(); }); }));
+  }
+  if (await openPage('difficulty')) {
+    await snap('difficulty', w);
+    report[`difficulty_${w}`] = await panelReport();
+    await key('Escape');
+  }
+  if (await openPage('controls')) {
+    await snap('controls', w);
+    report[`controls_${w}`] = await panelReport();
+    await key('Escape');
+  }
+  // first-time hint (onboarding) while playing
+  await page.evaluate(() => document.querySelector('#menu [data-act="play"], #menu [data-act="new-game"]')?.click());
+  await page.waitForTimeout(2600);
+  await page.evaluate(() => { const ev = window.__gp.ctx.game.events; ev.emit('uiScreen', { name: 'npc', open: true }); ev.emit('uiScreen', { name: 'npc', open: false }); });
+  await page.waitForTimeout(1200);
+  await snap('hint', w);
+  // pause menu: every slot listed, manual slots take saves
+  await key('Escape');
+  if (await openPage('saves')) {
+    await snap('saves_paused', w);
+    report[`saves_paused_${w}`] = { ...(await panelReport()), rows: await page.evaluate(() => document.querySelectorAll('#menu .mn-slot').length) };
+    await key('Escape');
+  }
+}
+if (menuOnly) {
+  await sheets();
+  console.log(JSON.stringify(report, null, 1));
+  console.log('errors', errs.length, errs.slice(0, 5));
+  await browser.close();
+  process.exit(0);
+}
+
 await page.goto(`http://localhost:${port}/?play`);
 await page.waitForFunction(() => window.__gp && window.__craft && window.__gp.ctx.game.tick > 30, null, { timeout: 240000 });
 await page.waitForTimeout(1500);
@@ -40,15 +153,7 @@ console.log('loadout', await page.evaluate(() => {
   return Object.entries(lo.equipment).filter(([, v]) => v).map(([k, v]) => `${k}:${v.defId}`).join(' ');
 }));
 
-const sizes = [[1280, 720], [1920, 1080]];
-const shots = [];
-const snap = async (name, w) => {
-  const p = `${out}ui_${stage}_${name}_${w}.png`;
-  await page.screenshot({ path: p });
-  shots.push([name, w, p]);
-};
-const key = async (code) => { await page.keyboard.press(code); await page.waitForTimeout(450); };
-const report = {};
+
 
 for (const [w, h] of sizes) {
   await page.setViewportSize({ width: w, height: h });
@@ -235,6 +340,8 @@ for (const [w, h] of sizes) {
 }
 
 // ---------- contact sheets (one per size) ----------
+await sheets();
+async function sheets() {
 for (const [w] of sizes) {
   const mine = shots.filter((s) => s[1] === w && existsSync(s[2]));
   const cells = mine.map(([n, , p]) => `<figure><img src="data:image/png;base64,${readFileSync(p).toString('base64')}"><figcaption>${n} · ${w}</figcaption></figure>`).join('');
@@ -243,6 +350,7 @@ for (const [w] of sizes) {
     figure{margin:0}img{width:100%;display:block;border:1px solid #333}figcaption{padding:3px 0}</style><h3 style="margin:8px">UI ${stage} · ${w}</h3><main>${cells}</main>`);
   await sheet.screenshot({ path: `${out}ui_${stage}_sheet_${w}.png`, fullPage: true });
   await sheet.close();
+}
 }
 console.log(JSON.stringify(report, null, 1));
 console.log('errors', errs.length, errs.slice(0, 5));

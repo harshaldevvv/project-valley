@@ -1,3 +1,13 @@
+/** Boot loading screen (src/ui/loading/loading.ts, main.ts). {n}/{total} models, {mb}/{totalMb} megabytes. */
+export const loadingText = {
+  models: 'Loading models {n}/{total} · {mb} / {totalMb} MB',
+  engine: 'Starting the engine',
+  world: 'Building the world',
+  shaders: 'Compiling shaders (the first visit takes a few seconds)',
+  ready: 'Ready',
+  failed: 'Could not start the game: {err}. Reload the page to try again.',
+};
+
 /** Loading-screen tips. Each max 120 chars. */
 export const loadingTips: string[] = [
   'Gunfire carries for a kilometre. Everything in that kilometre now knows your address.',

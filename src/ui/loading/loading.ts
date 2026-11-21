@@ -3,6 +3,8 @@ import manifest from '../../../public/assets/models/manifest.json';
 import { assetUrl } from '../../engine/assetUrl';
 import { charSet } from '../../content/data/zombies';
 import { genModelPath, genModels } from '../../world/yard/genModels';
+import { loadingText as LT, loadingTips } from '../../content/text/tips';
+import { menuText } from '../../content/text/ui';
 
 /**
  * Boot loading screen. Markup and CSS live in index.html so it paints before any script runs; this module drives it.
@@ -16,6 +18,14 @@ const fill = root?.querySelector<HTMLElement>('.bt-fill');
 const pct = root?.querySelector<HTMLElement>('.bt-pct');
 const status = root?.querySelector<HTMLElement>('.bt-status');
 let shown = 0;
+
+// one tip while the bar fills (the same pool as the title menu)
+const tipEl = root?.querySelector<HTMLElement>('.bt-tip');
+if (tipEl && loadingTips.length) {
+  const b = document.createElement('b');
+  b.textContent = menuText.tip;
+  tipEl.replaceChildren(b, loadingTips[Math.floor(Math.random() * loadingTips.length)]);
+}
 
 function set(fraction: number, text: string) {
   shown = Math.max(shown, Math.min(1, fraction)); // never runs backwards
@@ -42,7 +52,7 @@ export function prefetchModels(): Promise<void> {
   const update = () => {
     let bytes = 0;
     for (const b of got.values()) bytes += b;
-    const text = done < list.length ? `Loading models ${done}/${list.length} · ${mb(bytes)} / ${mb(total)} MB` : 'Starting the engine';
+    const text = done < list.length ? LT.models.replace('{n}', String(done)).replace('{total}', String(list.length)).replace('{mb}', mb(bytes)).replace('{totalMb}', mb(total)) : LT.engine;
     set(0.85 * Math.min(1, bytes / total), text);
   };
   update();
@@ -64,7 +74,7 @@ export const nextPaint = () => new Promise<void>((r) => requestAnimationFrame(()
 export const loading = {
   phase: set,
   done() {
-    set(1, 'Ready');
+    set(1, LT.ready);
     if (!root) return;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced) return root.remove();
@@ -73,7 +83,7 @@ export const loading = {
   },
   fail(err: unknown) {
     root?.classList.add('bt-failed');
-    if (status) status.textContent = `Could not start the game: ${err instanceof Error ? err.message : String(err)}. Reload to try again.`;
+    if (status) status.textContent = LT.failed.replace('{err}', err instanceof Error ? err.message : String(err));
     console.error(err);
   },
 };

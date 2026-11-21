@@ -47,7 +47,7 @@ export function installHints(game: Game, playing: () => boolean) {
   const el = document.createElement('div');
   el.id = 'pv-hint';
   el.setAttribute('role', 'status');
-  el.style.cssText = 'position:fixed;left:50%;bottom:118px;transform:translateX(-50%);z-index:13;display:none;max-width:min(560px,90vw);padding:7px 14px;border-radius:3px;pointer-events:none;background:rgba(14,16,18,.86);border-left:3px solid #d9a441;color:#efe6d2;font:600 13px system-ui;text-align:center';
+  el.style.display = 'none'; // look: #pv-hint in ui/menu/style.ts
   document.body.appendChild(el);
   // Hidden (and its timer held) behind the pause menu, any open screen (dialogue, journal, craft...) and the build bar:
   // it sits bottom centre, right where dialogue choices and build cards go.

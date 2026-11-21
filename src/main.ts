@@ -4,6 +4,7 @@ import { installGameplay } from './gameplay/index';
 import { installSystems } from './systems/index';
 import { loading, nextPaint, prefetchModels } from './ui/loading/loading';
 import { buildYard } from './world/yard/index';
+import { loadingText } from './content/text/tips';
 
 // Project Valley — M1 "the Yard": a tiny sandbox with a station for every mechanic.
 // Install order matters: engine APIs first, then the world (fills game.places), then systems
@@ -15,11 +16,11 @@ try {
   const game = await createGame();
   const engine = await installEngine(game);
   await models;
-  loading.phase(0.88, 'Building the yard');
+  loading.phase(0.88, loadingText.world);
   await buildYard(game);
   await installSystems(game);
   await installGameplay(game);
-  loading.phase(0.94, 'Compiling shaders (the first visit takes a few seconds)');
+  loading.phase(0.94, loadingText.shaders);
   await nextPaint();
   await game.start();
   loading.done();

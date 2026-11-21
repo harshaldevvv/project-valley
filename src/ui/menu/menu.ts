@@ -11,9 +11,11 @@ import { keyList } from './keys';
 import { applyPreset, difficulty, DIFFICULTY_PRESETS, type DeathPenalty } from '../../content/data/difficulty';
 import { DEFAULT_SETTINGS, effectiveQuality, loadSettings, presetIntoSettings, saveSettings, type Settings } from './settings';
 import { qualityText as QT } from '../../content/text/quality';
-import type { QualityId } from '../../content/data/quality';
+import { QUALITY, type QualityId } from '../../content/data/quality';
+import { SAVE } from '../../content/data/save';
+import type { SaveSlotInfo } from '../../core/contracts';
 import { MENU_CSS } from './style';
-import { menuText as T } from '../../content/text/ui';
+import { menuText as T, saveText as SV } from '../../content/text/ui';
 
 /**
  * Title + pause menu living in the demo world (no level load).
@@ -30,7 +32,7 @@ export interface MenuStation {
   go(): void; // teleport the player there
 }
 type Mode = 'title' | 'playing' | 'paused';
-type Page = 'main' | 'stations' | 'controls' | 'settings' | 'difficulty';
+type Page = 'main' | 'stations' | 'controls' | 'settings' | 'difficulty' | 'saves';
 
 const BLEND_IN_S = 1.8;
 const BLEND_OUT_S = 2.2;
@@ -69,7 +71,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       </div>
       <nav class="mn-nav"></nav>
     </div>
-    <section class="mn-panel" hidden><header><h2></h2><button class="mn-x" aria-label="${T.back}">&times;</button></header><div class="mn-body"></div></section>
+    <section class="mn-panel" hidden><header><h2></h2><button class="mn-x" aria-label="${T.back}">&times;</button></header><div class="mn-body"></div><div class="mn-pkeys">${T.panelKeys}</div></section>
     <aside class="mn-card" aria-label="${pauseCardTitle}"><h3>${pauseCardTitle}</h3><div class="mn-krows"></div></aside>
     <footer class="mn-tip"><b>${T.tip}</b><span></span></footer>
     <div class="mn-ver">v0.0.1 &middot; ${game.backend.toUpperCase()}</div>`;
@@ -116,45 +118,116 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
   let page: Page = 'main';
 
   /** `act` is a stable id for tests/automation (defaults to the label slug). */
-  const button = (label: string, fn: () => void, cls = '', act?: string) => {
+  const button = (label: string, fn: (kbd: boolean) => void, cls = '', act?: string) => {
     const b = document.createElement('button');
     b.className = `mn-btn ${cls}`;
-    b.innerHTML = `<span>${label}</span>`;
+    b.innerHTML = '<span></span>';
+    b.querySelector('span')!.textContent = label;
     b.dataset.act = act ?? label.toLowerCase().replace(/\s+/g, '-');
-    b.onclick = () => {
+    b.onclick = (e) => {
       sfx('ui_click');
-      fn();
+      fn(e.detail === 0); // keyboard Enter/Space clicks have detail 0
     };
     return b;
   };
 
+  // --- saves (game.save is installed after the menu, so it is read lazily) --------------------
+  const saveApi = () => (game as { save?: Game['save'] }).save;
+  let slots: SaveSlotInfo[] = [];
+  let loadFailed = false;
+  const refreshSlots = async () => {
+    try {
+      slots = (await saveApi()?.list()) ?? [];
+    } catch {
+      slots = [];
+    }
+    if (mode === 'title') renderNav();
+    if (page === 'saves' && mode !== 'playing') showPage('saves', { keep: true });
+  };
+  game.events.on('saved', () => void refreshSlots());
+  const playtime = (sec: number) => {
+    const m = Math.round(sec / 60);
+    return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${Math.max(1, m)} min`;
+  };
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+  const when = (t: number) => {
+    const min = Math.round((Date.now() - t) / 60000);
+    if (min < 60) return rtf.format(-min, 'minute');
+    if (min < 24 * 60) return rtf.format(-Math.round(min / 60), 'hour');
+    return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+  const slotName = (id: string) => SV.slots[id] ?? id;
+  const loadSlot = async (slot: string) => {
+    const ok = await (saveApi()?.load(slot) ?? Promise.resolve(false)).catch(() => false);
+    if (ok) return play();
+    loadFailed = true;
+    showPage('saves', { keep: page === 'saves' });
+  };
+
   const renderNav = () => {
+    const had = (document.activeElement as HTMLElement | null)?.dataset?.act;
     nav.replaceChildren();
     const N = T.nav;
-    if (mode === 'title') nav.append(button(N.play, () => play(), 'primary', 'play'));
+    const latest = slots[0];
+    if (mode === 'title' && latest) {
+      // a save exists: Continue (newest slot) leads; Play keeps the world that is running now
+      const c = button(N.continue, () => void loadSlot(latest.slot), 'primary', 'continue');
+      const sub = document.createElement('small');
+      sub.textContent = T.continueSub.replace('{day}', String(latest.gameDay)).replace('{slot}', slotName(latest.slot)).replace('{when}', when(latest.savedAt));
+      c.append(sub);
+      nav.append(c, button(N.play, () => play(), '', 'play'));
+    } else if (mode === 'title') nav.append(button(N.play, () => play(), 'primary', 'play'));
     else nav.append(button(N.resume, () => resume(), 'primary', 'resume'));
+    const open = (p: Page) => (kbd: boolean) => showPage(p, { focus: kbd });
     nav.append(
-      button(N.stations, () => showPage('stations'), '', 'jump-to-station'),
-      button(N.controls, () => showPage('controls'), '', 'controls'),
-      button(N.settings, () => showPage('settings'), '', 'settings'),
-      button(N.difficulty, () => showPage('difficulty'), '', 'difficulty'),
+      button(mode === 'title' ? N.saves : N.savesPaused, open('saves'), '', 'saves'),
+      button(N.settings, open('settings'), '', 'settings'),
+      button(N.controls, open('controls'), '', 'controls'),
+      button(N.difficulty, open('difficulty'), '', 'difficulty'),
+      button(N.stations, open('stations'), '', 'jump-to-station'),
     );
     if (mode === 'paused') nav.append(button(N.quit, () => quitToTitle(), 'quiet', 'quit-to-title'));
     root.classList.toggle('is-paused', mode === 'paused');
+    for (const b of nav.querySelectorAll('.mn-btn')) b.classList.toggle('active', page !== 'main' && (b as HTMLElement).dataset.act === pageAct[page]);
+    if (had) nav.querySelector<HTMLElement>(`[data-act="${had}"]`)?.focus();
   };
 
-  const showPage = (p: Page) => {
+  /** Focusable controls in the open panel, top to bottom (a segmented control counts once: its checked radio). */
+  const panelItems = () =>
+    [...body.querySelectorAll<HTMLElement>('input[type=range], input[type=checkbox], .mn-seg input:checked, button:not(:disabled)')].filter(
+      (e) => (e.matches('input') ? (e.closest('.row') as HTMLElement | null) : e)?.offsetParent !== null,
+    );
+  /**
+   * focus: put keyboard focus on the first control (the page was opened from the keyboard).
+   * keep: re-render in place (no slide-in; the scroll position and the focused control's index survive).
+   */
+  const showPage = (p: Page, o: { focus?: boolean; keep?: boolean } = {}) => {
+    const prev = page;
     page = p;
     for (const b of nav.querySelectorAll('.mn-btn')) b.classList.toggle('active', (b as HTMLElement).dataset.act === pageAct[p]);
     if (p === 'main') {
+      const wasIn = panel.contains(document.activeElement);
       panel.hidden = true;
+      // hand focus back to the entry that opened the panel, so the arrows keep working
+      if (wasIn && pageAct[prev]) nav.querySelector<HTMLElement>(`[data-act="${pageAct[prev]}"]`)?.focus({ focusVisible: true } as FocusOptions);
       return;
     }
+    const keepAt = o.keep ? panelItems().indexOf(document.activeElement as HTMLElement) : -1;
+    const scroll = o.keep ? body.scrollTop : 0;
     panel.hidden = false;
-    panel.classList.remove('in');
-    void panel.offsetWidth; // restart the CSS transition
-    panel.classList.add('in');
+    if (!o.keep) {
+      panel.classList.remove('in');
+      void panel.offsetWidth; // restart the CSS transition
+      panel.classList.add('in');
+    }
     body.replaceChildren();
+    fillPage(p);
+    body.scrollTop = scroll;
+    const items = panelItems();
+    const f = keepAt >= 0 ? items[Math.min(keepAt, items.length - 1)] : o.focus ? items[0] : null;
+    f?.focus({ focusVisible: true } as FocusOptions);
+  };
+  const fillPage = (p: Page) => {
     if (p === 'stations') {
       panelTitle.textContent = T.nav.stations;
       const grid = document.createElement('div');
@@ -180,9 +253,72 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     } else if (p === 'difficulty') {
       panelTitle.textContent = T.nav.difficulty;
       body.append(difficultyForm());
+    } else if (p === 'saves') {
+      panelTitle.textContent = mode === 'title' ? T.nav.saves : T.nav.savesPaused;
+      body.append(savesList());
     }
   };
-  const pageAct: Record<Page, string> = { main: '', stations: 'jump-to-station', controls: 'controls', settings: 'settings', difficulty: 'difficulty' };
+  const pageAct: Record<Page, string> = { main: '', stations: 'jump-to-station', controls: 'controls', settings: 'settings', difficulty: 'difficulty', saves: 'saves' };
+
+  /** Slot list. Title: the slots that exist, newest first. Paused: every slot, and the manual ones take saves. */
+  const savesList = () => {
+    const f = document.createElement('div');
+    f.className = 'mn-saves';
+    const canSave = mode === 'paused';
+    const msg = (text: string, cls: string) => {
+      const d = document.createElement('div');
+      d.className = cls;
+      d.textContent = text;
+      f.append(d);
+    };
+    if (loadFailed) {
+      msg(SV.failed, 'mn-empty bad');
+      loadFailed = false;
+    }
+    if (!slots.length) msg(canSave ? SV.noneYetPaused : SV.noneYet, 'mn-empty');
+    const byId = new Map(slots.map((s) => [s.slot, s]));
+    const ids = canSave ? [...SAVE.slots, ...slots.map((s) => s.slot).filter((id) => !SAVE.slots.includes(id))] : slots.map((s) => s.slot);
+    /** Two-press confirm: the first press relabels the button for 3 s, a second press inside that acts. */
+    const confirm = (b: HTMLButtonElement, label: string, ask: string | null, act: () => void) => {
+      let armed = -Infinity;
+      b.textContent = label;
+      b.onclick = () => {
+        sfx('ui_click');
+        if (!ask || performance.now() - armed < 3000) return act();
+        armed = performance.now();
+        b.classList.add('armed');
+        b.textContent = ask;
+        setTimeout(() => {
+          b.classList.remove('armed');
+          b.textContent = label;
+        }, 3000);
+      };
+      return b;
+    };
+    const sbtn = () => Object.assign(document.createElement('button'), { className: 'mn-sbtn' });
+    for (const id of ids) {
+      const info = byId.get(id);
+      const row = document.createElement('div');
+      row.className = `mn-slot${info ? '' : ' empty'}`;
+      row.innerHTML = '<div class="mn-slot-main"><b></b><span></span></div><time></time><div class="mn-slot-act"></div>';
+      row.querySelector('b')!.textContent = slotName(id);
+      row.querySelector('span')!.textContent = info ? `${SV.day.replace('{d}', String(info.gameDay))} · ${SV.played.replace('{t}', playtime(info.playtimeS))}` : SV.empty;
+      if (info) {
+        const t = row.querySelector('time')!;
+        t.textContent = when(info.savedAt);
+        t.dateTime = new Date(info.savedAt).toISOString();
+        t.title = new Date(info.savedAt).toLocaleString();
+      }
+      const acts = row.querySelector('.mn-slot-act')!;
+      if (info) acts.append(confirm(sbtn(), SV.load, canSave ? SV.confirmLoad : null, () => void loadSlot(id)));
+      if (canSave && id.startsWith('manual-')) {
+        // the 'saved' event refreshes the list
+      acts.append(confirm(sbtn(), SV.save, info ? SV.overwrite : null, () => void saveApi()?.save(id).catch((e) => console.warn('save failed', e))));
+      }
+      f.append(row);
+    }
+    return f;
+  };
   panel.querySelector('.mn-x')!.addEventListener('click', () => {
     sfx('ui_close');
     showPage('main');
@@ -194,6 +330,26 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     const commit = () => {
       apply(settings);
       saveSettings(settings);
+    };
+    // A player change to an option the preset writes takes over from Auto: Auto would otherwise overwrite it when it
+    // steps down. The preset Auto had picked stays as the base.
+    const PRESET_KEYS = ['renderScale', 'shadows', 'fxaa', 'look', 'ao', 'shafts'] as const;
+    let autoTurnedOff = false;
+    const touched = (key: string) => {
+      if (!(PRESET_KEYS as readonly string[]).includes(key)) return;
+      if (settings.quality === 'auto') {
+        settings.quality = settings.autoQuality;
+        autoTurnedOff = true;
+        saveSettings(settings);
+        opts.onQualityPicked?.(settings.quality);
+      }
+      paintQuality();
+    };
+    const sec = (title: string) => {
+      const h = document.createElement('h3');
+      h.className = 'mn-sec';
+      h.textContent = title;
+      f.append(h);
     };
     const slider = (key: 'fov' | 'sensitivity' | 'shake' | 'renderScale' | 'volume' | 'music' | 'ambience', label: string, min: number, max: number, step: number, fmt: (v: number) => string) => {
       const row = document.createElement('label');
@@ -207,6 +363,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
         settings[key] = Number(input.value);
         out.textContent = fmt(settings[key]);
         commit();
+        touched(key);
       };
       f.append(row);
     };
@@ -220,55 +377,75 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
         settings[key] = input.checked;
         sfx('ui_click');
         commit();
+        touched(key);
       };
       f.append(row);
     };
     const pct = (v: number) => `${Math.round(v * 100)}%`;
     const S = T.settings;
+    sec(S.secControls);
     slider('fov', S.fov, 55, 95, 1, (v) => `${v}°`);
     slider('sensitivity', S.sensitivity, 0.25, 3, 0.05, (v) => `${v.toFixed(2)}×`);
     slider('shake', S.shake, 0, 1, 0.05, pct);
+    check('captureMouse', ST.captureMouse);
+    sec(S.secAudio);
     slider('volume', S.volume, 0, 1, 0.05, pct);
     slider('music', S.music, 0, 1, 0.05, pct);
     slider('ambience', S.ambience, 0, 1, 0.05, pct);
     check('bgMuted', S.bgMuted);
-    {
-      // graphics preset: Auto (measured, data/quality AUTO_QUALITY) or a fixed preset; writes render scale / shadows / effects
-      const row = document.createElement('div');
-      row.className = 'row';
-      row.innerHTML = `<span>${QT.label}</span><div class="mn-seg" role="radiogroup" aria-label="${QT.label}"></div>`;
-      const seg = row.querySelector('.mn-seg')!;
-      for (const v of ['auto', 'low', 'medium', 'high'] as const) {
-        const l = document.createElement('label');
-        l.innerHTML = `<input type="radio" name="mn-quality" value="${v}"><span>${QT[v]}</span>`;
+    sec(S.secGraphics);
+    // graphics preset: Auto (measured, data/quality AUTO_QUALITY) or a fixed preset; writes render scale / shadows / effects
+    const qRow = document.createElement('div');
+    qRow.className = 'row mn-quality';
+    qRow.innerHTML = `<span>${QT.label}</span><div class="mn-seg" role="radiogroup" aria-label="${QT.label}"></div>`;
+    const qSeg = qRow.querySelector('.mn-seg')!;
+    const qNote = document.createElement('div');
+    qNote.className = 'mn-qnote';
+    qNote.setAttribute('aria-live', 'polite');
+    /** Marks the preset Auto picked and writes the note: Auto's pick / fixed preset / preset adjusted by the player. */
+    const paintQuality = () => {
+      const q = effectiveQuality(settings);
+      const p = QUALITY[q];
+      const adjusted = PRESET_KEYS.some((k) => settings[k] !== p[k]);
+      for (const l of qSeg.querySelectorAll('label')) {
         const r = l.querySelector('input')!;
-        r.checked = settings.quality === v;
-        r.onchange = () => {
-          settings.quality = v;
-          if (v === 'auto') settings.autoQuality = 'high'; // measure again from the top
-          presetIntoSettings(settings, effectiveQuality(settings));
-          sfx('ui_click');
-          commit();
-          opts.onQualityPicked?.(v);
-          showPage('settings'); // the sliders and toggles below show the preset's values
-        };
-        seg.append(l);
+        const v = r.value;
+        r.checked = settings.quality === v; // a manual change may just have turned Auto off
+        const pick = settings.quality === 'auto' && v === settings.autoQuality;
+        l.classList.toggle('auto-pick', pick);
+        l.title = pick ? QT.autoPick : '';
       }
-      const hint = document.createElement('div');
-      hint.className = 'mn-hint';
-      hint.style.cssText = 'opacity:.7;font-size:.85em;margin:-4px 0 6px';
-      hint.textContent = settings.quality === 'auto' ? QT.autoPicked.replace('{q}', QT[settings.autoQuality]) : QT.manual;
-      f.append(row, hint);
+      const text = settings.quality === 'auto' ? QT.autoPicked : autoTurnedOff ? QT.autoOff : adjusted ? QT.custom : QT.manual;
+      const [a, b = ''] = text.split('{q}');
+      qNote.replaceChildren(a, Object.assign(document.createElement('b'), { textContent: QT[q] }), b);
+    };
+    for (const v of ['auto', 'low', 'medium', 'high'] as const) {
+      const l = document.createElement('label');
+      l.innerHTML = `<input type="radio" name="mn-quality" value="${v}"><span>${QT[v]}</span>`;
+      const r = l.querySelector('input')!;
+      r.checked = settings.quality === v;
+      r.onchange = () => {
+        settings.quality = v;
+        if (v === 'auto') settings.autoQuality = 'high'; // measure again from the top
+        presetIntoSettings(settings, effectiveQuality(settings));
+        sfx('ui_click');
+        commit();
+        opts.onQualityPicked?.(v);
+        showPage('settings', { keep: true }); // the sliders and toggles below show the preset's values
+      };
+      qSeg.append(l);
     }
+    f.append(qRow, qNote);
+    paintQuality();
     slider('renderScale', S.renderScale, 0.5, 1, 0.05, pct);
     check('shadows', S.shadows);
     check('fxaa', S.fxaa);
     check('look', S.look);
     check('ao', S.ao);
     check('shafts', S.shafts);
-    check('reduceFlashing', S.reduceFlashing);
-    check('captureMouse', ST.captureMouse);
+    sec(S.secGame);
     check('hordeNight', ST.hordeNight);
+    check('reduceFlashing', S.reduceFlashing);
     {
       // segmented control (QA-048): native radios, styled; arrow keys work as usual
       const row = document.createElement('div');
@@ -292,10 +469,11 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     const reset = button(S.reset, () => {
       Object.assign(settings, DEFAULT_SETTINGS);
       commit();
-      showPage('settings');
-    }, 'quiet small');
+      opts.onQualityPicked?.(settings.quality); // back to Auto: measure again
+      showPage('settings', { keep: true });
+    }, 'quiet small', 'settings-reset');
     const btns = document.createElement('div');
-    btns.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px 24px';
+    btns.className = 'mn-btns';
     btns.append(reset, button(ST.hintsReset, () => hints.reset(), 'quiet small', 'hints-reset'));
     f.append(btns);
     const keysBox = document.createElement('div');
@@ -332,7 +510,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     const D = T.difficulty;
     seg(D.preset, [['story', D.story], ['survivor', D.survivor], ['hardcore', D.hardcore]], () => difficulty.preset, (v) => {
       applyPreset(v as keyof typeof DIFFICULTY_PRESETS);
-      showPage('difficulty'); // re-read every control
+      showPage('difficulty', { keep: true }); // re-read every control
     });
     for (const [key, label] of [['hungerDrain', D.hungerDrain], ['thirstDrain', D.thirstDrain], ['fatigueDrain', D.fatigueDrain]] as const) {
       const row = document.createElement('label');
@@ -397,6 +575,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     // pointer lock would stay held and clicks would never reach the menu (QA-014).
     if (open) game.input.blocked = true;
     game.events.emit('uiScreen', { name: 'menu', open });
+    if (open) void refreshSlots();
   };
 
   // --- camera --------------------------------------------------------------------------------
@@ -512,17 +691,37 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       showPage('main');
     } else if (mode === 'paused') resume();
   });
-  // Keyboard: Up/Down (or W/S) walk the menu entries; Enter/Space press the focused one (native button behaviour).
+  // Keyboard: Up/Down (or W/S) walk the menu entries, or the open panel's rows when focus is in it; Left/Right change
+  // the focused slider or segment (native); Right from the menu enters the open panel, Left on a panel button leaves it;
+  // Enter/Space press buttons and flip toggles.
+  const focusV = (el: HTMLElement | undefined) => {
+    el?.focus({ focusVisible: true } as FocusOptions);
+    el?.scrollIntoView({ block: 'nearest' });
+  };
   addEventListener('keydown', (e) => {
-    if (mode === 'playing' || !['ArrowDown', 'ArrowUp', 'KeyS', 'KeyW'].includes(e.code)) return;
+    if (mode === 'playing' || e.altKey || e.ctrlKey || e.metaKey) return;
     const a = document.activeElement as HTMLElement | null;
-    if (a && panel.contains(a) && a.matches('input, select')) return; // sliders and segments keep their arrows
-    const btns = [...nav.querySelectorAll<HTMLButtonElement>('.mn-btn')];
-    if (!btns.length) return;
-    e.preventDefault();
-    const at = btns.indexOf(a as HTMLButtonElement);
+    const inPanel = !panel.hidden && !!a && body.contains(a);
+    if (inPanel && e.code === 'Enter' && a.matches('input[type=checkbox]')) {
+      e.preventDefault();
+      a.click();
+      return;
+    }
+    if (!panel.hidden && e.code === 'ArrowRight' && a && nav.contains(a)) {
+      e.preventDefault();
+      return focusV(panelItems()[0]);
+    }
+    if (inPanel && e.code === 'ArrowLeft' && a.matches('button')) {
+      e.preventDefault();
+      return focusV(nav.querySelector<HTMLElement>('.mn-btn.active') ?? undefined);
+    }
+    if (!['ArrowDown', 'ArrowUp', 'KeyS', 'KeyW'].includes(e.code)) return;
+    const list = inPanel ? panelItems() : [...nav.querySelectorAll<HTMLElement>('.mn-btn')];
+    if (!list.length) return;
+    e.preventDefault(); // also keeps Up/Down from nudging a slider or flipping a segment
+    const at = list.indexOf(a as HTMLElement);
     const step = e.code === 'ArrowDown' || e.code === 'KeyS' ? 1 : -1;
-    btns[at < 0 ? (step > 0 ? 0 : btns.length - 1) : (at + step + btns.length) % btns.length].focus({ focusVisible: true } as FocusOptions);
+    focusV(list[at < 0 ? (step > 0 ? 0 : list.length - 1) : (at + step + list.length) % list.length]);
   });
   // Chrome eats the Esc that releases pointer lock, so losing the lock while playing also pauses.
   // Losing the lock pauses only if the lock was taken in this play session and held a moment. Within ~1 s of an Esc
@@ -553,6 +752,9 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
   const hints = installHints(game, () => mode === 'playing' && !blend);
 
   renderNav();
+  // game.save arrives with the systems, after the menu: pick up the slot list (and Continue) once it exists
+  const waitSave = (n = 0) => (saveApi() ? void refreshSlots() : n < 240 && setTimeout(() => waitSave(n + 1), 250));
+  waitSave();
   if (new URLSearchParams(location.search).has('play')) {
     mode = 'playing';
     root.classList.add('hidden');
@@ -593,7 +795,7 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
       presetIntoSettings(settings, id);
       apply(settings);
       saveSettings(settings);
-      if (mode !== 'playing' && page === 'settings') showPage('settings');
+      if (mode !== 'playing' && page === 'settings') showPage('settings', { keep: true });
     },
     get mode() {
       return mode;

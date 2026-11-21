@@ -382,3 +382,27 @@ Behaviour checks (headless, own dev server):
 
 Left for later: main_street with a horde still spends 3–3.5 ms/tick in zombie AI, mostly KCC calls inside 8 m. Next steps would be a
 cheaper move for zombies holding the ring (tiny moves), or accepting 30 Hz moves inside the ring if a 0.1 s slower approach is fine.
+
+## UI polish round 3: menus, settings, saves, loading (2026-11-22)
+
+Audit: `node tools/audit/uishots.mjs <before|after> <port> menu` (new menu phase: loading screen, title, settings top/end, quality
+override, saves empty/filled/paused, difficulty, controls, first-time hint). Sheets: `docs/audit/screenshots/wip/ui_{before,after}_sheet_{1280,1920}.png`.
+- **Quality presets:** the preset Auto picked is underlined in the segmented control and named in bold in the note under it.
+  Before, changing render scale or an effect while on Auto left Auto on (stored `auto`), so the next step-down overwrote the
+  player's change. Now that change turns Auto off at the picked preset (stored `medium`), stops the measuring, and the note says so.
+  A fixed preset that the player tweaked reads "Medium, adjusted by you". Reset to defaults restarts Auto.
+- **Settings:** grouped (Camera and mouse / Audio / Graphics / Gameplay and accessibility); toggle labels span two columns (no more
+  two-line "Mute music and ambience"); the focused row is highlighted; key bar at the panel foot.
+- **Keyboard:** opening a page from the keyboard focuses its first control; Up/Down walk the panel's rows (they no longer nudge
+  sliders or flip segments), Left/Right change values, Enter flips toggles, Right/Left move between menu and panel, Esc puts focus
+  back on the menu entry.
+- **Saves (new):** title menu "Load game" lists existing slots newest first; Continue (with day, slot and age) leads when a save
+  exists. Pause menu "Save / load" lists all five slots; manual slots take saves. Overwrite and load-while-playing ask for a second
+  press. Empty state explains autosave and F5/F9.
+- **Main menu:** kicker "Early build" and an open-world subtitle (was "M2 · The Yard" / "one walled yard"); compact layout up to
+  820 px tall so the longer menu clears the tip line at 720p.
+- **Loading screen:** a tip under the bar; its strings moved to `content/text/tips.ts` (`loadingText`), "Building the world".
+- **Onboarding:** the first-time hint uses the menu's glass card and font instead of plain system-ui.
+- `npx tsc --noEmit` and `npx vitest run` green (23 files, 201 tests). Laptop offline: run locally.
+
+Left: `v0.0.1` in the menu corner is hardcoded (versions untouched); the help overlay (H) still uses its own plain style.

@@ -61,7 +61,38 @@ export const MENU_CSS = `
 #menu .mn-controls h3{margin:0 0 6px;font:600 12px/1 var(--display);letter-spacing:.28em;text-transform:uppercase;color:var(--accent)}
 #menu .mn-controls .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;font-size:13.5px;color:var(--dim);border-bottom:1px solid rgba(255,255,255,.04)}
 #menu kbd{font:600 11.5px/1 var(--display);letter-spacing:.06em;color:var(--ink);padding:4px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;background:rgba(255,255,255,.04);white-space:nowrap}
-#menu .mn-settings .row{display:grid;grid-template-columns:150px 1fr 54px;align-items:center;gap:14px;padding:10px 0;font-size:14px;color:var(--dim);border-bottom:1px solid rgba(255,255,255,.05)}
+#menu .mn-settings .row{display:grid;grid-template-columns:150px 1fr 54px;align-items:center;gap:14px;padding:10px 8px;margin:0 -8px;font-size:14px;color:var(--dim);border-bottom:1px solid rgba(255,255,255,.05);transition:background .12s}
+#menu .mn-settings .row:has(:focus-visible){background:rgba(217,164,65,.07);box-shadow:inset 2px 0 var(--accent);color:var(--ink)}
+#menu .mn-settings .row.toggle>span{grid-column:1/3}
+#menu .mn-sec{margin:18px 0 2px;font:600 11px/1 var(--display);letter-spacing:.28em;text-transform:uppercase;color:var(--accent)}
+#menu .mn-sec:first-child{margin-top:4px}
+#menu .mn-qnote{padding:2px 0 10px;font-size:12.5px;line-height:1.45;color:var(--dim);border-bottom:1px solid rgba(255,255,255,.05)}
+#menu .mn-qnote b{color:var(--ink);font-weight:600}
+#menu .mn-settings .row.mn-quality{border-bottom:0}
+#menu .mn-seg label.auto-pick span{box-shadow:inset 0 -2px var(--accent);color:var(--ink)}
+#menu .mn-btns{display:flex;flex-wrap:wrap;gap:0 24px}
+#menu .mn-pkeys{padding:9px 22px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#menu .mn-pkeys kbd{padding:2px 5px;font-size:10.5px}
+#menu .mn-pkeys kbd+kbd{margin-left:-3px}
+#menu input[type=range]:focus-visible{outline:none}
+#menu input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(217,164,65,.35)}
+#menu .mn-btn small{display:block;margin-top:7px;font:400 12.5px/1.2 var(--text);letter-spacing:0;text-transform:none;color:var(--dim)}
+#menu .mn-empty{margin:4px 0 12px;padding:14px 16px;font-size:13.5px;line-height:1.5;color:var(--dim);border:1px dashed var(--line);border-radius:3px}
+#menu .mn-empty.bad{border:1px solid rgba(232,131,107,.6);color:#f0a28f}
+#menu .mn-slot{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+#menu .mn-slot b{display:block;font:600 15px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+#menu .mn-slot-main span{display:block;margin-top:6px;font-size:12.5px;color:var(--dim)}
+#menu .mn-slot.empty b{color:var(--dim)}
+#menu .mn-slot.empty .mn-slot-main span{color:var(--faint)}
+#menu .mn-slot time{font-size:12.5px;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+#menu .mn-slot-act{display:flex;gap:6px;justify-content:flex-end;min-width:96px}
+#menu .mn-sbtn{font:600 12px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);padding:8px 12px;border:1px solid var(--line);border-radius:3px;
+ background:rgba(255,255,255,.03);cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s}
+#menu .mn-sbtn:hover,#menu .mn-sbtn:focus-visible{border-color:var(--accent);background:rgba(217,164,65,.12);outline:none}
+#menu .mn-sbtn.armed{border-color:var(--accent);background:rgba(217,164,65,.38)}
+#pv-hint{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);z-index:13;max-width:min(560px,90vw);padding:9px 16px;border-radius:3px;pointer-events:none;
+ background:rgba(12,15,14,.84);border:1px solid rgba(238,240,234,.12);border-left:2px solid #d9a441;backdrop-filter:blur(8px);
+ color:#eef0ea;font:500 13.5px/1.4 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.35)}
 #menu .mn-settings output{text-align:right;font:600 14px/1 var(--display);color:var(--ink);letter-spacing:.04em}
 #menu input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;height:20px;cursor:pointer}
 #menu input[type=range]::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--accent),rgba(238,240,234,.25))}
@@ -100,7 +131,7 @@ export const MENU_CSS = `
 #menu .mn-tip span.in{opacity:1;transform:none}
 #menu .mn-ver{position:absolute;right:16px;bottom:12px;font:500 11px/1 var(--display);letter-spacing:.18em;color:var(--faint)}
 body:has(#menu:not(.hidden)) #perf,body:has(#menu:not(.hidden)) #ui,body.mn-blend #ui{visibility:hidden}
-@media (max-height:700px){#menu h1{font-size:clamp(40px,7vw,64px);margin:8px 0 6px}#menu .mn-left{gap:16px}
+@media (max-height:820px){#menu h1{font-size:clamp(40px,7vw,64px);margin:8px 0 6px}#menu .mn-left{gap:16px}
  #menu .mn-btn{font-size:18px;padding:8px 0}#menu .mn-btn.primary{font-size:24px}#menu .mn-btn.quiet{margin-top:6px;font-size:14px}
  #menu .mn-tip{bottom:10px;font-size:12.5px}#menu .mn-sub{font-size:13px}}
 @media (max-width:1100px) and (min-width:821px){#menu .mn-panel{width:min(520px,calc(100vw - 460px));min-width:340px}
