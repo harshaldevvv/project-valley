@@ -6,9 +6,9 @@ import { launch } from './browser.mjs';
 
 const OUT = 'docs/audit/screenshots/wip';
 mkdirSync(OUT, { recursive: true });
-const IDS = (process.argv[2] ?? 'wrench,cash,tarp,rope,copper_wire,note_camp_diary,earmuffs,campfire_kit,torch,spear,scope_4x,ammo_tin,glass_bottle,molotov,medkit,fuel_can,repair_kit').split(',');
+const IDS = (process.argv[2] ?? 'wrench,tarp,cash,rope,copper_wire,note_camp_diary,earmuffs,campfire_kit,torch,spear,scope_4x,ammo_tin,glass_bottle,molotov,medkit,fuel_can,repair_kit').split(',');
 const browser = await launch();
-const page = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+const page = await (await browser.newContext({ viewport: { width: 960, height: 540 } })).newPage();
 const errs = [];
 page.on('pageerror', (e) => errs.push(String(e).slice(0, 300)));
 page.on('console', (m) => m.type() === 'error' && !/Failed to load resource/.test(m.text()) && errs.push(m.text().slice(0, 300)));
@@ -22,7 +22,8 @@ await page.evaluate(async () => {
   g.ctx.player.godMode = true;
   g.data.horde.passive = true;
   g.teleport(0, 40, 0);
-  g.setLook(0, -0.6);
+  g.setLook(0, -0.95);
+  g.ctx.rig.mode = 'fp';
   g.ctx.weapons.select(3);
 });
 for (let s = 0; s * 8 < IDS.length; s++) {
@@ -30,8 +31,8 @@ for (let s = 0; s * 8 < IDS.length; s++) {
   await page.evaluate((batch) => {
     const g = window.__gp, lo = g.ctx.game.loadout, p = g.ctx.player.curr;
     for (const pk of [...lo.pickups]) lo.pickups.splice(lo.pickups.indexOf(pk), 1);
-    // a row 2.2 m ahead of the player (facing -Z), 0.45 m apart, left to right
-    batch.forEach((id, i) => lo.pickups.push({ item: window.__newItem(id), x: p.x - 1.6 + i * 0.45, y: p.y, z: p.z - 2.2 }));
+    // a row 1.3 m ahead of the player (facing -Z), 0.3 m apart, left to right
+    batch.forEach((id, i) => lo.pickups.push({ item: window.__newItem(id), x: p.x - 1.05 + i * 0.3, y: p.y, z: p.z - 1.3 }));
     g.ctx.game.events.emit('inventoryChanged', {});
   }, batch);
   await page.waitForTimeout(2500);
