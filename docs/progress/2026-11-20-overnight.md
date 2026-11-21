@@ -161,3 +161,22 @@ Draw calls (renderer draws, `drawbreak.mjs`, all views; before = before this pas
 Walk (`outskirtswalk.mjs all`): first run had two STUCK legs (main road east from the school, crash road back) with no collider of this pass within 14 m of either spot; a rerun of `walk` had every leg ok, 0 errors. tsc clean, vitest 177/177.
 - Correction to the grocery line above: the stalls `buildingdoors.mjs` blamed on the hardware pallet and a later grocery front-door stall were zombies (collision group 8) standing in the doorway, which also fits the original 985. The walk legs and `buildingdoors.mjs` now run with no zombies (the POI spawner is switched off and zones emptied; the zombie leg turns it back on). Full walk: every leg ok, 0 to 2 stall ticks each. buildingdoors after db338a0: all ok except the shop_gas back door (counter, intended), the workshop garage opening (parked hatchback, intended), and the police back door, which opens 0.65 m from the department store's back wall.
 - Interior night lighting (`node tools/audit/interiorlight.mjs <tag>`: every `*_in` view at 13:00, 23:00 flashlight off, 23:00 flashlight on, mean luma / near-black / blown per shot, contact sheet `wip/il_<tag>_sheet.png`; before/after sheets `il_before_sheet.png`, `il_after_sheet.png`). No room was pitch black with the light off (night means 46-116 of 255; shed darkest at 46, still readable), so GAIN and the model lifts stay as they are. The flashlight was the problem: its spot started 2.8 m ahead of the camera and kept full intensity, so a wall 3-6 m away in every room became a white disc (6-15% of the frame blown), and with a wall closer than 2.8 m (first person, police armory) the light sat behind the wall and lit nothing. Now five rays per frame (axis + four inside the cone; static, buildings, terrain, cars, zombies) keep the light in front of the first surface and cap intensity at 16 * s^1.5 by the nearest hit (about what a wall 10 m out got before), eased; the visible haze cone keeps its old start. Flash shots now 0-4% blown, warm readable pool. Views: `hardware_in`, `motel_in2` (a room under the roof break), `armory_in` moved into the armory looking along it (it faced a cabinet 1 m away); `poiperf.mjs` takes `TOD=23` and `FLASH=1`. `buildingdoors.mjs` 36/36 ok, tsc clean, vitest 182/182. Seen, not mine: `lake_cabin_in` walls near-black at night (22%) under a bright ceiling.
+
+### QA sweep after the PC crash (2026-11-21)
+
+| Check | Result | Console errors / warnings | Fixes |
+|---|---|---|---|
+| `tsc --noEmit` | pass | - | - |
+| `vitest run` | pass (181/181) | - | gear.test pickup size cap 1.2 -> 2 m (the spear pickup is 1.5 m long by design) |
+| playthrough.mjs | pass (ALL OK) | none | - |
+| outskirtswalk.mjs all | pass | 12x `AttributeNode: Vertex attribute "uv" not found` (warning), WebGPU powerPreference note | - |
+| buildingdoors.mjs | pass, 33 openings (first run: boot hung) | first run: `Vertex buffer count (9) exceeds the maximum (8)` on the pfz_farmer crowd pipeline, boot stuck at "Compiling shaders 94%" | crowd bug reported to the zombie combat session, fixed in 297a76c. Audit: gas shop back door and workshop garage opening reached 1.6 / 1.1 m inside, then the counter / parked hatchback; now pass when the body is >= 0.9 m past the wall |
+| doorwalk.mjs (yard) | pass | none | was out of date: yard doors are hinged and start closed. Now opens the door first (search radius 5 m, the farm door is 4.0 m away) and exits 1 on failure |
+| attachcheck.mjs | pass (ALL OK, 6 guns, save/load) | none (2 retries after dev-server reloads from other sessions' edits) | - |
+| zaudit.mjs | pass, 16 types, shots look right | none | the live `dy=-1.5` it prints is a probe artifact (the ground ray hits a collider at head height); zombies stand on the ground in the shots |
+| pickupshots.mjs | pass | none | - |
+| stalldiag.mjs | pass (2 brief stall ticks near spawn) | none | - |
+| bootcheck.mjs | pass | same uv warning + powerPreference note only | - |
+| F3 credits | pass: `tools/audit/creditscheck.mjs`, 474 files, 0 misses | - | asset-credits.md had no rows for Polyfork files or Polyfork-based models; rows added (e435031) |
+
+Open: the uv warning (a TSL material reads `uv()` on a mesh without UVs; harmless); zaudit ground probe; B2 turn-in-place and camera lag; A5 jog arm swing; C5 FP left forearm in rifle ADS (other sessions own these).
