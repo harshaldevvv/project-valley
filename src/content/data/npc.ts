@@ -22,8 +22,8 @@ export interface NpcDef {
 export const NPCS: NpcDef[] = [
   { id: 'odell', model: 'chr_npc_trader', role: 'trader', poi: 'checkpoint', at: { x: -7.9, z: 125, yaw: -1.5708 }, dialogue: 'odell', idles: ['idle'], gestures: ['interact_search'] },
   { id: 'eli', model: 'chr_npc_eli', role: 'survivor', poi: 'maple', at: { building: 'house_a', u: -2.8, v: 4.8 }, dialogue: 'eli', idles: ['idle'], gestures: ['interact_search'] },
-  { id: 'hollis', model: 'chr_npc_hollis', role: 'survivor', poi: 'farm', at: { building: 'farmhouse', u: -1.5, v: 5.4 }, dialogue: 'hollis', idles: ['idle'], gestures: ['interact_search'] },
-  { id: 'wren', model: 'chr_npc_wren', role: 'survivor', poi: 'ranger', at: { x: 129.2, z: 262.6, yaw: 1.5708 }, dialogue: 'wren', idles: ['idle'], gestures: ['interact_search'] },
+  { id: 'hollis', model: 'chr_npc_hollis', role: 'survivor', poi: 'farm', at: { building: 'farmhouse', u: -1.3, v: 6.2 }, dialogue: 'hollis', idles: ['idle'], gestures: ['interact_search'] },
+  { id: 'wren', model: 'chr_npc_wren', role: 'survivor', poi: 'ranger', at: { x: 127.6, z: 255.4, yaw: 0 }, dialogue: 'wren', idles: ['idle'], gestures: ['interact_search'] },
 ];
 export const NPC_BY_ID: Record<string, NpcDef> = Object.fromEntries(NPCS.map((n) => [n.id, n]));
 

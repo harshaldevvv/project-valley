@@ -29,7 +29,8 @@ export class CameraRig {
   private punchV = 0;
   private time = 0;
   private bobT = 0;
-  private landDip = 0;
+  private landDip = 0; // current landing dip amplitude (m)
+  private landT = 9; // s since the landing
   private deathT = 0;
   /** Third person squeezed into first person by a wall (QA-001). */
   collapsed = false;
@@ -141,11 +142,13 @@ export class CameraRig {
     }
     // Landing dip
     if (p.landed > 0) {
-      this.landDip = Math.max(this.landDip, p.landed * 0.12);
+      this.landDip = Math.max(this.landDip * this.landShape(), p.landed * C.landDip);
+      this.landT = 0;
       p.landed = 0;
     }
-    this.landDip = Math.max(0, this.landDip - dt * 0.6);
-    _cam.y -= Math.sin(Math.min(1, this.landDip / 0.12) * Math.PI * 0.5) * this.landDip;
+    this.landT += dt;
+    // Eased down over landDipAttack, back up over the rest of landDipS (was a one-frame snap down; audit A10)
+    _cam.y -= this.landDip * this.landShape();
     if (p.dead) {
       // QA-012: death camera rises over the body and looks down, out of the crowd
       this.deathT = Math.min(1, this.deathT + dt / 1.2);
@@ -160,6 +163,13 @@ export class CameraRig {
     cam.rotation.set(p.pitch + w.recoilPitch, p.yaw + w.recoilYaw, 0, 'YXZ');
     const base = this.firstPerson ? C.fovFp : C.fovHip;
     this.finish(dt, base + (base * (w.adsFovMul ?? C.fovAdsMul) - base) * ads);
+  }
+
+  /** Landing dip curve 0..1..0 over cameraFeel.landDipS. */
+  private landShape() {
+    const k = this.landT / C.landDipS, a = C.landDipAttack / C.landDipS;
+    if (k >= 1) return 0;
+    return k < a ? Math.sin((k / a) * Math.PI * 0.5) : 0.5 + 0.5 * Math.cos(((k - a) / (1 - a)) * Math.PI);
   }
 
   private finish(_dt: number, fov?: number) {

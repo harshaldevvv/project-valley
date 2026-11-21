@@ -339,7 +339,7 @@ export class Player implements PlayerView {
   private land(speed: number) {
     this.lastFall = speed;
     this.landed = Math.min(1, speed / 12);
-    if (speed > 4 && Math.hypot(this.vel.x, this.vel.z) < AP.landClipMaxSpeed) this.ctx.playerAnim?.oneshot('land', 0.05); // running on: bodyPost's dip only
+    if (speed > AP.landClipMinFall && Math.hypot(this.vel.x, this.vel.z) < AP.landClipMaxSpeed) this.ctx.playerAnim?.oneshot('land', 0.05); // running on: bodyPost's dip only
     this.ctx.sfx('jump_land', this.curr, { volume: Math.min(1, 0.3 + speed / 12) });
     if (speed > 3) this.ctx.fx.footDust(this.curr, Math.min(1, speed / 8), this.surfaceBelow() === 'grass');
     if (speed > M.hardLandSpeed) this.ctx.game.events.emit('noise', { position: this.curr.clone(), radius: M.landNoise, source: 'land' });

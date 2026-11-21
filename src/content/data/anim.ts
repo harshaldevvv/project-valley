@@ -92,10 +92,11 @@ export const animPost = {
   reactHz: 4.5, // spring frequency for flinch + landing dip
   reactDamping: 0.45, // 1 = no overshoot
   flinchDeg: 9, // upper-body snap away from a hit (scaled by damage, cap ×1.6)
-  landDipPerMps: 0.012, // m of pelvis dip per m/s of fall speed
+  landDipPerMps: 0.02, // m of pelvis dip per m/s of fall speed (0.012 read as ~1.5 cm on a hop; audit A10)
   landDipMax: 0.11,
   hitClipMaxSpeed: 0.5, // m/s: above this a hit is procedural only (the full-body clip would freeze the legs)
   landClipMaxSpeed: 1.5, // m/s horizontal: same for the hard-landing clip
+  landClipMinFall: 6.5, // m/s fall: softer landings (a standing hop lands at ~4.6) get the procedural dip only, not the deep land squat (audit A10)
   accelSmoothHL: 0.04, // s: speed is smoothed before differentiating for the acceleration lean
   // Third-person melee swing layered on the hero's clip (driven by melee.swingVis: -1 wind-up .. +1 follow-through)
   meleeTwistDeg: 28, // chest + spine yaw at full wind-up / follow-through (light)

@@ -98,6 +98,10 @@ export const survivalFeel = {
 };
 
 export const cameraFeel = {
+  /** Landing dip: metres at a 12 m/s fall (scaled by fall speed), total time and the eased-down part of it (s). */
+  landDip: 0.1,
+  landDipS: 0.32,
+  landDipAttack: 0.07,
   // Third person (principles §2)
   shoulderX: 0.5,
   shoulderY: 0.15,

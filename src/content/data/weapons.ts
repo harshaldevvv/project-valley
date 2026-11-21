@@ -221,10 +221,16 @@ export const fpArms = {
   supportRef: [0, 0.082, -0.327] as [number, number, number],
   /** Extra left-hand offset per gun id (grip-local m: x right, y up, z back), on top of its own SOCKET_support. */
   support: { shotgun_a: [0, -0.01, 0.0], bolt_a: [0, 0, 0], smg_a: [0, 0, 0] } as Record<string, [number, number, number]>,
+  /** Left hand rolled around the barrel (rad, + = under the handguard toward the eye) per gun id, else `default`: the arm
+   *  clips wrap the hand round the far side of the handguard where the gun hides it (audit A10, tools/audit/handaudit.mjs). */
+  supportRoll: { default: 0.6 } as Record<string, number>,
+  /** Left elbow pulled down in camera space (IK pole weight, 0 = the clip's elbow): the hip offset slides the rig forward,
+   *  which brings the left forearm's elbow end into view as a cut-off tube. */
+  supportElbowDown: 2,
   /** Pump / bolt cycle: how far the left hand slides back along the barrel (m). */
   pumpTravel: 0.09,
   /** Sight-line height above the grip (m) the arms clips are authored for, per FP kind: other guns shift to match when aiming. */
   adsSightRef: { rifle: 0.162, pistol: 0.086 } as Record<string, number>,
   /** Hip: extra rig offset (m, camera space) so the rifle stock doesn't run into the corner (QA-041). */
-  hipOffset: { rifle: [0.12, -0.13, -0.3], pistol: [0, 0, 0], knife: [0, 0, 0] } as Record<string, [number, number, number]>,
+  hipOffset: { rifle: [0.12, -0.24, -0.3], pistol: [0, 0, 0], knife: [0, 0, 0] } as Record<string, [number, number, number]>,
 };
