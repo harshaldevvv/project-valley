@@ -333,6 +333,19 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Skate Helmet by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/skate-helmet-cf1e6e |
 | Steel Helmet by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/steel-helmet-f5aa7d |
 | Field Radio Set by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/field-radio-set-b6f3fd |
+| Wrench by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/wrench-390c5f |
+| Banded Cash Bundle by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/banded-cash-bundle-7da278 |
+| Rolled Pitch Tarpaulin by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/rolled-pitch-tarpaulin-c8a93f |
+| Rope Coil by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/rope-coil-776dcc |
+| Decorative Wire Coil by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/decorative-wire-coil-50561a |
+| Lab Notebook by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/lab-notebook-e60f7a |
+| Headphones by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/headphones-d3e940 |
+| Firewood Stack by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/firewood-stack-810f49 |
+| Pitch Torch by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/pitch-torch-79d752 |
+| Spear by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/spear-e9824e |
+| Weapon Scope by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/weapon-scope-6b43b2 |
+| Ammo Crate by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/ammo-crate-ee3ec0 |
+| Bottle by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/bottle-ca0f79 |
 | Tool Case by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/tool-case-d92909 |
 | Camping Lantern by Polyfork (item pickup model in `public/assets/models/item/`, rescaled) | https://polyfork.dev/asset/camping-lantern-21d14b |
 | Merchant by Polyfork (NPC chr_npc_trader (the Gate Checkpoint trader), our survivor clips retargeted with `tools/audit/retarget_pf_hero.py`) | https://polyfork.dev/asset/merchant-6f606b |

@@ -49,10 +49,10 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 - [x] D4 Performance check after each world pass (draw calls, tris, frame time). Roadside pass: table below; p95 16.9 ms at every walk stop.
 
 ## E. Items, loot, survival
-- [ ] E1 More backpacks (sizes), vests, helmets, clothing as items with stats.
-- [ ] E2 More consumables (food, drink, meds), tools, crafting materials.
-- [ ] E3 Loot tables per POI theme; containers placed in the new areas.
-- [ ] E4 Pick-up models for every new item (Polyfork props where they exist).
+- [x] E1 More backpacks (sizes), vests, helmets, clothing as items with stats. (Checked 2026-11-21: 15 backpacks, 52 clothing items incl. vests and helmets with warmth / armour / pockets, from the items round; covered by systems/content.test.ts and gear.test.ts.)
+- [x] E2 More consumables (food, drink, meds), tools, crafting materials. (Checked: 23 food, 7 drink, 16 medical, 19 tools, 14 materials.)
+- [x] E3 Loot tables per POI theme; containers placed in the new areas. (Checked: themed tables >= 60 % on theme and every container's roll fits its grid, content.test.ts; roadside coolers and POI containers in the outskirts.)
+- [~] E4 Pick-up models for every new item (Polyfork props where they exist). New `content/data/pickups.test.ts`: every item resolves to a built model or an own file, and kind generics stay under half. Round 1: 13 new Polyfork pickups (wrench, cash bundle, rolled tarp, rope coil, wire coil, notebook for the 5 notes, headphones for earmuffs, firewood stack for the campfire kit, pitch torch, spear, weapon scope, ammo crate, bottle for the bottle and molotov) plus repo models for the medkit, fuel can and repair kit: 121 -> 101 of 208 items on a kind generic. Left on generics: clothing (folded-cloth bag, tinted), backpacks (tinted generic pack), ammo boxes and materials (small box); no Polyfork match for bats, machete, grenade, flare, binoculars, lockpick, tape, multitool. In-game render check of the new pickups (`tools/audit/pickupshots.mjs`) still to run: browsers were on hold for a GPU job.
 
 ## F. QA
 - [ ] F1 `npm test` and `tsc` green after each pass (laptop via lap.mjs).
