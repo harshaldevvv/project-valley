@@ -25,3 +25,13 @@ export async function createPhysics() {
   return { R, world };
 }
 export type Physics = Awaited<ReturnType<typeof createPhysics>>;
+
+/**
+ * One physics step. Same as `world.step()` minus rapier.js 0.21's `mapNewSoftBodies()` after it, which walks every collider
+ * and body handle across the JS/WASM boundary each step (~2400 colliders here: about 1 ms per step at CPU x4) to pick up
+ * soft bodies and objects created or removed inside the step. This game has no soft bodies, and colliders/bodies are only
+ * created and removed through the world/set APIs, which update the JS maps themselves.
+ */
+export function stepWorld(world: RAPIER.World) {
+  world.physicsPipeline.step(world.gravity, world.integrationParameters, world.islands, world.broadPhase, world.narrowPhase, world.bodies, world.colliders, world.softBodies, world.impulseJoints, world.multibodyJoints, world.ccdSolver);
+}

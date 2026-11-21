@@ -12,7 +12,7 @@ import { Input } from '../engine/input';
 import { FixedLoop } from '../engine/loop';
 import { paletteMaterial } from '../engine/palette';
 import { Perf } from '../engine/perf';
-import { createPhysics, type Physics } from '../engine/physics';
+import { createPhysics, stepWorld, type Physics } from '../engine/physics';
 import { createRenderer, type Backend } from '../engine/renderer';
 import { createRng, type Rng } from '../engine/rng';
 import type { AudioApi, BuildApi, DebugApi, Interactable, InteractApi, InventoryUi, LoadoutApi, Places, PlayerView, SaveApi, SurvivalApi } from './contracts';
@@ -112,6 +112,7 @@ export async function createGame(): Promise<Game> {
   });
 
   const systems: GameSystem[] = [];
+  const renderLabels: string[] = []; // 'r:<name>' perf timers for render hooks (built once, no per-frame string work)
   const interactables: Interactable[] = [];
   const game: Game = {
     renderer, backend, scene, camera, sun, phys, input, perf, events, ui,
@@ -121,16 +122,22 @@ export async function createGame(): Promise<Game> {
     places: { containers: [], targets: [] },
     tick: 0,
     paused: false,
-    addSystem: (s) => systems.push(s),
+    addSystem: (s) => {
+      systems.push(s);
+      renderLabels.push(`r:${s.name}`);
+    },
     debug: missing('debug') as DebugApi,
     audio: missing('audio') as AudioApi,
     interact: {
       all: interactables,
+      rev: 0,
       register(i) {
         interactables.push(i);
+        game.interact.rev++;
         return () => {
           const k = interactables.indexOf(i);
           if (k >= 0) interactables.splice(k, 1);
+          game.interact.rev++;
         };
       },
     },
@@ -146,6 +153,7 @@ export async function createGame(): Promise<Game> {
         step(dt, tick) {
           if (game.paused) return; // pause menu: freeze sim, physics and events (rendering continues)
           game.tick = tick;
+          perf.begin('step'); // whole fixed step (systems + physics + events): the sim cost per tick
           for (const s of systems) {
             if (!s.step) continue;
             perf.begin(s.name);
@@ -153,13 +161,20 @@ export async function createGame(): Promise<Game> {
             perf.end(s.name);
           }
           perf.begin('physics');
-          phys.world.step();
+          stepWorld(phys.world);
           perf.end('physics');
           events.drain();
+          perf.end('step');
           input.endTick();
         },
         render(alpha, frameDt) {
-          for (const s of systems) s.render?.(alpha, frameDt);
+          for (let i = 0; i < systems.length; i++) {
+            const s = systems[i];
+            if (!s.render) continue;
+            perf.begin(renderLabels[i]);
+            s.render(alpha, frameDt);
+            perf.end(renderLabels[i]);
+          }
           // Shadow camera follows the view so the 80 m shadow box covers what we see.
           sun.target.position.set(camera.position.x, 0, camera.position.z);
           sun.position.copy(sun.target.position).addScaledVector(game.sunDir, 70);

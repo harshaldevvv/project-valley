@@ -173,6 +173,25 @@ export const senses = {
   urgentFrac: 0.75,
 };
 
+/** AI level of detail by distance to the player (sim cost at CPU x4, principles §13). Only zombies walking (mode 'move', not
+ *  pushed, in hitstop, or able to charge) are thinned; every other mode runs every tick. Near zombies think and move every tick. Further out
+ *  `think` (steering casts, decisions) runs every Nth tick with the summed dt, and the character-controller move is computed
+ *  for that whole window and spread evenly over its ticks (yaw too), so motion stays smooth at 60 Hz. Senses and hearing
+ *  run every tick at any range. */
+export const aiLod = {
+  /** m: inside, the move query runs every tick. Covers the engaged ring (steer.ringR) so close-quarters movement is unchanged
+   *  (at 3 m the zai wall scene came round 0.1 s later). */
+  kccNearM: 8,
+  /** Between kccNearM and thinkNearM: think every tick, move query every this many ticks. */
+  kccMidEvery: 2,
+  /** m: inside, think runs every tick. */
+  thinkNearM: 12,
+  /** m: between thinkNearM and this, think every `midEvery` ticks; beyond it every `farEvery` ticks. */
+  thinkFarM: 28,
+  midEvery: 3,
+  farEvery: 6,
+};
+
 /** Steering round obstacles (no navmesh): whisker casts of the zombie's own capsule radius ahead of it. */
 export const steer = {
   look: 1.7, // m ahead

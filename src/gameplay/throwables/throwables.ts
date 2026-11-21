@@ -167,6 +167,7 @@ export class Throwables {
   private sd = new Vector3();
   private badge: HTMLDivElement | null = null;
   private badgeT = 0;
+  private badgeText: string | null | undefined = undefined;
   private time = 0;
   /** In-hand models while aiming (TP: hero's right hand, FP: arms' knife socket), one per item id and view. */
   private inHand = new Map<string, Object3D>();
@@ -252,6 +253,8 @@ export class Throwables {
     this.ctx.game.events.emit('toast', { text });
   }
   private showBadge(text: string | null) {
+    if (text === this.badgeText) return; // runs every tick: touch the DOM only on a change
+    this.badgeText = text;
     if (!this.badge) {
       const d = document.createElement('div');
       d.style.cssText = 'position:fixed;right:28px;bottom:140px;padding:6px 12px;background:rgba(20,22,24,.72);border-left:3px solid #d9a441;color:#f0ead8;font:600 13px/1.2 system-ui,sans-serif;letter-spacing:.04em;pointer-events:none;z-index:30;display:none';

@@ -34,6 +34,8 @@ export interface Interactable {
 export interface InteractApi {
   register(i: Interactable): () => void; // returns unregister
   readonly all: readonly Interactable[];
+  /** Bumped on every register/unregister (lets per-tick scanners cache a subset safely). */
+  rev: number;
 }
 
 /** engine-builder: Web Audio with CC0 sounds. Ids map to files in public/assets/audio (see data/sounds.ts). */

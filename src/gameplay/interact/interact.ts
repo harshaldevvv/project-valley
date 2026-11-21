@@ -1,6 +1,7 @@
 import { Vector3 } from 'three';
 import type { Interactable } from '../../core/contracts';
 import { Group, groups } from '../../engine/physics';
+import { INTERACT_SCAN } from '../../content/data/player';
 import { lockpickText } from '../../content/text/ui';
 import type { Ctx } from '../ctx';
 
@@ -27,6 +28,10 @@ export class Interact {
   promptText: string | null = null;
   progress = 0; // 0..1 hold ring
   private held = 0;
+  /** Interactables near the player (rebuilt a few times a second, or at once when one is added or removed). */
+  private cands: Interactable[] = [];
+  private candT = 0;
+  private candRev = -1;
   private fired = false;
   private interrupted = false;
   private ray;
@@ -77,6 +82,7 @@ export class Interact {
     if (p.dead || p.inVehicle || this.ctx.game.input.blocked) {
       this.held = 0;
       this.progress = 0;
+      this.candT = 0; // rescan as soon as prompts are possible again (left a car somewhere else)
       return;
     }
     _chest.copy(p.curr).setY(p.curr.y + 1.2);
@@ -93,7 +99,18 @@ export class Interact {
     const carFirst = onCar || nearCar;
     let best = Infinity;
     let bestText: string | null = null;
-    for (const i of this.ctx.game.interact.all) {
+    // The full list is long (every container, door, pickup): scan only what is near, refreshed every few ticks
+    const api = this.ctx.game.interact;
+    if (--this.candT <= 0 || api.rev !== this.candRev) {
+      this.candT = INTERACT_SCAN.everyTicks;
+      this.candRev = api.rev;
+      this.cands.length = 0;
+      for (const i of api.all) {
+        const r = (i.radius ?? 2) + INTERACT_SCAN.marginM;
+        if (i.position.distanceToSquared(_chest) < r * r) this.cands.push(i);
+      }
+    }
+    for (const i of this.cands) {
       const r = i.radius ?? 2;
       _to.subVectors(i.position, _chest);
       const d = _to.length();

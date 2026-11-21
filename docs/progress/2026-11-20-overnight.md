@@ -331,3 +331,54 @@ Unthrottled (x1): every view holds 16.7 ms (vsync) on all presets. Render-thread
 - **New CC0 files:** 20 from Kenney Impact Sounds, credited in CREDITS.md and asset-credits.md.
 - **Open:** the throwable swing is still 3D (`throwables.ts` has another session's uncommitted edits). Placed build doors play crate_open (`src/ui`, out of bounds).
 - tsc clean, vitest 23 files / 197 tests pass (run on this PC: the laptop was offline).
+
+## Sim cost at CPU x4: zombie AI level of detail, physics step, interact scan (2026-11-22)
+
+Measured with the new `tools/audit/simprofile.mjs [views] [port]` (one headless 960x540 page through the rq queue, CDP CPU throttle x4,
+Low preset, 30 zombies spawned in a ring 10–45 m round the player and hunting it, 6 s per view; `DETAIL=1` also times the zombie
+internals, `PROFILE=1` adds a CDP sampling profile). New perf timers: `step` = the whole fixed tick (systems + physics + events),
+`r:<system>` = each render hook. "sim/frame" is the sum of the ticks that ran in one rendered frame (the loop runs 1–4 per frame).
+
+| view | when | sim/frame p50 | sim/frame p95 | sim/tick mean | ticks/frame | frame p95 | ai / physics / player-side per tick | load (resource-guard) |
+|---|---|---|---|---|---|---|---|---|
+| diner_spot | before | 9.1 | 33.0 | 7.91 | 1.61 | 66.6 | 4.65 / 1.55 / 1.39 | 3.4 GB free, CPU 55% |
+| diner_spot | after, run 1 | 4.0 | 7.8 | 3.86 | 1.02 | 16.9 | 2.40 / 0.31 / 0.88 | 7.9 GB free, CPU 19% |
+| diner_spot | after, run 2 | 3.8 | 7.5 | 4.07 | 1.04 | 16.9 | 2.49 / 0.33 / 0.94 | 7.1 GB free, CPU 27% |
+| main_street | before | 7.2 | 41.5 | 8.50 | 1.36 | 66.6 | 5.68 / 1.40 / 1.13 | 2.5 GB free, CPU 23% |
+| main_street | after, run 1 | 4.4 | 8.8 | 4.35 | 1.06 | 16.9 | 2.82 / 0.32 / 0.94 | 7.9 GB free, CPU 15% |
+| main_street | after, run 2 | 5.0 | 15.7 | 5.13 | 1.18 | 33.4 | 3.45 / 0.36 / 1.03 | 7.1 GB free, CPU 15% |
+
+Target sim p95 < 8 ms: met on diner_spot, borderline on main_street (8.8 and 15.7 ms; p50 4.4–5.0). The "before" numbers came from a
+busier PC, so part of the gap is load; the per-tick ai and physics columns are the cleaner comparison. With other sessions' browsers
+running (1 GB free RAM) the same build measured 5.4–7.2 ms/tick with 50–250 ms frames, most of them untimed (swapping).
+
+What changed:
+- **Physics step 1.5 -> 0.3 ms/tick.** rapier.js 0.21 `world.step()` runs `mapNewSoftBodies()` after every step, which walks all
+  ~2400 collider handles and every body across the JS/WASM boundary. `stepWorld()` (engine/physics.ts) calls the physics pipeline
+  directly; this game has no soft bodies and creates/removes colliders only through the world APIs, which keep the JS maps current.
+- **Zombie AI level of detail** (`aiLod` in data/zombies.ts). Only walkers (mode `move`, not pushed, no hitstop, not chargers) are
+  thinned. Inside `kccNearM` 8 m everything runs every tick as before (covers the 7 m engaged ring). 8–12 m: think every tick, the
+  character-controller move every 2nd tick. 12–28 m: think and move every 3rd tick; beyond 28 m every 6th. A move query covers the whole
+  window and its result (and the turn) is spread evenly over the window's ticks, so far zombies still move smoothly at 60 Hz and stay on a
+  collision-checked path. Senses and hearing still run every tick at any range. Replaces the old ">12 m: 30 Hz" step. Zombie KCC
+  calls went from 19 to about 11 per tick in the diner horde. One KCC call costs ~22 µs unthrottled (0.17–0.30 ms at x4, more among
+  main_street's colliders); turning autostep or snap off saves only 10–20 %, so making fewer calls was the lever.
+- **Interact prompt scan:** the per-tick check now runs on the interactables within radius + 4 m, rebuilt every 6 ticks or whenever one
+  is registered or removed (new `game.interact.rev`), so a removed pickup can never be used from a stale list (`INTERACT_SCAN`, data/player.ts).
+- Throwables HUD badge writes the DOM only when its text changes (it ran every tick).
+- **Bug fixed (crash):** `zombies.clear()` (also used on save load) left the POI-zone lists holding the removed zombies; walking away from
+  that zone later removed the same Rapier body again, Rapier panicked ("unreachable", then "recursive use of an object") and physics was
+  dead for the rest of the session. `clear()` now empties the zone lists and `remove()` is idempotent.
+
+Behaviour checks (headless, own dev server):
+- `zai.mjs` all scenes, LOD on vs off (data set to 999 m): wall 9.97 / 9.98 s, crate 8.10–8.33 / 8.17–8.33 s, door 10.50 / 10.43 s,
+  spread arc at 10/14 s 144/164 / 141/163 deg, gunshot / flashlight / screamer / attack the same (attack hits 0.85, 1.50, 2.15 s… in both).
+  The brute charge varies run to run with the LOD off too (wall stun at 2.10 / 2.37 / 3.02 s). Spread arcs depend on which scenes ran
+  before (RNG state), so compare like for like. `kccNearM` 3 or 5 made the wall zombie reach the player 0.1 s later (minD 2.21–2.26 against
+  the 2.2 m threshold), hence 8.
+- `outskirtswalk.mjs`: every route ok, 0 stall ticks, door and container prompts right, POI spawns as before, no page errors.
+- `aizombie.mjs` is stale (looks for a zombie type `ai_civilian` that no longer exists) and fails without these changes too.
+- `npx tsc --noEmit` and `npx vitest run` green (23 files, 197 tests).
+
+Left for later: main_street with a horde still spends 3–3.5 ms/tick in zombie AI, mostly KCC calls inside 8 m. Next steps would be a
+cheaper move for zombies holding the ring (tiny moves), or accepting 30 Hz moves inside the ring if a 0.1 s slower approach is fine.

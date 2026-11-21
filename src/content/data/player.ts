@@ -141,3 +141,6 @@ export const heroLook = {
   fpSleeve: '#7fb0bd', // teal plaid shirt
   fpGlove: '#6e4a33', // brown work gloves
 };
+/** Interaction prompt scan: the nearby subset of all interactables is rebuilt every `everyTicks` sim ticks (and whenever one is
+ *  added or removed), keeping those within their radius + `marginM` of the chest; the per-tick prompt check runs on that subset. */
+export const INTERACT_SCAN = { everyTicks: 6, marginM: 4 };

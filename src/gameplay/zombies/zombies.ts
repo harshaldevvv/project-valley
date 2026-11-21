@@ -1,7 +1,7 @@
 import { BufferAttribute, BufferGeometry, Frustum, LineBasicMaterial, LineSegments, Matrix4, Object3D, Sphere, Vector3 } from 'three';
 import type { Collider, KinematicCharacterController, RigidBody } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
-import { crawlClips as CC, deathFall as DF, doorBash as DB, hitReact as HR, horde as HD, senses as SN, steer as ST, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
+import { aiLod as LOD, crawlClips as CC, deathFall as DF, doorBash as DB, hitReact as HR, horde as HD, senses as SN, steer as ST, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
 import { flashlightControl } from '../../engine/flashlight';
 import { doorHandles, type DoorHandle } from '../../world/yard/doors';
 import { hasAsset } from '../../engine/assets';
@@ -42,6 +42,7 @@ const _w = new Vector3();
 const _to = new Vector3();
 const _o = new Vector3();
 const _tg = new Vector3();
+const _kt = new Vector3(); // kinematic translation scratch (no per-call object)
 const seeThrough = (c: Collider) => (surfaceOf(c.handle) as string | null) !== 'chainlink';
 const _proj = new Matrix4();
 const _frustum = new Frustum();
@@ -124,6 +125,17 @@ export class Zombie {
   grounded = false;
   animAcc = 0;
   shadow = true;
+  /** AI level of detail (data aiLod): ticks until the next think, dt summed meanwhile, the current think/move rates, and the
+   *  planned per-tick move (and turn) followed between move queries. */
+  /** Body and colliders freed (Zombies.remove ran). */
+  removed = false;
+  thinkWait = 0;
+  lodAcc = 0;
+  thinkEvery = 1;
+  kccEvery = 1;
+  readonly glide = new Vector3();
+  glideN = 0;
+  yawGlide = 0;
   bones: { head: Object3D | null; spine: Object3D | null } | null = null;
 
   constructor(
@@ -394,6 +406,7 @@ export class Zombies {
     z.home.copy(at);
     z.wander.copy(at);
     z.yaw = z.prevYaw = yaw;
+    z.thinkWait = z.id % 3; // a batch spawned together doesn't think on the same ticks
     if (ca) z.anim = ca;
     this.list.push(z);
     const hittable: Hittable = {
@@ -420,9 +433,13 @@ export class Zombies {
   clear() {
     for (const z of this.list) this.remove(z);
     this.list.length = 0;
+    for (const zn of this.poiZones) zn.list = []; // else walking away from the zone later removes these bodies again
   }
 
   private remove(z: Zombie) {
+    // Twice would panic Rapier (removeRigidBody on a freed handle), which poisons the physics world for the session
+    if (z.removed) return;
+    z.removed = true;
     const { world } = this.ctx.game.phys;
     this.ctx.hits.delete(z.capsule.handle);
     this.ctx.hits.delete(z.head.handle);
@@ -722,9 +739,37 @@ export class Zombies {
         if (z.mode === 'move') this.ctx.sfx('zombie_groan', z.curr, { pitchJitter: 0.12, volume: z.sense.awareness === 'detected' ? 1 : 0.7 });
       }
 
-      this.think(z, zdt, dist);
+      // AI level of detail (aiLod): far walkers think every Nth tick with the summed dt; between, they follow their planned move
+      // (chargers stay full rate: the charge locks its line from where it stands and faces; rare, one per pack)
+      const lodOk = z.mode === 'move' && z.hitstop <= 0 && z.push.lengthSq() === 0 && !z.def.charge;
+      const tE = !lodOk || dist < LOD.thinkNearM ? 1 : dist < LOD.thinkFarM ? LOD.midEvery : LOD.farEvery;
+      z.thinkEvery = tE;
+      z.kccEvery = !lodOk || dist < LOD.kccNearM ? 1 : Math.max(tE, LOD.kccMidEvery);
+      z.lodAcc += zdt;
+      if (tE > 1 && z.thinkWait > 0) {
+        z.thinkWait--;
+        z.yaw += z.yawGlide;
+        this.glide(z);
+        continue;
+      }
+      z.thinkWait = tE - 1;
+      const tdt = z.lodAcc;
+      z.lodAcc = 0;
+      this.think(z, tdt, dist);
     }
     noises.length = 0;
+  }
+
+  /** One tick along the move planned by the last character-controller query (AI level of detail). */
+  private glide(z: Zombie) {
+    if (z.glideN <= 0 || z.mode !== 'move') {
+      z.glideN = 0;
+      return;
+    }
+    z.glideN--;
+    z.curr.add(z.glide);
+    z.body.setNextKinematicTranslation(_kt.set(z.curr.x, z.curr.y + z.capY, z.curr.z));
+    z.walkPhase += (Math.hypot(z.glide.x, z.glide.z) / 0.7) * Math.PI;
   }
 
   private los(z: Zombie, target: Vector3, h: number) {
@@ -1000,22 +1045,30 @@ export class Zombies {
     // Turn toward travel or the target
     const fx = face ? face.x - z.curr.x : _v.x;
     const fz = face ? face.z - z.curr.z : _v.z;
+    z.yawGlide = 0;
     if (fx * fx + fz * fz > 1e-4 && z.mode !== 'stagger') {
       const want = Math.atan2(-fx, -fz);
       let dy = want - z.yaw;
       dy = Math.atan2(Math.sin(dy), Math.cos(dy));
       const maxT = d.turnRate * dt;
-      z.yaw += Math.max(-maxT, Math.min(maxT, dy));
+      const turn = Math.max(-maxT, Math.min(maxT, dy));
+      // thinking every Nth tick: the turn is spread over the ticks until the next think
+      const tE = z.mode === 'move' ? z.thinkEvery : 1;
+      z.yaw += turn / tE;
+      if (tE > 1) z.yawGlide = turn / tE;
     }
 
-    // Integrate with the KCC (gravity always). Zombies > 12 m away move at 30 Hz (every other tick, double step):
-    // halves the character-controller cost of a crowd; the 30 Hz steps aren't visible at that range.
+    // Integrate with the KCC (gravity always). Level of detail (aiLod): beyond kccNearM walkers query every kE ticks; the query
+    // covers the whole window and the result is spread evenly over its ticks (glide), so they still move every tick.
     z.vel.x = _v.x;
     z.vel.z = _v.z;
-    if (dist > 12 && z.mode === 'move') {
-      if ((this.tickN + z.id) & 1) return;
-      dt *= 2;
+    const kE = z.mode === 'move' ? z.kccEvery : 1;
+    if (kE > 1 && z.glideN > 0) {
+      this.glide(z);
+      return;
     }
+    z.glideN = 0;
+    if (kE > 1) dt = (dt * kE) / z.thinkEvery; // the window this query covers (think may already sum kE ticks)
     z.vel.y = Math.max(-20, z.vel.y - 18 * dt);
     _w.set(z.vel.x * dt, z.vel.y * dt, z.vel.z * dt);
     const want = Math.hypot(_w.x, _w.z);
@@ -1027,13 +1080,19 @@ export class Zombies {
     const { R } = this.ctx.game.phys;
     this.kcc.computeColliderMovement(z.capsule, _w, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, MOVE_FILTER));
     const m = this.kcc.computedMovement();
-    z.curr.x += m.x;
-    z.curr.y += m.y;
-    z.curr.z += m.z;
     z.grounded = this.kcc.computedGrounded();
     if (z.grounded) z.vel.y = 0;
-    z.body.setNextKinematicTranslation({ x: z.curr.x, y: z.curr.y + z.capY, z: z.curr.z });
-    z.walkPhase += (Math.hypot(m.x, m.z) / 0.7) * Math.PI;
+    if (kE > 1) {
+      z.glide.set(m.x / kE, m.y / kE, m.z / kE);
+      z.glideN = kE;
+      this.glide(z); // this tick's share
+    } else {
+      z.curr.x += m.x;
+      z.curr.y += m.y;
+      z.curr.z += m.z;
+      z.body.setNextKinematicTranslation(_kt.set(z.curr.x, z.curr.y + z.capY, z.curr.z));
+      z.walkPhase += (Math.hypot(m.x, m.z) / 0.7) * Math.PI;
+    }
 
     // Charging brute ran into a wall: it stands stunned (the reward for baiting it)
     if (z.mode === 'charge' && moveSpeed > 0 && Math.hypot(m.x, m.z) < want * 0.35) {
