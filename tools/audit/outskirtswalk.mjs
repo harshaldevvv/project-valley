@@ -1,5 +1,5 @@
 // node tools/audit/outskirtswalk.mjs [zombies|walk|all]   headless: (1) walks the outskirts roads from the gate to every POI and logs stuck spots,
-// opens a door, checks the container prompts at 3 places; (2) teleports to 3 POIs and counts the streamed-in zombies (never in view) with a perf snapshot.
+// opens a door, checks the container prompts (incl. two roadside coolers; the routes pass the 4 roadblock gaps); (2) teleports to 3 POIs and counts the streamed-in zombies (never in view) with a perf snapshot.
 import { launch } from './browser.mjs';
 const mode = process.argv[2] ?? 'all';
 const browser = await launch();
@@ -78,7 +78,7 @@ if (mode === 'walk' || mode === 'all') {
     ['Maple Street to the school', [[-20, 198], [-60, 198], [-100, 198], [-128, 198]]],
     ['back to the main road, diner and crash road', [[-60, 198], [-8, 198], [0, 199], [0, 232], [20, 232], [0, 232], [0, 244], [-30, 247], [-60, 251]]],
     ['crash road back, camp track', [[-30, 247], [0, 246], [0, 262], [24, 258], [38, 266]]],
-    ['camp back, farm road', [[24, 258], [0, 258], [0, 200], [0, 166], [30, 165], [80, 165], [112, 165]]],
+    ['camp back, farm road', [[31, 259.5], [24, 258], [0, 258], [0, 200], [0, 166], [30, 165], [80, 165], [112, 165]]],
   ];
   for (const [label, wps] of R.slice(+(process.env.SKIP ?? 0))) await walkTo(wps, label);
   // a door: walk to house A's front step, open with E, walk in
@@ -93,7 +93,7 @@ if (mode === 'walk' || mode === 'all') {
   await page.waitForTimeout(900);
   await walkTo([[-60.5, 185.2], [-61.6, 184.4], [-61.6, 180.5]], 'through the opened door into house A');
   // container prompts at three places
-  for (const [name, x, z, yaw] of [['checkpoint footlocker', -21.4, 120.7, 3.14], ['house A kitchen', -59.5, 185.6, 0], ['fuel shop shelf', -30.3, 153.4, 1.57], ['pharmacy shelf', -91.4, 121.0, 0], ['police locker', -124.1, 121.9, 4.71], ['armory footlocker', -123.6, 118.4, 0]]) {
+  for (const [name, x, z, yaw] of [['checkpoint footlocker', -21.4, 120.7, 3.14], ['house A kitchen', -59.5, 185.6, 0], ['fuel shop shelf', -30.3, 153.4, 1.57], ['pharmacy shelf', -91.4, 121.0, 0], ['police locker', -124.1, 121.9, 4.71], ['armory footlocker', -123.6, 118.4, 0], ['roadside cooler (diner road)', 25.1, 236.5, 3.14], ['roadside cooler (farm road)', 67.6, 169.6, 0]]) {
     await ev(([x, z, yaw]) => window.__gp.teleport(x, z, yaw), [x, z, yaw]);
     await page.waitForTimeout(700);
     const ps = await ev(() => { const g = window.__gp.ctx.game, p = g.player.position; return g.interact.all.filter((i) => Math.hypot(i.position.x - p.x, i.position.y - (p.y + 1.2), i.position.z - p.z) < i.radius).map((i) => i.prompt()); });

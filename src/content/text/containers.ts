@@ -15,6 +15,7 @@ export const containerText: Record<string, { name: string; searchVerb: string }>
   wardrobe: { name: 'Wardrobe', searchVerb: 'Search' },
   food_cupboard: { name: 'Cupboard', searchVerb: 'Search' },
   car_trunk: { name: 'Car Trunk', searchVerb: 'Search' },
+  cooler: { name: 'Cooler', searchVerb: 'Open' },
   gas_shelf: { name: 'Shop Shelf', searchVerb: 'Search' },
   gas_register: { name: 'Cash Register', searchVerb: 'Force open' },
   farm_shed: { name: 'Farm Shed Shelf', searchVerb: 'Search' },

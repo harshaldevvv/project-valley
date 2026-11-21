@@ -14,7 +14,12 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 - [x] A7 Knife hold: blade forward from a natural wrist angle (TP and FP).
 - [x] A8 First person: no seeing inside the hand/arm (near plane, arm placement, back faces), sleeves match the hero.
 - [x] A9 Backpack, helmets and gear on the new hero (Polyfork backpacks/helmets attach to sockets).
-- [ ] A10 Check hands and joints in first, second and third person on every clip (memory rule), screenshots in `docs/audit/screenshots/wip/`.
+- [x] A10 Hands and joints, all 9 held types (unarmed, knife, pistol, rifle, shotgun, revolver, SMG, hunting rifle, throwable) x idle/walk/sprint/crouch/aim/reload/melee/fire, in over-the-shoulder, side and first person (`tools/audit/handaudit.mjs`, contact sheets `ha2_*_sheet.png`). Fixed:
+  - FP long guns: the left hand wrapped the far side of the handguard where the gun hid it, and the hip offset slid the rig forward so the left forearm ended in view as a cut-off tube. Now the hand rolls under the handguard (`fpArms.supportRoll` 0.6), the elbow is pulled down (`supportElbowDown` 2) and the rifle hip rig sits lower (`hipOffset.rifle` y -0.13 -> -0.24); both fade out in ADS. `a10_before/after_fp_rifle_idle.png`, `_fp_rifle_ads.png`.
+  - FP shotgun had no left hand at all (since 2bf15d6): the per-gun support offset went through `transformDirection`, which normalises, so its 1 cm became a 1 m drop (the pump slide too). Now metres. `a10_before/after_fp_shotgun_idle.png`, `a10_after_fp_shotgun_pump.png`.
+  - Landing: a standing hop played the full-body land clip (24 cm squat, deeper than a 2.5 m drop's 14.5 cm); now the clip needs a 6.5 m/s fall (`animPost.landClipMinFall`), hops get the procedural dip (`landDipPerMps` 0.02, ~2.7 cm). FP camera dip snapped 6 cm in one frame; now eased down 70 ms / up 250 ms (`cameraFeel.landDip*`). `tools/audit/landseq.mjs`, `a10_before/after_land_hop_side.png`, `_land_drop_fp.png`. Melee hit pause left to the player-feel session.
+  - NPCs (`tools/audit/npcclose.mjs`): Hollis straddled the farmhouse porch slab edge, feet sunk in it -> moved in front of the porch; Wren faced into the ranger station (player had to stand under its porch behind a post), then behind a sandbag wall -> open yard facing the track. `a10_before/after_hollis_feet.png`, `_wren_player.png`.
+  - Open (not bugs): throwables have no throw-ready arm pose or in-hand model while aiming; TP rifle aim holds the left hand at the magazine well, not the handguard; FP shotgun ADS hides the left hand under the pump.
 
 ## B. Controls and feel
 - [x] B1 Stop-start while walking on flat ground (velocity was zeroed by any blocked tick; now wall-slide only). `tools/audit/walkdiag.mjs`: speed dips 29 -> 0.
@@ -33,8 +38,8 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 ## D. World / demo map
 - [ ] D1 Bigger demo area beyond the yard, same theme (Polyfork buildings, vehicles, props).
 - [ ] D2 More points of interest: gas station, farm, police checkpoint, camp, houses with interiors.
-- [ ] D3 Set dressing density pass, collision on every solid prop.
-- [ ] D4 Performance check after each world pass (draw calls, tris, frame time).
+- [x] D3 Set dressing density pass, collision on every solid prop. Roadside round 2 (`src/content/data/outskirts_fill.ts`): 4 roadblocks with a centre gap (main road, Mill Road, farm road sandbags, crash road), 16 abandoned cars total (was 3; kept out of junction mouths, big vehicles never on the lane), power lines on the farm, diner, crash and Mill roads, guardrails, signs, mailboxes, bins and dumpsters, 26 dead trees and 8 stumps (trunk colliders), 8 lootable coolers (new `cooler` container, food table) and extra car trunks. Only models already in the repo, so no new credits.
+- [x] D4 Performance check after each world pass (draw calls, tris, frame time). Roadside pass: table below; p95 16.9 ms at every walk stop.
 
 ## E. Items, loot, survival
 - [ ] E1 More backpacks (sizes), vests, helmets, clothing as items with stats.
@@ -56,3 +61,19 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 - Agents: audio/FP (own shots 2D, priority voices, CC0 Free Firearm Sound Library shots + tails, reloads, knife sounds; FP arms double-sided; knife wrist re-posed), items (~113 new items, icons, themed loot), world (in progress).
 - 05:10 Movement stop-start fixed and committed (6e48af9).
 - Attachments: extended magazines for the pump shotgun (8-shell tube) and hunting rifle (10-round box), with loot and icons; none for the .357 (a cylinder holds six). New `tools/audit/attachcheck.mjs` mounts every gun's attachments and mags through the real inventory menu and drag, checks ADS zoom, suppressor noise, capacity, FP/TP parts and save/reload: all pass. Fixed: shotgun and hunting rifle sight sockets (and the rifle muzzle) floated 4-7 cm above the gun, so optics and the suppressor hung in the air.
+- Roadside set dressing (D3/D4). Everything merges into the existing 60 m fill chunks (one draw each, distance culled), so draws rose 0 to 6 per view. Renderer draws from `tools/audit/drawbreak.mjs` (new views rb_main, rb_mill, rb_farm, rb_crash, verge_farm, verge_diner):
+
+  | view | before | after | | view | before | after |
+  |---|---|---|---|---|---|---|
+  | spawn | 272 | 272 | | mill_road | 322 | 325 |
+  | gate | 258 | 264 | | main_street | 200 | 201 |
+  | fuel | 274 | 277 | | outpost_road | 306 | 307 |
+  | maple | 223 | 228 | | memorial | 185 | 190 |
+  | farm | 187 | 191 | | bus | 156 | 160 |
+  | camp | 162 | 165 | | rb_main | 171 | 175 |
+  | crash | 140 | 142 | | rb_mill | 342 | 345 |
+  | diner | 188 | 190 | | rb_farm | 190 | 195 |
+  | road_south | 209 | 213 | | rb_crash | 172 | 174 |
+  | verge_farm | 211 | 213 | | verge_diner | 199 | 204 |
+
+  Walk (`tools/audit/outskirtswalk.mjs all`): every route reaches its goal, roadblock gaps passable, both new cooler prompts show, no console errors; p95 16.9 ms and 0.8 to 1.6 M tris at the five zombie stops. The camp-track route now steps round the camp's own cooler (it sat on the straight line). Open, not from this pass: 985 stall ticks just inside the grocery door (-88, 140.6).

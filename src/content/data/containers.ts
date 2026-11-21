@@ -14,6 +14,7 @@ const list: ContainerDef[] = [
   { id: 'wardrobe', grid: { w: 5, h: 7 }, searchSeconds: 3, lootTable: 'civilian_wardrobe', tier: 1, lock: 0 },
   { id: 'food_cupboard', grid: { w: 5, h: 4 }, searchSeconds: 2, lootTable: 'food_cupboard', tier: 1, lock: 0 },
   { id: 'car_trunk', grid: { w: 8, h: 5 }, searchSeconds: 2, lootTable: 'car_trunk', tier: 1, lock: 0 },
+  { id: 'cooler', grid: { w: 4, h: 3 }, searchSeconds: 1.5, lootTable: 'food_cupboard', tier: 1, lock: 0 },
   // Themed types by place (see CONTAINER_THEMES). Locked ones need a lockpick or a crowbar (data/containers LOCKPICK).
   { id: 'gas_shelf', grid: { w: 5, h: 4 }, searchSeconds: 2, lootTable: 'gas_station_shelf', tier: 1, lock: 0 },
   { id: 'gas_register', grid: { w: 4, h: 2 }, searchSeconds: 1.5, lootTable: 'gas_station_register', tier: 2, lock: 1 },

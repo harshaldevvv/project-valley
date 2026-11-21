@@ -1,4 +1,4 @@
-import { BUILDINGS, CLEAR_RECTS, OUT, PLACED, ROADS, type Placed } from './outskirts';
+import { BUILDINGS, CLEAR_RECTS, OUT, PADS, PLACED, ROADS, type Placed } from './outskirts';
 import type { PoiContainer } from './pois';
 
 /**
@@ -131,3 +131,151 @@ put('grave-cross', 10.2, 195.8, -1.7, 0.8, { solid: false });
 put('grave-cross', 8.9, 197.8, -1.2, 0.8, { solid: false });
 put('stone-cairn', 11.6, 203.6, 0.3, 0.8);
 put('camping-lantern', 8.2, 200.6, 0, 0.5, { solid: false });
+
+// ================= Roadside set dressing, round 2 (D3): roadblocks, power lines on the side roads, mailboxes, signs,
+// guardrails, bins, dead trees and small lootable spots (coolers, dropped bags). Same 60 m chunks, so most cells add no draw.
+type Road = (typeof ROADS)[number];
+/** point `off` metres to one side of road r at distance t along it; yaw = the road's heading (a model's +Z along the road) */
+const along = (r: Road, t: number, side: number, off: number) => {
+  const len = Math.hypot(r.bx - r.ax, r.bz - r.az), dx = (r.bx - r.ax) / len, dz = (r.bz - r.az) / len;
+  return { x: r.ax + dx * t - dz * side * off, z: r.az + dz * t + dx * side * off, yaw: Math.atan2(dx, dz), len };
+};
+const spot = (type: string, x: number, z: number, yaw: number, id: string) => FILL_SPOTS.push({ type, theme: 'road', x, z, yaw, model: null, poi: 'road', id });
+const roadAt = (ax: number, az: number, bx: number, bz: number) => {
+  const r = ROADS.find((q) => q.ax === ax && q.az === az && q.bx === bx && q.bz === bz);
+  if (!r) throw new Error(`outskirts_fill: no road ${ax},${az} -> ${bx},${bz}`);
+  return r;
+};
+const MAIN = roadAt(0, 98, 0, 268), FARM = roadAt(0, 165, 100, 165), DINER = roadAt(0, 232, 70, 232), CRASH = roadAt(0, 244, -78, 252), MILL = roadAt(-72, 199, -72, 134);
+// The POI clear zones (CLEAR_RECTS) cover most road frontage; roadside things may go inside them, but never on a pad
+// (forecourts, aprons, the turnaround), near a building or on top of a placed model.
+const onPad = (x: number, z: number, pad: number) => PADS.some((p) => Math.abs(x - p.x) < p.w / 2 + pad && Math.abs(z - p.z) < p.d / 2 + pad);
+const freeR = (x: number, z: number, r: number, opts: { onRoad?: boolean } = {}) => !onPad(x, z, 0.5) && free(x, z, r, { ...opts, rect: true });
+
+/** within 7 m of another road's edge: the mouth of a junction, kept clear so turning traffic (and the walk) gets through */
+const inJunction = (x: number, z: number, self: Road) => ROADS.some((o) => o !== self && segDist(x, z, o.ax, o.az, o.bx, o.bz) < o.w / 2 + 7);
+const SMALL_CARS = ['boxy-sedan-70s', 'compact-hatchback', 'station-wagon-70s', 'family-crossover-suv', 'suburban-pickup-truck', 'marigold-pickup', 'scout-jeep'];
+// ---- roadblocks: barriers across both lanes with a ~3.4 m gap in the middle (people squeezed through), a car pushed
+// against them, cones, and a bag someone dropped. Barriers' long side is their local X, so the road heading lays them across.
+const ROADBLOCKS: [Road, number, 'police' | 'army' | 'civil'][] = [
+  [MAIN, 122, 'police'], // between Maple Street and the diner road
+  [MILL, 26, 'police'], // the edge of Dunmore
+  [FARM, 70, 'army'], // short of the Camp Harlan track
+  [CRASH, 46, 'civil'], // crash-site road
+];
+ROADBLOCKS.forEach(([r, t, kind], bi) => {
+  const half = r.w / 2;
+  const bar = kind === 'army' ? 'sandbag-wall-section' : kind === 'police' ? 'police-barricade' : 'field-barricade';
+  const wide = kind === 'army' ? 4 : kind === 'police' ? 2.4 : 2;
+  for (const side of [-1, 1]) {
+    for (let o = 1.7 + wide / 2; o - wide / 2 < half; o += wide) {
+      const p = along(r, t, side, o);
+      put(bar, p.x, p.z, p.yaw + range(-0.06, 0.06), wide / 2);
+    }
+    const j = along(r, t + 2.8, side, 2.9 + range(0, 0.6));
+    put('skated-jersey-barrier', j.x, j.z, j.yaw + range(-0.3, 0.3), 1.1);
+  }
+  const c = along(r, t - 7, 1, half + 1.4);
+  put(kind === 'police' ? 'police-cruiser' : kind === 'army' ? 'scout-jeep' : pick(CARS), c.x, c.z, c.yaw + range(0.25, 0.5), 3, { surf: 'metal' });
+  const c2 = along(r, t + 8, -1, half + 1.6);
+  if (!inJunction(c2.x, c2.z, r) && freeR(c2.x, c2.z, 3, { onRoad: true })) {
+    const yaw = c2.yaw + Math.PI + range(-0.4, -0.2);
+    put(pick(CARS), c2.x, c2.z, yaw, 3, { surf: 'metal' });
+    spot('car_trunk', c2.x - Math.sin(yaw) * 2.2, c2.z - Math.cos(yaw) * 2.2, yaw, `road_block${bi}_trunk`);
+  }
+  for (let i = 0; i < 3; i++) {
+    const p = along(r, t - range(3, 5), rnd() < 0.5 ? -1 : 1, range(1.9, half));
+    put('traffic-cone', p.x, p.z, rnd() * 6.28, 0.4, { solid: false });
+  }
+  const b = along(r, t + range(1.5, 3), -1, half + range(1.5, 2.5));
+  if (freeR(b.x, b.z, 0.8, { onRoad: true })) {
+    put('kit-bag', b.x, b.z, rnd() * 6.28, 0.8, { solid: false });
+    spot('duffel', b.x, b.z, 0, `road_block${bi}_bag`);
+  }
+});
+
+// ---- power lines on the side roads (the run model has its pole at local z = -5.9 and wires to the next pole)
+for (const r of [FARM, DINER, CRASH, MILL]) {
+  const L = Math.hypot(r.bx - r.ax, r.bz - r.az);
+  for (let t = 14; t + 12.21 < L - 4; t += 12.21) {
+    const p = along(r, t + 6.1, -1, r.w / 2 + 3.6);
+    if (!freeR(p.x, p.z, 1, { onRoad: true })) continue;
+    taken.push({ x: p.x, z: p.z, r: 0.6 });
+    FILL.push({ chunk: chunkOf(p.x, p.z), k: 'railway-telegraph-pole-run', x: p.x, z: p.z, yaw: p.yaw, solid: false, boxes: [[-0.75, 2, -5.9, 0.2, 2, 0.2]] });
+  }
+}
+
+// ---- mailboxes at the farm, ranger and camp drives (post collider), road signs at the junctions
+const MAILBOXES: [number, number, number][] = [[86, 169.6, Math.PI], [96.5, 169.6, Math.PI], [74, 237.4, Math.PI], [4.5, 266.2, -Math.PI / 2], [-40, 191.6, 0]];
+for (const [x, z, yaw] of MAILBOXES) if (freeR(x, z, 0.5, { onRoad: true })) put('mailbox', x, z, yaw, 0.5, { boxes: [[0, 0.6, 0, 0.12, 0.6, 0.12]] });
+const SIGNS: [string, number, number, number][] = [
+  ['speed-limit-sign', 5.6, 138, 0], ['route-shield-sign', -5.6, 176, Math.PI], ['speed-limit-sign', 12, 160.2, -Math.PI / 2],
+  ['route-shield-sign', 5.4, 226, 0], ['speed-limit-sign', -66.8, 192, Math.PI], ['route-shield-sign', -8, 248.6, Math.PI / 2], ['speed-limit-sign', 64, 236, Math.PI / 2],
+];
+for (const [k, x, z, yaw] of SIGNS) if (freeR(x, z, 0.5, { onRoad: true })) put(k, x, z, yaw, 0.5, { boxes: [[0, 1.2, 0, 0.08, 1.2, 0.08]] });
+
+// ---- guardrails (4 m sections, long side local X) on stretches past a ditch
+const RAILS: [Road, number, number, number][] = [[DINER, 28, 6, 1], [CRASH, 56, 5, 1], [MAIN, 150, 4, -1]];
+for (const [r, t0, n, side] of RAILS) {
+  for (let i = 0; i < n; i++) {
+    const p = along(r, t0 + i * 4, side, r.w / 2 + 1.1);
+    if (freeR(p.x, p.z, 1.9, { onRoad: true })) put('guardrail-section', p.x, p.z, p.yaw + Math.PI / 2, 1.9, { shrink: 1, surf: 'metal' });
+  }
+}
+
+// ---- more abandoned cars on the shoulders (the first pass above stays out of the POI zones, so most frontage was bare).
+// A few sit half on the lane, never closer than 2 m to the centre line, so the roads stay walkable and drivable.
+for (const r of asphalt) {
+  const L = Math.hypot(r.bx - r.ax, r.bz - r.az);
+  for (let t = 10; t < L - 8; t += range(9, 15)) {
+    if (rnd() < 0.2) continue;
+    const s0 = rnd() < 0.5 ? -1 : 1, lane = rnd() < 0.15, off = lane ? Math.max(3.1, r.w / 2 - 0.2) : r.w / 2 + range(1.4, 2.8);
+    const p = [along(r, t, s0, off), along(r, t, -s0, off)].find((q) => q.z >= 128 && !inJunction(q.x, q.z, r) && freeR(q.x, q.z, 2.4, { onRoad: true }));
+    if (!p) continue;
+    const yaw = p.yaw + (rnd() < 0.5 ? Math.PI : 0) + range(-0.25, 0.25);
+    put(pick(lane ? SMALL_CARS : CARS), p.x, p.z, yaw, 2.6, { surf: 'metal' });
+    if (rnd() < 0.35) spot('car_trunk', p.x - Math.sin(yaw) * 2.2, p.z - Math.cos(yaw) * 2.2, yaw, `road_car2_${FILL_SPOTS.length}`);
+  }
+}
+
+// ---- bins and drums at lay-bys, a dumpster every third
+for (let n = 0, tries = 0; n < 10 && tries < 300; tries++) {
+  const r = pick(asphalt);
+  const p = along(r, range(8, Math.hypot(r.bx - r.ax, r.bz - r.az) - 8), rnd() < 0.5 ? -1 : 1, r.w / 2 + range(1.4, 2.6));
+  if (p.z < 128 || !freeR(p.x, p.z, 1.8)) continue;
+  n++;
+  if (n % 3 === 0) { put('construction-dumpster', p.x, p.z, p.yaw + range(-0.2, 0.2), 1.8, { surf: 'metal' }); continue; }
+  const k = 2 + Math.floor(rnd() * 2);
+  for (let i = 0; i < k; i++) {
+    const x = p.x + Math.cos(i * 2.1) * 0.9, z = p.z + Math.sin(i * 2.1) * 0.9;
+    if (freeR(x, z, 0.45)) put(rnd() < 0.7 ? 'metal-trash-can' : 'oil-drum', x, z, rnd() * 6.28, 0.45, { surf: 'metal' });
+  }
+}
+
+// ---- dead trees (trunk collider only) and stumps in the verges and the fields between the POIs
+for (let n = 0, tries = 0; n < 34 && tries < 900; tries++) {
+  let x: number, z: number;
+  if (rnd() < 0.6) {
+    const r = pick(ROADS);
+    const p = along(r, range(4, Math.hypot(r.bx - r.ax, r.bz - r.az) - 4), rnd() < 0.5 ? -1 : 1, r.w / 2 + range(4, 12));
+    x = p.x; z = p.z;
+  } else { x = range(OUT.x0 + 16, OUT.x1 - 16); z = range(OUT.z0 + 24, OUT.z1 - 16); }
+  if (z < 128 || !free(x, z, 2.6)) continue;
+  n++;
+  const s = range(0.85, 1.35);
+  if (rnd() < 0.75) put('dead-tree', x, z, rnd() * 6.28, 2.6, { s, boxes: [[0, 1.4, 0, 0.22, 1.4, 0.22]], surf: 'wood' });
+  else put('tree-stump', x, z, rnd() * 6.28, 1, { s, surf: 'wood' });
+}
+
+// ---- coolers people dropped by the road (searchable, food and water), one at the hunting camp
+let coolers = 0;
+for (let tries = 0; coolers < 7 && tries < 400; tries++) {
+  const r = pick(asphalt);
+  const p = along(r, range(10, Math.hypot(r.bx - r.ax, r.bz - r.az) - 10), rnd() < 0.5 ? -1 : 1, r.w / 2 + range(1.2, 3.5));
+  if (p.z < 128 || !freeR(p.x, p.z, 0.9)) continue;
+  const yaw = rnd() * 6.28;
+  put('camp-cooler', p.x, p.z, yaw, 0.9, { surf: 'rubber' });
+  spot('cooler', p.x, p.z, yaw, `road_cooler${coolers++}`);
+}
+put('camp-cooler', -78.2, 234.6, 0.6, 0.6, { surf: 'rubber' });
+spot('cooler', -78.2, 234.6, 0.6, 'road_cooler_hunt');
