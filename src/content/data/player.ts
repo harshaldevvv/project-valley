@@ -80,6 +80,7 @@ export const bodyFacing = {
   lowerS: 0.3, // aim → low-ready
   lowerDelay: 1.2, // s after the last shot before lowering (QA-089: tap-fire doesn't bob)
   fireReady: 0.6, // raise fraction needed before a TP shot leaves the barrel
+  fireSnap: true, // TP trigger pull from low-ready snaps the gun to aim and the shot leaves the same frame (no ~0.1 s wait; fireReady unused)
   lowReadyDeg: 45, // rifle muzzle down
   lowReadyTuckDeg: 18, // rifle swung across the body
   pistolLowDeg: 0, // pistol: the arm hangs at the side from the locomotion clip (aim overlay off); extra drop here

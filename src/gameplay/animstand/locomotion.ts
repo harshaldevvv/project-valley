@@ -167,6 +167,12 @@ export class PlayerAnimator {
     this.pauseT = Math.max(this.pauseT, seconds);
   }
 
+  /** Next update sets the upper layer's weights straight to their targets (TP fire snap: no blend from low-ready). */
+  private snapUp = false;
+  snapUpper() {
+    this.snapUp = true;
+  }
+
   /** Old overlay API: restart = upper one-shot (fire, reload, draw, holster); weights are owned by the carry layer. */
   overlay(name: string, _weight: number, restart = false) {
     if (restart) this.oneshot(name);
@@ -341,6 +347,7 @@ export class PlayerAnimator {
     this.fullW = spring(this.fullW, this.full ? 1 : 0, dt, this.full?.name.startsWith('turn_') ? 0.06 : 0.08);
     if (this.full?.name.startsWith('turn_') && this.fullW > 0.9) this.fullW = 1; // turn clips own the body (feet planted)
     this.upperW = spring(this.upperW, i.carry !== 'none' || this.upperShot ? 1 : 0, dt, hlUp);
+    if (this.snapUp && (i.carry !== 'none' || this.upperShot)) this.upperW = 1;
 
     // ---- per-action springs, then renormalise per group
     let sumLoco = 0;
@@ -349,11 +356,12 @@ export class PlayerAnimator {
       if (a.meta.speed !== undefined) a.t = loco.get(name) ?? 0;
       else if (a.meta.upperBody) a.t = this.upperShot ? (name === this.upperShot ? 1 : 0) : (carry.get(name) ?? 0);
       else a.t = this.full?.name === name ? 1 : 0;
-      a.w = spring(a.w, a.t, dt, a.meta.upperBody ? hlUp : hlLoco);
+      a.w = a.meta.upperBody && this.snapUp ? a.t : spring(a.w, a.t, dt, a.meta.upperBody ? hlUp : hlLoco);
       if (a.w < 1e-3 && a.t === 0) a.w = 0;
       if (a.meta.speed !== undefined) sumLoco += a.w;
       else if (a.meta.upperBody) sumUp += a.w;
     }
+    this.snapUp = false;
     // ---- shared phase for moving loops (φ advances by the weighted cadence)
     // One time scale for the blend: actual speed / blended authored speed (clamped), so planted feet stay planted
     // Phase rate: each loop's own speed-matched rate, weighted (exact whenever one clip dominates)

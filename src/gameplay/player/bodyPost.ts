@@ -1,6 +1,7 @@
-import { Object3D, Quaternion, Vector3 } from 'three';
+import { Euler, Object3D, Quaternion, Vector3 } from 'three';
 import { Group, groups } from '../../engine/physics';
 import { animPost as P } from '../../content/data/anim';
+import { handling as H } from '../../content/data/weapons';
 import type { Ctx } from '../ctx';
 import type { PlayerAnimator } from '../animstand/locomotion';
 import { reach } from '../animstand/ik';
@@ -18,6 +19,10 @@ import { throwPose as TP } from '../../content/data/throwables';
 const DEG = Math.PI / 180;
 const UP = new Vector3(0, 1, 0);
 const _q = new Quaternion();
+const _gq = new Quaternion();
+const _ge = new Euler();
+const _gd = new Vector3();
+const _gw = new Vector3();
 const _pq = new Quaternion();
 const _a = new Vector3();
 const _b = new Vector3();
@@ -235,6 +240,7 @@ export class BodyPost {
 
     // ---- arms: support hand on the handguard, throwable hold pose
     if (!p.dead && !p.inVehicle) {
+      this.aimAlign(raise);
       this.supportHand(raise);
       this.throwHold(bodyYaw);
     }
@@ -302,6 +308,32 @@ export class BodyPost {
    * are short for the gun, so the left shoulder comes forward (clavicle) and the wrist takes the farthest point along the
    * barrel, from the gun's SOCKET_support back toward the receiver, that the arm reaches with a slight bend.
    */
+  /**
+   * TP aim align: turn the right forearm + wrist so the raised gun's barrel points at the aim point. The barrel is read
+   * from the hand socket and the grip rotation without the kick tilt, so the recoil kick still shows on top.
+   */
+  private aimAlign(raise: number) {
+    const w = this.ctx.weapons;
+    const k = P.tpAimAlign * raise;
+    if (k < 0.01 || !this.handR || !w.item || w.isMelee || w.reload || w.switchPhase !== 'none') return;
+    if (this.ctx.melee.phase !== 'idle' || this.ctx.throwables?.holding || this.ctx.player.usingItem) return;
+    const gun = this.ctx.playerChar.hand.children.find((c) => c.visible);
+    if (!gun?.parent) return;
+    gun.parent.updateWorldMatrix(true, false);
+    gun.parent.getWorldQuaternion(_gq).multiply(_q.setFromEuler(_ge.set(H.gripRot[0], H.gripRot[1], H.gripRot[2])));
+    _gd.set(0, 0, -1).applyQuaternion(_gq); // barrel forward (gun -Z) without the kick
+    gun.parent.getWorldPosition(_gw);
+    _gw.subVectors(w.aimTarget, _gw);
+    if (_gw.lengthSq() < 1) return; // aim point inside the gun's reach: nothing sensible to point at
+    _gw.normalize();
+    const ang = Math.min(_gd.angleTo(_gw), P.tpAimAlignMaxDeg * DEG) * k;
+    if (ang < 1e-3) return;
+    _ax.crossVectors(_gd, _gw).normalize();
+    const f = this.foreR ? P.tpAimAlignForearm : 0;
+    if (this.foreR) rotateWorld(this.foreR, _ax, ang * f);
+    rotateWorld(this.handR, _ax, ang * (1 - f));
+  }
+
   private supportHand(raise: number) {
     const w = this.ctx.weapons;
     if (!this.armL || !this.foreL || !this.handL || !w.item || w.isMelee || w.def?.class === 'pistol' || w.reload || w.switchPhase !== 'none') return;

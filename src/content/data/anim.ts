@@ -127,6 +127,11 @@ export const animPost = {
   turnTriggerDeg: 80,
   // Third-person support hand (audit A13): the rifle clips put the left hand at the AK's mag well; two-bone IK moves the
   // wrist to the held gun's SOCKET_support (handguard / pump) plus this offset (gun-local m: x right, y up, z back)
+  // TP aim align: with the gun raised, the right forearm + wrist turn the barrel onto the aim point (the retargeted
+  // aim_rifle clip points rifles ~16° left and ~20° up, so the muzzle and its flash sat behind the hero's head)
+  tpAimAlign: 1, // 0 = off .. 1 = full correction
+  tpAimAlignMaxDeg: 35, // larger errors are only corrected this far
+  tpAimAlignForearm: 0.5, // share of the turn done at the forearm (the rest at the wrist)
   tpSupportOffset: [-0.02, -0.09, 0.03] as [number, number, number],
   tpSupportPole: [-0.4, -1, 0] as [number, number, number], // elbow pulled down and out (body space: x right, y up, z forward)
   tpSupportProtractDeg: 24, // left clavicle swung forward so the arm reaches further down the handguard

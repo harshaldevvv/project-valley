@@ -119,6 +119,10 @@ export class Weapons {
   private pendingFlash = false;
   private flashDir = new Vector3();
   private aimHit = new Vector3();
+  /** Where the shot would land this step (world); the TP aim-align in bodyPost points the barrel at it. */
+  get aimTarget(): Readonly<Vector3> {
+    return this.aimHit;
+  }
   private models = new Map<string, { tp: WeaponModel; fp: WeaponModel }>();
   readonly fpHolder = new Object3D(); // child of the camera (legacy viewmodel, no arms)
   readonly vm = new Viewmodel();
@@ -393,10 +397,15 @@ export class Weapons {
       this.stepReload(dt);
       // Trigger
       const auto = this.fireMode() === 'auto';
-      if (c.pressed('fire')) this.semiBuffered = this.ctx.rig.firstPerson || this.raiseT >= BF.fireReady ? 0.12 : 0.25; // covers the raise
+      if (c.pressed('fire')) this.semiBuffered = this.ctx.rig.firstPerson || BF.fireSnap || this.raiseT >= BF.fireReady ? 0.12 : 0.25; // covers the raise
       else this.semiBuffered -= dt;
       const pull = auto ? c.down('fire') || this.semiBuffered > 0 : this.semiBuffered > 0; // a quick tap still fires while the gun comes up
       const sprintOk = this.sinceSprint * 1000 >= def.sprintToFireMs;
+      // TP fire snap: a trigger pull that can fire brings the gun straight up (pose snaps, the fire clip's kick covers it)
+      if (BF.fireSnap && !this.ctx.rig.firstPerson && pull && this.raiseT < 1 && this.cooldown <= 0 && this.ready && sprintOk && !p.sprinting && !this.ctx.throwables?.holding) {
+        this.raiseT = 1;
+        this.ctx.playerAnim?.snapUpper();
+      }
       const raisedOk = this.ctx.rig.firstPerson || this.raiseT >= BF.fireReady; // TP: the barrel comes up first (~0.1 s)
       if (pull && this.cooldown <= 0 && this.ready && sprintOk && !p.sprinting && raisedOk && !this.ctx.throwables?.holding) {
         this.semiBuffered = 0;
@@ -697,6 +706,33 @@ export class Weapons {
   }
 
   // --------------------------------------------------------------- rendering
+  /**
+   * Muzzle flash, smoke, casing and tracer for a shot fired this step, at the rendered muzzle. Third person calls this
+   * after the hero's pose is updated (index.ts), so the flash sits on this frame's barrel, not last frame's.
+   */
+  shotFx() {
+    const ctx = this.ctx;
+    const m = this.item ? this.models.get(this.item.defId) : undefined;
+    if (!this.pendingFlash || !m) return;
+    const fp = ctx.rig.firstPerson && !ctx.player.inVehicle;
+    const p = ctx.player;
+    this.pendingFlash = false;
+    const muz = (fp ? m.fp : m.tp).muzzle;
+    muz.getWorldPosition(_muz);
+    const wfx = weaponFx[this.item!.defId];
+    const ads = fp && this.adsEased > 0.5;
+    ctx.fx.muzzle(_muz, this.flashDir, (wfx?.flashLen ?? 0.3) * (fp ? 0.8 : 1.4) * (this.muzzleAtt?.flashMul ?? 1), ads);
+    // Smoke: every Nth shot of a burst, a little ahead of the barrel and never right in the lens
+    _p.copy(_muz).addScaledVector(this.flashDir, 0.25);
+    if (wfx && !ads && this.shotIdx % wfx.smokeEvery === 0 && _p.distanceTo(ctx.game.camera.position) > 1.0) ctx.fx.smokePuff(_p, this.flashDir, this.def?.class === 'pistol' ? 1 : 2);
+    _r.crossVectors(this.flashDir, UP).normalize();
+    _u.crossVectors(_r, this.flashDir);
+    (fp ? m.fp : m.tp).root.getWorldPosition(_p);
+    if (wfx?.casing) ctx.fx.casing(_p.addScaledVector(UP, 0.06).addScaledVector(this.flashDir, 0.12).addScaledVector(_r, 0.03), _r, _u, _n.copy(this.flashDir).negate(), p.curr.y, wfx.casing === 'hull');
+    // Tracers: every Nth round and always the first shot of a burst
+    if (wfx && wfx.tracerEvery > 0 && (this.shotIdx === 1 || this.shotsFired % wfx.tracerEvery === 0)) ctx.fx.tracer(_muz, this.aimHit, ctx.game.camera.position);
+  }
+
   render(_alpha: number, dt: number) {
     const ctx = this.ctx;
     const fp = ctx.rig.firstPerson && !ctx.player.inVehicle;
@@ -840,24 +876,8 @@ export class Weapons {
       this.trailOn = false;
     }
 
-    // Visual muzzle flash/tracer/shell/smoke at the rendered muzzle
-    if (this.pendingFlash && m) {
-      this.pendingFlash = false;
-      const muz = (fp ? m.fp : m.tp).muzzle;
-      muz.getWorldPosition(_muz);
-      const wfx = weaponFx[this.item!.defId];
-      const ads = fp && this.adsEased > 0.5;
-      ctx.fx.muzzle(_muz, this.flashDir, (wfx?.flashLen ?? 0.3) * (fp ? 0.8 : 1.4) * (this.muzzleAtt?.flashMul ?? 1), ads);
-      // Smoke: every Nth shot of a burst, a little ahead of the barrel and never right in the lens
-      _p.copy(_muz).addScaledVector(this.flashDir, 0.25);
-      if (wfx && !ads && this.shotIdx % wfx.smokeEvery === 0 && _p.distanceTo(ctx.game.camera.position) > 1.0) ctx.fx.smokePuff(_p, this.flashDir, this.def?.class === 'pistol' ? 1 : 2);
-      _r.crossVectors(this.flashDir, UP).normalize();
-      _u.crossVectors(_r, this.flashDir);
-      (fp ? m.fp : m.tp).root.getWorldPosition(_p);
-      if (wfx?.casing) ctx.fx.casing(_p.addScaledVector(UP, 0.06).addScaledVector(this.flashDir, 0.12).addScaledVector(_r, 0.03), _r, _u, _n.copy(this.flashDir).negate(), p.curr.y, wfx.casing === 'hull');
-      // Tracers: every Nth round and always the first shot of a burst
-      if (wfx && wfx.tracerEvery > 0 && (this.shotIdx === 1 || this.shotsFired % wfx.tracerEvery === 0)) ctx.fx.tracer(_muz, this.aimHit, ctx.game.camera.position);
-    }
+    // Visual muzzle flash/tracer/shell/smoke: first person here; third person after the hero's pose (index.ts calls shotFx)
+    if (fp) this.shotFx();
   }
 }
 

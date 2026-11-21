@@ -203,6 +203,7 @@ export async function installGameplay(game: Game): Promise<void> {
         bodyAnim.update(dt);
         post?.apply(dt, by, raise);
       } else applyPose(body);
+      ctx.weapons.shotFx(); // TP flash / casing / tracer on this frame's posed barrel (FP already spawned them)
       perf.end('anim');
       perf.begin('ui');
       ctx.hud.render(dt);
