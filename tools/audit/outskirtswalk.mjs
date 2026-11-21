@@ -70,6 +70,22 @@ async function walkTo(wps, label) {
   console.log(`${label}: ${stuck ? 'STUCK trying ' + JSON.stringify(stuck) : 'ok'}; stall ticks ${st.length}, spots ${JSON.stringify(uniq.slice(0, 6))}`);
 }
 
+// Aim the camera through the door (the E target is picked by aim, and a car trunk sits next to the grocery door), press E until the
+// door reads "Close door" (3 tries), so a door that failed to open shows as such instead of as a pile of stall ticks against its leaf.
+async function openDoor(ix, iz) {
+  const near = () => ev(() => { const g = window.__gp.ctx.game, p = g.player.position; return g.interact.all.filter((i) => Math.hypot(i.position.x - p.x, i.position.y - (p.y + 1.2), i.position.z - p.z) < i.radius).map((i) => i.prompt()); });
+  let pr = [];
+  for (let k = 0; k < 3; k++) {
+    await ev(([x, z]) => { const p = window.__gp.ctx.player; window.__gp.setLook(Math.atan2(-(x - p.curr.x), -(z - p.curr.z)), 0); }, [ix, iz]);
+    await page.waitForTimeout(300);
+    await page.keyboard.down('KeyE'); await page.waitForTimeout(600); await page.keyboard.up('KeyE'); await page.waitForTimeout(1200);
+    pr = await near();
+    if (pr.includes('Close door')) return pr;
+  }
+  console.log('DOOR DID NOT OPEN, prompts', JSON.stringify(pr));
+  return pr;
+}
+
 if (mode === 'walk' || mode === 'all') {
   await ev(([z]) => window.__gp.teleport(0, z, Math.PI), [process.env.SKIP ? 198 : 92]);
   await page.waitForTimeout(1500);
@@ -105,14 +121,12 @@ if (mode === 'town' || mode === 'all') {
   await ev(() => window.__gp.teleport(-72, 202, 0));
   await page.waitForTimeout(1500);
   await walkTo([[-72, 180], [-72, 160], [-72, 138], [-90, 134], [-120, 134], [-140, 134]], 'Mill Road into Dunmore, Main Street to the church');
-  const hold = async () => { await page.keyboard.down('KeyE'); await page.waitForTimeout(600); await page.keyboard.up('KeyE'); await page.waitForTimeout(1200); };
   const prompts = () => ev(() => { const g = window.__gp.ctx.game, p = g.player.position; return g.interact.all.filter((i) => Math.hypot(i.position.x - p.x, i.position.y - (p.y + 1.2), i.position.z - p.z) < i.radius).map((i) => i.prompt()); });
-  for (const [name, dx, dz, ix, iz] of [['pharmacy', -88, 128.7, -88, 124], ['police station', -119, 128.7, -119, 124], ['grocery', -88, 139.3, -88, 143.5], ['motel room 1', -117.5, 139.3, -117.5, 143.5]]) {
+  for (const [name, dx, dz, ix, iz] of [['pharmacy', -88, 128.7, -88, 124], ['police station', -119, 128.7, -119, 124], ['grocery', -88, 139.3, -88, 143.5], ['motel room 1', -117.5, 139.3, -117.5, 143.5], ['hardware store', -99.3, 128.7, -99.3, 124]]) {
     await ev(([x, z, yaw]) => window.__gp.teleport(x, z, yaw), [dx, dz, name === 'grocery' || name.startsWith('motel') ? Math.PI : 0]);
     await page.waitForTimeout(700);
     const p0 = await prompts();
-    await hold();
-    const p1 = await prompts();
+    const p1 = await openDoor(ix, iz);
     await walkTo([[ix, iz]], 'through the ' + name + ' door');
     console.log('door prompts', name, JSON.stringify(p0), '->', JSON.stringify(p1));
   }
@@ -121,14 +135,12 @@ if (mode === 'outpost' || mode === 'all') {
   await ev(() => window.__gp.teleport(93.5, 163, 0));
   await page.waitForTimeout(1500);
   await walkTo([[93.5, 140], [93.5, 118], [104, 118], [114, 118], [127, 116], [127, 114.2]], 'farm road to the outpost gate and the barracks');
-  const hold = async () => { await page.keyboard.down('KeyE'); await page.waitForTimeout(600); await page.keyboard.up('KeyE'); await page.waitForTimeout(1200); };
   const prompts = () => ev(() => { const g = window.__gp.ctx.game, p = g.player.position; return g.interact.all.filter((i) => Math.hypot(i.position.x - p.x, i.position.y - (p.y + 1.2), i.position.z - p.z) < i.radius).map((i) => i.prompt()); });
   for (const [name, dx, dz, ix, iz] of [['outpost barracks', 127, 113.4, 126.4, 110.4], ['outpost armory', 141.6, 112.3, 141.6, 109]]) {
     await ev(([x, z]) => window.__gp.teleport(x, z, 0), [dx, dz]);
     await page.waitForTimeout(700);
     const p0 = await prompts();
-    await hold();
-    const p1 = await prompts();
+    const p1 = await openDoor(ix, iz);
     await walkTo([[ix, iz]], 'through the ' + name + ' door');
     console.log('door prompts', name, JSON.stringify(p0), '->', JSON.stringify(p1));
   }
