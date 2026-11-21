@@ -111,7 +111,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   run(c, 'mesh-site-fence-run', 4, 14, 134, 38, 134);
   run(c, 'mesh-site-fence-run', 4, 38, 134, 38, 112);
   for (const [x, z] of [[-4.6, 115], [-3.4, 117], [4.8, 117], [3.4, 119.5], [-1, 135.5]]) add(c, 'traffic-cone', x, z, 0, { solid: false });
-  for (const z of [110, 116, 122]) add(c, 'minefield-warning-sign', -32, z, Math.PI / 2, { solid: false });
+  for (const z of [110, 116, 122]) add(c, 'minefield-warning-sign', -32, z, Math.PI / 2, { boxes: [[0, 0.5, 0, 0.28, 0.5, 0.06]] });
   add(c, 'oil-drum', -19, 126, 0);
   add(c, 'oil-drum', -18.3, 126.6, 0);
   add(c, 'salvage-crate', -21.4, 117.6, 0.3);
@@ -145,7 +145,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   add(c, 'suburban-pickup-truck', -22, 142, -1.45);
   add(c, 'family-crossover-suv', -9.2, 188.4 + MAPLE_DZ, -0.5, { surf: 'metal' });
   add(c, 'campsite-picnic-table', -36.5, 163, 0.4);
-  for (const [x, z, a] of [[-37.5, 168, 0], [-36.6, 168.7, 0.4], [-38.1, 169.2, 1]] as const) add(c, 'tire', x, z, a, { solid: false });
+  for (const [x, z, a] of [[-37.5, 168, 0], [-36.6, 168.7, 0.4], [-38.1, 169.2, 1]] as const) add(c, 'tire', x, z, a);
   add(c, 'oil-drum', -41.5, 152, 0);
   add(c, 'oil-drum', -40.8, 152.7, 0);
   add(c, 'oil-drum', -41.7, 153.2, 0);
@@ -164,13 +164,13 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   const rectM = (chunk: string, k: string, len: number, x0: number, z0: number, x1: number, z1: number, o: Partial<Placed> = {}, skip: Record<string, number[]> = {}) => rect(chunk, k, len, x0, z0 + M, x1, z1 + M, o, skip);
   const c = 'maple';
   const n = 'maple_n', s = 'maple_s';
-  addM(n, 'two-storey-family-house', -30, 171, 0);
-  addM(n, 'single-storey-ranch-house', -94, 172, 0);
+  addM(n, 'two-storey-family-house', -30, 171, 0, { shrink: 0.97 });
+  addM(n, 'single-storey-ranch-house', -94, 172, 0, { shrink: 0.97 });
   addM(n, 'split-level-house', -122, 171, 0);
-  addM(s, 'detached-garage', -62, 203, Math.PI);
+  addM(s, 'detached-garage', -62, 203, Math.PI, { shrink: 0.97 });
   addM(s, 'backyard-garden-shed', -73.5, 209, Math.PI);
   addM(s, 'log-cabin', -93, 201, Math.PI);
-  addM(s, 'detached-garage', -118, 202, Math.PI);
+  addM(s, 'detached-garage', -118, 202, Math.PI, { shrink: 0.97 });
   // frontage fences with a gap at each driveway, side fences, back fences
   runM(n, 'picket-fence-run', 4, -42, 179.5, -22, 179.5, {}, []);
   runM(n, 'picket-fence-run', 4, -80, 179.5, -50, 179.5, {}, [1, 2, 4, 5]); // 1, 2: Mill Road crosses here
@@ -197,7 +197,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   addM(c, 'backyard-barbecue-grill', -64, 213, 3.3);
   addM(c, 'wheelbarrow', -88, 213, 0.9);
   for (const x of [-24, -45, -66, -90, -112, -130]) addM(c, 'mailbox', x, 180.6, 0, { solid: false });
-  for (const x of [-30, -54, -84, -112]) addM(c, 'metal-trash-can', x + 6, 181, 0.4, { solid: false });
+  for (const x of [-30, -54, -84, -112]) addM(c, 'metal-trash-can', x + 6, 181, 0.4);
   for (const x of [-18, -48, -78, -108]) addM(c, 'station-lamp-post', x, 180.8, 0);
   for (const x of [-30, -64, -98, -128]) addM(c, 'station-lamp-post', x, 191.4, Math.PI);
   addM(c, 'fire-hydrant', -38, 180.6, 0);
@@ -205,7 +205,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   addM(c, 'collapse-rubble-mound', -112, 196, 0.4);
   // school at the west end of the street
   const sc = 'school';
-  addM(sc, 'one-room-schoolhouse', -148, 186, Math.PI / 2);
+  addM(sc, 'one-room-schoolhouse', -148, 186, Math.PI / 2, { shrink: 0.97 });
   addM(sc, 'yellow-school-bus', -126, 197.5, 1.75);
   rectM(sc, 'chain-link-fence-run', 4, -156, 166, -138, 206, {}, { e: [3, 4] });
   addM(sc, 'street-tree', -146, 170, 0);
@@ -215,7 +215,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
 // ---- Hollow Creek Farm (tier 2): barn, silos, coop, paddock, fields
 {
   const c = 'farm', cf = 'farm_field';
-  add(c, 'red-barn', 118, 142, 0);
+  add(c, 'red-barn', 118, 142, 0, { shrink: 0.97 });
   add(c, 'rolled-plate-silo', 127, 140, 0);
   add(c, 'grain-silo', 132.5, 146, 0);
   add(c, 'chicken-coop', 113, 184, 0.3);
@@ -231,7 +231,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   add(c, 'scarecrow', 104, 208, 3.4);
   for (const [x, z, a] of [[129, 177, 0.3], [133, 179.5, 1.2], [126, 181.5, 2.4], [131, 184, 3.3]] as const) add(c, 'haystack', x, z, a);
   for (const [x, z, a] of [[111, 150, 0.2], [112.3, 150.6, 0.9], [111.6, 148.8, 0.5], [108.6, 149.5, 1.4]] as const) add(c, 'hay-bale', x, z, a);
-  for (const [x, z, a] of [[96.5, 186.5, 0.4], [97.2, 187.2, 1.1]] as const) add(c, 'feed-sack', x, z, a, { solid: false });
+  for (const [x, z, a] of [[96.5, 186.5, 0.4], [97.2, 187.2, 1.1]] as const) add(c, 'feed-sack', x, z, a, { boxes: [[0, 0.33, 0, 0.24, 0.33, 0.17]] });
   add(c, 'firewood-stack', 82, 181, 1.57);
   add(c, 'fallen-log', 136, 160, 0.6);
   add(c, 'hollow-log', 150, 205, 1.3);
@@ -243,7 +243,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   add(c, 'mailbox', 88, 168.4, 0, { solid: false });
   // paddock: split-rail fence with a gate on the south side
   rect(c, 'split-rail-fence-run', 2, 126, 150, 150, 172, {}, { s: [5, 6] });
-  add(c, 'farm-gate', 138, 172, 0, { solid: false });
+  add(c, 'farm-gate', 136.15, 171, Math.PI / 2); // swung open into the paddock, the 4 m gap stays clear
   // farmhouse yard fence
   run(c, 'picket-fence-run', 4, 78, 176.5, 100, 176.5, {}, [2, 3]);
   // orchard
@@ -272,7 +272,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   add(c, 'camp-water-jug', 45.4, 273.2, 0.4, { solid: false });
   add(c, 'camping-lantern', 47, 275, 0, { solid: false, y: 0.75 });
   add(c, 'two-burner-camp-stove', 28.3, 264, 0, { solid: false, y: 0.75 });
-  add(c, 'hammock-on-posts', 50, 260, 0.4, { solid: false });
+  add(c, 'hammock-on-posts', 50, 260, 0.4);
   add(c, 'forest-outhouse', 15, 270, 1.57);
   add(c, 'portable-toilet', 67, 258, -0.4);
   add(c, 'log-store', 58, 255, 0.1);
@@ -289,22 +289,22 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
 // ---- Crash site (medical wreck, tier 3)
 {
   const c = 'crash';
-  add(c, 'air-ambulance-helicopter', -66, 262, 0.5, { shrink: 0.3 });
+  add(c, 'air-ambulance-helicopter', -66, 262, 0.5, { boxes: [[0.1, 1.0, 1.7, 1.25, 1.0, 3.0], [0, 1.6, -3.9, 0.3, 0.9, 2.6]] }); // cabin, tail boom
   add(c, 'sideline-medical-tent', -52, 252, -0.3);
   add(c, 'salvage-crate', -58, 254.5, 0.4);
   add(c, 'salvage-crate', -57.8, 256, 1.0);
   add(c, 'loot-crate', -79, 266, 0.1);
   add(c, 'ammo-crate', -78.7, 267.4, 0.9, { solid: false });
-  add(c, 'scrap-built-aeroplane', -98, 244, 2.2, { shrink: 0.3 });
+  add(c, 'scrap-built-aeroplane', -98, 244, 2.2, { boxes: [[0, 1.0, 0, 0.5, 1.0, 3.0], [0, 0.9, 0.74, 4.0, 0.5, 0.75], [0.25, 0.8, 2.3, 1.25, 0.8, 0.75]] }); // fuselage, wings, nose
   add(c, 'field-barricade', -48, 262, 1.4);
   add(c, 'field-barricade', -49, 268, 1.7);
-  add(c, 'grave-cross', -46, 246, 0.2, { solid: false });
-  add(c, 'grave-cross', -44.4, 246.6, 0.5, { solid: false });
-  add(c, 'grave-cross', -42.8, 246, -0.1, { solid: false });
+  add(c, 'grave-cross', -46, 246, 0.2, { boxes: [[0, 0.6, -0.05, 0.1, 0.6, 0.1]] });
+  add(c, 'grave-cross', -44.4, 246.6, 0.5, { boxes: [[0, 0.6, -0.05, 0.1, 0.6, 0.1]] });
+  add(c, 'grave-cross', -42.8, 246, -0.1, { boxes: [[0, 0.6, -0.05, 0.1, 0.6, 0.1]] });
   add(c, 'collapse-rubble-mound', -74, 252, 0.8);
-  add(c, 'minefield-warning-sign', -60, 248, 0, { solid: false });
-  add(c, 'minefield-warning-sign', -75, 270, 2, { solid: false });
-  add(c, 'minefield-warning-sign', -50, 275, 1, { solid: false });
+  add(c, 'minefield-warning-sign', -60, 248, 0, { boxes: [[0, 0.5, 0, 0.28, 0.5, 0.06]] });
+  add(c, 'minefield-warning-sign', -75, 270, 2, { boxes: [[0, 0.5, 0, 0.28, 0.5, 0.06]] });
+  add(c, 'minefield-warning-sign', -50, 275, 1, { boxes: [[0, 0.5, 0, 0.28, 0.5, 0.06]] });
   add(c, 'brass-water-tower', -122, 240, 0.4);
 }
 
@@ -315,8 +315,8 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   add(c, 'motel-sign', 12, 224, Math.PI / 2);
   add(c, 'suburban-pickup-truck', 30, 225, 0.3);
   add(c, 'garbage-truck', 52, 229, 1.6);
-  add(c, 'newspaper-box', 24, 209, 0, { solid: false });
-  add(c, 'metal-trash-can', 24.6, 210.2, 0.2, { solid: false });
+  add(c, 'newspaper-box', 24, 209, 0);
+  add(c, 'metal-trash-can', 24.6, 210.2, 0.2);
   add(c, 'campsite-picnic-table', 54, 213, 0.1);
   add(c, 'campsite-picnic-table', 54, 218, -0.1);
   add(c, 'street-lamp', 8, 209, Math.PI);
@@ -364,7 +364,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
 
 // ---------------------------------------------------------------- enterable buildings
 export interface Opening { u: number; w: number; sill: number; top: number }
-export interface Furn { k: string; u: number; v: number; yaw?: number; s?: number; y?: number; solid?: boolean }
+export interface Furn { k: string; u: number; v: number; yaw?: number; s?: number; y?: number; solid?: boolean; boxes?: Placed['boxes'] }
 export interface LocalContainer {
   type: string;
   theme: string;
@@ -427,12 +427,16 @@ export const BUILDINGS: BuildingDef[] = [
       { k: 'alcove-bookcase', u: -4.1, v: 3.0, yaw: Math.PI / 2 }, { k: 'arc-floor-lamp', u: -4.0, v: 0.3 }, { k: 'fridge-freezer', u: 3.95, v: -0.25, yaw: 0 },
       { k: 'cardboard-delivery-box', u: 3.8, v: 2.9, yaw: 0.4 }, { k: 'cardboard-delivery-box', u: 3.3, v: 3.1, yaw: 1.1 },
       { k: 'bed', u: 3.0, v: -2.2, yaw: 0 }, { k: 'dining-chair', u: -0.6, v: -1.6, yaw: 2.4 },
+      // lived-in clutter: a packed bag by the bed, a chair against the back wall, bin by the fridge, a box by the bookcase
+      { k: 'kit-bag', u: 1.8, v: -1.35, yaw: 0.4 }, { k: 'dining-chair', u: -1.6, v: -3.05, yaw: 0.3 }, { k: 'metal-trash-can', u: 3.9, v: 1.0 },
+      { k: 'cardboard-delivery-box', u: -3.3, v: 3.0, yaw: 0.7 },
     ],
     containers: [
       { type: 'kitchen_cupboard', theme: 'house', u: 2.5, v: -0.4, yaw: 0, model: 'counter' },
       { type: 'nightstand', theme: 'house', u: 1.9, v: -3.1, yaw: 0, model: 'bedside-table' },
       { type: 'wardrobe', theme: 'house', u: -3.9, v: -3.0, yaw: 0, model: 'dorm-wardrobe' },
       { type: 'food_cupboard', theme: 'house', u: -0.8, v: -3.1, yaw: 0, model: 'alcove-bookcase' },
+      { type: 'nightstand', theme: 'house', u: -4.15, v: 1.0, yaw: Math.PI / 2, model: 'bedside-table' }, // end table by the sofa
     ],
   },
   {
@@ -443,18 +447,20 @@ export const BUILDINGS: BuildingDef[] = [
     left: [win(-1.6, 1.2), win(2.0, 1.2)],
     right: [win(0.2, 1.2), win(2.4, 1.2)],
     partition: { v: -0.2, open: [door(-0.8, 1.0)] },
-    porch: true, chimney: [3.0, -2.4], roofBreak: { side: 'front', u0: -1.0, u1: 3.0 },
+    porch: true, chimney: [3.85, 1.5], roofBreak: { side: 'front', u0: -1.0, u1: 3.0 }, // chimney between the right windows (it stood in the back door)
     furniture: [
       { k: 'sofa', u: 2.4, v: 0.3, yaw: Math.PI }, { k: 'area-rug', u: 2.4, v: 1.5, solid: false }, { k: 'bistro-table', u: -2.6, v: 2.4 },
       { k: 'dining-chair', u: -3.3, v: 2.6, yaw: 1.4 }, { k: 'dining-chair', u: -1.9, v: 2.5, yaw: -1.7 }, { k: 'fridge-freezer', u: -3.9, v: 0.35, yaw: 0 },
       { k: 'arc-floor-lamp', u: 3.8, v: 3.1 }, { k: 'filing-cabinet', u: 3.9, v: 0.2, yaw: -Math.PI / 2 },
       { k: 'bed', u: -3.0, v: -2.2, yaw: 0 }, { k: 'bed', u: 0.9, v: -2.2, yaw: 0 }, { k: 'dining-chair', u: 3.2, v: -1.4, yaw: 3.3 },
+      { k: 'kit-bag', u: -1.7, v: -1.2, yaw: 0.3 }, { k: 'cardboard-delivery-box', u: 3.75, v: 2.3, yaw: 0.5 }, { k: 'metal-trash-can', u: -3.9, v: 1.3 },
     ],
     containers: [
       { type: 'kitchen_cupboard', theme: 'house', u: -2.0, v: 0.1, yaw: 0, model: 'counter' },
       { type: 'nightstand', theme: 'house', u: -1.7, v: -3.1, yaw: 0, model: 'bedside-table' },
       { type: 'wardrobe', theme: 'house', u: 3.7, v: -3.0, yaw: 0, model: 'dorm-wardrobe' },
-      { type: 'bathroom_cabinet', theme: 'house', u: 2.4, v: -3.1, yaw: 0, model: 'medicine-cabinet' },
+      { type: 'bathroom_cabinet', theme: 'house', u: -0.5, v: -3.25, yaw: 0, model: 'medicine-cabinet' }, // between the beds (it stood in the back door)
+      { type: 'nightstand', theme: 'house', u: -3.95, v: -0.75, yaw: Math.PI, model: 'bedside-table' },
     ],
   },
   {
@@ -464,19 +470,21 @@ export const BUILDINGS: BuildingDef[] = [
     back: [win(-2.0), door(3.0, 1.0), win(0.8)],
     left: [win(-1.8, 1.2), win(1.8, 1.2)],
     right: [win(-1.8, 1.2), win(1.8, 1.2)],
-    partition: { v: -0.6, open: [door(-2.0, 1.0), door(2.4, 1.0)] },
+    partition: { v: -0.6, open: [door(-2.0, 1.0), door(1.6, 1.0)] }, // right door clear of the kitchen counter
     porch: true, chimney: [-3.4, 0.2], roofBreak: { side: 'back', u0: 0.5, u1: 3.5 },
     furniture: [
-      { k: 'area-rug', u: 0, v: 1.6, solid: false }, { k: 'sofa', u: -3.0, v: 0.0, yaw: 0 }, { k: 'bistro-table', u: 1.6, v: 2.4 },
+      { k: 'area-rug', u: 0, v: 1.6, solid: false }, { k: 'sofa', u: -2.4, v: 2.0, yaw: Math.PI / 2 }, { k: 'bistro-table', u: 1.6, v: 2.4 }, // sofa faces the rug (it stood in the chimney)
       { k: 'dining-chair', u: 0.9, v: 2.4, yaw: 1.5 }, { k: 'dining-chair', u: 2.3, v: 2.5, yaw: -1.6 }, { k: 'fridge-freezer', u: 4.0, v: 0.0, yaw: 0 },
       { k: 'alcove-bookcase', u: -4.4, v: 2.6, yaw: Math.PI / 2 }, { k: 'arc-floor-lamp', u: -3.9, v: 3.2 },
-      { k: 'bed', u: -3.2, v: -2.6, yaw: 0 }, { k: 'bed', u: 3.4, v: -2.6, yaw: 0 }, { k: 'cardboard-delivery-box', u: 0.4, v: -2.9, yaw: 0.2 },
+      { k: 'bed', u: -3.2, v: -2.6, yaw: 0 }, { k: 'bed', u: 3.85, v: -1.72, yaw: 0, s: 0.92 }, { k: 'cardboard-delivery-box', u: 0.4, v: -2.9, yaw: 0.2 }, // right bed clear of the back door
+      { k: 'camping-lantern', u: 1.6, v: 2.4, y: 0.75 }, { k: 'metal-trash-can', u: 4.15, v: 1.3 }, { k: 'feed-sack', u: -4.2, v: -1.0, yaw: 0.3, boxes: [[0, 0.33, 0, 0.24, 0.33, 0.17]] },
     ],
     containers: [
       { type: 'kitchen_cupboard', theme: 'farm', u: 2.9, v: 0.05, yaw: 0, model: 'counter' },
       { type: 'nightstand', theme: 'farm', u: -1.8, v: -3.3, yaw: 0, model: 'bedside-table' },
       { type: 'wardrobe', theme: 'farm', u: -0.4, v: -3.3, yaw: 0, model: 'dorm-wardrobe' },
       { type: 'nightstand', theme: 'farm', u: 1.5, v: -3.3, yaw: 0, model: 'bedside-table' },
+      { type: 'kitchen_cupboard', theme: 'farm', u: 4.2, v: 2.9, yaw: -Math.PI / 2, model: 'alcove-bookcase' }, // pantry
     ],
   },
   {
@@ -487,13 +495,16 @@ export const BUILDINGS: BuildingDef[] = [
     left: [win(-0.8, 1.2)],
     right: [win(1.6, 1.2)],
     furniture: [
-      { k: 'glass-door-drinks-fridge', u: -3.4, v: -2.7, yaw: 0 }, { k: 'vending-machine', u: 3.7, v: -2.6, yaw: 0 }, { k: 'metal-trash-can', u: 1.2, v: 2.6 },
-      { k: 'cardboard-delivery-box', u: -3.7, v: 2.5, yaw: 0.5 }, { k: 'cardboard-delivery-box', u: -3.2, v: 2.9, yaw: 1.3 },
+      { k: 'glass-door-drinks-fridge', u: -3.4, v: -2.7, yaw: 0 }, { k: 'vending-machine', u: 3.9, v: -2.3, yaw: -Math.PI / 2 }, { k: 'metal-trash-can', u: 1.2, v: 2.6 }, // vending clear of the back door
+      { k: 'cardboard-delivery-box', u: -3.95, v: 2.75, yaw: 0.5 }, { k: 'cardboard-delivery-box', u: -0.45, v: 2.85, yaw: 1.3 }, // either side of the forecourt opening
+      { k: 'glass-door-drinks-fridge', u: -2.55, v: -2.7, yaw: 0 }, { k: 'camp-cooler', u: 0.3, v: 2.5, yaw: 0 },
+      { k: 'cardboard-delivery-box', u: 1.9, v: -0.9, y: 1.06, yaw: 0.2 },
     ],
     containers: [
       { type: 'gas_shelf', theme: 'gas_station', u: -1.4, v: -0.6, yaw: 0, model: 'back-bar-shelf-unit' },
       { type: 'gas_shelf', theme: 'gas_station', u: 0.9, v: 0.9, yaw: Math.PI, model: 'back-bar-shelf-unit' },
       { type: 'gas_register', theme: 'gas_station', u: 2.9, v: -0.9, yaw: 0, y: 1.0, model: 'register' },
+      { type: 'gas_shelf', theme: 'gas_station', u: -4.07, v: 0.8, yaw: Math.PI / 2, model: 'back-bar-shelf-unit' }, // third shelf along the side wall, clear of the forecourt opening
     ],
   },
   {
@@ -504,14 +515,16 @@ export const BUILDINGS: BuildingDef[] = [
     left: [door(1.4, 1.0), win(-1.6, 1.4)],
     right: [win(0.6, 1.4)],
     furniture: [
-      { k: 'compact-hatchback', u: -1.6, v: 0.4, yaw: 0.35 }, { k: 'tire', u: 3.6, v: 2.4, solid: false }, { k: 'tire', u: 3.7, v: 2.5, y: 0.3, solid: false },
-      { k: 'oil-drum', u: 4.3, v: -0.6 }, { k: 'oil-drum', u: 4.4, v: 0.1 }, { k: 'fuel-jerrycan', u: 2.6, v: -3.1, yaw: 0.4, solid: false },
+      { k: 'compact-hatchback', u: -1.6, v: 0.4, yaw: 0.35 }, { k: 'tire', u: 4.6, v: 1.0, yaw: Math.PI / 2 }, { k: 'tyre-stack', u: 4.3, v: -1.5 }, // tyres out of the side door lane
+      { k: 'oil-drum', u: 4.3, v: -0.6 }, { k: 'oil-drum', u: 4.4, v: 0.1 }, { k: 'fuel-jerrycan', u: 1.6, v: -3.15, yaw: 0.4, solid: false },
       { k: 'filing-cabinet', u: -4.5, v: -2.8, yaw: 0 },
+      { k: 'riding-lawn-tractor', u: 2.2, v: 0.0, yaw: 0.2 }, { k: 'fuel-drum', u: -4.5, v: 2.9 }, { k: 'cardboard-delivery-box', u: 0.6, v: -3.1, yaw: 0.3 },
     ],
     containers: [
       { type: 'garage_shelf', theme: 'garage', u: -3.4, v: -3.0, yaw: 0, model: 'back-bar-shelf-unit' },
       { type: 'garage_shelf', theme: 'garage', u: -1.0, v: -3.0, yaw: 0, model: 'back-bar-shelf-unit' },
       { type: 'tool_box', theme: 'garage', u: 2.6, v: -2.9, yaw: 0.2, model: 'wooden-crate' },
+      { type: 'tool_box', theme: 'garage', u: -4.45, v: -0.3, yaw: Math.PI / 2, model: 'wooden-crate' },
     ],
   },
   {
@@ -524,11 +537,14 @@ export const BUILDINGS: BuildingDef[] = [
     furniture: [
       { k: 'hay-bale', u: -3.8, v: -2.0, yaw: 0.2 }, { k: 'hay-bale', u: -3.7, v: -0.9, yaw: -0.1 }, { k: 'hay-bale', u: -3.8, v: -1.4, yaw: 0, y: 0.52 },
       { k: 'oil-drum', u: 4.0, v: -2.4 }, { k: 'wheelbarrow', u: 1.5, v: 1.4, yaw: 0.4 }, { k: 'wooden-crate', u: 4.0, v: 1.8, yaw: 0.3 },
+      { k: 'riding-lawn-tractor', u: -1.5, v: 0.3, yaw: 0.3 }, { k: 'firewood-stack', u: -3.6, v: 1.6 }, { k: 'hay-bale', u: -2.6, v: -2.5, yaw: 0.1 },
+      { k: 'feed-sack', u: 3.0, v: -1.2, yaw: 0.4, boxes: [[0, 0.33, 0, 0.24, 0.33, 0.17]] }, { k: 'feed-sack', u: 3.5, v: -0.85, yaw: 1.2, boxes: [[0, 0.33, 0, 0.24, 0.33, 0.17]] },
     ],
     containers: [
       { type: 'farm_shed', theme: 'farm', u: -0.8, v: -2.7, yaw: 0, model: 'back-bar-shelf-unit' },
       { type: 'farm_shed', theme: 'farm', u: 1.4, v: -2.7, yaw: 0, model: 'back-bar-shelf-unit' },
       { type: 'tool_box', theme: 'farm', u: 3.1, v: -2.5, yaw: 0.1, model: 'wooden-crate' },
+      { type: 'tool_box', theme: 'farm', u: 2.95, v: 2.0, yaw: 0.2, model: 'wooden-crate' },
     ],
   },
 ];

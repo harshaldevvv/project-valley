@@ -24,7 +24,7 @@ export const TOWN_CLEAR: [number, number, number, number][] = [[-160, -72, 104, 
 export const TOWN_PLACED: Placed[] = [];
 const add = (k: string, x: number, z: number, yaw = 0, o: Partial<Placed> = {}) => TOWN_PLACED.push({ chunk: 'town', k, x, z, yaw, ...o });
 // landmarks and decor buildings
-add('brick-church', -151, 134, Math.PI / 2);
+add('brick-church', -151, 134, Math.PI / 2, { shrink: 0.97 });
 add('clock-tower', -141, 143.5, Math.PI);
 add('department-store', -130, 109.5, 0);
 add('one-storey-shop-row', -102, 145.5, Math.PI);
@@ -59,7 +59,7 @@ add('oil-drum', -82, 146, 0);
 add('construction-dumpster', -112, 151.5, 0.1);
 add('wooden-crate', -96.5, 151, 0.4);
 // fences round the back lots, north of the north row and south of the south row
-for (const x of [-80, -86, -92]) add('board-privacy-fence-run', x, 152.6, 0);
+for (const x of [-80, -86, -98]) add('board-privacy-fence-run', x, 152.6, 0); // gap behind the grocery back door (x -91.6)
 for (const x of [-141, -145, -149]) add('board-privacy-fence-run', x, 117, 0);
 
 export const TOWN_BUILDINGS: BuildingDef[] = [
@@ -70,7 +70,7 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
     back: [door(3.6, 1.0), win(-2.5)],
     left: [win(1.5)],
     right: [win(1.5)],
-    partition: { v: -3.0, open: [door(-2.0, 1.0)] },
+    partition: { v: -3.0, open: [door(3.2, 1.2)] }, // in line with the back door (at -2.0 it opened onto the shelf row)
     counter: { u: 3.0, v: 1.2, w: 3 },
     furniture: [
       { k: 'metal-trash-can', u: -4.3, v: 4.0 }, { k: 'cardboard-delivery-box', u: -4.2, v: -4.2, yaw: 0.5 }, { k: 'cardboard-delivery-box', u: 4.2, v: -4.3, yaw: 1 },
@@ -84,7 +84,7 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
       { type: 'pharmacy_shelf', theme: 'medical', u: -1.0, v: -2.4, yaw: 0, model: 'back-bar-shelf-unit' },
       { type: 'pharmacy_shelf', theme: 'medical', u: 1.4, v: -2.4, yaw: 0, model: 'back-bar-shelf-unit' },
       { type: 'medical_cabinet', theme: 'medical', u: -3.8, v: -4.3, yaw: 0, model: 'dorm-wardrobe' },
-      { type: 'bathroom_cabinet', theme: 'medical', u: 3.9, v: -4.3, yaw: 0, model: 'medicine-cabinet' },
+      { type: 'bathroom_cabinet', theme: 'medical', u: 1.9, v: -4.35, yaw: 0, model: 'medicine-cabinet' }, // moved out of the back door
       { type: 'office_desk', theme: 'office', u: 4.3, v: 0.3, yaw: -Math.PI / 2, model: 'filing-cabinet' },
       { type: 'pharmacy_shelf', theme: 'medical', u: -3.2, v: 0.6, yaw: 0, model: 'back-bar-shelf-unit' },
     ],
@@ -99,15 +99,19 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
     counter: null,
     furniture: [
       { k: 'material-pallet', u: -4.2, v: 2.0, yaw: 0.2 }, { k: 'material-pallet', u: -4.3, v: 3.4, yaw: -0.1 }, { k: 'oil-drum', u: 4.8, v: 2.4 }, { k: 'oil-drum', u: 4.9, v: 3.0 },
-      { k: 'tire', u: 4.6, v: -0.2, solid: false }, { k: 'fuel-jerrycan', u: 3.9, v: 3.6, yaw: 0.4, solid: false }, { k: 'wheelbarrow', u: -0.4, v: 2.4, yaw: 0.8 },
+      { k: 'tire', u: 4.6, v: -0.2 }, { k: 'fuel-jerrycan', u: 3.9, v: 3.6, yaw: 0.4, solid: false }, { k: 'wheelbarrow', u: -0.4, v: 2.4, yaw: 0.8 },
+      // display mower, dropped boxes
+      { k: 'riding-lawn-tractor', u: -3.0, v: -1.4, yaw: 0.5 }, { k: 'tyre-stack', u: 4.7, v: 1.2 }, { k: 'fuel-jerrycan', u: 4.1, v: 3.25, yaw: 1.2, solid: false },
+      { k: 'cardboard-delivery-box', u: -2.0, v: -3.2, yaw: 0.4 }, { k: 'cardboard-delivery-box', u: 0.8, v: 0.2, yaw: 1.4 },
     ],
     containers: [
-      { type: 'garage_shelf', theme: 'garage', u: -3.6, v: -4.1, yaw: 0, model: 'back-bar-shelf-unit' },
+      { type: 'garage_shelf', theme: 'garage', u: 3.6, v: -4.1, yaw: 0, model: 'back-bar-shelf-unit' }, // moved out of the back door
       { type: 'garage_shelf', theme: 'garage', u: -1.2, v: -4.1, yaw: 0, model: 'back-bar-shelf-unit' },
       { type: 'garage_shelf', theme: 'garage', u: 1.2, v: -4.1, yaw: 0, model: 'back-bar-shelf-unit' },
-      { type: 'tool_box', theme: 'garage', u: 4.3, v: -3.8, yaw: 0.2, model: 'wooden-crate' },
+      { type: 'tool_box', theme: 'garage', u: 4.75, v: -2.6, yaw: Math.PI / 2, model: 'wooden-crate' },
       { type: 'tool_box', theme: 'garage', u: -4.6, v: 0.0, yaw: 1.5, model: 'wooden-crate' },
       { type: 'crate_wood', theme: 'garage', u: 4.5, v: -1.2, yaw: 0.3, model: 'salvage-crate' },
+      { type: 'garage_shelf', theme: 'garage', u: 0.5, v: -1.0, yaw: 0, model: 'back-bar-shelf-unit' }, // island aisle
     ],
   },
   {
@@ -150,11 +154,11 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
     right: [win(0.5)],
     counter: { u: 3.2, v: 2.3, w: 3 },
     furniture: [
-      { k: 'glass-door-drinks-fridge', u: -3.8, v: -4.3, yaw: 0 }, { k: 'glass-door-drinks-fridge', u: -2.6, v: -4.3, yaw: 0 }, { k: 'vending-machine', u: 4.0, v: -4.2, yaw: 0 },
-      { k: 'abandoned-shopping-trolley', u: -1.0, v: 3.2, yaw: 0.6, solid: false }, { k: 'cardboard-delivery-box', u: 4.3, v: 4.0, yaw: 0.3 },
+      { k: 'glass-door-drinks-fridge', u: -3.8, v: -4.3, yaw: 0 }, { k: 'glass-door-drinks-fridge', u: -2.6, v: -4.3, yaw: 0 }, { k: 'vending-machine', u: 4.45, v: -3.0, yaw: -Math.PI / 2 }, // against the side wall, clear of the back door
+      { k: 'abandoned-shopping-trolley', u: -2.3, v: 2.5, yaw: 0.6 }, { k: 'cardboard-delivery-box', u: 4.3, v: 4.0, yaw: 0.3 },
       // stock dropped in the aisles, a second trolley on its side by the door
       { k: 'cardboard-delivery-box', u: -2.3, v: -0.3, yaw: 0.8 }, { k: 'cardboard-delivery-box', u: 0.2, v: -0.4, yaw: 2.0 },
-      { k: 'abandoned-shopping-trolley', u: -3.9, v: 3.9, yaw: 2.4, solid: false }, { k: 'metal-trash-can', u: 1.8, v: 4.4 },
+      { k: 'abandoned-shopping-trolley', u: -3.9, v: 3.9, yaw: 2.4 }, { k: 'metal-trash-can', u: 1.8, v: 4.4 },
     ],
     containers: [
       { type: 'food_cupboard', theme: 'house', u: -3.5, v: -1.6, yaw: 0, model: 'back-bar-shelf-unit' },

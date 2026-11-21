@@ -128,7 +128,7 @@ export function buildBuilding(b: BuildingDef, ctx: BuildCtx): BuildResult {
   // ---- furniture (Polyfork models via the shared pipeline) and containers
   for (const f of b.furniture) {
     const w = world(f.u, f.v);
-    items.push({ chunk: b.chunk, k: f.k, x: w.x, z: w.z, yaw: b.yaw + (f.yaw ?? 0), ...(f.s ? { s: f.s } : {}), ...(f.y ? { y: f.y } : {}), ...(f.solid === false ? { solid: false } : {}), surf: 'wood' });
+    items.push({ chunk: b.chunk, k: f.k, x: w.x, z: w.z, yaw: b.yaw + (f.yaw ?? 0), ...(f.s ? { s: f.s } : {}), ...(f.y ? { y: f.y } : {}), ...(f.solid === false ? { solid: false } : {}), ...(f.boxes ? { boxes: f.boxes } : {}), surf: 'wood' });
   }
   for (const c of b.containers) {
     const w = world(c.u, c.v);

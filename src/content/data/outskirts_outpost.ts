@@ -51,7 +51,7 @@ add('sandbag-wall-section', 104.5, 122.4, Math.PI / 2);
 add('czech-hedgehog', 100.5, 113.2, 0.5);
 add('czech-hedgehog', 99.8, 123.4, 1.3);
 add('anti-aircraft-searchlight', 105.2, 126.8, -2.2);
-for (const z of [108, 128]) add('minefield-warning-sign', 105.6, z, -Math.PI / 2, { solid: false });
+for (const z of [108, 128]) add('minefield-warning-sign', 105.6, z, -Math.PI / 2, { boxes: [[0, 0.5, 0, 0.28, 0.5, 0.06]] });
 // command post: site cabin, radio mast, a field radio on a crate, flagpole
 add('site-cabin', 115, 111.2, Math.PI / 2);
 add('antenna-mast', 120.2, 114.6, 0.3);
@@ -75,7 +75,7 @@ add('military-cargo-truck', 134.2, 123.4, 0.05);
 add('military-cargo-truck', 138.6, 123.6, -0.04);
 add('scout-jeep', 143.6, 125, 0.08);
 add('scout-jeep', 147.2, 124.8, -0.06);
-add('camouflage-net-canopy', 145.4, 125, 0, { s: 1.05, solid: false });
+add('camouflage-net-canopy', 145.4, 125, 0, { s: 1.05, boxes: [[-1.9, 1.2, -1.9, 0.08, 1.2, 0.08], [1.9, 1.2, -1.9, 0.08, 1.2, 0.08], [-1.9, 1.2, 1.9, 0.08, 1.2, 0.08], [1.9, 1.2, 1.9, 0.08, 1.2, 0.08], [-0.4, 0.6, 0.3, 0.8, 0.6, 0.9]] }); // poles, the kit stacked under it
 add('water-bowser', 149.6, 120.4, Math.PI / 2 + 0.1);
 add('ground-power-unit', 152.6, 116.4, Math.PI / 2);
 add('salvage-crate', 131.2, 118.4, 0.4);
