@@ -118,7 +118,7 @@ export const TOWN_BUILDINGS: BuildingDef[] = [
     id: 'police_station', chunk: 'police_station', poi: 'police', kind: 'shop', x: -119, z: 121.5, yaw: 0, w: 14, d: 11, h: 3.4,
     wall: '#7a8794', roof: '#3b4148', trim: '#2b4a8a', floor: '#8f918c', floorSurface: 'concrete',
     front: [win(-5.2, 1.6), win(-2.8, 1.6), door(0), win(2.8, 1.6), win(5.2, 1.6)],
-    back: [door(-5.5, 1.0), win(0)],
+    back: [door(5.2, 1.0), win(0)], // east end: at u -5.5 it opened 0.65 m from the department store's back wall
     left: [win(1.0, 1.2)],
     right: [win(1.0, 1.2)],
     partition: { v: -2.4, open: [door(4.2, 1.0)] },
