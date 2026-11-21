@@ -114,7 +114,7 @@ export const animPost = {
   meleeArmDeg: 38, // right upper arm horizontal arc on top
   meleeDropDeg: 14, // chop: the arm drops through the follow-through
   meleeSwingHL: 0.03, // s smoothing (no pop when the wind-up starts)
-  meleePauseLight: 0.07, // s the hero's swing stalls on contact (was hitstop × 0.7 ≈ 0.03, invisible)
+  meleePauseLight: 0.07, // s the hero's swing (TP) and the FP arms' knife clip stall on contact (was hitstop × 0.7 ≈ 0.03, invisible)
   meleePauseHeavy: 0.1,
   // Jog arm swing (A5): the survivor run clip at jog swings the hands ~0.16 m fore-aft (Polyfork run 0.7). Free arms (no
   // carry pose / upper one-shot) get an extra shoulder swing in step with the opposite thigh, faded in from walk, out toward sprint

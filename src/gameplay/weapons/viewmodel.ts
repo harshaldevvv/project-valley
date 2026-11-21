@@ -240,9 +240,18 @@ export class Viewmodel {
     a.clampWhenFinished = true;
     a.timeScale = opts.seconds ? dur / Math.max(0.05, opts.seconds) : (opts.timeScale ?? 1);
     a.play();
+    this.shotTS = a.timeScale;
+    this.pauseT = 0;
     this.shot = a;
     this.shotW = Math.max(this.shotW, 0.5);
     this.leftOnly = !!opts.leftOnly;
+  }
+
+  private shotTS = 1;
+  private pauseT = 0;
+  /** Melee contact: the one-shot (knife swing) stalls for `seconds`, like the TP hero's swing (animPost.meleePause*). */
+  hitPause(seconds: number) {
+    if (this.shot) this.pauseT = Math.max(this.pauseT, seconds);
   }
 
   stop() {
@@ -299,6 +308,10 @@ export class Viewmodel {
     this.idleNoL?.setEffectiveWeight(noLW * (this.ads ? 1 - ads : 1));
     this.adsNoL?.setEffectiveWeight(noLW * ads);
     if (!this.ads) this.idle?.setEffectiveWeight(baseW);
+    if (this.shot) {
+      this.pauseT = Math.max(0, this.pauseT - dt);
+      this.shot.timeScale = this.pauseT > 0 ? this.shotTS * 0.05 : this.shotTS;
+    }
     this.mixer.update(dt);
     // Wrist re-pose (data: fpArms.wrist, radians in hand-bone space) applied after the clips, so the grip fingers follow.
     const wr = itemId ? F.wrist[itemId] : undefined;
