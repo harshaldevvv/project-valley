@@ -73,6 +73,7 @@ export class BodyPost {
   private foreR: Object3D | null;
   private handR: Object3D | null;
   private swing = 0;
+  private armSwingW = 0;
   private neck: Object3D | null;
   private head: Object3D | null;
   private legs: Leg[] = [];
@@ -192,6 +193,9 @@ export class BodyPost {
       }
     }
 
+    // ---- jog arm swing: free arms swing from the shoulder in step with the opposite thigh
+    this.armSwing(dt, sp, swinging);
+
     // ---- hit flinch (springed, overshoots a touch and settles)
     const sub = Math.min(dt, 1 / 30);
     const fp = this.react(this.flP, sub);
@@ -239,6 +243,53 @@ export class BodyPost {
     this.footIK(dt, sp);
     this.landDip(sub);
     this.footLock(dt, sp);
+  }
+
+  /**
+   * The survivor run clip barely swings the arms at jog. Adds an upper-arm rotation about the body's right axis driven by
+   * the thighs' fore-aft split, so it is phase-locked to the legs whatever clip, phase or timeScale plays; the legs (and
+   * foot lock) are untouched. Free arms only: off under a carry pose / upper one-shot, melee swing, throw hold, item use.
+   */
+  private armSwing(dt: number, sp: number, swinging: boolean) {
+    const p = this.ctx.player;
+    const anim = this.ctx.playerAnim;
+    const [i0, i1, o0, o1] = P.armSwingSpeed;
+    const ss = (a: number, b: number, x: number) => {
+      const t = clamp((x - a) / (b - a), 0, 1);
+      return t * t * (3 - 2 * t);
+    };
+    const free =
+      !!anim && anim.input.carry === 'none' && !anim.fullBody && !swinging && !p.dead && !p.inVehicle && !p.vault && p.grounded &&
+      !p.usingItem && (this.ctx.throwables?.holdW ?? 0) < 0.01;
+    const target = free ? ss(i0, i1, sp) * (1 - ss(o0, o1, sp)) : 0;
+    this.armSwingW = spring(this.armSwingW, target, dt, P.armSwingHL);
+    const w = this.armSwingW * (1 - (anim?.upperWeight ?? 0));
+    if (w < 0.01 || this.legs.length !== 2 || !this.armL || !this.armR) return;
+    // thigh angle forward of straight down, in the body's sagittal plane
+    const fwd = (L: Leg) => {
+      L.thigh.getWorldPosition(_a);
+      L.shin.getWorldPosition(_b);
+      _b.sub(_a);
+      return Math.atan2(_b.dot(_f), -_b.y);
+    };
+    const split = (fwd(this.legs[0]) - fwd(this.legs[1])) * 0.5; // + = left thigh forward
+    const max = P.armSwingMaxDeg * DEG;
+    const a = clamp(split * P.armSwingGain, -max, max) * w; // right arm forward by a, left arm back by a
+    rotateWorld(this.armR, _r, a);
+    rotateWorld(this.armL, _r, -a);
+    // elbows: the forward hand comes up a little more, the back one opens (flexion is about the forearm's own bend axis)
+    const elbow = (upper: Object3D, fore: Object3D | null, hand: Object3D | null, ang: number) => {
+      if (!fore || !hand || P.armSwingElbow <= 0) return;
+      upper.getWorldPosition(_a);
+      fore.getWorldPosition(_b);
+      hand.getWorldPosition(_c);
+      const axis = _ax.crossVectors(_e1.subVectors(_b, _a), _e2.subVectors(_c, _b));
+      if (axis.lengthSq() < 1e-8) return;
+      axis.normalize();
+      rotateWorld(fore, axis, ang * P.armSwingElbow);
+    };
+    elbow(this.armR, this.foreR, this.handR, a);
+    elbow(this.armL, this.foreL, this.handL, -a);
   }
 
   /** Body-space vector (x right, y up, z forward) to world. */

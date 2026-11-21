@@ -222,6 +222,11 @@ export class PlayerAnimator {
     return !!this.full || this.fullW > 0.05;
   }
 
+  /** Weight of the upper-body layer (carry pose or an upper one-shot owns the arms): 0 = the arms come from the legs' clip. */
+  get upperWeight() {
+    return this.upperW;
+  }
+
   get turning() {
     return !!this.full && this.full.name.startsWith('turn_');
   }

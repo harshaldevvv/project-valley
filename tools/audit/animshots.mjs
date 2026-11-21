@@ -51,6 +51,8 @@ async function shoot1(name, { keys, armed = false, rmb = false, az = 0, n = 4, e
 }
 await shoot('jog', { keys: ['w'], az: 0 });
 await shoot('sprint', { keys: ['Shift', 'w'], az: 0, n: 6, every: 60 });
+await shoot('jogback', { keys: ['w'], az: -Math.PI / 2 });
+await shoot('sprintback', { keys: ['Shift', 'w'], az: -Math.PI / 2, n: 6, every: 60 });
 await shoot('stop', { keys: ['w'], az: 0, release: true, n: 4, every: 120 });
 await shoot('aimdiag', { keys: ['w', 'a'], armed: true, rmb: true, az: Math.PI * 0.25 });
 await shoot('aimbackdiag', { keys: ['s', 'd'], armed: true, rmb: true, az: -Math.PI * 0.25 });

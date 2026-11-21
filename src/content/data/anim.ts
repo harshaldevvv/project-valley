@@ -116,6 +116,13 @@ export const animPost = {
   meleeSwingHL: 0.03, // s smoothing (no pop when the wind-up starts)
   meleePauseLight: 0.07, // s the hero's swing stalls on contact (was hitstop × 0.7 ≈ 0.03, invisible)
   meleePauseHeavy: 0.1,
+  // Jog arm swing (A5): the survivor run clip at jog swings the hands ~0.16 m fore-aft (Polyfork run 0.7). Free arms (no
+  // carry pose / upper one-shot) get an extra shoulder swing in step with the opposite thigh, faded in from walk, out toward sprint
+  armSwingGain: 0.95, // upper-arm swing angle per rad of half the thigh split (left thigh forward = right arm forward)
+  armSwingMaxDeg: 40,
+  armSwingElbow: 0.35, // forearm extra flex per rad of forward arm swing (a forward hand bends up, a back hand straightens)
+  armSwingSpeed: [1.2, 3.0, 4.2, 5.4] as [number, number, number, number], // m/s: fade in from..to, fade out from..to
+  armSwingHL: 0.08, // s weight smoothing for the gates
   // Turn in place (§3.5): threshold, the upper body absorbs the rest
   turnTriggerDeg: 80,
   // Third-person support hand (audit A13): the rifle clips put the left hand at the AK's mag well; two-bone IK moves the

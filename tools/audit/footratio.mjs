@@ -20,6 +20,7 @@ const install = () => gp(() => {
   const root = g.ctx.playerChar.root;
   const find = (...n) => { let r = null; root.traverse((o) => { if (!r && n.includes(o.name)) r = o; }); return r; };
   const feet = [find('LeftFoot', 'foot_L'), find('RightFoot', 'foot_R')];
+  const hands = [find('LeftHand', 'hand_L'), find('RightHand', 'hand_R')];
   window.__fs = [];
   const v = new (root.position.constructor)();
   const tick = () => {
@@ -33,6 +34,7 @@ const install = () => gp(() => {
       row.push(v.x, v.y - root.position.y, v.z, dx * c - dz * s, -dx * s - dz * c);
     }
     row.push(Math.hypot(g.ctx.player.vel.x, g.ctx.player.vel.z), g.ctx.player.gait, g.ctx.player.stamina ?? 0);
+    for (const h of hands) { h.getWorldPosition(v); const dx = v.x - root.position.x, dz = v.z - root.position.z; row.push(-dx * s - dz * c); } // hand forward (body frame)
     window.__fs.push(row);
     requestAnimationFrame(tick);
   };
@@ -75,8 +77,11 @@ const run = async (name, keys, ms) => {
   // peak foot world speed (p95 over frames): a lock catch-up snap shows up as a higher peak than the clip's swing
   const pk = [0, 1].map((f) => { const o = 1 + f * 5; const v = []; for (let i = 1; i < s.length; i++) { const dt = (s[i][0] - s[i - 1][0]) / 1000; if (dt > 0) v.push(Math.hypot(s[i][o] - s[i - 1][o], s[i][o + 2] - s[i - 1][o + 2]) / dt); } v.sort((a, b) => a - b); return v.length ? v[Math.floor(v.length * 0.97)].toFixed(1) : '-'; });
   res.push(`peak97 ${pk.join('/')}`);
+  // arm swing: hand fore-aft range in the body frame (p5..p95), what the eye reads as swing
+  const arm = [14, 15].map((o) => { const v = s.map((x) => x[o]).sort((a, b) => a - b); return v.length ? (v[Math.floor(v.length * 0.95)] - v[Math.floor(v.length * 0.05)]).toFixed(2) : '-'; });
+  res.push(`arm ${arm.join('/')}`);
   const sp = s.length ? s.reduce((a, x) => a + x[11], 0) / s.length : 0;
-  out.push(`${name.padEnd(7)} speed ${sp.toFixed(2)} gait ${s[s.length >> 1]?.[12]}  slip/ratio L ${res[0]}  R ${res[1]}  ${res[2]}`);
+  out.push(`${name.padEnd(7)} speed ${sp.toFixed(2)} gait ${s[s.length >> 1]?.[12]}  slip/ratio L ${res[0]}  R ${res[1]}  ${res[2]}  ${res[3]}`);
 };
 const cases = (process.env.CASES ?? 'jog,sprint,crouch').split(',');
 const def = { jog: [['w'], 3500], sprint: [['Shift', 'w'], 3500], crouch: [['c', 'w'], 3000], walk: [['Alt', 'w'], 3000], aimfwd: [['w'], 3000], aimstrafe: [['d'], 3000], aimback: [['s'], 3000], aimdiag: [['w', 'a'], 3000], aimbackdiag: [['s', 'd'], 3000] };
