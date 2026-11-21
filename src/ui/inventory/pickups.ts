@@ -10,6 +10,7 @@ import { defOf } from '../../systems/inventory';
 import type { Loadout } from '../../systems/loadout';
 import { inventoryText } from '../../content/text/ui';
 import { itemName } from './screen';
+import { buildPickupShape } from './pickupShapes';
 
 /**
  * World view of dropped items: a model per pickup (the item's own model, else a generic from PICKUP_MODELS),
@@ -102,7 +103,19 @@ export function createPickupView(game: Game, lo: Loadout, onPickedUp: (item: Ite
       game.scene.add(root);
       const fallback: [number, number, number] = [d.w * 0.1 + 0.04, 0.08, d.h * 0.1 + 0.04];
       const own = PICKUP_MODELS.files[d.id];
-      if (own) {
+      const shapeKey = own ? undefined : PICKUP_MODELS.shapes[d.id];
+      const shape = shapeKey ? buildPickupShape(d.id, shapeKey, d.iconSwatch) : null;
+      if (shape) {
+        // code-built (pickupShapes.ts): authored in metres lying on the ground; centre it and sit it just above y=0
+        // (the drawn ground can sit ~1 cm above the physics hit, which hid thin parts: nails, circuit board, tape end)
+        shape.updateMatrixWorld(true);
+        _box.setFromObject(shape);
+        const c = _box.getCenter(new Vector3());
+        shape.position.set(-c.x, -_box.min.y + 0.012, -c.z);
+        const holder = new Group();
+        holder.add(shape);
+        root.add(holder);
+      } else if (own) {
         void loadOwn(own.file).then((scene) => {
           if (!scene || live.get(p.item)?.root !== root) return; // missing file, or picked up while loading
           const inner = scaledTo(scene, own.size);

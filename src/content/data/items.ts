@@ -121,6 +121,7 @@ export const PICKUP_MODELS = {
     tackle_box: 'item_box_small', battery: 'item_box_small', matches: 'item_box_small', screws: 'item_box_small', sheet_metal: 'item_box_small',
     ammo_762_box: 'item_box_small', sterile_gauze: 'item_box_small', energy_gel: 'item_bag_soft', trail_mix: 'item_bag_soft', sardines: 'item_can', canned_corn: 'item_can',
     honey_jar: 'item_bottle', iced_tea: 'item_bottle', glow_stick: 'item_bottle', headlamp: 'item_bag_soft', bandolier: 'item_bag_soft', scarf: 'item_bag_soft',
+    canned_peaches: 'item_can', canned_chili: 'item_can', purification_tablets: 'item_bottle',
   } as Record<string, string>,
   /**
    * Own world models (Polyfork, CC BY 4.0, credited in CREDITS.md), loaded straight from public/assets/models/item/<file>.glb.
@@ -171,6 +172,36 @@ export const PICKUP_MODELS = {
     fuel_can: { file: 'fuel-jerrycan-6f1d85', size: 0.42 },
     repair_kit: { file: 'tool-case-d92909', size: 0.4 },
   } as Record<string, { file: string; size: number; upright?: boolean }>,
+  /**
+   * E4 round 2: code-built low-poly models (ui/inventory/pickupShapes.ts, own work) for items with no catalog match.
+   * Item id -> shape key; clothing and packs share a shape per cut and are told apart by their iconSwatch.
+   */
+  shapes: {
+    baseball_bat: 'bat', nail_bat: 'bat_nails', machete: 'machete', frag_grenade: 'grenade', flare: 'flare', road_flare: 'road_flare',
+    binoculars: 'binoculars', lockpick: 'lockpick', duct_tape: 'duct_tape', multitool: 'multitool', bolt_cutters: 'bolt_cutters',
+    can_opener: 'can_opener', lighter: 'lighter', whistle: 'whistle', sewing_kit: 'sewing_kit', flashlight_a: 'flashlight', cooking_pot: 'pot',
+    hot_soup: 'bowl', hot_chili: 'bowl', hot_noodles: 'bowl',
+    bandage: 'bandage', sterile_bandage: 'sterile_pack', splint: 'splint', antiviral: 'injector', adrenaline_shot: 'injector',
+    energy_bar: 'wrapper_bar', beef_jerky: 'snack_bag',
+    red_dot: 'red_dot', suppressor: 'suppressor',
+    ammo_9mm: 'ammo_9mm', ammo_9mm_box: 'ammo_9mm_box', ammo_762: 'ammo_762', ammo_12ga: 'ammo_12ga', ammo_308: 'ammo_308', ammo_357: 'ammo_357',
+    nails: 'nails', scrap_metal: 'scrap_metal', electronic_parts: 'electronics', gunpowder: 'gunpowder', metal_pipe: 'pipe', wood_planks: 'planks',
+    // clothing by cut
+    jacket_field: 'jacket', military_jacket: 'jacket', denim_jacket: 'jacket', raincoat: 'jacket', leather_jacket: 'jacket', hunting_jacket: 'jacket',
+    police_jacket: 'jacket', hoodie: 'hoodie', flannel_shirt: 'shirt', puffer_jacket: 'puffer',
+    cargo_pants: 'pants', track_pants: 'pants', jeans: 'pants', work_trousers: 'pants', tactical_pants: 'pants',
+    hunting_vest: 'vest', fishing_vest: 'vest', construction_vest: 'hiviz_vest', chest_rig: 'chest_rig',
+    tactical_vest: 'armor_vest', stab_vest: 'armor_vest', kevlar_vest: 'armor_vest', plate_carrier: 'armor_vest',
+    boots_work: 'boots', hiking_boots: 'boots', combat_boots: 'boots', sneakers: 'sneakers', rubber_boots: 'tall_boots',
+    gloves_work: 'gloves', gloves_winter: 'gloves', gloves_leather: 'gloves', gloves_tactical: 'gloves',
+    cap: 'cap', hunting_cap: 'cap', beanie: 'beanie', bucket_hat: 'bucket_hat', cowboy_hat: 'cowboy_hat', hard_hat: 'hard_hat',
+    motorcycle_helmet: 'moto_helmet', gas_mask: 'gas_mask', glasses: 'glasses', sunglasses: 'sunglasses', safety_goggles: 'goggles',
+    surgical_mask: 'surgical_mask', bandana: 'bandana', balaclava: 'balaclava',
+    // backpacks by build
+    backpack_small: 'pack_small', school_bag: 'pack_school', kids_backpack: 'pack_kids', hiking_pack: 'pack_hiking',
+    large_hiking_pack: 'pack_hiking_large', military_pack: 'pack_military', rucksack_military: 'pack_military', alice_pack: 'pack_alice',
+    assault_pack: 'pack_assault', hydration_pack: 'pack_hydration', laboratory_pack: 'pack_lab',
+  } as Record<string, string>,
   byKind: {
     backpack: 'item_backpack_generic', clothing: 'item_bag_soft', food: 'item_can', drink: 'item_can',
   } as Record<string, string>,
