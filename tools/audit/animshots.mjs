@@ -30,7 +30,11 @@ const reset = (armed) => gp(async (armed) => {
   g.ctx.facing.yaw = g.ctx.facing.prevYaw = Math.PI;
   if (armed && !g.ctx.weapons.sandbox) { g.sandbox(); await new Promise((r) => setTimeout(r, 1200)); }
 }, armed);
-async function shoot(name, { keys, armed = false, rmb = false, az = 0, n = 4, every = 110, lead = 1200, release = false }) {
+async function shoot(name, opts) {
+  if (process.env.ONLY && !process.env.ONLY.split(',').includes(name)) return;
+  return shoot1(name, opts);
+}
+async function shoot1(name, { keys, armed = false, rmb = false, az = 0, n = 4, every = 110, lead = 1200, release = false }) {
   try {
     await reset(armed);
     await cam(az);
@@ -46,6 +50,7 @@ async function shoot(name, { keys, armed = false, rmb = false, az = 0, n = 4, ev
   } catch (e) { console.log(name, 'failed', String(e).slice(0, 100)); await page.waitForTimeout(3000); }
 }
 await shoot('jog', { keys: ['w'], az: 0 });
+await shoot('sprint', { keys: ['Shift', 'w'], az: 0, n: 6, every: 60 });
 await shoot('stop', { keys: ['w'], az: 0, release: true, n: 4, every: 120 });
 await shoot('aimdiag', { keys: ['w', 'a'], armed: true, rmb: true, az: Math.PI * 0.25 });
 await shoot('aimbackdiag', { keys: ['s', 'd'], armed: true, rmb: true, az: -Math.PI * 0.25 });

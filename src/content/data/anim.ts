@@ -21,6 +21,8 @@ export interface ClipMeta {
   turn_deg?: number;
   /** Upper-body layer clip: mask it to spine, chest, neck, head, shoulders, arms, hands (+ SOCKET_*). */
   upperBody?: boolean;
+  /** Loops: phase offset added to the shared phase so this clip's heel strikes line up with the survivor set. */
+  phase?: number;
   source?: string;
 }
 
@@ -36,7 +38,15 @@ export const anim = {
   strideScale: { chr_hero_pf: 0.96 } as Record<string, number>,
   /** Per model and clip, overrides strideScale where the measured foot travel differs (tools/audit/footratio.mjs:
    *  hero crouch_walk feet travel 0.88 of the body speed at 0.96). */
-  strideScaleClip: { chr_hero_pf: { crouch_walk: 0.85 } } as Record<string, Record<string, number>>,
+  strideScaleClip: { chr_hero_pf: { crouch_walk: 0.85, pf_run: 1 } } as Record<string, Record<string, number>>,
+  /** Clips native to a model (not in the survivor meta), measured with tools/audit/clipmeasure.mjs on that model. */
+  nativeMeta: {
+    // Polyfork run: 5.56 m/s, high knees, 0.7 m arm swing; left strike at 0.025 vs the survivor run's 0.908
+    pf_run: { speed: 5.56, cycle: 0.917, dir: [0, 1], phase: 0.117 },
+  } as Record<string, ClipMeta>,
+  /** Per model: blend node -> native clip that plays in its place (A5: pf_run sprints with real arm swing; the survivor
+   *  jog clip at ts 1.55 swung the arms 0.15 m). pf_walk (0.86 m/s) and pf_idle (≈ ours) lost the compare. */
+  nodeSwap: { chr_hero_pf: { sprint: 'pf_run' } } as Record<string, Record<string, string>>,
   /** 1D forward blend nodes (clip names; speeds come from clipMeta). */
   survivorForward: ['idle', 'walk', 'run', 'sprint'],
   survivorCrouch: ['crouch_idle', 'crouch_walk'],

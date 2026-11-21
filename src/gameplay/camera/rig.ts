@@ -13,6 +13,7 @@ const CAM_FILTER = Group.STATIC | Group.TERRAIN | Group.BUILD | Group.VEHICLE;
 const _dir = new Vector3();
 const _right = new Vector3();
 const _pivot = new Vector3();
+const _feet = new Vector3();
 const _shoulder = new Vector3();
 const _cam = new Vector3();
 const _tmp = new Vector3();
@@ -41,9 +42,12 @@ export class CameraRig {
   /** Chase camera etc.; returns true if it positioned the camera. */
   override: ((dt: number) => boolean) | null = null;
   private ball: Ball;
+  private ballSoft: Ball;
+  private followY = 0;
 
   constructor(private ctx: Ctx) {
     this.ball = new ctx.game.phys.R.Ball(C.collisionRadius);
+    this.ballSoft = new ctx.game.phys.R.Ball(C.collisionAnticipate);
     // Getting hit: a view punch (head snaps back) scaled by the damage; the HUD adds the trauma shake
     ctx.game.events.on('playerDamaged', ({ amount }) => this.kick(0, C.hurtPunchDeg * Math.min(1.5, 0.5 + amount / 30)));
   }
@@ -83,17 +87,21 @@ export class CameraRig {
     if (hitS < 1) _shoulder.lerpVectors(_pivot, _shoulder, Math.max(0, hitS - 0.05));
     const hit = this.cast(_shoulder, _tmp.copy(dir).multiplyScalar(-want), 1) * want;
     if (dt >= 0) {
-      if (hit < this.arm) this.arm = hit; // snap in
-      else this.arm = Math.min(hit, this.arm + (want / C.easeOut) * dt); // ease out
+      // A wider cast sees obstacles (posts, corners) a few frames before the real one binds: ease in toward it
+      // (B2: a lamp post crossing the view used to snap the camera 0.66 m in one frame). The real cast still clamps
+      // below, so the camera never enters geometry.
+      const soft = Math.min(want, this.cast(_shoulder, _tmp.copy(dir).multiplyScalar(-want), 1, this.ballSoft) * want + (C.collisionAnticipate - C.collisionRadius));
+      if (soft < this.arm) this.arm += (soft - this.arm) * (1 - Math.exp((-0.6931 * dt) / C.snapInHL)); // ease in
+      else this.arm = Math.min(soft, this.arm + (want / C.easeOut) * dt); // ease out
       this.arm = Math.min(this.arm, want);
     }
     return out.copy(_shoulder).addScaledVector(dir, -Math.min(this.arm, hit));
   }
 
-  private cast(from: Vector3, vel: Vector3, maxToi: number) {
+  private cast(from: Vector3, vel: Vector3, maxToi: number, ball = this.ball) {
     const { world, R } = this.ctx.game.phys;
     const hit = world.castShape(
-      from, { x: 0, y: 0, z: 0, w: 1 }, vel, this.ball, 0, maxToi, true,
+      from, { x: 0, y: 0, z: 0, w: 1 }, vel, ball, 0, maxToi, true,
       R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.PLAYER, CAM_FILTER), this.ctx.player.collider,
     );
     return hit ? hit.time_of_impact : maxToi;
@@ -122,7 +130,16 @@ export class CameraRig {
     const w = this.ctx.weapons;
     const ads = w.adsEased;
     p.lookDir(_dir, w.recoilPitch, w.recoilYaw);
-    this.solve(p.position, p.eyeHeight, _dir, ads, _cam, dt);
+    // TP: the pivot follows the feet's height through a short spring, so curbs, the 3 cm heightfield seam lift
+    // and stair steps don't pop the view (B2); lag is capped so jumps and falls stay tight
+    const dy = p.position.y - this.followY;
+    if (this.mode !== 'tp' || p.inVehicle || p.dead || Math.abs(dy) > C.followYMaxLag * 4) this.followY = p.position.y;
+    else {
+      this.followY += dy * (1 - Math.exp((-0.6931 * dt) / C.followYHL));
+      this.followY = Math.max(p.position.y - C.followYMaxLag, Math.min(p.position.y + C.followYMaxLag, this.followY));
+    }
+    _feet.set(p.position.x, this.followY, p.position.z);
+    this.solve(_feet, p.eyeHeight, _dir, ads, _cam, dt);
     // QA-001: when a wall squeezes the arm under ~0.6 m the camera would sit in the head. Go to the eye
     // instead (body hidden, first-person viewmodel shown) until there is room again.
     _pivot.set(p.position.x, p.position.y + p.eyeHeight, p.position.z);

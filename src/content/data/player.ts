@@ -111,6 +111,10 @@ export const cameraFeel = {
   fovHip: 70,
   fovAdsMul: 0.8, // irons ×0.8 (TP ADS uses 55° via this * 70 ≈ 56)
   collisionRadius: 0.2,
+  collisionAnticipate: 0.5, // m: wider cast that starts the pull-in early (smooth instead of a one-frame snap)
+  followYHL: 0.05, // s: TP camera height follows the feet through this spring (curbs, seams, steps)
+  followYMaxLag: 0.12, // m cap on that lag
+  snapInHL: 0.04, // s half-life of that pull-in; the 0.2 m cast still clamps hard
   easeOut: 0.3, // s to ease back out after a collision snap-in
   shoulderSwap: 0.2, // s
   collapseIn: 0.6, // m camera-to-eye: below this the TP camera switches to the eye (QA-001)

@@ -79,7 +79,7 @@ export class PlayerAnimator {
       const clip = action.getClip();
       // Clip ground speeds are measured on the survivor rig; a rig with shorter legs covers less ground per cycle
       const k = A.strideScaleClip[ch.root.name]?.[name] ?? A.strideScale[ch.root.name] ?? 1;
-      const m0 = meta[name] ?? {};
+      const m0 = meta[name] ?? A.nativeMeta[name] ?? {};
       const m = m0.speed !== undefined && k !== 1 ? { ...m0, speed: m0.speed * k } : m0;
       const lo = m.upperBody ? null : this.mixer.clipAction(half(clip, false));
       const up = this.mixer.clipAction(half(clip, true));
@@ -97,6 +97,19 @@ export class PlayerAnimator {
         }
       }
       this.acts.set(name, { lo, up, meta: m, w: 0, t: 0 });
+    }
+    this.swapNodes();
+  }
+
+  /** Swap blend nodes for clips native to this model (anim.nodeSwap). */
+  private swapNodes() {
+    for (const [node, clip] of Object.entries(A.nodeSwap[this.ch.root.name] ?? {})) {
+      const a = this.acts.get(clip);
+      if (!a) continue;
+      const old = this.acts.get(node);
+      for (const x of [old?.lo, old?.up]) x?.setEffectiveWeight(0);
+      this.acts.delete(clip);
+      this.acts.set(node, a);
     }
   }
 
@@ -359,7 +372,7 @@ export class PlayerAnimator {
       const m = a.meta;
       if (m.speed !== undefined) {
         const w = sumLoco > 0 ? a.w / sumLoco : 0;
-        const time = m.speed < 0.05 ? this.idleT % (m.cycle ?? 3) : this.phase * (m.cycle ?? 1);
+        const time = m.speed < 0.05 ? this.idleT % (m.cycle ?? 3) : ((this.phase + (m.phase ?? 0)) % 1) * (m.cycle ?? 1);
         if (a.lo) (a.lo.time = time), a.lo.setEffectiveWeight(w * (1 - fW));
         if (a.up) (a.up.time = time), a.up.setEffectiveWeight(w * (turnLayer ? 1 - fW * (1 - uW) : 1 - fW) * (1 - uW));
       } else if (m.upperBody) {
