@@ -57,6 +57,8 @@ def dirty(rgb, p, skin):
         if patch(p, 0.06, 1) < 0.35 * G: rgb = mix(rgb, ROT, 0.55)
         return grade(rgb, 1.0, 1.0 - 0.15 * G)
     rgb = grade(rgb, 1.0 - 0.6 * G, 1.0 - 0.4 * G)
+    if colorsys.rgb_to_hsv(*rgb)[1] > 0.35:  # loud colours (hi-vis vests, bright shirts) get grimed down harder
+        rgb = mix(grade(rgb, 1.0 - 0.55 * G, 1.0 - 0.3 * G), MUD, 0.3 * G)
     if p.z < 0.9: rgb = mix(rgb, MUD, G * 0.85 * (1 - p.z / 0.9) ** 0.7)
     if patch(p, 0.1, 2) < 0.5 * G: rgb = mix(rgb, GRIME, 0.4 + 0.4 * patch(p, 0.1, 3))
     return rgb
@@ -80,12 +82,13 @@ for o in meshes:
             state = rg.getstate()
             for li in poly.loop_indices:
                 c = attr.data[li].color
-                if blood: rgb = mix(c, blood, 0.85)
-                elif skin: rgb = grade(mix(c, SKIN, 0.65), 0.7, 0.85)
-                else: rgb = grade(c, 0.55, 0.78)
-                if not blood:
+                if blood and G <= 0: rgb = mix(c, blood, 0.85)
+                else:
+                    rgb = grade(mix(c, SKIN, 0.65), 0.7, 0.85) if skin else grade(c, 0.55, 0.78)
                     rg.setstate(state)
                     rgb = dirty(rgb, centre, skin)
+                    # grimy blood: older and darker, laid over the dirtied colour so bright cloth does not show through
+                    if blood: rgb = mix(rgb, tuple(x * (1 - 0.45 * G) for x in blood), 0.85 + 0.1 * G)
                 attr.data[li].color = (*rgb, c[3])
     else:
         for v in me.vertices:
