@@ -33,7 +33,7 @@ OGG_DIRS = {
     'oga/zmoans': 'zombie',
 }
 KEEP_OGG = {  # only what sounds.ts uses
-    'footstep_grass_00', 'footstep_concrete_00', 'footstep_carpet_00', 'impactPunch_', 'impactMining_', 'impactSoft_',
+    'footstep_grass_00', 'footstep_concrete_00', 'footstep_carpet_00', 'footstep_wood_00', 'impactPlate_medium', 'impactPlate_heavy', 'impactMetal_heavy', 'impactPunch_', 'impactMining_', 'impactSoft_',
     'impactWood_medium', 'impactWood_heavy', 'impactPlank_medium', 'impactMetal_light', 'impactPlate_light', 'impactBell_heavy_00',
     'metalClick', 'metalLatch', 'drawKnife', 'creak', 'cloth', 'handleSmallLeather', 'beltHandle', 'dropLeather',
     'click_001', 'click_002', 'open_001', 'close_001', 'error_004', 'tick_001', 'confirmation_001',

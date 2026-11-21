@@ -86,7 +86,7 @@ export class Melee {
           this.t = def!.active;
           this.raysDone = 0;
           this.hitThisSwing.clear();
-          this.ctx.sfx('melee_swing', p.curr, { pitchJitter: 0.1, volume: this.heavy ? 1 : 0.8 });
+          this.ctx.sfx('melee_swing', p.curr, { pitchJitter: 0.1, volume: this.heavy ? 1 : 0.8, twoD: true }); // own swing: 2D
         }
         break;
       case 'active': {
@@ -188,7 +188,7 @@ export class Melee {
     this.ctx.weapons.cancelReload();
     this.ctx.playerAnim?.oneshot('melee_heavy', 0.08);
     this.ctx.weapons.vm.play(this.ctx.weapons.isMelee ? 'fp_knife_heavy' : 'fp_shove', { seconds: FIN.duration, leftOnly: !this.ctx.weapons.isMelee });
-    this.ctx.sfx('melee_swing', this.ctx.player.curr);
+    this.ctx.sfx('melee_swing', this.ctx.player.curr, { twoD: true });
     // Keep it staggered for the whole finisher
     z.mode = 'stagger';
     z.modeT = FIN.duration + 0.2;
@@ -271,7 +271,7 @@ export class Melee {
     this.t = SH.duration;
     this.raysDone = 0;
     this.ctx.weapons.cancelReload();
-    this.ctx.sfx('melee_swing', this.ctx.player.curr, { pitchJitter: 0.15, volume: 0.6 });
+    this.ctx.sfx('melee_swing', this.ctx.player.curr, { pitchJitter: 0.15, volume: 0.6, twoD: true });
   }
 
   private doShove() {

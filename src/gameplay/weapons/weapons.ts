@@ -271,7 +271,7 @@ export class Weapons {
       this.equip();
       this.switchT = this.drawTotal;
     }
-    this.ctx.sfx('reload_mag_out', undefined, { volume: 0.25, pitchJitter: 0.1 });
+    this.ctx.sfx('weapon_switch', undefined, { volume: 0.7 });
   }
 
   /** Complete a reload now (getting into a car mid-reload finishes it instead of silently dropping it, QA-051). */
@@ -464,11 +464,11 @@ export class Weapons {
     const rs = weaponFeel[it.defId]?.reloadSounds;
     if (!r.outPlayed && k > (ev ? ev.magOut / ev.dur : 0.15)) {
       r.outPlayed = true;
-      this.ctx.sfx(rs?.out ?? 'reload_mag_out', this.ctx.player.curr);
+      this.ctx.sfx(rs?.out ?? 'reload_mag_out', undefined, { twoD: true }); // own hands: 2D, not panned from the feet
     }
     if (!r.inPlayed && k > (ev ? ev.magIn / ev.dur : 0.6)) {
       r.inPlayed = true;
-      this.ctx.sfx(rs?.in ?? 'reload_mag_in', this.ctx.player.curr);
+      this.ctx.sfx(rs?.in ?? 'reload_mag_in', undefined, { twoD: true });
       this.ctx.rig.kick(0.4, -0.6); // the magazine seats: a small jolt of the view
     }
     if (!r.committed && k >= B.magCommitAt) {
@@ -483,7 +483,7 @@ export class Weapons {
       if (!it.rounds && it.mag && (it.mag.rounds ?? 0) > 0) {
         it.mag.rounds!--;
         it.rounds = 1;
-        this.ctx.sfx(rs?.chamber ?? 'bolt_rack', this.ctx.player.curr);
+        this.ctx.sfx(rs?.chamber ?? 'bolt_rack', undefined, { twoD: true });
         this.ctx.rig.kick(0.35, 0.55); // bolt slam
       }
       this.reload = null;
@@ -525,7 +525,7 @@ export class Weapons {
     const it = this.item!;
     const p = this.ctx.player;
     if (!it.rounds) {
-      this.ctx.sfx('dry_fire', p.curr);
+      this.ctx.sfx('dry_fire', undefined, { twoD: true });
       this.cooldown = 0.25;
       this.semiBuffered = 0;
       if ((it.mag?.rounds ?? 0) === 0) this.ctx.game.events.emit('toast', { text: EMPTY_TOAST });

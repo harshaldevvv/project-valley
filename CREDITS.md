@@ -26,7 +26,7 @@ funding from NSF EIA-0196217.
 
 | Sounds | Source | Author |
 |---|---|---|
-| Footsteps, impacts, hit markers, building | [Impact Sounds](https://kenney.nl/assets/impact-sounds) | Kenney |
+| Footsteps (grass, concrete, wood, metal), impacts, car crashes, hit markers, building | [Impact Sounds](https://kenney.nl/assets/impact-sounds) | Kenney |
 | UI clicks, open, close, confirm | [Interface Sounds](https://kenney.nl/assets/interface-sounds) | Kenney |
 | Reload, bolt, crates, cloth, item pickup | [RPG Audio](https://kenney.nl/assets/rpg-audio) | Kenney |
 | Pistol and rifle shots | [Gunshots](https://opengameart.org/content/gunshots) | kurt |

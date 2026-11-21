@@ -10,7 +10,7 @@ import type { PlayerView } from '../../core/contracts';
 import type { Ctx } from '../ctx';
 import { Stamina } from './stamina';
 import { weaponSlots } from '../../content/data/weapons';
-import { surfaceOf } from '../../world/surfaces';
+import { surfaceOf, type Surface } from '../../world/surfaces';
 
 /**
  * Player controller v1 (principles §2): Rapier kinematic capsule with our own velocity state,
@@ -243,7 +243,7 @@ export class Player implements PlayerView {
         this.ctx.playerAnim?.oneshot('jump', 0.08);
         this.sinceGround = 9;
         this.grounded = false;
-        this.ctx.sfx('footstep_concrete', this.curr, { volume: 0.6 });
+        this.ctx.sfx(this.stepSound(), this.curr, { volume: 0.6 }); // take-off scuff on the real surface (was always concrete)
       }
       if (this.vault) return;
     }
@@ -331,7 +331,7 @@ export class Player implements PlayerView {
     const radius =
       this.gait === 'sprint' ? M.noiseSprint : this.gait === 'jog' ? M.noiseJog : this.gait === 'crouch' ? M.noiseCrouch : M.noiseWalk;
     const vol = this.gait === 'crouch' ? 0.25 : this.gait === 'sprint' ? 0.9 : 0.55;
-    this.ctx.sfx(this.surfaceBelow() === 'grass' ? 'footstep_grass' : 'footstep_concrete', this.curr, { volume: vol, pitchJitter: 0.08 });
+    this.ctx.sfx(this.stepSound(), this.curr, { volume: vol, pitchJitter: 0.08 });
     this.ctx.game.events.emit('noise', { position: this.curr.clone(), radius, source: 'footstep' });
     if (this.gait === 'sprint' || this.gait === 'jog') this.ctx.fx.footDust(this.curr, this.gait === 'sprint' ? 1 : 0.5, this.surfaceBelow() === 'grass');
   }
@@ -346,6 +346,12 @@ export class Player implements PlayerView {
   }
 
   surfaceBelow(): 'grass' | 'concrete' {
+    const s = this.groundSurface();
+    return s === 'grass' || s === 'dirt' ? 'grass' : 'concrete';
+  }
+
+  /** The surface under the feet: its tag, else terrain = grass, build pieces = wood, anything else = concrete. */
+  groundSurface(): Surface {
     const { R, world } = this.ctx.game.phys;
     const hit = world.castRay(
       new R.Ray({ x: this.curr.x, y: this.curr.y + 0.3, z: this.curr.z }, { x: 0, y: -1, z: 0 }),
@@ -355,10 +361,16 @@ export class Player implements PlayerView {
       groups(Group.PLAYER, Group.STATIC | Group.TERRAIN | Group.BUILD | Group.VEHICLE),
     );
     if (!hit) return 'grass';
-    // Environment surface tags: soft ground (grass/dirt) vs hard (concrete, wood, metal…)
     const s = surfaceOf(hit.collider.handle, this.curr.x, this.curr.z);
-    if (s) return s === 'grass' || s === 'dirt' ? 'grass' : 'concrete';
-    return (hit.collider.collisionGroups() >>> 16) & Group.TERRAIN ? 'grass' : 'concrete';
+    if (s) return s;
+    const member = hit.collider.collisionGroups() >>> 16;
+    return member & Group.TERRAIN ? 'grass' : member & Group.BUILD ? 'wood' : 'concrete';
+  }
+
+  /** Footstep sound id for the surface under the feet (wood and metal floors used to play concrete). */
+  private stepSound() {
+    const s = this.groundSurface();
+    return s === 'grass' || s === 'dirt' ? 'footstep_grass' : s === 'wood' ? 'footstep_wood' : s === 'metal' || s === 'chainlink' ? 'footstep_metal' : 'footstep_concrete';
   }
 
   private setCrouch(on: boolean) {

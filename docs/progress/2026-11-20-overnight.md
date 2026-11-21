@@ -316,3 +316,18 @@ Unthrottled (x1): every view holds 16.7 ms (vsync) on all presets. Render-thread
 - tsc clean for these files (`src/core/game.ts` has another session's uncommitted `renderLabels` errors). vitest 23 files / 197 tests pass, run on this PC because the laptop was down.
 - tsc clean, vitest 23 files / 197 tests pass (run on this PC: the laptop was offline).
 - Follow-up: the "You died… Respawning…" toasts are gone; `playerDied` now carries `{ cause }` (attack, starvation, bleeding, fire...) and the death card shows it as a sub-line (`hudText.deathCause`); the onboarding hint holds while dead. tsc clean, vitest 197 pass.
+
+## Sound pass by ear (2026-11-21)
+
+- **Audit:** new `tools/audit/soundlog.mjs`, a headless run on its own :5196 server. It logs every sound with its file, volume, distance, 2D/3D and level at the ear. Before and after tables are in `docs/audit/soundlog-{before,after}.md`; the summary is in `docs/audit/sound-pass-2026-11-21.md`.
+- **Fixes:**
+  - Wood and metal floors now have their own footsteps. They used to play concrete, and so did every jump take-off.
+  - `heartbeat` now has a real file (own procedural, `tools/audio/gen_heartbeat.sh`). No synth-only ids are left.
+  - Pump, bolt cycle and bolt rack were as loud as the shot. Quiet drawKnife files in their pools made the level swing; those files are gone from the pools.
+  - Own reloads, dry fire and melee swing are 2D. They used to play 3D from the feet.
+  - Levels changed for kill confirm, zombie attack and death, melee hit, shotgun vs pistol, search rustle, and each reload layer.
+  - Weapon switch has its own `weapon_switch` sound (it used to play the mag-out clack).
+  - `car_crash` uses heavy plate and metal impacts.
+- **New CC0 files:** 20 from Kenney Impact Sounds, credited in CREDITS.md and asset-credits.md.
+- **Open:** the throwable swing is still 3D (`throwables.ts` has another session's uncommitted edits). Placed build doors play crate_open (`src/ui`, out of bounds).
+- tsc clean, vitest 23 files / 197 tests pass (run on this PC: the laptop was offline).
