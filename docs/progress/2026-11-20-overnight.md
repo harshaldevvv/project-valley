@@ -49,6 +49,15 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 - [x] Z1 Zombified Polyfork set `pfz` (12 civilians: corpse skin, faded clothes, blood, held props removed; `tools/audit/build_pfz.sh`) is the default; `?chars=orig` keeps the old ones.
 - [x] Z2 Visual audit of every pfz type and the 4 archetypes (`tools/audit/zaudit.mjs <tag> [types]`: side-on ground-level film of walk-in, attack and death, plus a feet close-up; sheets `zc_<type>_sheet.png`). Plain pfz walkers: feet planted, no T-pose or pop, falls land flat. Fixed: the crawler (and any walker whose legs gave out) rose onto its knees for every attack, stagger and death, because those played the standing `z_attack` / `z_stagger` / `z_death`; now a fast `z_crawl_b` lunge, a slowed crawl, and a death that freezes the crawl prone along its heading (`crawlClips` in `content/data/zombies.ts`). `za_crawler_sheet.png` before, `zb_crawler_sheet.png` after.
 
+- [x] Z3 Combat feel and effects (`tools/audit/zfx.mjs <tag> react,death,shoot,knife,hurt`: stops the game's loop and drives it at a fixed 60 Hz, so every frame strip has exact times; strips `docs/audit/screenshots/wip/zb_*` before, `zc_*` after). Fixed (297a76c, da69ad1):
+  - Hit flinch by location: the crowd shader bends everything above a pivot along the shot, feet planted (`hitReact` in content/data/zombies.ts). Head hits snap the neck, body hits bend at the hips and off-centre hits twist the torso, leg hits buckle the knees toward the shooter. Was a whole-body roll wobble that did not read (`zb_react_*` vs `zc_react_*`).
+  - The white hit flash covered the whole body for ~70 ms on every hit; now it sits on the hit height (head, torso or legs).
+  - Death falls: a gun kill that throws the body off its feet played the knee-drop in mid-air and was still kneeling at 2 s; now down by ~0.6 s (`deathFall.flungSpeed` 2.4). Plain kills 0.95-1.4x speed. Head kills, crawler deaths unchanged (already fine).
+  - Melee on the world: each surface's burst and sound (was always the wood knock); blades spark on metal / concrete / chainlink (`meleeWorldFx` in fx.ts).
+  - Heavy hits on the player (15+ damage) muffle the world through an 800 Hz low-pass for 0.3 s (principles Â§4; `hurtMuffle` in sounds.ts).
+  - Checked and fine: stagger on heavy / shotgun hits (damage ladder), headshot drop, blood bursts and floor decals, casings (land 1.3-2.3 m to the side, rest on the ground), FP muzzle flash (2 frames) and tracers, hurt vignette + directional wedge.
+  - Open: in third person the muzzle flash is hidden behind the hero's torso (the gun sits on the body's centre line, the camera over the right shoulder); a camera framing call for the player-feel session. Third-person fire waits ~0.1 s for the barrel to rise (by design, `raiseT`).
+
 ## D. World / demo map
 - [ ] D1 Bigger demo area beyond the yard, same theme (Polyfork buildings, vehicles, props).
 - [ ] D2 More points of interest: gas station, farm, police checkpoint, camp, houses with interiors.
