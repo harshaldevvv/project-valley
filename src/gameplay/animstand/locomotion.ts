@@ -193,15 +193,27 @@ export class PlayerAnimator {
    * the hips by what the root has already received, so the end of the clip has nothing left to snap.
    */
   private turnAccum = 0;
+  /** Yaw the root took from the last turn clip, still in its fading-out pose (counter-rotated by fullW). */
+  private turnTail = 0;
   private turnStart: number | null = null;
   onTurnDelta: ((rad: number) => void) | null = null;
   private turnRootMotion() {
     const turning = !!this.full && !!this.acts.get(this.full.name)?.meta.turn_deg;
     if (!turning || !this.hips) {
+      // B2: the clip just ended or was dropped. The root already holds its yaw, and the clip pose fading out over
+      // fullW still carries it, so keep counter-rotating the hips by the faded share. This stops a ~80° hip and leg
+      // pop on the frame a turn clip ends.
+      if (this.turnStart !== null) this.turnTail = this.turnAccum;
       this.turnStart = null;
       this.turnAccum = 0;
+      if (this.hips && this.turnTail && this.fullW > 0 && this.lastFull?.meta.turn_deg) {
+        this.hips.parent!.getWorldQuaternion(_rq);
+        _hv.set(0, 1, 0).applyQuaternion(_rq.invert());
+        this.hips.quaternion.premultiply(_hq.setFromAxisAngle(_hv, -this.turnTail * this.fullW));
+      } else this.turnTail = 0;
       return;
     }
+    this.turnTail = 0;
     this.ch.root.updateMatrixWorld(true);
     this.hips.getWorldQuaternion(_hq);
     this.ch.root.getWorldQuaternion(_rq);

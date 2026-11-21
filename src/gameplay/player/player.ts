@@ -28,6 +28,8 @@ export class Player implements PlayerView {
   readonly position = new Vector3(); // interpolated feet
   readonly eye = new Vector3();
   readonly forward = new Vector3(0, 0, -1);
+  /** Wanted move direction from the keys this tick (unit XZ, zero when no move key): body facing turns toward it at once (B2). */
+  readonly wish = new Vector3();
   inVehicle = false;
   godMode = false;
 
@@ -208,6 +210,7 @@ export class Player implements PlayerView {
     _v.set(-sin * f + cos * s, 0, -cos * f - sin * s);
     const moving = _v.lengthSq() > 0;
     if (moving) _v.normalize();
+    this.wish.copy(_v);
     const wantSprint = c.down('sprint') && f > 0 && !this.crouched && !this.blockSprint && this.sprintAllowed && !this.usingItem && this.stamina.canSprint;
     if (wantSprint && this.crouched) this.setCrouch(false);
     this.sprinting = wantSprint && moving && this.grounded;

@@ -68,10 +68,18 @@ export const health = {
  * Aiming / firing / melee: orient to the camera. Guns sit at low-ready until RMB/fire raises them.
  */
 export const bodyFacing = {
-  moveTurnDeg: 540, // deg/s toward the movement direction
+  moveTurnDeg: 720, // deg/s toward the movement direction (B2: 540 -> 720, a jog 180° flick faces the new way in ~0.3 s)
   aimTurnDeg: 900, // deg/s toward the camera while aiming/firing
   inPlaceTriggerDeg: 100, // camera this far from the body (standing) → turn-in-place step
   inPlaceTurnDeg: 300,
+  // B2 turn in place with the mocap clips (turn_left/right_90, 0.97 s for 92° at 1x)
+  inPlaceClipSpeed: 1.4, // clip time scale for a 90° gap (0.69 s), scaled up with the gap ...
+  inPlaceClipSpeedMax: 2.2, // ... to this (a 150°+ flick turns the first 92° in 0.44 s)
+  inPlaceMaxLagDeg: 100, // standing: past this gap the body is dragged after the camera (fast flicks) ...
+  inPlaceDragDeg: 600, // ... at up to this rate (deg/s, eased by easing, accel-limited by turnAccelDeg)
+  inPlaceHardLagDeg: 150, // ... and never trails by more than this
+  inPlaceReverseDeg: 25, // camera swung back past the body by this much mid-turn: drop the clip, turn the other way
+  wishTurnDot: 0.5, // moving: face the key direction instead of the velocity when they differ by > 60° (180° flicks turn at once)
   easing: 12, // 1/s exponential approach (capped by the turn rates)
   turnAccelDeg: 5400, // deg/s² body turn acceleration (move / turn): 540°/s in 0.1 s, eases into turns
   aimTurnAccelDeg: 12000, // deg/s² while aiming/firing: 900°/s in 0.075 s (snappy but no one-frame jump)

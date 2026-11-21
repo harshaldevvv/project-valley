@@ -18,6 +18,8 @@ export class BodyFacing {
   /** Body turn rate (rad/s): accel-limited so turns ease in instead of starting at full speed (no snaps). */
   yawVel = 0;
   turningInPlace = false;
+  /** +1 / -1: direction of the turn-in-place clip playing. */
+  private turnDir = 0;
 
   constructor(private ctx: Ctx) {
     this.yaw = this.prevYaw = ctx.player.yaw;
@@ -46,13 +48,31 @@ export class BodyFacing {
       target = p.yaw;
       rate = BF.aimTurnDeg;
       this.turningInPlace = false;
-    } else if (sp > 0.3) {
-      target = Math.atan2(-p.vel.x, -p.vel.z);
+    } else if (sp > 0.3 || p.wish.lengthSq() > 0) {
+      // Velocity direction, or the keys' direction when they point well away from it (a 180° flick while jogging turns
+      // the body at once instead of waiting ~9 frames for the velocity to pass through zero, B2)
+      const w = p.wish;
+      const along = sp > 0.3 ? (p.vel.x * w.x + p.vel.z * w.z) / sp : -1;
+      target = w.lengthSq() > 0 && along < BF.wishTurnDot ? Math.atan2(-w.x, -w.z) : Math.atan2(-p.vel.x, -p.vel.z);
       this.turningInPlace = false;
     } else if (this.ctx.playerAnim?.has('turn_left_90')) {
-      // Turn in place with the mocap clips (feet step, no yaw sliding); body yaw jumps by turn_deg when it ends
+      // Turn in place with the mocap clips (feet step); the clip's hip yaw feeds the body yaw frame by frame
       const anim = this.ctx.playerAnim;
-      const diff = wrap(p.yaw - this.yaw);
+      let diff = wrap(p.yaw - this.yaw);
+      // The camera swung back the other way mid-turn: drop the clip (B2: it used to finish its 90° away from the view)
+      if (anim.turning && diff * this.turnDir < -BF.inPlaceReverseDeg * DEG) anim.cancelFull();
+      // Fast flicks: past inPlaceMaxLagDeg the body is dragged after the camera (accel-limited, so no one-frame jerk;
+      // the clip keeps stepping underneath), and it never trails by more than inPlaceHardLagDeg
+      const excess = Math.abs(diff) - BF.inPlaceMaxLagDeg * DEG;
+      const want = excess > 0 ? Math.sign(diff) * Math.min(BF.inPlaceDragDeg * DEG, excess * BF.easing) : 0;
+      const acc = BF.turnAccelDeg * DEG * dt;
+      this.yawVel += Math.max(-acc, Math.min(acc, want - this.yawVel));
+      if (excess <= 0 && this.yawVel * diff <= 0) this.yawVel = 0;
+      let pull = this.yawVel * dt;
+      const hard = Math.abs(diff - pull) - BF.inPlaceHardLagDeg * DEG;
+      if (hard > 0) pull += Math.sign(diff) * hard;
+      this.yaw = wrap(this.yaw + pull);
+      diff -= pull;
       if (!anim.turning && Math.abs(diff) > AP.turnTriggerDeg * DEG) {
         anim.onTurnEnd = null;
         // Root motion arrives frame by frame from the clip (no end-of-clip snap, QA-084)
@@ -60,10 +80,12 @@ export class BodyFacing {
           this.yaw = wrap(this.yaw + rad);
           this.prevYaw = wrap(this.prevYaw + rad);
         };
-        anim.oneshot(diff > 0 ? 'turn_left_90' : 'turn_right_90', 0.06);
+        this.turnDir = Math.sign(diff);
+        // Faster for a bigger gap: 1.4x at 90°, up to 2.2x (B2: 0.97 s for 90° read as sluggish)
+        const ts = Math.min(BF.inPlaceClipSpeedMax, BF.inPlaceClipSpeed * Math.abs(diff) / (90 * DEG));
+        anim.oneshot(diff > 0 ? 'turn_left_90' : 'turn_right_90', 0.06, false, 0, Math.max(BF.inPlaceClipSpeed, ts));
       }
       this.turningInPlace = anim.turning;
-      this.yawVel = 0;
       return;
     } else {
       const diff = Math.abs(wrap(p.yaw - this.yaw));
