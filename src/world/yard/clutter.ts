@@ -10,6 +10,7 @@ import { underGenProp } from './genProps';
 import { underDress } from './dress';
 import { OUT } from '../../content/data/outskirts';
 import { underOutskirts } from '../outskirts/footprints';
+import { MEADOW } from '../../content/data/nature';
 
 /**
  * Ground clutter (no colliders, no shadows): wind-swayed grass tufts on every grass patch of the Yard, plus
@@ -51,7 +52,7 @@ export function buildClutter(game: Game) {
   const free = (x: number, z: number) => !st.some(([x0, x1, z0, z1]) => x > x0 && x < x1 && z > z0 && z < z1) && Math.hypot(x - yard.spawn.x, z - yard.spawn.z) > 4.5 && !underGenProp(x, z) && !underDress(x, z);
 
   // --- grass ---
-  const spots: [number, number, number][] = [];
+  const spots: [number, number, number, number?][] = []; // x, z, random, height factor (meadow patches)
   const step = 0.85;
   for (let gx = -half + 1; gx < half - 1; gx += step) {
     for (let gz = -half + 1; gz < half - 1; gz += step) {
@@ -69,7 +70,10 @@ export function buildClutter(game: Game) {
       if (groundSurfaceAt(x, z) !== 'grass' || underOutskirts(x, z, 0.5)) continue;
       const dens = 0.3 + 0.6 * fbm(x * 0.05 + 40, z * 0.05);
       if (rng.next() > dens) continue;
-      spots.push([x, z, rng.next()]);
+      // meadow patches: long grass in the open ground, the same tuft stretched up
+      const mw = fbm(x * MEADOW.noise + 5, z * MEADOW.noise + 21);
+      const tall = mw > MEADOW.threshold ? 1 + (MEADOW.tall - 1) * Math.min(1, (mw - MEADOW.threshold) * 8) : 1;
+      spots.push([x, z, rng.next(), tall]);
     }
   }
   // beyond the walls the hills get a thinner coat close to the wall only
@@ -89,7 +93,7 @@ export function buildClutter(game: Game) {
   mat.normalNode = transformNormalToView(vec3(0, 1, 0)); // same up-lit shading on both faces of a blade
   // 50 m chunks so the frustum culls the grass (the vertex shader's distance shrink saves fill, not vertex work)
   const CH = 50;
-  const cells = new Map<string, [number, number, number][]>();
+  const cells = new Map<string, [number, number, number, number?][]>();
   for (const sp of spots) {
     const k = `${Math.floor(sp[0] / CH)},${Math.floor(sp[1] / CH)}`;
     (cells.get(k) ?? cells.set(k, []).get(k)!).push(sp);
@@ -99,10 +103,10 @@ export function buildClutter(game: Game) {
   for (const [k, list] of cells) {
     const tuft = new InstancedMesh(geo, mat, list.length);
     tuft.name = `grass_${k}`;
-    list.forEach(([x, z, r], i) => {
+    list.forEach(([x, z, r, tall = 1], i) => {
       q.setFromAxisAngle(up, r * 6.28);
       const s = 0.8 + r * 0.7;
-      sc.set(s, 0.24 + r * 0.26, s);
+      sc.set(s, (0.24 + r * 0.26) * tall, s);
       p.set(x, groundHeight(x, z) - 0.02, z);
       tuft.setMatrixAt(i, m.compose(p, q, sc));
     });

@@ -6,6 +6,7 @@ import { Group, groups } from '../../engine/physics';
 import { tagTerrain } from '../surfaces';
 import type { Kit } from './kit';
 import { hillFactor, plateauDist } from '../outskirts/terrain';
+import { POND } from '../../content/data/nature';
 
 const EXTENT = 360; // land out to ±360 m so the horizon isn't a void (the outskirts plateau reaches z = 300)
 const CELL = 5;
@@ -40,7 +41,13 @@ function soft<T extends BufferGeometry>(g: T): T {
 /** Ground height: flat inside the walls (M1 has no navmesh), low rolling hills beyond. */
 export function groundHeight(x: number, z: number) {
   const d = Math.max(Math.abs(x), Math.abs(z));
-  return smoothstep(yard.half + 8, yard.half + 70, d) * (2 + 16 * fbm(x * 0.011 + 3, z * 0.011 + 7)) * hillFactor(x, z);
+  return smoothstep(yard.half + 8, yard.half + 70, d) * (2 + 16 * fbm(x * 0.011 + 3, z * 0.011 + 7)) * hillFactor(x, z) - pondDip(x, z);
+}
+
+/** The outskirts pond (content/data/nature.ts): a shallow bowl, deepest at the centre, flat ground from `r` out. */
+function pondDip(x: number, z: number) {
+  const d = Math.hypot(x - POND.x, z - POND.z);
+  return d < POND.r ? POND.depth * smooth(1 - d / POND.r) : 0;
 }
 
 /** Per-face ground swatch: big low-frequency patches (low-poly look). */
@@ -52,7 +59,8 @@ function groundSwatch(x: number, z: number) {
 
 /** Hill trees closer than this are drawn as AI-made instanced models (aiTrees.ts) instead of the cone/blob kit. */
 export const AI_TREE_RANGE = 150;
-export const nearTreeSpots: { x: number; z: number; s: number; a: number; k: number }[] = [];
+/** `sp` forces a species (PF key, yard/pfModels.ts); without it the default mix of aiTrees.ts applies. */
+export const nearTreeSpots: { x: number; z: number; s: number; a: number; k: number; sp?: string }[] = [];
 
 export function buildGround(kit: Kit) {
   const n = (EXTENT * 2) / CELL;

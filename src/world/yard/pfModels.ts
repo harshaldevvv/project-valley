@@ -37,6 +37,9 @@ export const PF: Record<string, { file: string; h: number }> = {
   tree_pine_young: { file: 'young-pine-0d7695', h: 6 },
   tree_birch: { file: 'birch-tree-181b33', h: 7.5 },
   tree_oak: { file: 'oak-tree-50ee7c', h: 8 },
+  tree_apple: { file: 'orchard-apple-tree-b21f85', h: 5 },
+  tree_pine_stand: { file: 'campground-pine-stand-0bf4f2', h: 9 },
+  tree_street: { file: 'street-tree-0d33f3', h: 7 },
   // set dressing (dress.ts)
   car_hatch: { file: 'compact-hatchback-386417', h: 1.5 },
   car_pickup: { file: 'marigold-pickup-f4b6f9', h: 1.9 },

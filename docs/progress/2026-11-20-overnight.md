@@ -84,3 +84,54 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 
   Walk (`tools/audit/outskirtswalk.mjs all`): every route reaches its goal, roadblock gaps passable, both new cooler prompts show, no console errors; p95 16.9 ms and 0.8 to 1.6 M tris at the five zombie stops. The camp-track route now steps round the camp's own cooler (it sat on the straight line). Open, not from this pass: 985 stall ticks just inside the grocery door (-88, 140.6).
 - Grocery door stall (985 ticks at -88, 140.6): not reproducible in 4 runs (town and all). The spot is the face of the closed door leaf, so in that run the door never opened: the walk pressed E without aiming, and the E target is picked by aim (a car trunk sits 2.4 m from the grocery door). The walk now aims through each door, retries E until "Close door" and prints DOOR DID NOT OPEN otherwise; hardware store added. Town leg 1 stall tick, outpost 0. New `tools/audit/buildingdoors.mjs [ids]` walks in and out of every full-height opening of every enterable building (ROUNDS=n): all front doors pass; blocked: grocery back door (vending machine), hardware shopfront opening (new pallet), fuel shop shopfront (box), pharmacy back door once. Those sit in data files the POI collision session is editing, so they were handed to it. The church is a solid landmark, not enterable.
+
+## Nature pass on the outskirts plateau (2026-11-21)
+
+- **Tree variety:** plateau trees now pick a species by zone (content/data/nature.ts TREE_MIX): the edge belt is mostly pines with Polyfork pine stands, the clumps broadleaf (oak, birch, street tree, orchard apple, some pines). New PF keys tree_apple, tree_pine_stand, tree_street (yard/pfModels.ts); spots carry `sp` and aiTrees.ts honours it. The three plateau-only species use one instanced cell each (one draw wherever you look). Pine stands get a wider trunk collider. Hill trees outside the plateau are unchanged.
+- **Rocks, logs, undergrowth:** world/outskirts/nature.ts places 44 rock/log cluster centres in the belt and clumps, then field rocks, medium rocks, large boulders, rock outcrops, fallen and hollow logs, stumps and ferns, clear of roads, POI clear zones, footprints and trunks. Boulders, outcrops and logs always get a box collider; rocks and stumps only when wider than 1.1 / 0.7 m. Everything merges into one mesh per 160 m square named outskirts_nature_* (at most 4 draws, distance-culled, no shadow pass): one instanced mesh per model across the plateau sat in every frustum, even indoors, and cost +10 to +17 draws per view.
+- **Grass:** meadow patches (MEADOW noise) stretch the plateau tufts up to 1.9x (no extra draws); bushes 140 -> 190.
+- **Pond** at (30, 190), open ground east of the main road: the terrain dips 0.85 m in a 9.5 m bowl (yard/ground.ts pondDip, render mesh and heightfield alike), a water disc at -0.1 m (culled past 140 m, cull.ts `pond_`), cattail reeds round the west/south banks (north-east left open to walk down), lily pads, shore rocks. No colliders: walk round it or wade in.
+- New Polyfork models (CC BY 4.0, CREDITS.md + asset-credits.md): Cattail Reed, Fern Plant, Lily Pad Cluster, Medium Rock.
+- New drawbreak views nat_pond, nat_pond_low, nat_forest_w (nat_belt_w / nat_belt_nw kept for the before/after, they look at the school side).
+- Gotcha: cull.ts measures the geometry's own bounding sphere, so a mesh placed with `mesh.position` gets culled by its local origin. Bake the position into the geometry.
+
+Draw calls (renderer draws, `drawbreak.mjs`, all views; before = before this pass, other sessions were also editing outskirts data and weapons in between, so +-2 is noise). Over 350 before already: diner_spot, houseA_front, door_in, rb_mill. Nature adds +0 to +6 on most views, +9 at outpost_road, +12 at nat_pond.
+
+  | view | before | after | | view | before | after |
+  |---|---|---|---|---|---|---|
+  | diner_spot | 384 | 390 | | houseA_front | 359 | 362 |
+  | door_in | 355 | 360 | | rb_mill | 351 | 353 |
+  | diner_office | 344 | 350 | | houseA_in | 342 | 343 |
+  | mill_road | 328 | 331 | | outpost_road | 310 | 319 |
+  | pharmacy_in | 303 | 306 | | shed_in | 301 | 304 |
+  | shelf_front | 293 | 298 | | odell | 289 | 296 |
+  | gatehouse | 289 | 289 | | police_in | 284 | 284 |
+  | fuel | 277 | 283 | | armory_in | 280 | 280 |
+  | spawn | 272 | 279 | | checkpoint | 270 | 274 |
+  | yard_camp | 270 | 273 | | sign_checkpoint | 269 | 271 |
+  | gate | 264 | 271 | | pumps | 268 | 270 |
+  | shop_front | 250 | 256 | | shop_in | 246 | 250 |
+  | air_town | 243 | 249 | | workshop_in | 238 | 242 |
+  | sign_maple | 238 | 241 | | maple | 228 | 234 |
+  | yard_junk | 225 | 230 | | verge_farm | 227 | 229 |
+  | barracks_in | 224 | 224 | | garage | 217 | 223 |
+  | road_south | 219 | 222 | | nat_pond | 198 | 210 |
+  | grocery_in | 205 | 208 | | verge_diner | 204 | 206 |
+  | main_street | 204 | 206 | | nat_pond_low | - | 204 |
+  | motel_in | 198 | 204 | | shelf_back | 196 | 199 |
+  | houseB_front | 189 | 196 | | rb_farm | 195 | 193 |
+  | memorial | 191 | 193 | | dept_store | 190 | 193 |
+  | diner | 190 | 190 | | farm | 191 | 189 |
+  | rb_main | 186 | 188 | | outpost_armory_in | 184 | 184 |
+  | houseB_in | 182 | 184 | | outpost_air | 180 | 183 |
+  | rb_crash | 174 | 177 | | farmhouse_in | 176 | 176 |
+  | camp | 165 | 167 | | bus | 163 | 165 |
+  | stand | 153 | 156 | | church | 152 | 154 |
+  | school | 150 | 152 | | outpost_gate | 146 | 146 |
+  | crash | 142 | 144 | | nat_belt_w | 133 | 142 |
+  | ranger_spot | 137 | 138 | | motor_pool | 130 | 133 |
+  | school_spot | 129 | 131 | | nat_forest_w | - | 126 |
+  | wren | 119 | 120 | | ranger | 120 | 120 |
+  | nat_belt_nw | 107 | 112 | |  |  |  |
+
+Walk (`outskirtswalk.mjs all`): first run had two STUCK legs (main road east from the school, crash road back) with no collider of this pass within 14 m of either spot; a rerun of `walk` had every leg ok, 0 errors. tsc clean, vitest 177/177.

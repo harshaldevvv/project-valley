@@ -17,16 +17,23 @@ const SPECIES = [
   { id: 'tree_pine_young', weight: 0.25 },
   { id: 'tree_birch', weight: 0.15 },
   { id: 'tree_oak', weight: 0.2 },
+  // plateau-only species: picked by `sp` on the spot (outskirts/scatter.ts), never by the default mix
+  { id: 'tree_apple', weight: 0 },
+  { id: 'tree_pine_stand', weight: 0 },
+  { id: 'tree_street', weight: 0 },
 ];
 
 export async function buildAiTrees(game: Game) {
   const loaded = await Promise.all(SPECIES.map((sp) => loadPfGeometry(sp.id).then((g) => (g ? { sp, g } : null))));
   const buckets = loaded.filter((x): x is NonNullable<typeof x> => !!x).map((x) => ({ ...x, spots: [] as typeof nearTreeSpots }));
   if (!buckets.length) return;
-  const total = buckets.reduce((a, b) => a + b.sp.weight, 0);
+  const mix = buckets.filter((b) => b.sp.weight > 0);
+  const total = mix.reduce((a, b) => a + b.sp.weight, 0);
   for (const t of nearTreeSpots) {
+    const forced = t.sp && buckets.find((b) => b.sp.id === t.sp);
+    if (forced) { forced.spots.push(t); continue; }
     let r = t.k * total;
-    for (const b of buckets) if ((r -= b.sp.weight) <= 0 || b === buckets[buckets.length - 1]) { b.spots.push(t); break; }
+    for (const b of mix) if ((r -= b.sp.weight) <= 0 || b === mix[mix.length - 1]) { b.spots.push(t); break; }
   }
   const m = new Matrix4(), q = new Quaternion(), up = new Vector3(0, 1, 0), p = new Vector3(), sc = new Vector3();
   for (const b of buckets) {
@@ -36,9 +43,11 @@ export async function buildAiTrees(game: Game) {
     const h = positionLocal.y.div(PF[b.sp.id].h).max(0);
     const sway = sin(time.mul(1.1).add(phase)).add(sin(time.mul(2.3).add(phase.mul(1.7))).mul(0.35)).mul(h.mul(h)).mul(windGust.mul(0.2).add(0.1));
     mat.positionNode = positionLocal.add(vec3(sway, 0, sway.mul(0.45)));
-    // 120 m cells so the cull system (outskirts/cull.ts) can drop far groves; one draw per species per cell
+    // 120 m cells so the cull system (outskirts/cull.ts) can drop far groves; one draw per species per cell. The rarer
+    // plateau-only species use one cell for the whole plateau (a single draw each wherever you look)
+    const one = b.sp.weight === 0;
     const cells = new Map<string, typeof nearTreeSpots>();
-    for (const t of b.spots) { const k = `${Math.floor(t.x / 120)},${Math.floor(t.z / 120)}`; (cells.get(k) ?? cells.set(k, []).get(k)!).push(t); }
+    for (const t of b.spots) { const k = one ? 'plateau' : `${Math.floor(t.x / 120)},${Math.floor(t.z / 120)}`; (cells.get(k) ?? cells.set(k, []).get(k)!).push(t); }
     for (const [ck, list] of cells) {
       const inst = new InstancedMesh(b.g.geo, mat, list.length);
       inst.name = `treecell_${b.sp.id}_${ck}`;

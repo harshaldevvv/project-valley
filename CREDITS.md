@@ -231,6 +231,10 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Hearth Log Bench by Polyfork | https://polyfork.dev/asset/hearth-log-bench-c3c5ec |
 | Hollow Log by Polyfork | https://polyfork.dev/asset/hollow-log-329fd7 |
 | Large Boulder by Polyfork | https://polyfork.dev/asset/large-boulder-a29b99 |
+| Cattail Reed by Polyfork | https://polyfork.dev/asset/cattail-reed-6abbb3 |
+| Fern Plant by Polyfork | https://polyfork.dev/asset/fern-plant-1559b8 |
+| Lily Pad Cluster by Polyfork | https://polyfork.dev/asset/lily-pad-cluster-457382 |
+| Medium Rock by Polyfork | https://polyfork.dev/asset/medium-rock-e08405 |
 | Log Cabin by Polyfork | https://polyfork.dev/asset/log-cabin-4fac3b |
 | Log Store by Polyfork | https://polyfork.dev/asset/log-store-25e0b5 |
 | Loot Crate by Polyfork | https://polyfork.dev/asset/loot-crate-23dd3b |
