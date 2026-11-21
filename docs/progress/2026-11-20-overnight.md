@@ -315,3 +315,4 @@ Unthrottled (x1): every view holds 16.7 ms (vsync) on all presets. Render-thread
 - **Audit:** `tools/audit/questchain.mjs` plays all 13 quests (no new objective kinds needed). It also checks every recipe a quest-reward manual unlocks: blocked without it, crafted with it. Result: ALL QUESTS PLAYABLE, SAVE ROUND TRIP OK; IFAK locked without the manual, crafted with it.
 - tsc clean for these files (`src/core/game.ts` has another session's uncommitted `renderLabels` errors). vitest 23 files / 197 tests pass, run on this PC because the laptop was down.
 - tsc clean, vitest 23 files / 197 tests pass (run on this PC: the laptop was offline).
+- Follow-up: the "You died… Respawning…" toasts are gone; `playerDied` now carries `{ cause }` (attack, starvation, bleeding, fire...) and the death card shows it as a sub-line (`hudText.deathCause`); the onboarding hint holds while dead. tsc clean, vitest 197 pass.

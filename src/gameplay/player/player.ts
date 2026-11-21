@@ -138,8 +138,7 @@ export class Player implements PlayerView {
     if (this.hp <= 0) {
       this.dead = true;
       this.deadT = HD.respawnDelay;
-      this.ctx.game.events.emit('toast', { text: 'You died. Respawning…' });
-      this.ctx.game.events.emit('playerDied', {});
+      this.ctx.game.events.emit('playerDied', { cause: 'attack' }); // the HUD death card says it (no toast)
     }
     return true;
   }
@@ -160,8 +159,7 @@ export class Player implements PlayerView {
     if (this.hp <= 0) {
       this.dead = true;
       this.deadT = HD.respawnDelay;
-      this.ctx.game.events.emit('toast', { text: `You died (${cause}). Respawning…` });
-      this.ctx.game.events.emit('playerDied', {});
+      this.ctx.game.events.emit('playerDied', { cause });
     }
   }
 

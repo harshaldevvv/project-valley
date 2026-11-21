@@ -92,7 +92,9 @@ const CSS = `
 /* UI polish round 2: death screen sub-lines, hotbar strip (1-4 weapons, 5-9 quick items) */
 .hud div.dead{align-content:center;justify-items:center;gap:22px}
 .hud .dead small{display:block;font:600 15px/1.4 var(--display);letter-spacing:.16em;text-indent:0;color:#e8ecef;text-shadow:0 1px 3px #000;animation:hud-fade .6s .7s both}
-.hud .dead small+small{font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent)}
+.hud .dead small.why{font-size:18px;letter-spacing:.1em;color:#f0c8c0}
+.hud .dead small:empty{display:none}
+.hud .dead small+small+small{font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent)}
 @keyframes hud-fade{from{opacity:0}to{opacity:1}}
 .hud .hb{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;align-items:flex-end;gap:4px;padding:5px;background:#0a0d0c99;border-radius:2px}
 .hud .hb .s{position:relative;width:44px;height:44px;border:1px solid #ffffff26;border-radius:2px;background:#0a0d0ccc;display:grid;place-items:center;overflow:hidden}
@@ -157,6 +159,7 @@ export class Hud {
   private help: HTMLElement;
   private dead: HTMLElement;
   private deadCost: HTMLElement;
+  private deadWhy: HTMLElement;
   private deadT: HTMLElement;
   private hb: HTMLElement;
   private hbCells: HTMLElement[] = [];
@@ -207,6 +210,7 @@ export class Hud {
     this.help.style.cssText = 'position:fixed;z-index:12';
     this.dead = el('dead', this.root);
     el('', this.dead, 'span').textContent = hudText.died;
+    this.deadWhy = el('why', this.dead, 'small');
     this.deadCost = el('', this.dead, 'small');
     this.deadT = el('', this.dead, 'small');
     // Hotbar: weapon slots 1-4, then the quick items bound to 5-9
@@ -230,7 +234,10 @@ export class Hud {
     }
 
     ctx.game.events.on('toast', ({ text, icon }) => this.toast(text, icon));
-    ctx.game.events.on('playerDied', () => (this.helpOpen = false));
+    ctx.game.events.on('playerDied', ({ cause }) => {
+      this.helpOpen = false;
+      this.deadWhy.textContent = (cause && hudText.deathCause[cause]) || '';
+    });
     // Hidden behind the title/pause menu (QA-017)
     ctx.game.events.on('uiScreen', ({ name, open }) => {
       if (name === 'menu') this.root.style.display = open ? 'none' : '';

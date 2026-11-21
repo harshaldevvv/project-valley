@@ -53,6 +53,9 @@ export function installHints(game: Game, playing: () => boolean) {
   // it sits bottom centre, right where dialogue choices and build cards go.
   const open = new Set<string>();
   game.events.on('uiScreen', ({ name, open: o }) => (o ? open.add(name) : open.delete(name)));
+  // ...and behind the death card: held (timer paused) from playerDied until respawn
+  game.events.on('playerDied', () => open.add('dead'));
+  game.events.on('playerRespawned', () => open.delete('dead'));
   const clear = () => {
     try {
       return playing() && open.size === 0 && !game.build?.active;

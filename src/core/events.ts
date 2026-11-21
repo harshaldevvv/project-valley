@@ -14,7 +14,8 @@ export interface GameEvents {
   /** Player took damage. `from` = world position of the attacker (for the direction wedge). */
   playerDamaged: { amount: number; from: Vector3 | null };
   /** Player died / respawned. UI screens (inventory, build mode) close on death. */
-  playerDied: Record<string, never>;
+  /** cause: 'attack' for hits, else the hurt() cause ('starvation', 'bleeding', 'fire'...). */
+  playerDied: { cause?: string };
   playerRespawned: Record<string, never>;
   /** A zombie died; its corpse stays at `position` until corpseRemoved (systems makes it a searchable body). */
   zombieKilled: { id: number; variant: string; position: Vector3 };
