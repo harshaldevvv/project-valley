@@ -42,7 +42,7 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 - [x] C1 Silent gunshots sometimes: own shots play as 2D (not HRTF at the muzzle), weapon sounds preloaded before play starts, layered shot (body + tail + mech).
 - [x] C2 Better CC0 gun sounds (pistol, rifle, shotgun, reloads, dry fire, casings), logged in credits.
 - [x] C3 Knife and melee whoosh/impact sounds.
-- [~] C4 More guns from Polyfork (shotgun "scattergun", bolt-action rifle, pistol) wired with stats.
+- [x] C4 More guns from Polyfork wired with stats: pump shotgun `shotgun_a`, hunting rifle `bolt_a`, .357 `revolver_a`, SMG `smg_a` (items_guns, loot_guns, range rack, per-gun hands, attachments and extended mags; `attachcheck.mjs` passes).
 - [x] C5 Gun polish, all six guns (`tools/audit/gunpolish.mjs ads|reload|audio`): ADS sight on the eye line per optic, FP reload hand and magazine paths, recoil feel, per-gun reload sounds. Details in the Log.
 
 ## Z. Zombies
