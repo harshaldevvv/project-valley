@@ -88,7 +88,10 @@ for o in meshes:
                     rg.setstate(state)
                     rgb = dirty(rgb, centre, skin)
                     # grimy blood: older and darker, laid over the dirtied colour so bright cloth does not show through
-                    if blood: rgb = mix(rgb, tuple(x * (1 - 0.45 * G) for x in blood), 0.85 + 0.1 * G)
+                    if blood:
+                        # on near-black cloth (wetsuits) full-strength blood reads as red paint: soak it in instead
+                        k = 0.85 + 0.1 * G if max(rgb) > 0.06 else 0.2
+                        rgb = mix(rgb, tuple(x * (1 - 0.45 * G) for x in blood), k)
                 attr.data[li].color = (*rgb, c[3])
     else:
         for v in me.vertices:

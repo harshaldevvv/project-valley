@@ -3,7 +3,7 @@
 # body scale (brute). Each: name:polyfork-id:scale:seed[:grime 0..1]. ONLY=<name> rebuilds just that one. Credited in CREDITS.md. Models already in D:/AI3D/polyfork/chars are reused.
 cd /e/Documents/GitHub/project-valley
 B="C:/Program Files/Blender Foundation/Blender 4.5/blender.exe"; P="$PWD"; mkdir -p assets/gen/pfzmb
-for spec in brute:groundworker-083f5c:1.4:21:1 runner:surveyor-82e5c7:0.97:22:1 screamer:lake-angler-1c4740:0.95:23:1 crawler:scuba-diver-bdd1c8:0.95:24; do
+for spec in brute:groundworker-083f5c:1.4:21:1 runner:surveyor-82e5c7:0.97:22:1 screamer:lake-angler-1c4740:0.95:23:1 crawler:scuba-diver-bdd1c8:0.95:24:1; do
   IFS=: read n id k i g <<< "$spec"; out=zmb_pfz_${n}_a
   [ -n "$ONLY" ] && [ "$ONLY" != "$n" ] && continue
   [ -f /d/AI3D/polyfork/chars/$id.glb ] || curl -sL -o /d/AI3D/polyfork/chars/$id.glb https://polyfork.dev/cdn/$id.glb
