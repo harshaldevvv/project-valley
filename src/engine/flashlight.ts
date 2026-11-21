@@ -2,6 +2,7 @@ import { AdditiveBlending, ConeGeometry, DoubleSide, Mesh, SpotLight, Vector3 } 
 import { MeshBasicNodeMaterial } from 'three/webgpu';
 import { float, positionLocal, pow, smoothstep, uniform, vec3 } from 'three/tsl';
 import type { Game } from '../core/game';
+import { Group, groups } from './physics';
 
 /**
  * Flashlight (L): a warm spotlight from the camera along the view direction. One SpotLight lives in the scene from the
@@ -48,6 +49,17 @@ export function installFlashlight(game: Game) {
     if (e.code === 'KeyL' && !e.repeat && !game.input.blocked) flashlightControl.toggle();
   });
   const fwd = new Vector3();
+  // Five rays per frame, the view axis and four inside the cone (static, buildings, terrain, cars, zombies; never the player):
+  // the beam starts in front of the first wall instead of behind it, and its intensity is capped by the distance to the
+  // nearest lit surface, so a wall or a car 1-5 m away is lit, not blown out to white (cap K * s^decay, the light's own falloff).
+  const { R, world } = game.phys;
+  const ray = new R.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: -1 });
+  const right = new Vector3(), up = new Vector3(), dir = new Vector3();
+  const SPREAD = Math.tan(Math.PI / 6.2) * 0.5; // half way to the cone edge
+  const PROBES: [number, number][] = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
+  const RAY_FILTER = groups(Group.PROJECTILE, Group.STATIC | Group.BUILD | Group.TERRAIN | Group.VEHICLE | Group.ZOMBIE);
+  const OFFSET = 2.8, REACH = 16, CAP_K = 16, MAX_I = 420; // CAP_K: a near wall gets about the light a wall 10 m out gets (420 / 10^1.5)
+  let cap = MAX_I;
   let t = 0;
   game.addSystem({
     name: 'flashlight',
@@ -63,15 +75,30 @@ export function installFlashlight(game: Game) {
       }
       const cam = game.camera;
       cam.getWorldDirection(fwd);
-      light.position.copy(cam.position).addScaledVector(fwd, 2.8); // starts ahead of the camera so the third-person body behind the lens is not blown out
+      ray.origin = cam.position;
+      right.setFromMatrixColumn(cam.matrixWorld, 0);
+      up.setFromMatrixColumn(cam.matrixWorld, 1);
+      let d = REACH, axis = REACH;
+      for (const [a, b] of PROBES) {
+        ray.dir = dir.copy(fwd).addScaledVector(right, a * SPREAD).addScaledVector(up, b * SPREAD).normalize();
+        const hit = world.castRay(ray, REACH, true, undefined, RAY_FILTER);
+        const h = hit ? hit.timeOfImpact : REACH;
+        if (a === 0 && b === 0) axis = h;
+        d = Math.min(d, h);
+      }
+      const off = Math.min(OFFSET, Math.max(0.15, axis - 0.6)); // ahead of the camera so the third-person body is not blown out, never past the wall
+      const goalCap = Math.min(MAX_I, CAP_K * Math.pow(Math.max(0.4, d - off), 1.5));
+      cap += (goalCap - cap) * Math.min(1, dt * 10); // eased so walking up to a wall dims the spot smoothly
+      light.position.copy(cam.position).addScaledVector(fwd, off);
       light.position.y -= 0.12;
       light.target.position.copy(cam.position).addScaledVector(fwd, 14);
       const flicker = 1 + 0.03 * Math.sin(t * 37) * Math.sin(t * 11);
       const dark = 0.35 + 0.65 * game.time.night; // dim by day so it does not look like a second sun
-      light.intensity = 420 * state.level * flicker * dark;
+      light.intensity = cap * state.level * flicker * dark;
       // beam: positioned at the lens, pointing along the view; stronger at night
       cone.visible = true;
-      cone.position.copy(light.position);
+      cone.position.copy(cam.position).addScaledVector(fwd, OFFSET); // the haze keeps its old start: pulled in near a wall its bright apex would fill the lens
+      cone.position.y -= 0.12;
       cone.lookAt(light.target.position);
       beam.value = state.level * (0.02 + 0.07 * game.time.night) * flicker;
     },

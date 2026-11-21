@@ -1,5 +1,6 @@
 // node tools/audit/poiperf.mjs [tag] [name,name...]   headless: teleport to each view, screenshot (wip/poi_<name>.png) and log draws/tris/frame ms.
 // Views come from tools/audit/poiviews.json: {name:[x,z,yaw,pitch,height?]}. Needs the dev server on 5188.
+// Env TOD=<hour> sets the time of day (TOD=23 = night; shots then go to wip/poi_<name>_t23.png), FLASH=1 turns the flashlight on.
 import { readFileSync } from 'node:fs';
 import { launch } from './browser.mjs';
 const views = JSON.parse(readFileSync(new URL('./poiviews.json', import.meta.url), 'utf8'));
@@ -15,6 +16,10 @@ await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, 
 await page.waitForTimeout(2500);
 await page.mouse.click(640, 360);
 await page.evaluate(() => { window.__gp.ctx.player.godMode = true; });
+const TOD = process.env.TOD, FLASH = process.env.FLASH === '1';
+if (TOD) await page.evaluate((tod) => window.engine.setTimeOfDay(+tod), TOD);
+if (FLASH) { await page.keyboard.press('KeyL'); await page.waitForTimeout(400); } // the real key: importing flashlight.ts here can return a second module copy
+const sfx = (TOD ? `_t${TOD}` : '') + (FLASH ? '_flash' : '');
 const rows = [];
 for (const [name, v] of Object.entries(views)) {
   if (only && !only.includes(name)) continue;
@@ -31,7 +36,7 @@ for (const [name, v] of Object.entries(views)) {
   }
   await page.waitForTimeout(2500);
   const s = await page.evaluate(() => { const p = window.__gp.ctx.game.perf.snapshot(); return { draws: p.drawCalls, tris: Math.round(p.triangles / 1000), p50: +p.p50.toFixed(1), p95: +p.p95.toFixed(1), gpuMs: p.gpuMs }; });
-  await page.screenshot({ path: `docs/audit/screenshots/wip/poi_${name}.png` });
+  await page.screenshot({ path: `docs/audit/screenshots/wip/poi_${name}${sfx}.png` });
   rows.push({ name, ...s });
 }
 console.log(process.argv[2] ?? '', JSON.stringify(rows));
