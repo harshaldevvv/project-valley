@@ -87,9 +87,12 @@ for (let rr = 0; rr < rounds; rr++) for (const d of doors) {
   const sIn = await page.evaluate(() => window.__stalls.splice(0));
   const rOut = await walk(ox, oz);
   const sOut = await page.evaluate(() => { window.__walking = false; return window.__stalls.splice(0); });
-  const fail = rIn >= 0.5 || rOut >= 0.5 || sIn.length + sOut.length > 3;
+  // through = body at least 0.9 m past the wall line; furniture just inside (a counter, a parked car) may stop it short of the 2.2 m target
+  const [ex, ez] = endIn.split(' ')[0].split(',').map(Number);
+  const depth = (ex - d.cx) * d.ix + (ez - d.cz) * d.iz;
+  const fail = (rIn >= 0.5 && depth < 0.9) || rOut >= 0.5 || sIn.length + sOut.length > 3;
   total++; if (fail) bad++;
-  console.log(`${fail ? 'BAD ' : 'ok  '} ${d.id} ${d.side} u${d.u} w${d.w} door(${d.cx.toFixed(1)},${d.cz.toFixed(1)}) [${opened}] in ${rIn < 0.5 ? 'reached' : 'left ' + rIn.toFixed(1) + ' at ' + endIn + ' target ' + inx.toFixed(1) + ',' + inz.toFixed(1)} stalls ${sIn.length}, out ${rOut < 0.5 ? 'reached' : 'left ' + rOut.toFixed(1)} stalls ${sOut.length}`);
+  console.log(`${fail ? 'BAD ' : 'ok  '} ${d.id} ${d.side} u${d.u} w${d.w} door(${d.cx.toFixed(1)},${d.cz.toFixed(1)}) [${opened}] in ${rIn < 0.5 ? 'reached' : (depth >= 0.9 ? 'through (' + depth.toFixed(1) + ' m in, interior blocks the 2.2 m target)' : 'left ' + rIn.toFixed(1) + ' at ' + endIn + ' target ' + inx.toFixed(1) + ',' + inz.toFixed(1))} stalls ${sIn.length}, out ${rOut < 0.5 ? 'reached' : 'left ' + rOut.toFixed(1)} stalls ${sOut.length}`);
   if (fail) for (const s of [...new Set([...sIn, ...sOut])].slice(0, 4)) console.log('      ', s);
 }
 console.log(`doors ${total}, bad ${bad}`);
