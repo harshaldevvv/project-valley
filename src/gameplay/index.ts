@@ -30,6 +30,7 @@ import { Vehicles } from './vehicles/vehicles';
 import { Targets } from './weapons/targets';
 import { sandboxLoadout, Weapons } from './weapons/weapons';
 import { Zombies } from './zombies/zombies';
+import { flashlightControl } from '../engine/flashlight';
 
 const easeInOut = (t: number) => t * t * (3 - 2 * t);
 
@@ -227,6 +228,8 @@ export async function installGameplay(game: Game): Promise<void> {
     /** Live data tables (the same module instances the game uses, also after HMR). */
     data: { horde, zombieDefs, senses, fxTuning, cameraFeel, movement },
     surfaceOf,
+    /** The flashlight switch (audits turn it on without a battery item). */
+    flashlight: flashlightControl,
     setLook: (yaw: number, pitch: number) => ctx.player.setLook(yaw, pitch),
     look: (dx: number, dy: number) => ((ctx.controls.lookDx += dx), (ctx.controls.lookDy += dy)),
     mouse: (button: 0 | 2, held: boolean) => ctx.controls.press('Mouse' + button, held),

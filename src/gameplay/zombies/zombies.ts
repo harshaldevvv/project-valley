@@ -1,7 +1,9 @@
 import { BufferAttribute, BufferGeometry, Frustum, LineBasicMaterial, LineSegments, Matrix4, Object3D, Sphere, Vector3 } from 'three';
 import type { Collider, KinematicCharacterController, RigidBody } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
-import { crawlClips as CC, deathFall as DF, hitReact as HR, horde as HD, senses as SN, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
+import { crawlClips as CC, deathFall as DF, doorBash as DB, hitReact as HR, horde as HD, senses as SN, steer as ST, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
+import { flashlightControl } from '../../engine/flashlight';
+import { doorHandles, type DoorHandle } from '../../world/yard/doors';
 import { hasAsset } from '../../engine/assets';
 import { fxTuning } from '../../content/data/fx';
 import { anim as A, clipMeta } from '../../content/data/anim';
@@ -31,7 +33,9 @@ const CAPSULE_HH = 0.45;
 const CAPSULE_R = 0.3;
 const HEAD_Y = 1.62;
 
-type Mode = 'move' | 'windup' | 'recover' | 'stagger' | 'climb' | 'scream' | 'dead';
+type Mode = 'move' | 'windup' | 'recover' | 'stagger' | 'climb' | 'scream' | 'charge_windup' | 'charge' | 'bash' | 'dead';
+const STEER_FILTER = Group.STATIC | Group.BUILD | Group.VEHICLE;
+const wrapA = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
 const _v = new Vector3();
 const _w = new Vector3();
@@ -87,6 +91,25 @@ export class Zombie {
   headKill = false;
   /** Screamer: seconds until it can scream again. */
   screamCd = 0;
+  /** Heard a noise: head-turn time left before it moves, and whether it was loud enough to come at a run. */
+  reactT = 0;
+  urgent = false;
+  /** Obstacle steering: next whisker check, chosen swerve (rad), the eased one, preferred side and how long it is kept. */
+  steerT = 0;
+  swerve = 0;
+  swerveNow = 0;
+  side = 0;
+  sideT = 0;
+  blockedT = 0;
+  /** Attack windup length this swing (off-view swings are longer). */
+  windupLen = 0.6;
+  /** Brute charge: cooldown, locked direction, metres left. */
+  chargeCd = 0;
+  readonly chargeDir = new Vector3();
+  chargeLeft = 0;
+  /** Door being bashed; heading for a doorway this step. */
+  door: DoorHandle | null = null;
+  viaDoor = false;
   /** Capsule centre above the feet (scaled per variant). */
   get capY() {
     return CAPSULE_HH * (this.def.scale ?? 1) + CAPSULE_R;
@@ -127,6 +150,7 @@ export class Zombies {
   private kcc: KinematicCharacterController;
   private nextId = 1;
   private noises: { pos: Vector3; radius: number }[] = [];
+  private doorHits = new Map<DoorHandle, number>();
   private time = 0;
   private lines: LineSegments;
   private linePos = new Float32Array(30 * 8 * 3);
@@ -139,6 +163,12 @@ export class Zombies {
   hordeOn = false;
   horde!: HordeNight;
   private lastWindup = -9;
+  /** When the last swing lands (sim s): swings are spaced by when they land, not only when they start. */
+  private lastLand = -9;
+  /** Doors in the world (for audits). */
+  get doors() {
+    return doorHandles;
+  }
   private bags = new Map<string, string[]>();
   private tickN = 0;
   private ray;
@@ -582,6 +612,8 @@ export class Zombies {
     const stance = p.crouched ? SN.stanceCrouch : 1;
     const noises = this.noises;
     const night = this.night01();
+    const lit = flashlightControl.on && night > 0.2 && !p.inVehicle ? night : 0;
+    const beamCos = Math.cos((SN.beamHalfDeg * Math.PI) / 180);
     if (this.knockT > 0 && (this.knockT -= dt) <= 0 && this.knockLocked) {
       p.locked = false; // only the lock this module took
       this.knockLocked = false;
@@ -636,12 +668,17 @@ export class Zombies {
       if ((z.losT -= dt) <= 0) {
         z.losT = 1 / SN.losHz + (z.id % 6) * 0.004; // staggered across zombies
         z.sight = 0;
-        if (playerTarget && !HD.passive && dist < Math.max(SN.rangeDay, SN.rangeNight)) {
+        if (playerTarget && !HD.passive && dist < Math.max(SN.rangeDay, SN.rangeNight * (lit ? SN.lightRangeMul : 1), lit ? SN.beamRange : 0)) {
           const fwdX = -Math.sin(z.yaw);
           const fwdZ = -Math.cos(z.yaw);
           const cos = (fwdX * _to.x + fwdZ * _to.z) / Math.max(1e-3, dist);
           const ang = (Math.acos(Math.max(-1, Math.min(1, cos))) * 180) / Math.PI;
-          const rate = dist < 1.2 ? 4 : Math.max(sightRate(dist, ang, stance, p.speed01, night) * suspicionMul(night), dist < SN.nearRange ? SN.nearRate : 0);
+          // a lit lamp at night is seen from further, crouched or not
+          const eff = lit ? dist / (1 + (SN.lightRangeMul - 1) * lit) : dist;
+          let rate = dist < 1.2 ? 4 : Math.max(sightRate(eff, ang, lit ? 1 : stance, lit ? 1 : p.speed01, night) * suspicionMul(night), dist < SN.nearRange ? SN.nearRate : 0);
+          // the beam lands on it: it notices the light whichever way it faces
+          if (lit && dist < SN.beamRange && (-Math.sin(p.yaw) * -_to.x + -Math.cos(p.yaw) * -_to.z) / Math.max(1e-3, dist) > beamCos)
+            rate = Math.max(rate, SN.beamRate * lit * (1 - (0.5 * dist) / SN.beamRange));
           z.seen = rate > 0 && this.los(z, p.curr, p.eyeHeight - 0.2);
           z.sight = z.seen ? rate : 0;
         } else z.seen = false;
@@ -652,6 +689,10 @@ export class Zombies {
           const d = n.pos.distanceTo(z.curr);
           if (d < n.radius * hearingMul(night)) {
             heard = true;
+            if (z.sense.awareness !== 'detected') {
+              if (z.sense.awareness === 'unaware' || z.sense.awareness === 'suspicious') z.reactT = SN.hearReact[0] + this.ctx.rand() * (SN.hearReact[1] - SN.hearReact[0]);
+              if (n.radius >= 20 && d < n.radius * SN.urgentFrac) z.urgent = true;
+            }
             // Imprecise for far sounds: the zombie searches around where it came from
             z.lastKnown.copy(n.pos);
             z.lastKnown.x += (this.ctx.rand() - 0.5) * d * 0.1;
@@ -705,13 +746,17 @@ export class Zombies {
     let face: Vector3 | null = null;
     z.modeT -= dt;
     if (z.screamCd > 0) z.screamCd -= dt;
+    if (z.chargeCd > 0) z.chargeCd -= dt;
+    z.viaDoor = false;
+    let moveSpeed = 0; // the wanted speed this step (charge: wall check after the move)
 
     switch (z.mode) {
       case 'stagger':
         if (z.modeT <= 0) z.mode = 'move';
         break;
       case 'windup':
-        face = tgt;
+        // tracks the player for the first part of the swing, then commits: a late sidestep or backstep dodges it
+        if (1 - z.modeT / z.windupLen < HD.windupTrack) face = tgt;
         if (z.modeT <= 0) {
           // Strike lands only if still in reach, in front, with no wall between (never through walls)
           const fwdX = -Math.sin(z.yaw);
@@ -740,7 +785,7 @@ export class Zombies {
             } else this.ctx.sfx('melee_swing', z.curr, { volume: 0.6 });
           }
           z.mode = 'recover';
-          z.modeT = d.attackRecover;
+          z.modeT = d.attackRecover * (1 + (this.ctx.rand() * 2 - 1) * HD.recoverJitter); // no lock-step volleys
         }
         break;
       case 'recover':
@@ -761,6 +806,69 @@ export class Zombies {
           z.screamCd = sc.cooldownS;
         }
         break;
+      case 'charge_windup':
+        // Brute: plants its feet and roars (the telegraph), then commits to a straight line
+        face = tgt;
+        if (z.modeT <= 0) {
+          const ch = d.charge!;
+          z.chargeDir.subVectors(tgt, z.curr).setY(0).normalize();
+          z.chargeLeft = Math.min(ch.maxDist, dist + 3);
+          z.mode = 'charge';
+          z.modeT = 0;
+          this.ctx.sfx('zombie_attack', z.curr, { pitchJitter: 0.05, volume: 1 });
+        }
+        break;
+      case 'charge': {
+        const ch = d.charge!;
+        moveSpeed = ch.speed;
+        _v.copy(z.chargeDir).multiplyScalar(ch.speed);
+        face = _tg.copy(z.curr).add(z.chargeDir);
+        _w.subVectors(p.curr, z.curr);
+        const ahead = _w.x * z.chargeDir.x + _w.z * z.chargeDir.z;
+        const side = Math.abs(_w.x * z.chargeDir.z - _w.z * z.chargeDir.x);
+        if (!car && !p.dead && ahead > -0.2 && ahead < 1.3 && side < 0.85 && Math.abs(_w.y) < 1.4) {
+          // ran into the player
+          if (!this.ctx.melee?.invulnerable && p.damage(ch.damage, z.curr)) {
+            this.ctx.sfx('melee_hit', p.curr, { volume: 1 });
+            this.ctx.survival?.zombieHit(ch.damage, 'body');
+            this.knockPlayer(d.knockdownS ?? 0.9);
+          }
+          z.mode = 'recover';
+          z.modeT = ch.recoverS;
+          _v.set(0, 0, 0);
+          break;
+        }
+        if ((z.chargeLeft -= ch.speed * dt) <= 0) {
+          z.mode = 'recover'; // winded: the window to punish it
+          z.modeT = ch.recoverS;
+        }
+        break;
+      }
+      case 'bash': {
+        // Bangs on a closed door; after doorBash.hits blows it bursts open
+        const dr = z.door;
+        if (!dr || !dr.closed() || z.sense.awareness === 'unaware') {
+          z.mode = 'move';
+          z.door = null;
+          break;
+        }
+        face = _tg.set(dr.x, z.curr.y, dr.z);
+        if (z.modeT <= 0) {
+          z.modeT = DB.every * (0.85 + this.ctx.rand() * 0.3);
+          z.anim?.oneshot('z_attack');
+          this.ctx.sfx('impact_wood', _tg, { volume: 1, pitchJitter: 0.15 });
+          this.ctx.game.events.emit('noise', { position: _tg.clone(), radius: 14, source: 'door_bash' });
+          const n = (this.doorHits.get(dr) ?? 0) + 1;
+          this.doorHits.set(dr, n);
+          if (n >= DB.hits) {
+            dr.force();
+            this.doorHits.delete(dr);
+            z.mode = 'move';
+            z.door = null;
+          }
+        }
+        break;
+      }
       case 'climb': {
         const c = z.climb!;
         c.t += dt / d.climbTime;
@@ -788,15 +896,33 @@ export class Zombies {
             z.anim?.oneshot('z_grab');
             break;
           }
+          // Brute: a bull charge from mid range, telegraphed by a roar
+          const ch = d.charge;
+          if (ch && z.chargeCd <= 0 && !car && !z.crawler && z.seen && dist >= ch.range[0] && dist <= ch.range[1] && Math.abs(tgt.y - z.curr.y) < 1) {
+            z.mode = 'charge_windup';
+            z.modeT = ch.windupS;
+            z.chargeCd = ch.cooldownS;
+            this.releaseToken(z);
+            this.ctx.sfx('zombie_alert', z.curr, { pitchJitter: 0.04, volume: 1 });
+            z.anim?.oneshot('z_grab');
+            break;
+          }
           // Ask for an attack token on approach; holders close in, the rest circle (Doom tokens)
           if (!z.token && dist < d.circleRadius + 1 && this.tokensInUse() < HD.attackTokens) z.token = true;
           if (z.token && dist > d.circleRadius + 3) z.token = false;
           if (rd <= d.attackRange && Math.abs(tgt.y - z.curr.y) < 1.6) {
-            if (z.token && this.time - this.lastWindup >= HD.attackSpacing && !HD.passive) {
+            const wl = d.attackWindup * windupMul(this.night01());
+            if (z.token && this.time - this.lastWindup >= HD.attackSpacing && this.time + wl >= this.lastLand + HD.attackSpacing && !HD.passive) {
               this.lastWindup = this.time;
               // Telegraph: windup with an audio cue ≥ 0.3 s before the hit lands
               z.mode = 'windup';
               z.modeT = d.attackWindup * windupMul(this.night01());
+              // a swing from outside the player's view gets a longer telegraph (it is heard, not seen)
+              const lx = -Math.sin(p.yaw), lz = -Math.cos(p.yaw);
+              const offView = (lx * (z.curr.x - p.curr.x) + lz * (z.curr.z - p.curr.z)) / Math.max(1e-3, dist) < Math.cos((HD.offViewDeg * Math.PI) / 180);
+              if (offView && !car) z.modeT *= HD.offViewWindupMul;
+              z.windupLen = z.modeT;
+              this.lastLand = this.time + z.modeT;
               this.ctx.sfx('zombie_attack', z.curr, { pitchJitter: 0.08 });
               if (z.crawler) z.anim?.oneshot(CC.attack, 0.1, false, 0, CC.attackSpeed); // lunge along the ground, never up onto the knees
               else z.anim?.oneshot('z_attack');
@@ -810,21 +936,36 @@ export class Zombies {
             _v.set(-_w.z * tangent, 0, _w.x * tangent).addScaledVector(_w, (d.circleRadius - dist) * 1.5);
             if (_v.lengthSq() > speed * speed) _v.setLength(speed);
           } else {
-            _v.subVectors(tgt, z.curr).setY(0);
+            _v.subVectors(this.doorWaypoint(z, tgt) ?? tgt, z.curr).setY(0);
             if (_v.lengthSq() > 0.01) _v.setLength(rd < 0.2 ? 0 : speed);
           }
+          if (!car) this.spreadOut(z, dist, speed);
+          moveSpeed = speed;
         } else if (s === 'searching') {
-          _v.subVectors(z.lastKnown, z.curr).setY(0);
-          const dl = _v.length();
-          if (dl > 1.5) _v.setLength(speed * 0.8);
-          else this.wanderAround(z, z.lastKnown, dt, z.walkSpeed);
+          if (z.reactT > 0) {
+            // heard something: the head turns first, then it goes
+            z.reactT -= dt;
+            face = z.lastKnown;
+            break;
+          }
+          const goal = this.doorWaypoint(z, z.lastKnown) ?? z.lastKnown;
+          _v.subVectors(goal, z.curr).setY(0);
+          const dl = Math.hypot(z.lastKnown.x - z.curr.x, z.lastKnown.z - z.curr.z);
+          if (dl > 1.5) _v.setLength(z.urgent ? speed : speed * 0.8); // a gunshot or a scream close by: it comes at a run
+          else {
+            z.urgent = false;
+            this.wanderAround(z, z.lastKnown, dt, z.walkSpeed);
+          }
+          moveSpeed = Math.hypot(_v.x, _v.z);
           face = null;
         } else if (s === 'suspicious') {
           face = z.lastKnown.lengthSq() > 0 ? z.lastKnown : p.curr; // head-turn toward the stimulus
           if (z.seen) z.lastKnown.copy(p.curr);
         } else {
+          z.urgent = false;
           this.wanderAround(z, z.home, dt, z.walkSpeed);
         }
+        if (z.mode === 'move') this.avoid(z, dt, s === 'detected' ? rd : Math.hypot(z.lastKnown.x - z.curr.x, z.lastKnown.z - z.curr.z), s !== 'unaware' && tgt.y - z.curr.y > 0.8);
         break;
       }
     }
@@ -886,11 +1027,23 @@ export class Zombies {
     z.body.setNextKinematicTranslation({ x: z.curr.x, y: z.curr.y + z.capY, z: z.curr.z });
     z.walkPhase += (Math.hypot(m.x, m.z) / 0.7) * Math.PI;
 
-    // Blocked while chasing/searching: climb onto vehicles and low walls (anti-cheese), 1.5–2 s
+    // Charging brute ran into a wall: it stands stunned (the reward for baiting it)
+    if (z.mode === 'charge' && moveSpeed > 0 && Math.hypot(m.x, m.z) < want * 0.35) {
+      this.ctx.sfx('impact_concrete', z.curr, { volume: 1 });
+      this.ctx.rig.trauma = Math.max(this.ctx.rig.trauma, dist < 8 ? 0.35 : 0.1);
+      this.stagger(z, d.charge!.wallStunS);
+      return;
+    }
+    // Blocked while chasing/searching: a closed door in the way gets bashed; otherwise climb onto vehicles and low walls (anti-cheese)
     if (z.mode === 'move' && want > 0.005 && Math.hypot(m.x, m.z) < want * 0.3 && z.sense.awareness !== 'unaware') {
       z.stuckT += dt;
-      if (z.stuckT > 0.4 && !p.inVehicle) this.tryClimb(z); // beat on an occupied car instead of climbing it
+      if (z.stuckT > 0.4 && !this.tryBash(z) && !p.inVehicle) this.tryClimb(z); // beat on an occupied car instead of climbing it
     } else z.stuckT = 0;
+    // Sliding along an obstacle for a long time (a long fence): try to climb it toward the target
+    if (z.mode === 'move' && z.blockedT > ST.climbAfterS && z.sense.awareness === 'detected' && !p.inVehicle) {
+      z.blockedT = 0;
+      if (!this.tryBash(z)) this.tryClimb(z, Math.atan2(-(tgt.x - z.curr.x), -(tgt.z - z.curr.z)));
+    }
   }
 
   private wanderAround(z: Zombie, center: Vector3, dt: number, _speed: number) {
@@ -903,11 +1056,137 @@ export class Zombies {
     if (z.wander.distanceToSquared(z.curr) > 0.25) _v.subVectors(z.wander, z.curr).setY(0).setLength(z.walkSpeed);
   }
 
-  private tryClimb(z: Zombie) {
+  /** Spread round the player: engaged zombies push apart along the ring (tangentially) to at least steer.minArc. */
+  private spreadOut(z: Zombie, dist: number, speed: number) {
+    if (dist > ST.ringR || dist < 0.3) return;
+    const P = this.ctx.player.curr;
+    const bz = Math.atan2(z.curr.x - P.x, z.curr.z - P.z);
+    let n = 0;
+    for (const o of this.list) if (o !== z && o.alive && o.sense.awareness === 'detected' && Math.hypot(o.curr.x - P.x, o.curr.z - P.z) < ST.ringR) n++;
+    if (!n) return;
+    const minArc = Math.min(ST.minArc, (Math.PI * 2) / (n + 1));
+    let push = 0;
+    for (const o of this.list) {
+      if (o === z || !o.alive || o.sense.awareness !== 'detected') continue;
+      const od = Math.hypot(o.curr.x - P.x, o.curr.z - P.z);
+      if (od > ST.ringR) continue;
+      const dA = wrapA(bz - Math.atan2(o.curr.x - P.x, o.curr.z - P.z));
+      if (Math.abs(dA) < minArc) push += (dA === 0 ? (z.id > o.id ? 1 : -1) : Math.sign(dA)) * (1 - Math.abs(dA) / minArc) * (od < dist ? 1 : 0.5); // the one behind gives way more
+    }
+    if (!push) return;
+    const rx = (z.curr.x - P.x) / dist, rz = (z.curr.z - P.z) / dist;
+    const k = Math.max(-1.2, Math.min(1.2, push)) * ST.arcGain * speed;
+    _v.x += rz * k;
+    _v.z += -rx * k;
+    const l = Math.hypot(_v.x, _v.z);
+    if (l > speed * 1.15) _v.multiplyScalar((speed * 1.15) / l);
+  }
+
+  /** The goal is on the other side of a door near this zombie: walk to the doorway first (open or shut). */
+  private doorWaypoint(z: Zombie, goal: Vector3): Vector3 | null {
+    let best: DoorHandle | null = null;
+    let bd = 9;
+    for (const dr of doorHandles) {
+      const d = Math.hypot(dr.x - z.curr.x, dr.z - z.curr.z);
+      if (d > bd || Math.hypot(dr.x - goal.x, dr.z - goal.z) > 16) continue;
+      const sz = (z.curr.x - dr.x) * dr.nx + (z.curr.z - dr.z) * dr.nz;
+      const sg = (goal.x - dr.x) * dr.nx + (goal.z - dr.z) * dr.nz;
+      if (sz * sg >= 0 || Math.abs(sz) < 0.35) continue; // same side, or already in the doorway
+      best = dr;
+      bd = d;
+    }
+    if (!best) return null;
+    const sz = Math.sign((z.curr.x - best.x) * best.nx + (z.curr.z - best.z) * best.nz);
+    z.viaDoor = true; // no whisker swerve: the jambs and the leaf would turn it away from the doorway
+    if (bd < 1.0) {
+      if (best.closed()) {
+        // at the shut door: bang on it
+        if (z.sense.awareness !== 'unaware' && z.mode === 'move') {
+          z.mode = 'bash';
+          z.modeT = 0.3;
+          z.door = best;
+        }
+        return _o.set(best.x, z.curr.y, best.z);
+      }
+      return _o.set(best.x - best.nx * sz * 1.2, z.curr.y, best.z - best.nz * sz * 1.2); // open: walk on through
+    }
+    return _o.set(best.x + best.nx * sz * 0.6, z.curr.y, best.z + best.nz * sz * 0.6);
+  }
+
+  /** Stuck at a closed door while hunting: start bashing it. */
+  private tryBash(z: Zombie) {
+    if (z.sense.awareness === 'unaware') return false;
+    for (const dr of doorHandles) {
+      if (!dr.closed() || Math.hypot(dr.x - z.curr.x, dr.z - z.curr.z) > DB.near) continue;
+      z.stuckT = 0;
+      z.mode = 'bash';
+      z.modeT = 0.3;
+      z.door = dr;
+      return true;
+    }
+    return false;
+  }
+
+  /** Whisker steering: a capsule-wide cast along the wanted heading; blocked, it swerves to the first clear angle,
+   *  keeping the side it chose (no flip-flop), and eases the swerve so the turn reads as walking round, not jitter. */
+  private avoid(z: Zombie, dt: number, goalDist: number, goalAbove: boolean) {
+    const sp = Math.hypot(_v.x, _v.z);
+    if ((z.sideT -= dt) <= 0) z.side = 0;
+    if (sp < 0.05 || goalDist < 1.6 || goalAbove || z.viaDoor) {
+      z.swerve = z.swerveNow = 0;
+      z.blockedT = 0;
+      return;
+    }
+    const base = Math.atan2(_v.x, _v.z);
+    if ((z.steerT -= dt) <= 0) {
+      z.steerT = 1 / ST.hz + (z.id % 5) * 0.004;
+      const look = Math.min(ST.look, goalDist - 0.6);
+      if (this.clearAt(z, base, look)) {
+        z.swerve = 0;
+      } else {
+        let found = 0;
+        const sides = z.side ? [z.side, -z.side] : this.ctx.rand() < 0.5 ? [1, -1] : [-1, 1];
+        // prefer the side whose first swerve is open
+        if (!z.side && this.clearAt(z, base + sides[1] * ST.angles[0], look) && !this.clearAt(z, base + sides[0] * ST.angles[0], look)) sides.reverse();
+        outer: for (const sd of sides)
+          for (const a of ST.angles)
+            if (this.clearAt(z, base + sd * a, look)) {
+              found = sd * a;
+              z.side = sd;
+              break outer;
+            }
+        z.swerve = found;
+        if (found) z.sideT = ST.holdS;
+      }
+    }
+    if (z.swerve) z.blockedT += dt;
+    else z.blockedT = Math.max(0, z.blockedT - dt * 2);
+    z.swerveNow += (z.swerve - z.swerveNow) * Math.min(1, dt * 10);
+    if (Math.abs(z.swerveNow) > 1e-3) {
+      const a = base + z.swerveNow;
+      _v.set(Math.sin(a) * sp, 0, Math.cos(a) * sp);
+    }
+  }
+
+  private shapeBall: unknown = null;
+  /** Is the heading `a` (atan2(x, z)) free of static props, buildings and cars for `look` m, capsule-wide? */
+  private clearAt(z: Zombie, a: number, look: number) {
+    if (look <= 0.05) return true;
+    const { R, world } = this.ctx.game.phys;
+    this.shapeBall ??= new R.Ball(CAPSULE_R * 1.05);
+    const filt = this.ctx.player.inVehicle ? STEER_FILTER & ~Group.VEHICLE : STEER_FILTER;
+    const hit = world.castShape(
+      { x: z.curr.x, y: z.curr.y + ST.probeY, z: z.curr.z }, { x: 0, y: 0, z: 0, w: 1 }, { x: Math.sin(a), y: 0, z: Math.cos(a) }, this.shapeBall as InstanceType<typeof R.Ball>, 0, look, true,
+      R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.ZOMBIE, filt), z.capsule,
+    );
+    return !hit;
+  }
+
+  private tryClimb(z: Zombie, yaw = z.yaw) {
     z.stuckT = 0;
     const { R, world } = this.ctx.game.phys;
-    const fx = -Math.sin(z.yaw);
-    const fz = -Math.cos(z.yaw);
+    const fx = -Math.sin(yaw);
+    const fz = -Math.cos(yaw);
     const px = z.curr.x + fx * 0.75;
     const pz = z.curr.z + fz * 0.75;
     const top = z.curr.y + z.def.climbMax + 0.3;
@@ -970,7 +1249,7 @@ export class Zombies {
     a.crowd.set(a.i, p.x, p.y, p.z, yaw);
     a.crowd.setSpeed(a.i, a.frozen ? 0 : z.hitstop > 0 ? 0.05 : 1);
     a.crowd.setFlash(a.i, Math.min(1, z.flash * 9));
-    a.crowd.setTilt(a.i, z.alive && z.mode === 'stagger' ? HR.staggerLean : 0, 0);
+    a.crowd.setTilt(a.i, !z.alive ? 0 : z.mode === 'stagger' ? HR.staggerLean : z.mode === 'scream' || z.mode === 'charge_windup' ? HR.roarLean : z.mode === 'charge' ? HR.chargeLean : 0, 0); // roar: reared back, charge: head down
     // location flinch: fast ease-in, ease-out back (dead bodies keep none: the death clip owns the pose)
     const b = z.bend;
     const age = this.time - b.at;

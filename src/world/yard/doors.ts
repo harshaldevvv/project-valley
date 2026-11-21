@@ -25,6 +25,10 @@ const DOORS: DoorDef[] = [
 ];
 void cabin; void shop; void farm;
 
+/** Every built door, for the zombie AI: the leaf's middle, its outward normal, whether it is shut, and a forced open (bashed in). */
+export interface DoorHandle { x: number; z: number; nx: number; nz: number; closed(): boolean; force(): void }
+export const doorHandles: DoorHandle[] = [];
+
 export function buildDoors(kit: Kit, defs: DoorDef[] = DOORS) {
   const { game } = kit;
   const { R, world } = game.phys;
@@ -76,6 +80,15 @@ export function buildDoors(kit: Kit, defs: DoorDef[] = DOORS) {
       onInteract: () => {
         open = !open;
         game.audio.play('door_creak', mid, { pitchJitter: 0.08 });
+      },
+    });
+    doorHandles.push({
+      x: mid.x, z: mid.z, nx: d.ox, nz: d.oz,
+      closed: () => !open,
+      force: () => {
+        if (open) return;
+        open = true;
+        game.audio.play('door_creak', mid, { pitchJitter: 0.2, volume: 1 });
       },
     });
     game.addSystem({

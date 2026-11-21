@@ -40,6 +40,9 @@ export interface ZombieDef {
   knockdownS?: number;
   /** Screams on first detecting the player: after `windupS` every zombie within `radius` m hears it (the screamer). */
   scream?: { windupS: number; radius: number; cooldownS: number };
+  /** Bull charge (the brute): from `range` m it stops and roars for `windupS` (the telegraph), then runs a straight, locked
+   *  line at `speed` m/s for up to `maxDist` m. Touching the player in it hits for `damage` + the knockdown; a wall stuns it. */
+  charge?: { range: [number, number]; windupS: number; speed: number; maxDist: number; damage: number; recoverS: number; wallStunS: number; cooldownS: number };
 }
 
 const zombieDefsBase: Record<string, ZombieDef> = {
@@ -110,7 +113,7 @@ export const zombieDefs: Record<string, ZombieDef> = {
   // Crawler: on the ground from the start, low and dark. Capsule and head ball are low (scale 0.55), the clip is z_crawl.
   crawler: { ...zombieDefsBase.shambler, id: 'crawler', archetype: 'crawler', startsCrawling: true, headY: 1.0, model: 'zmb_pfz_crawler_a', scale: 0.55, hp: 70, legHp: 999, walk: 0.5, chase: 1.6, crawl: 1.7, attackRange: 1.3, attackWindup: 0.5, attackRecover: 0.9, attackDamage: 8, sprintMissChance: 0.5, circleRadius: 1.3, climbMax: 0.3 },
   // Brute: big (scale 1.4 baked into the model), slow, a lot of HP, hardly staggers, a hit knocks you down.
-  brute: { ...zombieDefsBase.shambler, id: 'brute', archetype: 'brute', headY: 1.38, model: 'zmb_pfz_brute_a', scale: 1.4, hp: 650, legHp: 420, walk: 0.45, chase: 1.0, crawl: 0.4, attackRange: 2.1, attackWindup: 1.0, attackRecover: 1.7, attackDamage: 26, sprintMissChance: 0.2, circleRadius: 2.6, climbMax: 1.4, staggerFrac: 0.6, zoneMul: { body: 0.3, limb: 0.2 }, knockdownS: 0.9, helmetMul: 0.8 },
+  brute: { ...zombieDefsBase.shambler, id: 'brute', archetype: 'brute', headY: 1.38, model: 'zmb_pfz_brute_a', scale: 1.4, hp: 650, legHp: 420, walk: 0.45, chase: 1.0, crawl: 0.4, attackRange: 2.1, attackWindup: 1.0, attackRecover: 1.7, attackDamage: 26, sprintMissChance: 0.2, circleRadius: 2.6, climbMax: 1.4, staggerFrac: 0.6, zoneMul: { body: 0.3, limb: 0.2 }, knockdownS: 0.9, helmetMul: 0.8, charge: { range: [5, 13], windupS: 0.95, speed: 5.2, maxDist: 14, damage: 30, recoverS: 1.8, wallStunS: 2.2, cooldownS: 9 } },
   // Screamer: weak, but its scream tells every zombie within 55 m where you are.
   screamer: { ...zombieDefsBase.shambler, id: 'screamer', archetype: 'screamer', headY: 1.38, model: 'zmb_pfz_screamer_a', scale: 0.95, hp: 80, legHp: 50, chase: 1.5, attackDamage: 6, scream: { windupS: 1.1, radius: 55, cooldownS: 30 } },
   civilian_f: { ...zombieDefsBase.shambler, id: 'civilian_f', model: 'zmb_civilian_f_a', clipsFrom: 'zmb_shambler_a', scale: 0.93, hp: 110 },
@@ -157,12 +160,50 @@ export const senses = {
   losHz: 10,
   nearRange: 3.5, // inside this, a zombie senses the player at any angle (peripheral / smell)
   nearRate: 0.8, // suspicion/s from that
+  /** A lit flashlight at night: the lamp is seen from this many times further (blended by night 0..1; crouching doesn't hide it). */
+  lightRangeMul: 2.2,
+  /** The beam lands on a zombie (inside this half-angle of the player's view, within `beamRange` m, clear line): it notices
+   *  the light at any facing and turns to look. Suspicion/s, by night 0..1. */
+  beamHalfDeg: 16,
+  beamRange: 30,
+  beamRate: 0.55,
+  /** Hearing a noise: a short, staggered head-turn before moving (s), so a crowd doesn't snap round on the same frame. */
+  hearReact: [0.15, 0.6] as [number, number],
+  /** Loud noises (gunshots, a scream): heard within this fraction of their radius, the zombie comes at chase pace instead of a walk. */
+  urgentFrac: 0.75,
 };
+
+/** Steering round obstacles (no navmesh): whisker casts of the zombie's own capsule radius ahead of it. */
+export const steer = {
+  look: 1.7, // m ahead
+  hz: 8, // checks per second (staggered per zombie)
+  /** Swerve angles tried in order (rad off the wanted heading), on the side already chosen first. */
+  angles: [0.5, 0.95, 1.4, 1.85, 2.3],
+  /** Probe height above the feet: under it the KCC steps up anyway (curbs, low props). */
+  probeY: 0.55,
+  /** Keep a chosen side at least this long (no left-right flip-flop at a wall's middle), s. */
+  holdS: 0.8,
+  /** Sliding along one obstacle this long while hunting (a long fence or wall): try to climb it instead, s. */
+  climbAfterS: 3,
+  /** Engaged zombies (detected, within `ringR` m) push apart around the player to at least `minArc` rad (or 2π/n). */
+  ringR: 7,
+  minArc: 1.0,
+  arcGain: 1.1,
+};
+
+/** Closed doors: a zombie that hunts the player and is stuck at one bangs on it; after `hits` blows it bursts open. */
+export const doorBash = { near: 1.8, every: 1.1, hits: 4 };
 
 export const horde = {
   maxAlive: 30,
   attackTokens: 3, // principles §6 (QA-008 tuning: 5 standing still ≈ 7 s, kiting survives 20)
-  attackSpacing: 0.45, // s between any two attack windups starting (no stacked hits)
+  attackSpacing: 0.65, // s between any two attack windups starting (no stacked hits; 0.45 let 3 land inside 0.9 s)
+  recoverJitter: 0.25, // ± fraction on attackRecover, so token holders don't fall into volleys
+  /** A swing from outside the player's view (more than `offViewDeg` off the look direction) winds up this much longer. */
+  offViewDeg: 100,
+  offViewWindupMul: 1.4,
+  /** The swing tracks the player for this fraction of the windup, then the facing locks: a late sidestep or backstep dodges. */
+  windupTrack: 0.6,
   groanMin: 4,
   groanMax: 10,
   passive: false,
@@ -190,6 +231,9 @@ export const hitReact = {
   legBelow: 0.95,
   /** Whole-body lean while staggered (rad, + = back). */
   staggerLean: 0.18,
+  /** Lean while roaring (screamer scream, brute charge windup: + = back) and while charging (forward). */
+  roarLean: 0.22,
+  chargeLean: -0.2,
 };
 
 /** Death fall playback (z_death). A plain kill drops at a random speed in `speed` (no two falls alike); a gun kill that
