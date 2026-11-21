@@ -174,4 +174,13 @@ export const MORE_ITEMS: ItemDef[] = [
   { id: 'radio_crystal', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#9fb4bc', value: 0 },
   /** Recipe unlock: a recipe that lists it as a tool (data/crafting.ts ifak) can be made while it is carried. Readable. */
   { id: 'field_manual', kind: 'tool', w: 1, h: 2, stack: 1, rarity: 'rare', iconSwatch: '#5d6b4a', value: 40, use: { seconds: 1.5, keep: true, action: 'read', sound: 'search_rustle' } },
+  // Dunmore side quests (dunmore_fever, dunmore_evidence, dunmore_motel)
+  { id: 'note_pharmacy_ledger', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
+  { id: 'note_police_duty', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
+  { id: 'note_evidence_log', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
+  { id: 'note_motel_letter', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#e0d6b4', value: 0, use: { seconds: 1.2, keep: true, action: 'read', sound: 'search_rustle' } },
+  /** Quest key: opens the evidence locker in the police station (data/quests.ts QUEST_KEYS) and is used up there. */
+  { id: 'key_evidence', kind: 'misc', w: 1, h: 1, stack: 1, iconSwatch: '#b8a46a', value: 0 },
+  /** Quest item: June's bag, carried to the diner for her. */
+  { id: 'june_bag', kind: 'misc', w: 2, h: 2, stack: 1, iconSwatch: '#7a5a3a', value: 0 },
 ];

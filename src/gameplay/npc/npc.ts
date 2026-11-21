@@ -72,6 +72,9 @@ export async function installNpcs(ctx: Ctx) {
   const trader = newTraderState();
   const live: Live[] = [];
   let talkingTo: string | null = null;
+  /** NpcDef.show: present only while its flag is (un)set; someone you are talking to stays until the talk ends. */
+  const shown = (def: NpcDef) => talkingTo === def.id || !def.show || flags.has(def.show.flag) !== !!def.show.not;
+  const colOn = new Map<string, boolean>();
 
   // ---------------- UI and conversation ----------------
   const toast = (text: string, icon?: string) => game.events.emit('toast', { text, icon });
@@ -124,7 +127,7 @@ export async function installNpcs(ctx: Ctx) {
   game.events.on('playerDied', () => ui.closeAll());
 
   function talk(def: NpcDef) {
-    if (game.input.blocked || ui.isOpen) return;
+    if (game.input.blocked || ui.isOpen || !shown(def)) return;
     talkingTo = def.id;
     ui.startTalk(def.id, new Dialogue(def.id, def.dialogue, envFor(def.id)));
   }
@@ -171,7 +174,7 @@ export async function installNpcs(ctx: Ctx) {
     game.interact.register({
       position: pos,
       radius: NPC_FEEL.reach,
-      prompt: () => (ui.isOpen ? null : def.role === 'trader' ? npcUi.trade(npcName[def.id].name) : npcUi.talk(npcName[def.id].name)),
+      prompt: () => (ui.isOpen || !shown(def) ? null : def.role === 'trader' ? npcUi.trade(npcName[def.id].name) : npcUi.talk(npcName[def.id].name)),
       holdSeconds: () => NPC_FEEL.hold,
       onInteract: () => talk(def),
     });
@@ -200,7 +203,12 @@ export async function installNpcs(ctx: Ctx) {
       const p = playerPos();
       for (const n of live) {
         const d2 = (n.root.position.x - p.x) ** 2 + (n.root.position.z - p.z) ** 2;
-        const near = d2 < NPC_FEEL.drawDistance ** 2;
+        const here = shown(n.def);
+        if (colOn.get(n.def.id) !== here) {
+          colOn.set(n.def.id, here);
+          (n as unknown as { col: { setEnabled(on: boolean): void } }).col.setEnabled(here);
+        }
+        const near = here && d2 < NPC_FEEL.drawDistance ** 2;
         n.root.visible = near;
         if (!near) continue;
         if (!n.snapped && d2 < 80 * 80) {

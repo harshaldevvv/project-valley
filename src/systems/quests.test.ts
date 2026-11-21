@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { RECIPE_BY_ID } from '../content/data/crafting';
 import { ITEMS } from '../content/data/items';
 import { POIS } from '../content/data/pois';
-import { QUESTS, QUEST_BY_ID, QUEST_PLACED } from '../content/data/quests';
-import { CONTAINER_THEMES } from '../content/data/containers';
+import { QUESTS, QUEST_BY_ID, QUEST_KEYS, QUEST_PLACED } from '../content/data/quests';
+import { CONTAINERS, CONTAINER_THEMES } from '../content/data/containers';
+import { NPCS } from '../content/data/npc';
 import { noteText, questText } from '../content/text/quests';
 import { poiText } from '../content/text/pois';
 import { bearing } from '../ui/quests/questUi';
@@ -241,7 +242,7 @@ describe('progress rules', () => {
     goto(w, 'ranger');
     q.report({ type: 'event', name: 'radio', poi: 'ranger' });
     expect(q.state.ranger.status).toBe('done');
-    expect(q.active().map((x) => x.id)).toEqual(['school', 'lake_dock']); // only side quests are left
+    expect(q.active().map((x) => x.id)).toEqual(['school', 'lake_dock', 'dunmore_fever']); // only side quests are left
     expect(q.active().every((x) => x.side)).toBe(true);
     expect(q.tracked).toBe('school');
     for (let n = 0; n < 40 && q.active().length; n++) for (const a of q.active()) q.skip(a.id);
@@ -314,6 +315,64 @@ describe('progress rules', () => {
     q.report({ type: 'give', npc: 'tobin', item: 'note_harlan_medic' });
     expect(q.state.harlan_clear.status).toBe('done');
     expect(w.given.map((g) => g[0])).toContain('field_manual');
+  });
+
+  it('Dunmore: Walt gets two painkillers, the evidence key opens the locker, June is handed her letter and her bag at the diner', () => {
+    const w = world();
+    const { q } = mk(w);
+    through(q, 'farm'); // opens after Maple Street
+    expect(q.state.dunmore_fever.status).toBe('active');
+    expect(q.state.dunmore_evidence.status).toBe('locked');
+    goto(w, 'town');
+    q.tick();
+    q.report({ type: 'note', id: 'note_pharmacy_ledger' });
+    expect(q.current('dunmore_fever')).toMatchObject({ type: 'collect', item: 'painkillers', count: 2 });
+    w.items.painkillers = 2;
+    q.tick();
+    q.report({ type: 'give', npc: 'walt', item: 'painkillers' });
+    expect(q.state.dunmore_fever.status).toBe('done');
+    expect(q.state.dunmore_evidence.status).toBe('active');
+    expect(q.state.dunmore_motel.status).toBe('active');
+    // evidence locker
+    goto(w, 'police');
+    q.tick();
+    q.report({ type: 'note', id: 'note_police_duty' });
+    expect(q.current('dunmore_evidence')).toMatchObject({ type: 'collect', item: 'key_evidence' });
+    w.items.key_evidence = 1;
+    q.tick();
+    q.report({ type: 'note', id: 'note_evidence_log' });
+    expect(q.state.dunmore_evidence.status).toBe('done');
+    // June: street, letter, hand-off, diner
+    const town = POIS.find((p) => p.id === 'town')!;
+    for (let i = 0; i < 5; i++) q.report({ type: 'kill', x: town.x + 4, z: town.z });
+    q.report({ type: 'note', id: 'note_motel_letter' });
+    q.report({ type: 'give', npc: 'june_diner', item: 'note_motel_letter' }); // wrong June
+    expect(q.current('dunmore_motel')).toMatchObject({ type: 'give', npc: 'june' });
+    q.report({ type: 'give', npc: 'june', item: 'note_motel_letter' });
+    expect(q.current('dunmore_motel')).toMatchObject({ type: 'goto', poi: 'diner' });
+    goto(w, 'diner');
+    q.tick();
+    q.report({ type: 'give', npc: 'june_diner', item: 'june_bag' });
+    expect(q.state.dunmore_motel.status).toBe('done');
+    expect(w.given.map((g) => g[0])).toEqual(expect.arrayContaining(['first_aid_pouch', 'police_jacket', 'hunting_jacket']));
+  });
+
+  it('quest keys open a locked container the world places, the key is placed in an unlocked one, and the hand-off NPCs pair up', () => {
+    const spots = (Object.values(import.meta.glob('../content/data/pois.ts', { eager: true }))[0] as { poiSpots: { id: string; type: string }[] }).poiSpots;
+    for (const [cid, key] of Object.entries(QUEST_KEYS)) {
+      const spot = spots.find((s) => `poi_${s.id}` === cid);
+      expect(spot, cid).toBeTruthy();
+      expect(CONTAINERS[spot!.type].lock, cid).toBeGreaterThan(0);
+      expect(ITEMS[key]?.value, key).toBe(0);
+      const at = QUEST_PLACED.find((p) => p.item === key);
+      expect(at, `${key} is placed`).toBeTruthy();
+      const home = spots.find((s) => `poi_${s.id}` === at!.container)!;
+      expect(CONTAINERS[home.type].lock, `${key} must not sit behind a lock`).toBe(0);
+      // whatever the quest reads behind the lock is placed there
+      expect(QUEST_PLACED.some((p) => p.container === cid)).toBe(true);
+    }
+    // every flag-shown NPC has a twin hidden by the same flag
+    for (const n of NPCS.filter((x) => x.show)) expect(NPCS.some((m) => m !== n && m.show?.flag === n.show!.flag && !!m.show.not !== !!n.show!.not), n.id).toBe(true);
   });
 
   it('the chain reward unlocks a recipe: the field manual is a tool of a recipe, is only a quest reward, and reads as a note', () => {

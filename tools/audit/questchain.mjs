@@ -176,6 +176,7 @@ const obtain = async (quest, id, n) => {
   const holders = await ev(([id]) => window.__qc.holders(id), [id]);
   for (const cid of holders) {
     if (got >= n) break;
+    await unlockKeyed(quest, cid);
     got += await ev(([cid, id, k]) => window.__qc.loot(cid, id, k), [cid, id, n - got]);
   }
   if (got >= n) return `looted from ${holders.slice(0, 3).join(', ')}`;
@@ -185,6 +186,36 @@ const obtain = async (quest, id, n) => {
     for (let i = 0; i < k; i++) window.__gp.give(id);
   }, [id, n - got]);
   return 'debug give';
+};
+
+/** A locked container a quest key opens (data/quests.ts QUEST_KEYS): stand at it and press E like a player, then check
+ *  it opened and the key was used up. A dead end if the key is not carried by now (the quest order should have given it). */
+const unlockKeyed = async (quest, cid) => {
+  const r = await ev(async ([cid]) => {
+    const { QUEST_KEYS } = await import('/src/content/data/quests.ts');
+    const key = QUEST_KEYS[cid];
+    const lo = window.__gp.ctx.game.loadout;
+    const c = lo.containers.get(cid);
+    if (!key || !c?.locked) return null;
+    const keys = lo.count(key);
+    if (!keys) return { err: `${cid} is locked and the key ${key} is not carried` };
+    const pl = window.__gp.ctx.game.places.containers.find((p) => p.id === cid);
+    if (!pl) return { err: `${cid} has no world placement` };
+    let said = null;
+    for (const [dx, dz] of [[0.9, 0], [-0.9, 0], [0, 0.9], [0, -0.9], [0, 0]]) {
+      window.__qc.tp(pl.position.x + dx, pl.position.z + dz);
+      await new Promise((res) => setTimeout(res, 250));
+      if ((said = window.__qc.interact('unlock'))) break;
+    }
+    if (!said) return { err: `no unlock prompt at ${cid} while carrying ${key}` };
+    if (window.__gp.ctx.game.inventory.isOpen) window.__gp.ctx.game.inventory.toggle(); // the E key opened the locker screen
+    return { said, locked: c.locked, keys: lo.count(key), key };
+  }, [cid]);
+  if (!r) return;
+  if (r.err) return deadEnd(quest, r.err);
+  log(`    unlock: "${r.said}" -> locked ${r.locked}, ${r.key} left ${r.keys}`);
+  if (r.locked) deadEnd(quest, `${cid} still locked after using the key`);
+  if (r.keys) finding(quest, `${r.key} was not used up`);
 };
 
 const craft = async (quest, recipe) => {
@@ -255,6 +286,23 @@ async function play(quest, o) {
     }, [o.npc, o.item]);
     if (res.err) deadEnd(quest, res.err);
     else log(`    talk: ${res.said.join(' | ')}`);
+    // flag hand-off (data/npc.ts `show`): an NPC with a twin vanishes here once the flag is set, and its twin is talkable
+    const hand = await ev(async ([npc]) => {
+      const api = window.__npc;
+      const me = api.live.find((l) => l.def.id === npc);
+      if (!me?.def.show) return null;
+      await new Promise((r) => setTimeout(r, 400)); // a few frames for the npc system to apply the flag
+      const twins = api.live.filter((l) => l !== me && l.def.show?.flag === me.def.show.flag);
+      const flag = api.flags.has(me.def.show.flag);
+      const prompt = window.__qc.interact('talk to'); // null when she is gone; a hit opens a talk, closed again
+      if (api.ui.isOpen) api.ui.closeAll?.();
+      return { flag, flagName: me.def.show.flag, visible: me.root.visible, prompt, twins: twins.map((t) => t.def.id), wantShown: flag !== !!me.def.show.not };
+    }, [o.npc]);
+    if (hand) {
+      log(`    hand-off: ${hand.flagName}=${hand.flag}, ${o.npc} visible ${hand.visible}, talk prompt ${hand.prompt ? 'yes' : 'none'}, twins ${hand.twins.join(',')}`);
+      if (!hand.wantShown && (hand.visible || hand.prompt)) deadEnd(quest, `${o.npc} still there after ${hand.flagName} was set`);
+      if (!hand.twins.length) deadEnd(quest, `${o.npc} has a show flag but no twin NPC`);
+    }
   } else if (o.type === 'kill') {
     const p = o.poi ? await ev(([id]) => window.__qc.place(id), [o.poi]) : null;
     const n = await ev(async ([x, z, k]) => {

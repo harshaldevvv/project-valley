@@ -190,6 +190,58 @@ describe('dialogue graph', () => {
     expect(new Dialogue('tobin', 'tobin', tenv()).start()).toBe('after');
   });
 
+  it('Walt takes two painkillers only while the Dunmore fever quest asks, then points at the station and the motel', () => {
+    const w = world();
+    expect(new Dialogue('walt', 'walt', env(w)).start()).toBe('first');
+    w.status.dunmore_fever = 'active';
+    w.giving.add('walt');
+    w.items.painkillers = 1;
+    expect(new Dialogue('walt', 'walt', env(w)).start()).toBe('waiting'); // one pack is not enough
+    w.items.painkillers = 2;
+    const d = new Dialogue('walt', 'walt', env(w));
+    expect(d.start()).toBe('pills');
+    d.choose('give');
+    expect(w.handed).toEqual(['walt:painkillers']);
+    expect(w.items.painkillers).toBe(0);
+    expect(d.node).toBe('thanks');
+    w.status.dunmore_fever = 'done';
+    w.giving.clear();
+    const e = new Dialogue('walt', 'walt', env(w));
+    expect(e.start()).toBe('after');
+    expect(e.choose('police')).toBe('police');
+  });
+
+  it('June: the letter sets june_left and hands you her bag; the diner June takes the bag and replaces a lost one', () => {
+    const w = world();
+    const jenv = (): DialogueEnv => ({ ...env(w), objectives: () => [...w.giving].map((npc) => ({ type: 'give' as const, item: npc === 'june' ? 'note_motel_letter' : 'june_bag', npc })) });
+    expect(NPC_BY_ID.june.show).toEqual({ flag: 'june_left', not: true });
+    expect(NPC_BY_ID.june_diner.show).toEqual({ flag: 'june_left' });
+    w.status.dunmore_motel = 'active';
+    expect(new Dialogue('june', 'june', jenv()).start()).toBe('street');
+    w.giving.add('june');
+    w.items.note_motel_letter = 1;
+    const a = new Dialogue('june', 'june', jenv());
+    expect(a.start()).toBe('letter');
+    a.choose('letter');
+    expect(w.handed).toEqual(['june:note_motel_letter']);
+    expect(w.flags.has('june_left')).toBe(true);
+    expect(w.items.june_bag).toBe(1);
+    w.giving.clear();
+    w.giving.add('june_diner');
+    w.items.june_bag = 0; // dropped on the way
+    const b = new Dialogue('june_diner', 'june_diner', jenv());
+    expect(b.start()).toBe('nobag');
+    b.choose('lost');
+    expect(w.items.june_bag).toBe(1);
+    const c = new Dialogue('june_diner', 'june_diner', jenv());
+    expect(c.start()).toBe('bag');
+    c.choose('bag');
+    expect(w.handed).toEqual(['june:note_motel_letter', 'june_diner:june_bag']);
+    w.status.dunmore_motel = 'done';
+    w.giving.clear();
+    expect(new Dialogue('june_diner', 'june_diner', jenv()).start()).toBe('after');
+  });
+
   it('Hollis gives food once and trades rags for tuna once', () => {
     const w = world();
     w.flags.add('hollis_met');

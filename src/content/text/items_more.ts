@@ -142,6 +142,12 @@ export const itemTextMore: Record<string, T> = {
   note_ranger_log: t('Ranger Log', 'Rngr Log', 'A weathered ranger log book. Use it to read it.'),
   note_lake_scanner: t('Scanner Transcript', 'Transcr', 'Pencil on the back of a campsite map: what the scanner heard. Use it to read it.'),
   note_harlan_medic: t('Medic\'s Letter', 'Letter', 'A letter in a ration-box envelope, addressed to Tobin. Use it to read it.'),
+  note_pharmacy_ledger: t('Pharmacy Ledger', 'Ledger', "The pharmacist's counter ledger, last page folded down. Use it to read it."),
+  note_police_duty: t('Duty Log', 'Log', 'The front desk duty log of the Dunmore police station. Use it to read it.'),
+  note_evidence_log: t('Evidence Tag', 'Tag', 'A brown evidence envelope with a typed tag stapled on. Use it to read it.'),
+  note_motel_letter: t('Note for June', 'Note', 'Motel notepaper, folded twice, "June" written on the outside. Use it to read it.'),
+  key_evidence: t('Evidence Locker Key', 'Key', 'A small brass key on a ring tagged EVIDENCE. Opens one locker in the Dunmore police station.'),
+  june_bag: t("June's Bag", 'Bag', 'A satchel with a change of clothes, a photo album and a hairbrush. June asked you to carry it to the diner.'),
   radio_crystal: t('Scanner Crystal', 'Crystal', 'A quartz crystal in a tin can, tuned to one channel. Useless unless you own the scanner it fits.'),
   field_manual: t('Medic\'s Field Manual', 'Manual', 'An army combat-medic manual, dog-eared at the trauma kit page. Carry it to craft IFAKs; use it to read it.'),
 };

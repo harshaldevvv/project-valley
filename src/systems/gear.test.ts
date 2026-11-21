@@ -232,8 +232,8 @@ describe('loot reach and balance', () => {
 
   it('every item that is not a starter or a derivative can be found in at least one loot table', () => {
     const crafted = RECIPES.flatMap((r) => r.outputs.map((o) => o.item)).filter((id) => ['hot_soup', 'hot_chili', 'hot_noodles', 'spear', 'nail_bat'].includes(id));
-    // starting kit only, made only by crafting (cooked food, crafted weapons), quest items placed for a quest, or a quest-only reward (the recipe-unlock manual)
-    const exempt = new Set(['secure_pouch', 'field_manual', ...crafted, ...QUEST_PLACED.map((p) => p.item).filter((id) => !ITEMS[id]?.value), ...Object.keys(ITEMS).filter((id) => id.startsWith('note_'))]);
+    // starting kit only, made only by crafting (cooked food, crafted weapons), quest items placed for a quest, a quest-only reward (the recipe-unlock manual) or handed over in dialogue (June's bag)
+    const exempt = new Set(['secure_pouch', 'field_manual', 'june_bag', ...crafted, ...QUEST_PLACED.map((p) => p.item).filter((id) => !ITEMS[id]?.value), ...Object.keys(ITEMS).filter((id) => id.startsWith('note_'))]);
     const never = Object.keys(ITEMS).filter((id) => !exempt.has(id) && !rolled.has(id));
     expect(never).toEqual([]);
   });

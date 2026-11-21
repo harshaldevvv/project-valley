@@ -17,6 +17,8 @@ import { installSave } from './installSave';
 import { installCraft, WORLDTOOLS_VERSION, type WorldToolsSave } from './installCraft';
 import { installMap, MAP_SAVE_VERSION, type MapSave } from './installMap';
 import { installQuests } from './installQuests';
+import { QUEST_KEYS } from '../content/data/quests';
+import { questUi } from '../content/text/quests';
 import { QUEST_SAVE_VERSION, type QuestSave } from './quests';
 import { installSurvival, type DeathBag } from './installSurvival';
 import { Loadout, SAVE_VERSION, type LoadoutSave } from './loadout';
@@ -116,12 +118,16 @@ export async function installSystems(game: Game): Promise<void> {
     const cc = () => lo.containers.get(id) ?? lo.registerContainer(id, type);
     const name = containerName(type);
     const verb = containerText[type]?.searchVerb ?? 'Search';
+    // a quest key opens this one container outright (no pick, no cutters) and is used up
+    const key = QUEST_KEYS[id];
+    const hasKey = () => !!key && cc().locked && lo.count(key) > 0;
     return game.interact.register({
       position,
       radius,
       prompt: () => {
         const c = cc();
         if (type === 'death_bag') return survivalText.recoverBag;
+        if (hasKey()) return questUi.unlockWith(itemName(key!));
         if (c.locked) {
           const n = lo.count('lockpick');
           if (n > 0) return `${T.pickLock} (${T.lockpickWord} ×${n})`;
@@ -129,9 +135,16 @@ export async function installSystems(game: Game): Promise<void> {
         }
         return c.searched || def.searchSeconds === 0 ? `${T.act.open} ${name}` : `${verb} ${name}`;
       },
-      holdSeconds: () => (cc().locked ? (lo.count('lockpick') <= 0 && canCut(lo, def.lock, CUT.maxLock, CUT.tools) ? CUT.seconds : 0) : cc().searched ? 0 : def.searchSeconds),
+      holdSeconds: () => (hasKey() ? 0 : cc().locked ? (lo.count('lockpick') <= 0 && canCut(lo, def.lock, CUT.maxLock, CUT.tools) ? CUT.seconds : 0) : cc().searched ? 0 : def.searchSeconds),
       onInteract: () => {
         const c = cc();
+        if (hasKey()) {
+          lo.consume(key!, 1);
+          c.locked = false;
+          sfx('crate_open', position);
+          toast(questUi.keyUsed(itemName(key!)));
+          return game.inventory.openContainer(id);
+        }
         if (c.locked) {
           if (lo.count('lockpick') <= 0) {
             // No picks: bolt cutters snap an easy lock (slow, no minigame, they wear down).

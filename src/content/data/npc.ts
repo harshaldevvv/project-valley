@@ -19,6 +19,9 @@ export interface NpcDef {
   gestures: string[];
   /** Looped clip while you talk to them (default NPC_FEEL.talkClip). */
   talk?: string;
+  /** Present only while this dialogue flag is set (`not`: while it is unset). NPCs never walk: a hand-off between two
+   *  places is two defs, one hidden and one shown by the same flag. Checked each frame, never mid-conversation. */
+  show?: { flag: string; not?: boolean };
 }
 
 export const NPCS: NpcDef[] = [
@@ -28,6 +31,11 @@ export const NPCS: NpcDef[] = [
   { id: 'wren', model: 'chr_npc_wren', role: 'survivor', poi: 'ranger', at: { x: 127.6, z: 255.4, yaw: 0 }, dialogue: 'wren', idles: ['idle'], gestures: ['interact_search'] },
   // Loon Lake: sits by the east-bank fire ring (outskirts_lake.ts pitch 3), facing the car park track; reuses Hollis's model
   { id: 'tobin', model: 'chr_npc_hollis', role: 'survivor', poi: 'lake', at: { x: -118.4, z: 267.6, yaw: 0.6 }, dialogue: 'tobin', idles: ['idle'], gestures: ['interact_search'] },
+  // Dunmore: Walt in the hardware store (reuses the trader model; Odell is 93 m away, past drawDistance)
+  { id: 'walt', model: 'chr_npc_trader', role: 'survivor', poi: 'town', at: { building: 'hardware', u: -1.6, v: 1.0 }, dialogue: 'walt', idles: ['idle'], gestures: ['interact_search'] },
+  // June: motel room 2 until she is handed her letter (flag june_left), then at the diner (reuses Wren's model; 90 m from the ridge)
+  { id: 'june', model: 'chr_npc_wren', role: 'survivor', poi: 'town', at: { building: 'motel', u: -3.3, v: 0.6 }, dialogue: 'june', idles: ['idle'], gestures: ['interact_search'], show: { flag: 'june_left', not: true } },
+  { id: 'june_diner', model: 'chr_npc_wren', role: 'survivor', poi: 'diner', at: { x: 44, z: 221, yaw: 1.2 }, dialogue: 'june_diner', idles: ['idle'], gestures: ['interact_search'], show: { flag: 'june_left' } },
 ];
 export const NPC_BY_ID: Record<string, NpcDef> = Object.fromEntries(NPCS.map((n) => [n.id, n]));
 
@@ -180,6 +188,63 @@ export const DIALOGUES: DialogueDef[] = [
       letter_read: { choices: [{ id: 'leave', next: 'end' }] },
       after: { choices: [{ id: 'fish', next: 'fish' }, { id: 'leave', next: 'end' }] },
       fish: { choices: [{ id: 'back', next: 'hub' }, { id: 'leave', next: 'end' }] },
+    },
+  },
+  {
+    id: 'walt',
+    entry: [
+      { when: [{ quest: 'dunmore_fever', status: 'done' }], node: 'after' },
+      { when: [{ giving: 'walt' }, { has: { item: 'painkillers', count: 2 } }], node: 'pills' },
+      { when: [{ giving: 'walt' }], node: 'waiting' },
+      { when: [{ flag: 'walt_met', not: true }], node: 'first' },
+      { node: 'about' },
+    ],
+    nodes: {
+      first: { choices: [{ id: 'fever', effects: [{ set: 'walt_met' }], next: 'fever' }, { id: 'leave', effects: [{ set: 'walt_met' }], next: 'end' }] },
+      about: { choices: [{ id: 'fever', next: 'fever' }, { id: 'leave', next: 'end' }] },
+      fever: { choices: [{ id: 'where', next: 'where' }, { id: 'leave', next: 'end' }] },
+      where: { choices: [{ id: 'leave', next: 'end' }] },
+      waiting: { choices: [{ id: 'where', next: 'where' }, { id: 'leave', next: 'end' }] },
+      pills: { choices: [{ id: 'give', effects: [{ hand: { item: 'painkillers', count: 2 } }, { set: 'walt_helped' }], next: 'thanks' }, { id: 'later', next: 'end' }] },
+      thanks: { choices: [{ id: 'police', next: 'police' }, { id: 'motel', next: 'motel' }, { id: 'leave', next: 'end' }] },
+      after: { choices: [{ id: 'police', next: 'police' }, { id: 'motel', next: 'motel' }, { id: 'leave', next: 'end' }] },
+      police: { choices: [{ id: 'back', next: 'after' }, { id: 'leave', next: 'end' }] },
+      motel: { choices: [{ id: 'back', next: 'after' }, { id: 'leave', next: 'end' }] },
+    },
+  },
+  {
+    id: 'june',
+    entry: [
+      { when: [{ giving: 'june' }, { has: { item: 'note_motel_letter', count: 1 } }], node: 'letter' },
+      { when: [{ quest: 'dunmore_motel', status: 'active' }], node: 'street' },
+      { when: [{ flag: 'june_met', not: true }], node: 'first' },
+      { node: 'hub' },
+    ],
+    nodes: {
+      first: { choices: [{ id: 'who', effects: [{ set: 'june_met' }], next: 'cal' }, { id: 'leave', effects: [{ set: 'june_met' }], next: 'end' }] },
+      hub: { choices: [{ id: 'who', next: 'cal' }, { id: 'leave', next: 'end' }] },
+      cal: { choices: [{ id: 'leave', next: 'end' }] },
+      street: { choices: [{ id: 'who', next: 'cal' }, { id: 'leave', next: 'end' }] },
+      // handing the letter: she gives you her bag and leaves (june_left hides her here and shows june_diner)
+      letter: { choices: [{ id: 'letter', effects: [{ hand: { item: 'note_motel_letter', count: 1 } }, { give: { item: 'june_bag', count: 1 } }, { set: 'june_left' }], next: 'going' }, { id: 'later', next: 'end' }] },
+      going: { choices: [{ id: 'leave', next: 'end' }] },
+    },
+  },
+  {
+    id: 'june_diner',
+    entry: [
+      { when: [{ quest: 'dunmore_motel', status: 'done' }], node: 'after' },
+      { when: [{ giving: 'june_diner' }, { has: { item: 'june_bag', count: 1 } }], node: 'bag' },
+      { when: [{ giving: 'june_diner' }], node: 'nobag' },
+      { node: 'after' },
+    ],
+    nodes: {
+      bag: { choices: [{ id: 'bag', effects: [{ hand: { item: 'june_bag', count: 1 } }, { set: 'june_safe' }], next: 'thanks' }, { id: 'later', next: 'end' }] },
+      // the bag was lost or dropped: she has no use for blame, and the quest must stay finishable
+      nobag: { choices: [{ id: 'lost', effects: [{ give: { item: 'june_bag', count: 1 } }], next: 'found' }, { id: 'leave', next: 'end' }] },
+      found: { choices: [{ id: 'leave', next: 'end' }] },
+      thanks: { choices: [{ id: 'leave', next: 'end' }] },
+      after: { choices: [{ id: 'leave', next: 'end' }] },
     },
   },
 ];

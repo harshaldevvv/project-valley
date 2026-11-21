@@ -9,6 +9,9 @@ export const npcName: Record<string, { name: string; role: string }> = {
   hollis: { name: 'Hollis', role: 'Farmer' },
   wren: { name: 'Wren', role: 'Ranger' },
   tobin: { name: 'Tobin', role: 'Fisherman' },
+  walt: { name: 'Walt', role: 'Hardware store' },
+  june: { name: 'June', role: 'Survivor' },
+  june_diner: { name: 'June', role: 'Survivor' },
 };
 
 export const dialogueText: Record<string, Record<string, string>> = {
@@ -57,6 +60,33 @@ export const dialogueText: Record<string, Record<string, string>> = {
     after: 'I am staying at the lake. If Dee comes back, this is where Dee will look. Thank you for walking it for me.',
     fish: 'Worms in the cooler, line on the rack. Cast past the reeds. If the water goes flat and quiet, reel in and walk away slowly.',
   },
+  walt: {
+    first: 'Stay over there. I have a fever and I do not know what kind. Walt. I own this store, or I did.',
+    about: 'Still hot. Still shaking. Still here.',
+    fever: 'Two days now. Sweats, then shakes. The pharmacy is next door and I cannot walk ten metres without sitting down.',
+    where: 'Mrs Okafor kept a ledger behind her counter. If she moved stock, she wrote it down. Two packs of painkillers will break this. Bring them here.',
+    waiting: 'Did you find the ledger? Behind the pharmacy counter. She wrote everything down.',
+    pills: "Those are hers. Okafor's labels. Give them here.",
+    thanks: 'It will break by morning. Listen. Two more things in this town want doing, and I am in no state to do them.',
+    after: 'Still breathing, thanks to you. What do you need?',
+    police: 'Sergeant Ames kept an evidence locker at the station. Nobody is coming to collect it now. The key went with one of his officers, and he never came back.',
+    motel: 'There is a woman in the motel, room two. June. Her husband went out three days ago. The street is too busy for her to cross alone.',
+  },
+  june: {
+    first: 'Do not come in. I have a chair against the door and I will use it. I am June. I am waiting for my husband.',
+    hub: 'Still waiting.',
+    cal: 'Cal went out three days ago. He always leaves a note. He did not leave one here, so he left it somewhere stupid. The street is full of them. I cannot get past.',
+    street: 'They are still out there on Main Street. Thin them out and I might make it. And look for a note; Cal slept in the end room when I snored.',
+    letter: "That is Cal's writing. Let me see it.",
+    going: 'The diner. Then that is where I am going. Carry my bag for me, I can run without it. I will go round the back lots. Meet me there.',
+  },
+  june_diner: {
+    bag: 'You came. Cal is not here. The truck is, though, and the keys were on the visor, like he said.',
+    nobag: 'No bag? Then you dropped it on the step behind you. I saw it from the window.',
+    found: 'Here. Hand it to me properly, then. I want something to have gone right today.',
+    thanks: 'I will learn to drive it. Ray will come back for it, or Cal will. Take these. I will not need a jacket in a truck.',
+    after: 'The coffee is cold. It is still coffee.',
+  },
 };
 
 export const choiceText: Record<string, Record<string, string>> = {
@@ -100,6 +130,28 @@ export const choiceText: Record<string, Record<string, string>> = {
     fish: 'How is the fishing?',
     back: 'Another question.',
     leave: 'Stay safe on the dock.',
+  },
+  walt: {
+    fever: 'You look sick.',
+    where: 'What do you need?',
+    give: 'Two packs, from the back cabinet.',
+    later: 'Not yet. Hold on.',
+    police: 'What about the police station?',
+    motel: 'Who else is in town?',
+    back: 'Something else.',
+    leave: 'Drink some water, Walt.',
+  },
+  june: {
+    who: 'Who are you waiting for?',
+    letter: 'Cal left this for you.',
+    later: 'Not yet.',
+    leave: 'Keep the chain on.',
+  },
+  june_diner: {
+    bag: 'Your bag, as promised.',
+    lost: 'I lost your bag.',
+    later: 'In a minute.',
+    leave: 'Good luck, June.',
   },
 };
 

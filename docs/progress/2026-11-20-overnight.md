@@ -406,3 +406,13 @@ override, saves empty/filled/paused, difficulty, controls, first-time hint). She
 - `npx tsc --noEmit` and `npx vitest run` green (23 files, 201 tests). Laptop offline: run locally.
 
 Left: `v0.0.1` in the menu corner is hardcoded (versions untouched); the help overlay (H) still uses its own plain style.
+
+## Dunmore side quests (3)
+
+Three side quests in the town's existing buildings. They open after Maple Street. Walt, the first quest's NPC, points at the other two.
+- **Fever in Dunmore** (`dunmore_fever`): Walt in the hardware store is sick. You read the pharmacist's ledger (pharmacy filing cabinet), take 2 painkillers from the back-room medicine cabinet and give them to Walt. There is no timer, so the urgency is in the text only.
+- **The Evidence Locker** (`dunmore_evidence`): you read the police duty log (front office). The locker key is in Officer Pruitt's motel room wardrobe. The key opens evidence locker one (`police_station_0`, a lock-1 police locker) with no lockpick and is used up. Inside is the case 0419 tag, which ties into June's story. New: `QUEST_KEYS` (container id -> key) in `data/quests.ts`, read by the container interaction in `systems/index.ts` (prompt "Unlock (Evidence Locker Key)").
+- **Room Two** (`dunmore_motel`): 5 kills in town, read Cal's note (motel end room nightstand), and give it to June. She hands you her bag and leaves. Then go to the diner and give her the bag. The hand-off is faked: `NpcDef.show` (a flag, optionally negated) hides `june` at the motel and shows `june_diner` at the diner once `june_left` is set (`gameplay/npc/npc.ts`: no prompt, no collider, not drawn while hidden; she never vanishes mid-talk). If the bag is lost, the diner June gives it back, so the quest can't soft-lock.
+- Rewards are mostly items: first aid pouch, antiseptic, peaches / 9mm x30, police jacket, 2 lockpicks / flares, hunting jacket, jerky. $20 each uses the last $60 of the cash cap. 4 notes (bodies in `noteText`), 2 quest items (`key_evidence`, `june_bag`), and NPCs Walt (trader model, 93 m from Odell) and June (Wren's model, 90 m from the ridge).
+- Tests: Walt and June dialogue, the full Dunmore playthrough, quest keys (the locked target, an unlocked key spot, a note behind the lock), and show-flag twins. Updated: the active list in the finale test, and the june_bag exemption in the gear test. `questchain.mjs` now opens keyed lockers through the real E interaction and checks the hand-off (hidden, no prompt, twin talkable). The headless run shows all 16 quests playable and the save round trip OK.
+- `npx tsc --noEmit` and `npx vitest run` are green on the laptop (23 files, 201 tests).

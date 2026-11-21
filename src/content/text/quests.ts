@@ -89,6 +89,25 @@ export const questText: Record<string, QuestText> = {
     objectives: ['Clear Camp Harlan (8 kills)', 'Find the letter in the supply crate and read it', 'Bring the letter to Tobin at Loon Lake'],
     done: "Tobin reads the letter twice, then hands you a manual with a nurse's notes in the margins. Carry it and you can build trauma kits (IFAK) at the crafting menu.",
   },
+  // ---- Dunmore side quests ----
+  dunmore_fever: {
+    title: 'Fever in Dunmore',
+    summary: 'Walt runs the hardware store on Main Street and is burning up. The pharmacy is next door. He cannot walk that far, and a fever like his does not wait.',
+    objectives: ['Go to Dunmore', "Read the pharmacist's ledger (behind the pharmacy counter)", 'Find 2 painkillers (pharmacy back room, medicine cabinet)', 'Bring the painkillers to Walt in the hardware store'],
+    done: 'Walt swallows both and sits down on a pallet. The shakes ease off. He pays in what a hardware store has left, and two more names.',
+  },
+  dunmore_evidence: {
+    title: 'The Evidence Locker',
+    summary: "Walt says the police station's evidence locker was never emptied. The sergeant gave the key to one of his officers, and the officer never came back.",
+    objectives: ['Go to the Dunmore police station', 'Read the duty log (front office filing cabinet)', "Find the evidence locker key (Officer Pruitt's motel room, wardrobe)", 'Open the evidence locker (by the west wall) and read the tag'],
+    done: 'Case 0419: a revolver taken from a man who wanted to get his wife out. The gun is long gone. The station owes you the rest.',
+  },
+  dunmore_motel: {
+    title: 'Room Two',
+    summary: 'June has kept the chain on her motel door for three days, waiting for her husband. The street outside is too busy for her to cross alone.',
+    objectives: ['Clear Main Street (5 kills in Dunmore)', 'Find the note Cal left (motel, end room nightstand)', 'Give June the note', 'Go to the crossroads diner', 'Give June her bag at the diner'],
+    done: "June takes the bag and climbs into the truck Cal's brother left. Cal is not there. She will drive it anyway, she says, as soon as she learns how. She gives you what she cannot carry.",
+  },
 };
 
 /** Fallback shown if a quest has no text yet. */
@@ -128,6 +147,22 @@ export const noteText: Record<string, { title: string; body: string }> = {
     title: 'Combat medic field manual, page 40',
     body: 'Individual first aid kit (IFAK), field assembly: one sterile dressing, one tourniquet, one antiseptic. Fold the dressing flat, stage the tourniquet on top, tape the pouch shut so it opens one-handed. In the margin, in pencil: Dee says practise until you can do it in the dark. Carry this manual and the crafting menu will show you how.',
   },
+  note_pharmacy_ledger: {
+    title: "Pharmacist's ledger",
+    body: 'Tuesday. Third break-in this week. Moved the painkillers, fever reducers and the good bandages to the medicine cabinet in the back room; the front shelves can have whatever they want. Walt from the hardware store came in for his heart pills, looking grey. Told him to stay inside and drink water. Wednesday. Nobody came in. Thursday. Locking up. If you need something, take it, and leave the shelves standing.',
+  },
+  note_police_duty: {
+    title: 'Front desk duty log',
+    body: "06:00 Ames on desk. Station locked down, public sent to the church. 09:30 Mayhew's revolver logged into evidence, case 0419, locker one. He did not take it well. 14:00 Pruitt's house overrun; he is sleeping at the motel, room three, until further notice. Locker key is on his ring. 22:00 Pruitt has not reported for shift. 23:00 Nobody else has either.",
+  },
+  note_evidence_log: {
+    title: 'Evidence tag, case 0419',
+    body: 'Item: one revolver, unloaded, and six rounds. Seized from Calvin Mayhew at the motel. Owner states he needs it to get his wife to the crossroads diner, where his brother left a truck. Held pending review. Note, in pen, under the type: I should have given it back. If he comes for it, give it back. Ames.',
+  },
+  note_motel_letter: {
+    title: 'Note for June',
+    body: "June. I am going to Rosie's diner at the crossroads. Ray left the truck there with a full tank and the keys on the visor. Keep the chain on and stay in room two. If I am not back by dark, do not come looking. If somebody kind turns up, go with them, and bring your bag, not mine. I love you. Cal.",
+  },
 };
 
 export const questUi = {
@@ -150,6 +185,9 @@ export const questUi = {
   meters: (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`),
   dir: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
   rewardGiven: (name: string, n: number) => `+ ${name}${n > 1 ? ` ×${n}` : ''}`,
+  /** A quest key in the pack opens its locked container (data/quests.ts QUEST_KEYS). */
+  unlockWith: (key: string) => `Unlock (${key})`,
+  keyUsed: (key: string) => `${key} turns. The lock opens.`,
   /** The pack was full: the reward is on the ground at the player's feet. */
   rewardDropped: (name: string, n: number) => `+ ${name}${n > 1 ? ` ×${n}` : ''}: no room, left at your feet`,
 };

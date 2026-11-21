@@ -164,6 +164,47 @@ export const QUESTS: QuestDef[] = [
     // the field manual unlocks the IFAK recipe (data/crafting.ts): the chain pays in know-how, not loot
     rewards: [{ item: 'field_manual', count: 1 }, { item: 'ifak', count: 1 }, { item: 'cash', count: 80 }],
   },
+  // ---- side quests in Dunmore (opens after Maple Street; Walt in the hardware store points you at the other two) ----
+  {
+    id: 'dunmore_fever',
+    requires: ['maple'],
+    side: true,
+    // no timer system: the urgency is in the words only
+    objectives: [
+      { type: 'goto', poi: 'town' },
+      { type: 'read', note: 'note_pharmacy_ledger', poi: 'town' },
+      { type: 'collect', item: 'painkillers', count: 2, poi: 'town' },
+      { type: 'give', item: 'painkillers', count: 2, npc: 'walt', poi: 'town' },
+    ],
+    rewards: [{ item: 'first_aid_pouch', count: 1 }, { item: 'antiseptic', count: 2 }, { item: 'canned_peaches', count: 2 }, { item: 'cash', count: 20 }],
+  },
+  {
+    id: 'dunmore_evidence',
+    requires: ['dunmore_fever'],
+    side: true,
+    objectives: [
+      { type: 'goto', poi: 'police' },
+      { type: 'read', note: 'note_police_duty', poi: 'police' },
+      { type: 'collect', item: 'key_evidence', count: 1, poi: 'town' },
+      // the tag is in the evidence locker (police_station_0), which the key opens (QUEST_KEYS)
+      { type: 'read', note: 'note_evidence_log', poi: 'police' },
+    ],
+    rewards: [{ item: 'ammo_9mm', count: 30 }, { item: 'police_jacket', count: 1 }, { item: 'lockpick', count: 2 }, { item: 'cash', count: 20 }],
+  },
+  {
+    id: 'dunmore_motel',
+    requires: ['dunmore_fever'],
+    side: true,
+    // no escort: handing June the letter sets the flag june_left, which hides her at the motel and shows her at the diner (data/npc.ts `show`)
+    objectives: [
+      { type: 'kill', count: 5, poi: 'town' },
+      { type: 'read', note: 'note_motel_letter', poi: 'town' },
+      { type: 'give', item: 'note_motel_letter', npc: 'june', poi: 'town' },
+      { type: 'goto', poi: 'diner' },
+      { type: 'give', item: 'june_bag', npc: 'june_diner', poi: 'diner' },
+    ],
+    rewards: [{ item: 'road_flare', count: 3 }, { item: 'hunting_jacket', count: 1 }, { item: 'beef_jerky', count: 3 }, { item: 'cash', count: 20 }],
+  },
 ];
 
 export const QUEST_BY_ID: Record<string, QuestDef> = Object.fromEntries(QUESTS.map((q) => [q.id, q]));
@@ -184,7 +225,18 @@ export const QUEST_PLACED: { container: string; item: string; count?: number }[]
   { container: 'poi_lake_office_3', item: 'radio_crystal' }, // camp office desk
   { container: 'poi_lake_cabin_a_0', item: 'note_lake_scanner' }, // rental cabin A nightstand
   { container: 'poi_outpost_out2', item: 'note_harlan_medic' }, // the supply crate in the middle of Camp Harlan
+  { container: 'poi_pharmacy_5', item: 'note_pharmacy_ledger' }, // filing cabinet behind the counter
+  { container: 'poi_pharmacy_3', item: 'painkillers', count: 2 }, // back-room medical cabinet
+  { container: 'poi_police_station_2', item: 'note_police_duty' }, // front office filing cabinet
+  { container: 'poi_motel_4', item: 'key_evidence' }, // motel room 3 wardrobe (Pruitt's room)
+  { container: 'poi_police_station_0', item: 'note_evidence_log' }, // the evidence locker: locked, QUEST_KEYS opens it
+  { container: 'poi_motel_0', item: 'note_motel_letter' }, // motel room 1 nightstand
 ];
+
+/** Locked world containers a quest key opens without a pick (the key is used up). Container id -> key item. */
+export const QUEST_KEYS: Record<string, string> = {
+  poi_police_station_0: 'key_evidence',
+};
 
 export const QUEST = {
   /** Default radius of a "go to" objective, as a fraction of the place's own radius (the sign at the entrance). */
