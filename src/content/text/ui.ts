@@ -30,6 +30,7 @@ export const saveText = {
   loadedSlot: 'Game loaded',
   fellBack: 'The latest save was damaged. Loaded the previous copy.',
   corrupt: 'Save could not be loaded',
+  partial: 'Part of this save could not be read and was skipped.',
   nothing: 'No save in that slot',
 };
 

@@ -33,8 +33,11 @@ export function installQuests(game: Game, lo: Loadout, deps: { sfx(id: string, a
     hours: () => (game.time.day - 1) * 24 + game.time.hours,
     place: (id) => POIS.find((p) => p.id === id),
     give: (item, count) => {
+      const ground = lo.pickups.length;
       for (const it of newItems(item, count)) lo.give(it);
-      deps.toast(T.rewardGiven(itemText[item]?.name ?? item, count), item);
+      // a full pack drops the reward at the player's feet: say so, or it is easy to walk away from (a quest may need it)
+      const name = itemText[item]?.name ?? item;
+      deps.toast(lo.pickups.length > ground ? T.rewardDropped(name, count) : T.rewardGiven(name, count), item);
     },
   });
 

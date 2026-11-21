@@ -452,12 +452,19 @@ export class Loadout implements LoadoutApi {
   }
 
   load(save: LoadoutSave) {
-    if (save.v < 1 || save.v > SAVE_VERSION) throw new Error(`loadout save v${save.v} has no migration to v${SAVE_VERSION}`);
+    const v = typeof save.v === 'number' ? save.v : 1; // the earliest dev saves did not always write it
+    if (v < 1 || v > SAVE_VERSION) throw new Error(`loadout save v${save.v} has no migration to v${SAVE_VERSION}`);
     const s = structuredClone(save);
+    // fields a hand-edited or very old save may lack
+    s.equipment ??= {};
+    s.pickups ??= [];
+    s.containers ??= [];
+    s.hotbar ??= [...INVENTORY.hotbar];
+    s.nextUid ??= 1;
     const rep = repairLoadoutSave(s);
     if (rep.renamed || rep.dropped.length) console.warn(`loadout save repaired: ${rep.renamed} renamed, dropped ${rep.dropped.join(', ') || 'nothing'}`);
     uidState.next = Math.max(uidState.next, s.nextUid);
-    if (save.v < 2) this.migrateV1(s);
+    if (v < 2) this.migrateV1(s);
     this.equipment = s.equipment;
     this.pickups = s.pickups;
     this.containers.clear();

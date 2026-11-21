@@ -65,6 +65,8 @@ export function installSurvival(
   game.survival = survival;
   lo.useValidator = (item) => {
     const d = defOf(item);
+    // a quest that asks for this item to be used (the farm's hot soup) is never blocked by "you're not hungry"
+    if (worldHooks.quests?.objectives().some((o) => o.type === 'use' && o.item === item.defId)) return null;
     return d.use ? survival.useRefusal(d.use, d.kind) : null;
   };
 

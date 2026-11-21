@@ -147,7 +147,7 @@ export class Quests {
     this.check(q);
   }
 
-  /** Re-evaluate the polled objective of one quest (go to, collect, fuel, survive). */
+  /** Re-evaluate the polled objective of one quest (go to, collect, fuel, survive, a note already read). */
   private check(q: QuestDef) {
     const s = this.state[q.id];
     if (s.status !== 'active') return;
@@ -160,6 +160,8 @@ export class Quests {
     } else if (o.type === 'collect') ok = this.env.count(o.item) >= o.count;
     else if (o.type === 'fuel') ok = this.env.fuel() >= o.liters;
     else if (o.type === 'survive') ok = this.env.hours() - s.n >= o.hours;
+    // a note read before this objective came up still counts (it may have been dropped since: notes are placed once)
+    else if (o.type === 'read') ok = this.notes.includes(o.note);
     if (ok) this.advance(q);
   }
 

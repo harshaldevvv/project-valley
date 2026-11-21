@@ -95,6 +95,9 @@ export interface SaveSection {
   version: number;
   save(): unknown; // plain JSON-safe data only
   load(data: unknown, version: number): void;
+  /** Optional: put this slice back to a new game's state, called when a loaded save has no record of it (made
+   *  before the slice existed), so the session's current state does not leak into the loaded game. */
+  fresh?(): void;
 }
 export interface SaveSlotInfo {
   slot: string; // 'auto' | 'quick' | 'manual-1' | 'manual-2' | 'manual-3' | 'pre-horde'

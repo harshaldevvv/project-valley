@@ -269,6 +269,17 @@ describe('progress rules', () => {
     expect(q.notes).toEqual(['note_a', 'note_b']);
   });
 
+  it('a note read before its objective comes up still counts (no need to find it again)', () => {
+    const w = world();
+    const { q } = mk(w);
+    for (const id of ['wake', 'listen', 'make_do', 'route9']) for (let i = 0; i < 10 && q.state[id].status === 'active'; i++) q.skip(id);
+    q.report({ type: 'note', id: 'note_maple_sick' }); // read in the house before the Maple Street objective ticked
+    expect(q.current('maple')).toMatchObject({ type: 'goto' });
+    goto(w, 'maple');
+    q.tick();
+    expect(q.current('maple')).toMatchObject({ type: 'collect' });
+  });
+
   it('the whole chain can be finished by playing it through, and ends with no active quest', () => {
     const w = world();
     const { q } = mk(w);

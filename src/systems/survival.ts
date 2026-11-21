@@ -46,8 +46,9 @@ const DERIVED: StatusId[] = ['well_fed', 'starving', 'dehydrated', 'exhausted', 
 /** Survival save versions: 1 = needs and statuses; 2 adds `warmth`. */
 export const SURVIVAL_SAVE_VERSION = 2;
 export function migrateSurvival(d: SurvivalSave, version: number): SurvivalSave {
-  if (version < 2) return { ...d, warmth: 100, statuses: d.statuses.filter(([id]) => id !== ('cold' as StatusId)) };
-  return d;
+  const statuses = Array.isArray(d.statuses) ? d.statuses : [];
+  if (version < 2) return { ...d, warmth: 100, statuses: statuses.filter(([id]) => id !== ('cold' as StatusId)) };
+  return { ...d, statuses };
 }
 
 export class Survival implements SurvivalApi {

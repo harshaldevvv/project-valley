@@ -98,8 +98,8 @@ export class SaveManager implements SaveApi {
       for (const gen of [...meta.gens].reverse()) {
         const file = await this.readValid(`${slot}:${gen}`);
         if (!file) continue;
-        this.apply(file);
-        if (gen !== meta.current || gen !== meta.gens[meta.gens.length - 1]) this.hooks.toast(saveText.fellBack);
+        if (this.apply(file).length) this.hooks.toast(saveText.partial);
+        else if (gen !== meta.current || gen !== meta.gens[meta.gens.length - 1]) this.hooks.toast(saveText.fellBack);
         this.hooks.loaded(slot);
         return true;
       }
@@ -126,19 +126,33 @@ export class SaveManager implements SaveApi {
     }
   }
 
-  /** Apply sections in the data-defined order (world before contents before player), then the rest. */
-  private apply(f: SaveFile) {
+  /**
+   * Apply sections in the data-defined order (world before contents before player), then the rest. A section the
+   * save has no record of (it predates it) is reset to a new game's state when it can be. One section that fails to
+   * load is reported and skipped: the rest of the save still loads (a throw here would leave the game half-loaded).
+   * Returns the names of the sections that failed.
+   */
+  private apply(f: SaveFile): string[] {
     const order = [...SAVE.loadOrder, ...this.sections.keys()];
+    const failed: string[] = [];
     this.loading = true;
     try {
       for (const name of new Set(order)) {
         const s = this.sections.get(name);
+        if (!s) continue;
         const rec = f.sections[name];
-        if (s && rec) s.load(rec.data, rec.v);
+        try {
+          if (rec) s.load(rec.data, typeof rec.v === 'number' ? rec.v : 1);
+          else s.fresh?.();
+        } catch (e) {
+          failed.push(name);
+          console.warn(`save: section "${name}" did not load, skipped`, e);
+        }
       }
     } finally {
       this.loading = false;
     }
+    return failed;
   }
 
   async list(): Promise<SaveSlotInfo[]> {

@@ -243,9 +243,9 @@ export async function installSystems(game: Game): Promise<void> {
   });
   saves.section('deathbags', { version: 1, save: () => m2.bags.serialize(), load: (d) => m2.bags.load(d as DeathBag[]) });
   saves.section('survival', { version: SURVIVAL_SAVE_VERSION, save: () => m2.survival.serialize(), load: (d, v) => m2.survival.load(d as SurvivalSave, v) });
-  saves.section('quests', { version: QUEST_SAVE_VERSION, save: () => questApi.serialize(), load: (d, v) => questApi.load(d as QuestSave, v) });
+  saves.section('quests', { version: QUEST_SAVE_VERSION, save: () => questApi.serialize(), load: (d, v) => questApi.load(d as QuestSave, v), fresh: () => questApi.load({ state: {}, tracked: null, notes: [], seen: [] }) }); // fresh: a pre-quest save starts the quests anew
   saves.section('map', { version: MAP_SAVE_VERSION, save: () => mapApi.serialize(), load: (d) => mapApi.load(d as MapSave) });
-  saves.section('worldtools', { version: WORLDTOOLS_VERSION, save: () => craft.serialize(), load: (d, v) => craft.load(d as WorldToolsSave, v) });
+  saves.section('worldtools', { version: WORLDTOOLS_VERSION, save: () => craft.serialize(), load: (d, v) => craft.load(d as WorldToolsSave, v), fresh: () => craft.load({ camps: [], radio: 0 }, 1) });
 
   game.events.on('playerDied', () => {
     screen.close();

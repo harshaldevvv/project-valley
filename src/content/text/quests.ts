@@ -120,4 +120,6 @@ export const questUi = {
   meters: (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`),
   dir: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'],
   rewardGiven: (name: string, n: number) => `+ ${name}${n > 1 ? ` ×${n}` : ''}`,
+  /** The pack was full: the reward is on the ground at the player's feet. */
+  rewardDropped: (name: string, n: number) => `+ ${name}${n > 1 ? ` ×${n}` : ''}: no room, left at your feet`,
 };
