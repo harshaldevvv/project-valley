@@ -9,7 +9,9 @@ import { HORDE_NIGHT } from '../../content/data/zombie_arch';
 import { installHints } from './hints';
 import { keyList } from './keys';
 import { applyPreset, difficulty, DIFFICULTY_PRESETS, type DeathPenalty } from '../../content/data/difficulty';
-import { DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from './settings';
+import { DEFAULT_SETTINGS, effectiveQuality, loadSettings, presetIntoSettings, saveSettings, type Settings } from './settings';
+import { qualityText as QT } from '../../content/text/quality';
+import type { QualityId } from '../../content/data/quality';
 import { MENU_CSS } from './style';
 import { menuText as T } from '../../content/text/ui';
 
@@ -35,7 +37,7 @@ const BLEND_OUT_S = 2.2;
 const FLY_PERIOD_S = 150;
 const TIP_MS = 8000;
 
-export function installMenu(game: Game, opts: { applySettings(s: Settings): void; stations: MenuStation[] }) {
+export function installMenu(game: Game, opts: { applySettings(s: Settings): void; onQualityPicked?(q: Settings['quality']): void; stations: MenuStation[] }) {
   const style = document.createElement('style');
   style.textContent = MENU_CSS;
   document.head.appendChild(style);
@@ -230,6 +232,34 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
     slider('music', S.music, 0, 1, 0.05, pct);
     slider('ambience', S.ambience, 0, 1, 0.05, pct);
     check('bgMuted', S.bgMuted);
+    {
+      // graphics preset: Auto (measured, data/quality AUTO_QUALITY) or a fixed preset; writes render scale / shadows / effects
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `<span>${QT.label}</span><div class="mn-seg" role="radiogroup" aria-label="${QT.label}"></div>`;
+      const seg = row.querySelector('.mn-seg')!;
+      for (const v of ['auto', 'low', 'medium', 'high'] as const) {
+        const l = document.createElement('label');
+        l.innerHTML = `<input type="radio" name="mn-quality" value="${v}"><span>${QT[v]}</span>`;
+        const r = l.querySelector('input')!;
+        r.checked = settings.quality === v;
+        r.onchange = () => {
+          settings.quality = v;
+          if (v === 'auto') settings.autoQuality = 'high'; // measure again from the top
+          presetIntoSettings(settings, effectiveQuality(settings));
+          sfx('ui_click');
+          commit();
+          opts.onQualityPicked?.(v);
+          showPage('settings'); // the sliders and toggles below show the preset's values
+        };
+        seg.append(l);
+      }
+      const hint = document.createElement('div');
+      hint.className = 'mn-hint';
+      hint.style.cssText = 'opacity:.7;font-size:.85em;margin:-4px 0 6px';
+      hint.textContent = settings.quality === 'auto' ? QT.autoPicked.replace('{q}', QT[settings.autoQuality]) : QT.manual;
+      f.append(row, hint);
+    }
     slider('renderScale', S.renderScale, 0.5, 1, 0.05, pct);
     check('shadows', S.shadows);
     check('fxaa', S.fxaa);
@@ -542,6 +572,17 @@ export function installMenu(game: Game, opts: { applySettings(s: Settings): void
 
   return {
     showNote,
+    get settings(): Readonly<Settings> {
+      return settings;
+    },
+    /** The auto-pick stepped down: save the new pick and its render scale / shadows / effects. */
+    setAutoQuality(id: QualityId) {
+      settings.autoQuality = id;
+      presetIntoSettings(settings, id);
+      apply(settings);
+      saveSettings(settings);
+      if (mode !== 'playing' && page === 'settings') showPage('settings');
+    },
     get mode() {
       return mode;
     },

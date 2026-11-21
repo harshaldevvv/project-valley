@@ -3,6 +3,7 @@ import { MeshBasicNodeMaterial } from 'three/webgpu';
 import { cameraPosition, cameraViewMatrix, fract, instanceIndex, positionLocal, sin, time, uniform, vec3 } from 'three/tsl';
 import type { Game } from '../core/game';
 import type { Post } from './post';
+import { qualityHooks } from './quality';
 
 /**
  * Weather: rain showers. `weather.rain` (0..1) eases toward a target that follows a deterministic per-day schedule
@@ -86,8 +87,9 @@ export function installWeather(game: Game, post: Post) {
         far0 = fog.far;
       }
       if (fog) {
-        fog.near = near0 * (1 - 0.7 * r) * (1 - 0.9 * f);
-        fog.far = far0 * (1 - 0.6 * r) * (1 - 0.72 * f);
+        const v = qualityHooks.viewDist; // graphics preset (data/quality viewDist)
+        fog.near = near0 * v * (1 - 0.7 * r) * (1 - 0.9 * f);
+        fog.far = far0 * v * (1 - 0.6 * r) * (1 - 0.72 * f);
         // grey the fog toward its own luminance (time of day writes the colour from scene.background ~10x/s)
         const bg = game.scene.background;
         if (bg instanceof Color) {

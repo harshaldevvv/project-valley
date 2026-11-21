@@ -3,6 +3,8 @@
  *   const s = loadSettings();  s.fov = 80;  saveSettings(s);
  * Applied by installMenu() to the live data tables (cameraFeel, look), the post pipeline and audio.
  */
+import { QUALITY, type QualityId } from '../../content/data/quality';
+
 export interface Settings {
   fov: number; // third-person hip FOV, degrees
   sensitivity: number; // multiplier on data/input look.sensitivity
@@ -21,10 +23,21 @@ export interface Settings {
   gore: 'full' | 'reduced' | 'off';
   captureMouse: boolean; // pointer lock while playing (data/input pointerLock.enabled); ?lock=1/0 overrides for a session
   hordeNight: boolean; // horde nights on/off (data/zombie_arch HORDE_NIGHT.enabled)
+  quality: QualityId | 'auto'; // graphics preset (data/quality); 'auto' uses autoQuality
+  autoQuality: QualityId; // what the auto-pick settled on (engine/quality startAutoQuality)
+}
+
+/** The preset in effect. */
+export const effectiveQuality = (s: Settings): QualityId => (s.quality === 'auto' ? s.autoQuality : s.quality);
+
+/** Writes a preset's player-visible values (render scale, shadows, effects) into the settings. */
+export function presetIntoSettings(s: Settings, id: QualityId) {
+  const q = QUALITY[id];
+  Object.assign(s, { renderScale: q.renderScale, shadows: q.shadows, fxaa: q.fxaa, look: q.look, ao: q.ao, shafts: q.shafts });
 }
 
 const KEY = 'pv.settings.v1';
-export const DEFAULT_SETTINGS: Settings = { fov: 70, sensitivity: 1, shake: 0.7, renderScale: 1, shadows: true, fxaa: true, look: true, ao: true, shafts: true, volume: 0.8, music: 0.4, ambience: 0.6, bgMuted: false, reduceFlashing: false, gore: 'full', captureMouse: false, hordeNight: true };
+export const DEFAULT_SETTINGS: Settings = { fov: 70, sensitivity: 1, shake: 0.7, renderScale: 1, shadows: true, fxaa: true, look: true, ao: true, shafts: true, volume: 0.8, music: 0.4, ambience: 0.6, bgMuted: false, reduceFlashing: false, gore: 'full', captureMouse: false, hordeNight: true, quality: 'auto', autoQuality: 'high' };
 
 export function loadSettings(): Settings {
   try {

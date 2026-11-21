@@ -11,6 +11,7 @@ import { underDress } from './dress';
 import { OUT } from '../../content/data/outskirts';
 import { underOutskirts } from '../outskirts/footprints';
 import { MEADOW } from '../../content/data/nature';
+import { qualityHooks, thinByQuality } from '../../engine/quality';
 
 /**
  * Ground clutter (no colliders, no shadows): wind-swayed grass tufts on every grass patch of the Yard, plus
@@ -79,7 +80,8 @@ export function buildClutter(game: Game) {
   // beyond the walls the hills get a thinner coat close to the wall only
   const mat = new MeshStandardNodeMaterial({ side: DoubleSide, roughness: 0.9 });
   const dist = positionWorld.sub(cameraPosition).length();
-  const shrink = smoothstep(46, 22, dist); // 0 far, 1 near
+  const far = qualityHooks.grassFar; // 46 m on high (data/quality grassFar)
+  const shrink = smoothstep(far, far.mul(0.48), dist); // 0 far, 1 near
   const wind = sin(time.mul(1.7).add(positionWorld.x.mul(0.55)).add(positionWorld.z.mul(0.4)))
     .add(sin(time.mul(2.9).add(positionWorld.z.mul(0.9))).mul(0.4));
   const hgt = uv().y;
@@ -100,7 +102,13 @@ export function buildClutter(game: Game) {
   }
   const geo = tuftGeometry();
   const m = new Matrix4(), q = new Quaternion(), up = new Vector3(0, 1, 0), sc = new Vector3(), p = new Vector3();
+  const shuffle = createRng(77); // separate stream: the spots stay as they were
   for (const [k, list] of cells) {
+    // shuffled, so the quality preset can thin a cell evenly by drawing only its first N instances
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(shuffle.next() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
     const tuft = new InstancedMesh(geo, mat, list.length);
     tuft.name = `grass_${k}`;
     list.forEach(([x, z, r, tall = 1], i) => {
@@ -112,6 +120,7 @@ export function buildClutter(game: Game) {
     });
     tuft.castShadow = tuft.receiveShadow = false;
     tuft.computeBoundingSphere();
+    thinByQuality('grass', tuft);
     game.scene.add(tuft);
   }
 

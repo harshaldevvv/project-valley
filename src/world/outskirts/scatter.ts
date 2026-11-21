@@ -9,6 +9,7 @@ import { footprints, inClearRect, roadClearance } from './footprints';
 import { loadPfm } from './models';
 import { TREE_MIX, TRUNK_R } from '../../content/data/nature';
 import { buildNature, reservePond } from './nature';
+import { thinByQuality } from '../../engine/quality';
 
 /** Weighted species pick from a zone's mix by a 0..1 roll. */
 const pick = (mix: { id: string; w: number }[], roll: number) => {
@@ -67,6 +68,7 @@ export async function buildScatter(kit: Kit, game: Game) {
     inst.name = `outskirts_bushes_x${mats.length}`;
     inst.receiveShadow = true;
     inst.computeBoundingSphere();
+    thinByQuality('foliage', inst); // random order already: the quality preset draws the first N
     game.scene.add(inst);
   }
   const nature = await buildNature(kit, game);

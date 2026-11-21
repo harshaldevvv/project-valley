@@ -3,13 +3,15 @@ import { MeshBasicNodeMaterial } from 'three/webgpu';
 import { float, normalView, positionViewDirection, pow, uniform, uv } from 'three/tsl';
 import type { Game } from '../core/game';
 import type { TimeOfDay } from './timeofday';
+import { qualityHooks } from './quality';
 
 /**
  * Night street lamps (QA-032). For every lamp head: an emissive bulb and a fake light cone (one InstancedMesh each,
  * additive, no depth write), plus REAL_LIGHTS point lights (no shadows) that follow the lamps nearest the camera.
  * The lights always exist (intensity 0 by day) so the light count never changes and no material recompiles.
  * Everything fades in with tod.night.     createLamps(game, tod, [{x, y, z}, ...])
- * Cost: 2 draws + REAL_LIGHTS point lights in the forward lighting loop.
+ * Cost: 2 draws + REAL_LIGHTS point lights in the forward lighting loop. The quality preset uses fewer (qualityHooks.lampLights):
+ * the spare lights are hidden, which recompiles lit materials once when the preset changes.
  */
 const REAL_LIGHTS = 4;
 const LIGHT_INTENSITY = 70; // candela-ish (physically based); ~2 lux on the ground from 5.9 m
@@ -64,6 +66,11 @@ export function createLamps(game: Game, tod: TimeOfDay, heads: { x: number; y: n
         for (const s of lights) s.l.intensity = 0;
         return;
       }
+      const active = Math.min(REAL_LIGHTS, qualityHooks.lampLights);
+      lights.forEach((s, i) => {
+        const use = i < active;
+        if (s.l.visible !== use) { s.l.visible = use; s.lamp = -1; }
+      });
       if (++frame % 10 === 0) {
         // nearest lamps to the camera (n is small: insertion sort on a typed array, no allocations)
         const c = game.camera.position;
@@ -81,14 +88,15 @@ export function createLamps(game: Game, tod: TimeOfDay, heads: { x: number; y: n
         // keep lights already on a near lamp; move the others to uncovered near lamps
         for (const s of lights) {
           let near = false;
-          for (let k = 0; k < REAL_LIGHTS && k < n; k++) if (order[k] === s.lamp) near = true;
+          for (let k = 0; k < active && k < n; k++) if (order[k] === s.lamp) near = true;
           if (!near) s.lamp = -1;
         }
-        for (let k = 0; k < REAL_LIGHTS && k < n; k++) {
+        for (let k = 0; k < active && k < n; k++) {
           const lamp = order[k];
           let covered = false;
           let s: (typeof lights)[number] | null = null;
           for (const x of lights) {
+            if (!x.l.visible) continue;
             if (x.lamp === lamp) covered = true;
             else if (x.lamp === -1 && !s) s = x;
           }

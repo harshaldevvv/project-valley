@@ -20,6 +20,10 @@ import { detectGpu } from './gpuinfo';
 import { menuText } from '../content/text/ui';
 import { createClock, type Clock } from './clock';
 import { createLamps } from './lamps';
+import { applyQuality, autoQualityAllowed, lowerQuality, startAutoQuality } from './quality';
+import { effectiveQuality } from '../ui/menu/settings';
+import { qualityText } from '../content/text/quality';
+import { QUALITY, type QualityId } from '../content/data/quality';
 import { worldHooks } from '../systems/worldHooks';
 
 /**
@@ -40,6 +44,7 @@ export function stationSpot(id: StationId | 'spawn'): { p: Vector3; yaw: number 
 export async function installEngine(game: Game) {
   let atmosphere: ReturnType<typeof createAtmosphere> | null = null; // created after warm-up (game.start)
   let menu: ReturnType<typeof installMenu> | null = null; // created last; the debug panel's relock reads it
+  let auto: ReturnType<typeof startAutoQuality> | null = null; // graphics auto-pick while it measures
   // --- debug panel -------------------------------------------------------------------------
   const panel = createDebugPanel(game.events, () => {
     if (menu?.mode === 'playing') requestLock(game.renderer.domElement);
@@ -200,19 +205,38 @@ export async function installEngine(game: Game) {
       cameraFeel.fovHip = s.fov;
       look.sensitivity = BASE_SENSITIVITY * s.sensitivity;
       cameraFeel.shake = s.shake;
-      Object.assign(post.settings, { fxaa: s.fxaa, renderScale: s.renderScale, shadows: s.shadows, look: s.look, ao: s.ao, shafts: s.shafts });
+      const qid = effectiveQuality(s);
+      Object.assign(post.settings, { fxaa: s.fxaa, renderScale: s.renderScale, shadows: s.shadows, look: s.look, ao: s.ao, shafts: s.shafts, bloom: QUALITY[qid].bloom });
       post.apply();
+      applyQuality(game, qid);
       audio.settings.master = s.volume;
       Object.assign(audio.settings, { music: s.music, ambience: s.ambience, bgMuted: s.bgMuted });
       audio.applyVolumes();
       fxTuning.reduceFlashing = s.reduceFlashing;
       fxTuning.gore = s.gore;
     },
+    onQualityPicked: (q) => {
+      auto?.stop();
+      auto = q === 'auto' ? runAuto() : null;
+    },
     stations: [
       { id: 'spawn', label: 'Spawn', go: () => teleport('spawn') },
       ...(Object.keys(yard.stations) as StationId[]).map((id) => ({ id, label: yard.stations[id].label, go: () => teleport(id) })),
     ],
   });
+
+  // Graphics auto-pick (data/quality AUTO_QUALITY): steps the preset down while p95 frame time is over budget.
+  function runAuto() {
+    if (!autoQualityAllowed()) return null;
+    return startAutoQuality(game, () => menu?.mode === 'playing', () => {
+      const next = menu ? lowerQuality(menu.settings.autoQuality) : null;
+      if (!next || !menu) return null;
+      menu.setAutoQuality(next);
+      game.events.emit('toast', { text: qualityText.steppedDown.replace('{q}', qualityText[next]) });
+      return next;
+    });
+  }
+  auto = menu.settings.quality === 'auto' ? runAuto() : null;
 
   // Warm-up before the loop starts (behind the title): first physics step + every pipeline compiled.
   const start = game.start;
@@ -236,7 +260,9 @@ export async function installEngine(game: Game) {
     if (gpu.integrated) menu?.showNote('igpu', menuText.igpuNote);
   });
 
-  const engine = { audio, post, tod, menu, panel, setTimeOfDay: setHours, get clock() { return clock; }, get atmosphere() { return atmosphere; },
+  /** For audits: apply a preset for this page only (the player's saved settings are untouched). */
+  const quality = { set(id: QualityId) { auto?.stop(); auto = null; const q = QUALITY[id]; Object.assign(post.settings, { renderScale: q.renderScale, shadows: q.shadows, fxaa: q.fxaa, look: q.look, ao: q.ao, shafts: q.shafts, bloom: q.bloom }); post.apply(); applyQuality(game, id); } };
+  const engine = { audio, post, tod, menu, panel, quality, setTimeOfDay: setHours, get clock() { return clock; }, get atmosphere() { return atmosphere; },
     /** Music + ambience. main.ts calls this once the loading screen is gone, so its files never slow the boot. */
     startAtmosphere() {
       atmosphere ??= createAtmosphere(game, audio, () => menu?.mode ?? 'title');

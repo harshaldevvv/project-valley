@@ -252,6 +252,30 @@ Open: the uv warning (a TSL material reads `uv()` on a mesh without UVs; harmles
 - Not done: skid marks on the ground, tyre smoke, gamepad rumble.
 - tsc clean; vitest 21/22 files pass (laptop): the one failure is another session's untracked, in-progress `src/systems/saveCompat.test.ts` (quest assertion), not this work.
 
+## Graphics quality presets for weaker machines (Low / Medium / High + Auto)
+
+- **Presets:** `src/content/data/quality.ts` holds every number. Levers: render scale, shadows on/off, shadow map size (2048 / 1536 / 1024) and box (±40 / 30 / 22 m), zombie shadow distance, AO, sun shafts, bloom, view distance (fog + camera far plane x1 / 0.8 / 0.6; sky dome scales to fit), grass and bush density (instances shuffled, so thinning is even), grass fade distance, far-cull scale on `FAR_CULL` and `NPC_FEEL.drawDistance`, street-lamp point lights (4 / 2 / 1). Applied by `src/engine/quality.ts`.
+- **Auto:** default for new players. Measures frame time while playing (skips 5 s after start and after each change, which hold shader compiles); after 30 s of samples, if p95 > 18 ms it steps down one preset, saves it, shows a toast, and measures again. Steps only down. Off under automation (`navigator.webdriver`) so audits keep fixed settings; `?autoquality` forces it on, `?noautoquality` off.
+- **Settings:** new "Graphics quality" row (Auto / Low / Medium / High) above render scale, with a line saying what Auto picked. Picking a preset writes its render scale, shadows and effects into the toggles below (still adjustable one by one); picking Auto again re-measures from High. Existing players keep their saved toggles (`quality: 'auto'`, `autoQuality: 'high'`).
+- **Measured** with `node tools/audit/gpuprofile.mjs <high|medium|low> [scale]` (new): one headless 960x540 page, a warm-up pass over the views, then 6 s of rAF frame times per view; `THROTTLE=1` for unthrottled; GPU ms from timestamp queries. `QUALITY=low node tools/audit/drawbreak.mjs <view>` now applies a preset too.
+
+CPU throttled x4 (Chrome CDP), frame time p50 / p95 ms, draws, render-thread CPU ms (`render` timer). PC load from `resource-guard --status` at the time (no Unity build ran during these; other sessions' browser jobs did).
+
+| view | High (before) p50 / p95 | draws | render CPU | Low (scale 0.7) p50 / p95 | draws | render CPU | load (high / low) |
+|---|---|---|---|---|---|---|---|
+| diner_spot | 50.0 / 83.3 | 259 | 49.4 | 50.0 / 233 (one hitch) | 199 | 28.4 | CPU 38-47 % / 84 % |
+| main_street | 50.0 / 83.3 | 189 | - | 33.3 / 50.0 | 84 | 20.5 | CPU 51 % / 60 % |
+| dept_store | 66.7 / 83.4 | 149 | 21.9 | 66.6 / 66.7 | 78 | 16.5 | CPU 42 % / 54 % |
+| outpost_gate | 33.3 / 66.7 | 119 | - | 33.3 / 33.4 | 51 | 14.9 | CPU 54 % / 68 % |
+| lake_shore | 16.7 / 33.5 | 94 | - | 33.3 / 33.4 | 48 | 15.4 | CPU 39 % / 82 % |
+
+Medium (x4, PC at 98-100 % CPU from another job, so noisy): diner 50 / 83 (239 draws), main_street 33 / 67 (156), dept_store 50 / 100 (138), outpost_gate 67 / 83 (110), lake_shore 17 / 50 (89).
+
+Unthrottled (x1): every view holds 16.7 ms (vsync) on all presets. Render-thread CPU high -> low: diner 5.7 -> 3.7, main_street 4.1 -> 2.3, dept_store 4.6 -> 2.2, outpost_gate 4.3 -> 2.1, lake_shore 3.2 -> 1.6 ms. GPU ms (timestamps, rough: medium readings jumped about) high -> low: diner 3.18 -> 0.23, main_street 4.27 -> 0.14, dept_store 3.34 -> 0.95, outpost_gate 3.84 -> 0.85, lake_shore 1.69 -> 0.11.
+
+- **What this shows:** Low halves draws and render-thread CPU and cuts post to ~0 (bloom's mip chain was ~8 ms of CPU at x4). It does **not** reach 60 fps at CPU x4: game simulation alone (sim + physics + AI + anim) is 10-30 ms there, and the PC was shared with other jobs. CPU throttling stands in for a slow CPU, not a slow GPU (it does not slow the GPU process), so render scale, AO and shafts show only in the GPU ms column. The remaining draws in town are map-wide instanced dress meshes (one draw each, cannot be far-culled per object).
+- **Not done:** 60 fps at x4 needs simulation work (zombie AI / physics cost, outside this task); render scale 0.6 not measured separately (it only changes GPU cost, invisible under CPU throttling); stepping up again when there is headroom; a "very low" preset.
+
 ## Quests and saves QA (quest chain played end to end, save compatibility suite)
 
 - **Quest chain audit:** `node tools/audit/questchain.mjs` (one headless browser, no mouse lock; `URL=` for the server). Plays all 10 quests in data order through game actions: teleport to the place, loot from the container the item is in (or pick it up off the ground), timed item use and note reading, crafting jobs, the E-key `onInteract` of pumps / campfire / car filler cap, the NPC dialogue (choices clicked), kills through the normal death path. Logs every step; flags missing text, items not reachable, objectives that never tick, rewards not granted. Ends with a quick save, page reload and load, comparing pack, quest states, notes, tracker, a moved car and its fuel, time of day and weather, plus a mid-quest save (Maple Street step 2). Result: **all quests playable, round trip OK**.

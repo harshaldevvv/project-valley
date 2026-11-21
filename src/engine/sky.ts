@@ -61,6 +61,7 @@ export function createSky(game: Game, tod: TimeOfDay) {
     name: 'sky',
     render() {
       mesh.position.copy(game.camera.position);
+      mesh.scale.setScalar(Math.min(1, (game.camera.far * 0.95) / 450)); // stay inside the far plane (quality viewDist)
       const fog = game.scene.fog instanceof Fog ? game.scene.fog.color : (game.scene.background as Color | null);
       if (fog) horizon.value.copy(fog);
       zenith.value.copy(tod.zenith);

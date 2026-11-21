@@ -6,10 +6,10 @@ const views = JSON.parse(readFileSync(new URL('./poiviews.json', import.meta.url
 const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 await page.routeWebSocket(/.*/, () => {});
-await page.goto('http://localhost:5188/?play');
+await page.goto('http://localhost:5188/?play&noautoquality');
 await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 240000 });
 await page.waitForTimeout(2500);
-await page.evaluate(() => { window.__gp.ctx.player.godMode = true; });
+await page.evaluate((q) => { window.__gp.ctx.player.godMode = true; if (q) window.engine.quality.set(q); }, process.env.QUALITY ?? ''); // QUALITY=low|medium|high applies a preset
 for (const name of process.argv[2].split(',')) {
   const v = views[name];
   if (v.length === 6) await page.evaluate(([cx, cy, cz, tx, ty, tz]) => { const g = window.__gp.ctx, cam = g.game.camera; window.__gp.teleport(tx, tz, 0); g.rig.override = () => { cam.position.set(cx, cy, cz); cam.lookAt(tx, ty, tz); cam.updateMatrixWorld(true); return true; }; }, v);

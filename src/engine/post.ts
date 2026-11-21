@@ -22,6 +22,8 @@ export interface PostSettings {
   /** Ambient occlusion and sun shafts (each a half-res pass; only built into the graph when on). */
   ao: boolean;
   shafts: boolean;
+  /** Bloom inside the look chain (a mip chain of blur passes: ~8 ms of render-thread CPU on a slow machine). Default on. */
+  bloom?: boolean;
 }
 
 export function installPost(game: Game, settings: PostSettings = { fxaa: true, renderScale: 1, shadows: true, look: true, ao: true, shafts: true }) {
@@ -48,7 +50,7 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
   /** Look chain graph for the current settings: passes that are off are left out, so they cost nothing. */
   const buildGraded = () => {
     let hdr: typeof scenePass | typeof occluded = settings.ao ? occluded : scenePass;
-    hdr = hdr.add(bloomNode.mul(look.bloomMix));
+    if (settings.bloom !== false) hdr = hdr.add(bloomNode.mul(look.bloomMix));
     if (settings.shafts && settings.shadows) hdr = hdr.add(rays);
     const tonedHdr = renderOutput(hdr);
     const c = tonedHdr.rgb;
@@ -89,7 +91,7 @@ export function installPost(game: Game, settings: PostSettings = { fxaa: true, r
     pipeline.needsUpdate = true;
     direct = !settings.fxaa && !settings.look && settings.renderScale === 1;
     sun.castShadow = settings.shadows;
-    perf.extra.post = `${settings.fxaa ? 'FXAA' : 'no AA'} x${settings.renderScale.toFixed(2)}${settings.shadows ? '' : ' no-shadows'}${settings.look ? '' : ' no-look'}${settings.look && !settings.ao ? ' no-ao' : ''}${settings.look && !settings.shafts ? ' no-shafts' : ''}`;
+    perf.extra.post = `${settings.fxaa ? 'FXAA' : 'no AA'} x${settings.renderScale.toFixed(2)}${settings.shadows ? '' : ' no-shadows'}${settings.look ? '' : ' no-look'}${settings.look && !settings.ao ? ' no-ao' : ''}${settings.look && !settings.shafts ? ' no-shafts' : ''}${settings.look && settings.bloom === false ? ' no-bloom' : ''}`;
   };
   apply();
 
