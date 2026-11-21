@@ -1,4 +1,5 @@
-import { BUILDINGS, CLEAR_RECTS, OUT, PADS, PLACED, ROADS, type Placed } from './outskirts';
+import { BUILDINGS as ALL_BUILDINGS, CLEAR_RECTS as ALL_CLEAR, OUT, PADS as ALL_PADS, PLACED as ALL_PLACED, ROADS as ALL_ROADS, type Placed } from './outskirts';
+import { LAKE_BUILDINGS, LAKE_CLEAR, LAKE_PADS, LAKE_PLACED, LAKE_ROADS } from './outskirts_lake';
 import type { PoiContainer } from './pois';
 
 /**
@@ -19,6 +20,11 @@ const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
 
 export const FILL: Placed[] = [];
 export const FILL_SPOTS: (PoiContainer & { poi: string; id: string })[] = [];
+// The fill is rolled as if the lake campground (outskirts_lake.ts, added later) were not there, so the seeded layout
+// everywhere else stays exactly as tuned; whatever lands in the campground or on its track is dropped at the end of the file.
+const notLake = <T,>(all: T[], lake: T[]) => all.filter((x) => !lake.includes(x));
+const BUILDINGS = notLake(ALL_BUILDINGS, LAKE_BUILDINGS), CLEAR_RECTS = notLake(ALL_CLEAR, LAKE_CLEAR), PADS = notLake(ALL_PADS, LAKE_PADS);
+const PLACED = notLake(ALL_PLACED, LAKE_PLACED), ROADS = notLake(ALL_ROADS, LAKE_ROADS);
 const chunkOf = (x: number, z: number) => `fill_${Math.floor(x / 60)}_${Math.floor(z / 60)}`;
 
 const segDist = (x: number, z: number, ax: number, az: number, bx: number, bz: number) => {
@@ -279,3 +285,14 @@ for (let tries = 0; coolers < 7 && tries < 400; tries++) {
 }
 put('camp-cooler', -78.2, 234.6, 0.6, 0.6, { surf: 'rubber' });
 spot('cooler', -78.2, 234.6, 0.6, 'road_cooler_hunt');
+
+// ---- drop fill that landed in the lake campground or on its track (see the note at the top)
+{
+  const inLake = (x: number, z: number) =>
+    LAKE_CLEAR.some(([x0, x1, z0, z1]) => x > x0 - 2 && x < x1 + 2 && z > z0 - 2 && z < z1 + 2) ||
+    LAKE_ROADS.some((r) => segDist(x, z, r.ax, r.az, r.bx, r.bz) < r.w / 2 + 3);
+  for (const list of [FILL, FILL_SPOTS] as { x: number; z: number }[][]) {
+    const keep = list.filter((p) => !inLake(p.x, p.z));
+    list.splice(0, list.length, ...keep);
+  }
+}

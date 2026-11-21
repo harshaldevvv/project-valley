@@ -8,7 +8,7 @@ import { FILL_SPOTS } from './outskirts_fill';
  * is a data/containers.ts id; `theme` is a CONTAINER_THEMES key (what the spot is for), so a table can be re-pointed per theme.
  * Zombie zones are data only: the zombie system may read `poiZombieZones` to place hordes.
  */
-export type PoiTheme = 'gas' | 'farm' | 'house' | 'police' | 'camp' | 'school' | 'medical' | 'diner' | 'ranger' | 'road' | 'town' | 'military';
+export type PoiTheme = 'gas' | 'farm' | 'house' | 'police' | 'camp' | 'school' | 'medical' | 'diner' | 'ranger' | 'road' | 'town' | 'military' | 'lake';
 export interface PoiContainer {
   type: string;
   theme: string;
@@ -172,6 +172,27 @@ export const POIS: PoiDef[] = [
       { x: 127, z: 108.6, radius: 3, count: 3, soldier: 0.9 },
       { x: 144, z: 108, radius: 2.2, count: 2, soldier: 1 },
       { x: 100, z: 118, radius: 6, count: 2, soldier: 0.5 },
+    ],
+  },
+  // Loon Lake Campground, the south-west corner (outskirts_lake.ts; the lake is LAKE in nature.ts)
+  {
+    id: 'lake', theme: 'lake', tier: 2, x: -132, z: 262, radius: 30, landmark: 'brass-water-tower',
+    reason: 'A lakeside campground: the camp store and tackle locker, two rental cabins, bear lockers at every pitch. The campers never checked out.',
+    containers: [
+      c('bear_locker', 'lake', -149.4, 280.6, Math.PI / 2, 'bear-proof-food-locker'),
+      c('bear_locker', 'lake', -149.4, 289.4, Math.PI / 2, 'bear-proof-food-locker'),
+      c('bear_locker', 'lake', -112.6, 266, -Math.PI / 2, 'bear-proof-food-locker'),
+      c('cooler', 'lake', -141.6, 275.4, 0.4, 'camp-cooler'),
+      c('tackle_locker', 'lake', -114.6, 260.3, Math.PI, 'wooden-crate'),
+      c('car_trunk', 'lake', -132.1, 256.1, Math.PI / 2, null),
+    ],
+    zombies: [
+      { x: -125, z: 254, radius: 5, count: 3 },
+      { x: -132, z: 244.2, radius: 2.4, count: 2 },
+      { x: -145, z: 256, radius: 2.4, count: 2 },
+      { x: -144, z: 281, radius: 6, count: 4 },
+      { x: -141, z: 266, radius: 3, count: 2 },
+      { x: -116, z: 271, radius: 3, count: 2 },
     ],
   },
   // micro-POIs (models in outskirts_fill.ts)

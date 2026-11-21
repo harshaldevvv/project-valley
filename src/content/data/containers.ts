@@ -14,6 +14,10 @@ const list: ContainerDef[] = [
   { id: 'wardrobe', grid: { w: 5, h: 7 }, searchSeconds: 3, lootTable: 'civilian_wardrobe', tier: 1, lock: 0 },
   { id: 'food_cupboard', grid: { w: 5, h: 4 }, searchSeconds: 2, lootTable: 'food_cupboard', tier: 1, lock: 0 },
   { id: 'car_trunk', grid: { w: 8, h: 5 }, searchSeconds: 2, lootTable: 'car_trunk', tier: 1, lock: 0 },
+  // Loon Lake Campground (theme 'lake')
+  { id: 'bear_locker', grid: { w: 5, h: 3 }, searchSeconds: 2, lootTable: 'bear_locker', tier: 1, lock: 0 },
+  { id: 'tackle_locker', grid: { w: 5, h: 4 }, searchSeconds: 2.5, lootTable: 'lake_tackle', tier: 2, lock: 1 },
+  { id: 'camp_store_shelf', grid: { w: 6, h: 4 }, searchSeconds: 2.5, lootTable: 'camp_store', tier: 2, lock: 0 },
   { id: 'cooler', grid: { w: 4, h: 3 }, searchSeconds: 1.5, lootTable: 'food_cupboard', tier: 1, lock: 0 },
   // Themed types by place (see CONTAINER_THEMES). Locked ones need a lockpick or a crowbar (data/containers LOCKPICK).
   { id: 'gas_shelf', grid: { w: 5, h: 4 }, searchSeconds: 2, lootTable: 'gas_station_shelf', tier: 1, lock: 0 },
@@ -60,6 +64,7 @@ export const CONTAINER_THEMES: Record<string, string[]> = {
   town: ['office_desk', 'kitchen_cupboard', 'nightstand', 'wardrobe', 'pharmacy_shelf', 'car_trunk'],
   road: ['car_trunk', 'duffel', 'crate_wood', 'camp_stash'],
   diner: ['kitchen_cupboard', 'food_cupboard', 'office_desk', 'car_trunk'],
+  lake: ['camp_store_shelf', 'tackle_locker', 'bear_locker', 'cooler', 'camp_stash', 'car_trunk'],
   ranger: ['military_footlocker', 'office_desk', 'military_crate', 'car_trunk'],
 };
 

@@ -310,6 +310,28 @@ Props, buildings and trees in `public/assets/models/pf/` come from the Polyfork 
 | Antenna Mast by Polyfork | https://polyfork.dev/asset/antenna-mast-0954b0 |
 | Anti-Aircraft Searchlight by Polyfork | https://polyfork.dev/asset/anti-aircraft-searchlight-ba3f07 |
 | Lookout Watchtower by Polyfork | https://polyfork.dev/asset/lookout-watchtower-f1a5ce |
+| Porch Log Cabin by Polyfork | https://polyfork.dev/asset/porch-log-cabin-d2f3ef |
+| A-Frame Cabin by Polyfork | https://polyfork.dev/asset/a-frame-cabin-6cb550 |
+| Timber Wash House by Polyfork | https://polyfork.dev/asset/timber-wash-house-c7e7d5 |
+| Bear-Proof Food Locker by Polyfork | https://polyfork.dev/asset/bear-proof-food-locker-9144bb |
+| Lake Dock Run by Polyfork | https://polyfork.dev/asset/lake-dock-run-f5380e |
+| Camp Canoe by Polyfork | https://polyfork.dev/asset/camp-canoe-c65d2a |
+| Canoe Rack by Polyfork | https://polyfork.dev/asset/canoe-rack-c8126e |
+| Lake Rowing Skiff by Polyfork | https://polyfork.dev/asset/lake-rowing-skiff-4916e7 |
+| Swim Raft by Polyfork | https://polyfork.dev/asset/swim-raft-6aefb5 |
+| Heavy Timber Picnic Table by Polyfork | https://polyfork.dev/asset/heavy-timber-picnic-table-1ac060 |
+| Stone-Ring Campfire by Polyfork | https://polyfork.dev/asset/stone-ring-campfire-8a0c6f |
+| Canvas Wall Tent by Polyfork | https://polyfork.dev/asset/canvas-wall-tent-de8a04 |
+| Camp Notice Board by Polyfork | https://polyfork.dev/asset/camp-notice-board-c0be42 |
+| Self-Registration Post by Polyfork | https://polyfork.dev/asset/self-registration-post-e4636f |
+| Campground Rail Fence Run by Polyfork | https://polyfork.dev/asset/campground-rail-fence-run-524013 |
+| Cordwood Pile by Polyfork | https://polyfork.dev/asset/cordwood-pile-b5229b |
+| Folding Camp Chair by Polyfork | https://polyfork.dev/asset/folding-camp-chair-2fc7d1 |
+| Pop-Top Camper Van by Polyfork | https://polyfork.dev/asset/pop-top-camper-van-62a322 |
+| Life Jacket Post by Polyfork | https://polyfork.dev/asset/life-jacket-post-15c73a |
+| Split-Log Bench by Polyfork | https://polyfork.dev/asset/split-log-bench-289780 |
+| Propped Fishing Rod by Polyfork | https://polyfork.dev/asset/propped-fishing-rod-072978 |
+| Lake Kayak by Polyfork | https://polyfork.dev/asset/lake-kayak-930d0b |
 | Teen Zombie by Polyfork (zombie `zmb_pf_teen_a` for `?chars=pf`, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/teen-zombie-b5bb27 |
 | Shambling Ghoul by Polyfork (zombie `zmb_pf_ghoul_a` for `?chars=pf`, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/shambling-ghoul-256f2f |
 | Police Officer by Polyfork (zombie `zmb_pf_police_a` for `?chars=pf`, retargeted with our zombie clips, `tools/audit/retarget_pf.py`) | https://polyfork.dev/asset/police-officer-1cc379 |

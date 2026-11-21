@@ -48,4 +48,8 @@ export const MEADOW = { noise: 0.016, threshold: 0.58, tall: 1.9 };
  * The pond, east of the main road between the crash road and Maple junction, in open ground. The terrain dips
  * (yard/ground.ts) by `depth` at the centre down to 0 at `r`; the centre sits on a terrain vertex (5 m grid).
  */
-export const POND = { x: 30, z: 190, r: 9.5, depth: 0.85, water: -0.1, reeds: 46, lilies: 5, rocks: 9 };
+export const POND = { x: 30, z: 190, r: 9.5, depth: 0.85, water: -0.1, reeds: 46, lilies: 5, rocks: 9, name: 'pond_water', open: [0.2, 1.5] as [number, number] };
+/** Loon Lake at the campground (outskirts_lake.ts), same rules as the pond; reeds keep off the north-east (dock) shore. */
+export const LAKE = { x: -125, z: 280, r: 10, depth: 1.0, water: -0.1, reeds: 40, lilies: 7, rocks: 10, name: 'pond_lake', open: [-2.0, -0.4] as [number, number] };
+/** `open`: the bank arc (radians, atan2(dz, dx)) kept free of reeds. Every water bowl the terrain dips for and nature.ts fills. */
+export const WATERS = [POND, LAKE];

@@ -71,6 +71,7 @@ Credit format in CREDITS.md: *Name by Polyfork (page URL), CC BY 4.0*. Files are
 
 | asset id | source | author | licence | url | notes |
 |---|---|---|---|---|---|
+| MODEL pf/a-frame-cabin-6cb550 | Polyfork catalog "A-Frame Cabin" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/a-frame-cabin-6cb550 | GLB as-is |
 | MODEL pf/abandoned-shopping-trolley-3de6cb | Polyfork catalog "Abandoned Shopping Trolley" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/abandoned-shopping-trolley-3de6cb | GLB as-is |
 | MODEL pf/air-ambulance-helicopter-ed9acc | Polyfork catalog "Air Ambulance Helicopter" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/air-ambulance-helicopter-ed9acc | GLB as-is |
 | MODEL pf/alcove-bookcase-83894d | Polyfork catalog "Alcove Bookcase" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/alcove-bookcase-83894d | GLB as-is |
@@ -87,6 +88,7 @@ Credit format in CREDITS.md: *Name by Polyfork (page URL), CC BY 4.0*. Files are
 | MODEL pf/backyard-doghouse-50a492 | Polyfork catalog "Backyard Doghouse" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/backyard-doghouse-50a492 | GLB as-is |
 | MODEL pf/backyard-garden-shed-38d79f | Polyfork catalog "Backyard Garden Shed" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/backyard-garden-shed-38d79f | GLB as-is |
 | MODEL pf/barbed-wire-fence-section-a01906 | Polyfork catalog "Barbed Wire Fence Section" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/barbed-wire-fence-section-a01906 | GLB as-is |
+| MODEL pf/bear-proof-food-locker-9144bb | Polyfork catalog "Bear-Proof Food Locker" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/bear-proof-food-locker-9144bb | GLB as-is |
 | MODEL pf/bed-6e10e8 | Polyfork catalog "Bed" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/bed-6e10e8 | GLB as-is |
 | MODEL pf/bedside-table-3f2b80 | Polyfork catalog "Bedside Table" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/bedside-table-3f2b80 | GLB as-is |
 | MODEL pf/birch-tree-181b33 | Polyfork catalog "Birch Tree" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/birch-tree-181b33 | GLB as-is |
@@ -99,15 +101,20 @@ Credit format in CREDITS.md: *Name by Polyfork (page URL), CC BY 4.0*. Files are
 | MODEL pf/bus-shelter-f786b4 | Polyfork catalog "Bus Shelter" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/bus-shelter-f786b4 | GLB as-is |
 | MODEL pf/bush-8bb596 | Polyfork catalog "Bush" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/bush-8bb596 | GLB as-is |
 | MODEL pf/camouflage-net-canopy-ce6249 | Polyfork catalog "Camouflage Net Canopy" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/camouflage-net-canopy-ce6249 | GLB as-is |
+| MODEL pf/camp-canoe-c65d2a | Polyfork catalog "Camp Canoe" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/camp-canoe-c65d2a | GLB as-is |
 | MODEL pf/camp-cooler-8ba941 | Polyfork catalog "Camp Cooler" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/camp-cooler-8ba941 | GLB as-is |
+| MODEL pf/camp-notice-board-c0be42 | Polyfork catalog "Camp Notice Board" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/camp-notice-board-c0be42 | GLB as-is |
 | MODEL pf/camp-tent-3c5c89 | Polyfork catalog "Camp Tent" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/camp-tent-3c5c89 | GLB as-is |
 | MODEL pf/camp-water-jug-1aba54, item/camp-water-jug-1aba54 | Polyfork catalog "Camp Water Jug" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/camp-water-jug-1aba54 | GLB as-is (item pickup model) |
 | MODEL pf/camper-van-8d10e2 | Polyfork catalog "Camper-van" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/camper-van-8d10e2 | GLB as-is |
 | MODEL pf/campfire-4390aa | Polyfork catalog "Campfire" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/campfire-4390aa | GLB as-is |
 | MODEL pf/campground-pine-stand-0bf4f2 | Polyfork catalog "Campground Pine Stand" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/campground-pine-stand-0bf4f2 | GLB as-is |
+| MODEL pf/campground-rail-fence-run-524013 | Polyfork catalog "Campground Rail Fence Run" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/campground-rail-fence-run-524013 | GLB as-is |
 | MODEL pf/camping-lantern-21d14b, item/camping-lantern-21d14b | Polyfork catalog "Camping Lantern" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/camping-lantern-21d14b | GLB as-is (item pickup model) |
 | MODEL pf/campsite-picnic-table-361d51 | Polyfork catalog "Campsite Picnic Table" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/campsite-picnic-table-361d51 | GLB as-is |
+| MODEL pf/canoe-rack-c8126e | Polyfork catalog "Canoe Rack" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/canoe-rack-c8126e | GLB as-is |
 | MODEL pf/canvas-ridge-tent-f0df0d | Polyfork catalog "Canvas Ridge Tent" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/canvas-ridge-tent-f0df0d | GLB as-is |
+| MODEL pf/canvas-wall-tent-de8a04 | Polyfork catalog "Canvas Wall Tent" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/canvas-wall-tent-de8a04 | GLB as-is |
 | MODEL pf/cardboard-delivery-box-59cc68 | Polyfork catalog "Cardboard Delivery Box" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/cardboard-delivery-box-59cc68 | GLB as-is |
 | MODEL pf/cargo-container-fd73bc | Polyfork catalog "Cargo Container" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/cargo-container-fd73bc | GLB as-is |
 | MODEL pf/cattail-reed-6abbb3 | Polyfork catalog "Cattail Reed" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/cattail-reed-6abbb3 | GLB as-is |
@@ -120,6 +127,7 @@ Credit format in CREDITS.md: *Name by Polyfork (page URL), CC BY 4.0*. Files are
 | MODEL pf/collapse-rubble-mound-4fbfed | Polyfork catalog "Collapse Rubble Mound" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/collapse-rubble-mound-4fbfed | GLB as-is |
 | MODEL pf/compact-hatchback-386417 | Polyfork catalog "Compact Hatchback" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/compact-hatchback-386417 | GLB as-is |
 | MODEL pf/construction-dumpster-2de7ae | Polyfork catalog "Construction Dumpster" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/construction-dumpster-2de7ae | GLB as-is |
+| MODEL pf/cordwood-pile-b5229b | Polyfork catalog "Cordwood Pile" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/cordwood-pile-b5229b | GLB as-is |
 | MODEL pf/corn-crop-b71f2f | Polyfork catalog "Corn Crop" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/corn-crop-b71f2f | GLB as-is |
 | MODEL pf/crash-barrier-run-b47d1d | Polyfork catalog "Crash Barrier Run" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/crash-barrier-run-b47d1d | GLB as-is |
 | MODEL pf/czech-hedgehog-d77ae5 | Polyfork catalog "Czech Hedgehog" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/czech-hedgehog-d77ae5 | GLB as-is |
@@ -148,6 +156,7 @@ Credit format in CREDITS.md: *Name by Polyfork (page URL), CC BY 4.0*. Files are
 | MODEL pf/firewood-stack-810f49, item/firewood-stack-810f49 | Polyfork catalog "Firewood Stack" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/firewood-stack-810f49 | GLB as-is (item pickup model) |
 | MODEL pf/flagpole-7b7806 | Polyfork catalog "Flagpole" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/flagpole-7b7806 | GLB as-is |
 | MODEL pf/flower-planter-500ed2 | Polyfork catalog "Flower Planter" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/flower-planter-500ed2 | GLB as-is |
+| MODEL pf/folding-camp-chair-2fc7d1 | Polyfork catalog "Folding Camp Chair" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/folding-camp-chair-2fc7d1 | GLB as-is |
 | MODEL pf/forest-outhouse-e968d1 | Polyfork catalog "Forest Outhouse" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/forest-outhouse-e968d1 | GLB as-is |
 | MODEL pf/fridge-freezer-fb9b5a | Polyfork catalog "Fridge Freezer" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/fridge-freezer-fb9b5a | GLB as-is |
 | MODEL pf/fuel-depot-e57cdc | Polyfork catalog "Fuel Depot" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/fuel-depot-e57cdc | GLB as-is |
@@ -167,10 +176,15 @@ Credit format in CREDITS.md: *Name by Polyfork (page URL), CC BY 4.0*. Files are
 | MODEL pf/hay-bale-079e8c | Polyfork catalog "Hay Bale" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/hay-bale-079e8c | GLB as-is |
 | MODEL pf/haystack-77b0dd | Polyfork catalog "Haystack" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/haystack-77b0dd | GLB as-is |
 | MODEL pf/hearth-log-bench-c3c5ec | Polyfork catalog "Hearth Log Bench" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/hearth-log-bench-c3c5ec | GLB as-is |
+| MODEL pf/heavy-timber-picnic-table-1ac060 | Polyfork catalog "Heavy Timber Picnic Table" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/heavy-timber-picnic-table-1ac060 | GLB as-is |
 | MODEL pf/helipad-marking-decal-e697dd | Polyfork catalog "Helipad Marking Decal" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/helipad-marking-decal-e697dd | GLB as-is |
 | MODEL pf/hollow-log-329fd7 | Polyfork catalog "Hollow Log" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/hollow-log-329fd7 | GLB as-is |
 | MODEL pf/kit-bag-7d617f, item/kit-bag-7d617f | Polyfork catalog "Kit Bag" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/kit-bag-7d617f | GLB as-is (item pickup model) |
+| MODEL pf/lake-dock-run-f5380e | Polyfork catalog "Lake Dock Run" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/lake-dock-run-f5380e | GLB as-is |
+| MODEL pf/lake-kayak-930d0b | Polyfork catalog "Lake Kayak" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/lake-kayak-930d0b | GLB as-is |
+| MODEL pf/lake-rowing-skiff-4916e7 | Polyfork catalog "Lake Rowing Skiff" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/lake-rowing-skiff-4916e7 | GLB as-is |
 | MODEL pf/large-boulder-a29b99 | Polyfork catalog "Large Boulder" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/large-boulder-a29b99 | GLB as-is |
+| MODEL pf/life-jacket-post-15c73a | Polyfork catalog "Life Jacket Post" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/life-jacket-post-15c73a | GLB as-is |
 | MODEL pf/lily-pad-cluster-457382 | Polyfork catalog "Lily Pad Cluster" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/lily-pad-cluster-457382 | GLB as-is |
 | MODEL pf/log-cabin-4fac3b | Polyfork catalog "Log Cabin" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/log-cabin-4fac3b | GLB as-is |
 | MODEL pf/log-store-25e0b5 | Polyfork catalog "Log Store" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/log-store-25e0b5 | GLB as-is |
@@ -200,7 +214,10 @@ Credit format in CREDITS.md: *Name by Polyfork (page URL), CC BY 4.0*. Files are
 | MODEL pf/picket-fence-run-9310c1 | Polyfork catalog "Picket Fence Run" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/picket-fence-run-9310c1 | GLB as-is |
 | MODEL pf/police-barricade-0bbf37 | Polyfork catalog "Police Barricade" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/police-barricade-0bbf37 | GLB as-is |
 | MODEL pf/police-cruiser-a2d25e | Polyfork catalog "Police Cruiser" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/police-cruiser-a2d25e | GLB as-is |
+| MODEL pf/pop-top-camper-van-62a322 | Polyfork catalog "Pop-Top Camper Van" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/pop-top-camper-van-62a322 | GLB as-is |
+| MODEL pf/porch-log-cabin-d2f3ef | Polyfork catalog "Porch Log Cabin" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/porch-log-cabin-d2f3ef | GLB as-is |
 | MODEL pf/portable-toilet-a3f1a2 | Polyfork catalog "Portable Toilet" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/portable-toilet-a3f1a2 | GLB as-is |
+| MODEL pf/propped-fishing-rod-072978 | Polyfork catalog "Propped Fishing Rod" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/propped-fishing-rod-072978 | GLB as-is |
 | MODEL pf/pump-island-canopy-c3aa62 | Polyfork catalog "Pump Island Canopy" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/pump-island-canopy-c3aa62 | GLB as-is |
 | MODEL pf/pumpkin-crop-7de137 | Polyfork catalog "Pumpkin Crop" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/pumpkin-crop-7de137 | GLB as-is |
 | MODEL pf/railway-telegraph-pole-run-bb9354 | Polyfork catalog "Railway Telegraph Pole Run" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/railway-telegraph-pole-run-bb9354 | GLB as-is |
@@ -220,6 +237,7 @@ Credit format in CREDITS.md: *Name by Polyfork (page URL), CC BY 4.0*. Files are
 | MODEL pf/scout-jeep-c02efe | Polyfork catalog "Scout Jeep" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/scout-jeep-c02efe | GLB as-is |
 | MODEL pf/scrap-built-aeroplane-65ac95 | Polyfork catalog "Scrap-built aeroplane" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/scrap-built-aeroplane-65ac95 | GLB as-is |
 | MODEL pf/security-gatehouse-fd00c8 | Polyfork catalog "Security Gatehouse" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/security-gatehouse-fd00c8 | GLB as-is |
+| MODEL pf/self-registration-post-e4636f | Polyfork catalog "Self-Registration Post" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/self-registration-post-e4636f | GLB as-is |
 | MODEL pf/sideline-medical-tent-ce1649 | Polyfork catalog "Sideline Medical Tent" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/sideline-medical-tent-ce1649 | GLB as-is |
 | MODEL pf/single-storey-ranch-house-3880ea | Polyfork catalog "Single-Storey Ranch House" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/single-storey-ranch-house-3880ea | GLB as-is |
 | MODEL pf/site-cabin-e9ee10 | Polyfork catalog "Site Cabin" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/site-cabin-e9ee10 | GLB as-is |
@@ -233,11 +251,13 @@ Credit format in CREDITS.md: *Name by Polyfork (page URL), CC BY 4.0*. Files are
 | MODEL pf/speed-limit-sign-1c55a2 | Polyfork catalog "Speed Limit Sign" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/speed-limit-sign-1c55a2 | GLB as-is |
 | MODEL pf/splay-leg-lookout-tower-6fae7e | Polyfork catalog "Splay-Leg Lookout Tower" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/splay-leg-lookout-tower-6fae7e | GLB as-is |
 | MODEL pf/split-level-house-40fe1a | Polyfork catalog "Split-Level House" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/split-level-house-40fe1a | GLB as-is |
+| MODEL pf/split-log-bench-289780 | Polyfork catalog "Split-Log Bench" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/split-log-bench-289780 | GLB as-is |
 | MODEL pf/split-rail-fence-run-87da39 | Polyfork catalog "Split-Rail Fence Run" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/split-rail-fence-run-87da39 | GLB as-is |
 | MODEL pf/station-lamp-post-7d14dd | Polyfork catalog "Station Lamp Post" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/station-lamp-post-7d14dd | GLB as-is |
 | MODEL pf/station-wagon-70s-11d67b | Polyfork catalog "Station-wagon-70s" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/station-wagon-70s-11d67b | GLB as-is |
 | MODEL pf/stone-cairn-a9bf48 | Polyfork catalog "Stone Cairn" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/stone-cairn-a9bf48 | GLB as-is |
 | MODEL pf/stone-fire-pit-4136b0 | Polyfork catalog "Stone Fire Pit" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/stone-fire-pit-4136b0 | GLB as-is |
+| MODEL pf/stone-ring-campfire-8a0c6f | Polyfork catalog "Stone-Ring Campfire" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/stone-ring-campfire-8a0c6f | GLB as-is |
 | MODEL pf/stone-well-2b4717 | Polyfork catalog "Stone Well" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/stone-well-2b4717 | GLB as-is |
 | MODEL pf/streamline-diner-car-de9777 | Polyfork catalog "Streamline Diner Car" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/streamline-diner-car-de9777 | GLB as-is |
 | MODEL pf/street-lamp-136745 | Polyfork catalog "Street Lamp" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/street-lamp-136745 | GLB as-is |
@@ -245,6 +265,7 @@ Credit format in CREDITS.md: *Name by Polyfork (page URL), CC BY 4.0*. Files are
 | MODEL pf/suburban-pickup-truck-d15ea2 | Polyfork catalog "Suburban Pickup Truck" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/suburban-pickup-truck-d15ea2 | GLB as-is |
 | MODEL pf/summit-cross-181eba | Polyfork catalog "Summit Cross" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/summit-cross-181eba | GLB as-is |
 | MODEL pf/sunflower-80ce15 | Polyfork catalog "Sunflower" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/sunflower-80ce15 | GLB as-is |
+| MODEL pf/swim-raft-6aefb5 | Polyfork catalog "Swim Raft" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/swim-raft-6aefb5 | GLB as-is |
 | MODEL pf/tall-pine-tree-ab4108 | Polyfork catalog "Tall Pine Tree" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/tall-pine-tree-ab4108 | GLB as-is |
 | MODEL pf/tank-wagon-d860fa | Polyfork catalog "Tank Wagon" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/tank-wagon-d860fa | GLB as-is |
 | MODEL pf/team-minibus-f14295 | Polyfork catalog "Team Minibus" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/team-minibus-f14295 | GLB as-is |
@@ -252,6 +273,7 @@ Credit format in CREDITS.md: *Name by Polyfork (page URL), CC BY 4.0*. Files are
 | MODEL pf/telegraph-and-post-office-71d3ff | Polyfork catalog "Telegraph and Post Office" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/telegraph-and-post-office-71d3ff | GLB as-is |
 | MODEL pf/telegraph-pole-line-95e382 | Polyfork catalog "Telegraph Pole Line" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/telegraph-pole-line-95e382 | GLB as-is |
 | MODEL pf/timber-utility-pole-a93693 | Polyfork catalog "Timber Utility Pole" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/timber-utility-pole-a93693 | GLB as-is |
+| MODEL pf/timber-wash-house-c7e7d5 | Polyfork catalog "Timber Wash House" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/timber-wash-house-c7e7d5 | GLB as-is |
 | MODEL pf/tire-ccf0eb | Polyfork catalog "Tire" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/tire-ccf0eb | GLB as-is |
 | MODEL pf/tow-truck-7d04f8 | Polyfork catalog "Tow Truck" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/tow-truck-7d04f8 | GLB as-is |
 | MODEL pf/traffic-cone-247748 | Polyfork catalog "Traffic Cone" | Polyfork (polyfork.dev) | CC BY 4.0 | https://polyfork.dev/asset/traffic-cone-247748 | GLB as-is |

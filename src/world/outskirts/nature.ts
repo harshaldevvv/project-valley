@@ -4,7 +4,7 @@ import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { positionWorld, sin, time, vec3, mix } from 'three/tsl';
 import type { Game } from '../../core/game';
 import { OUT } from '../../content/data/outskirts';
-import { CLUSTERS, NATURE_CELL as CELL, NATURE_PROPS, POND, type NatureProp } from '../../content/data/nature';
+import { CLUSTERS, NATURE_CELL as CELL, NATURE_PROPS, WATERS, type NatureProp } from '../../content/data/nature';
 import { createRng } from '../../engine/rng';
 import { pfWorldMaterial } from '../../engine/palette';
 import type { Kit } from '../yard/kit';
@@ -19,7 +19,7 @@ export const isClump = (x: number, z: number) => fbm(x * 0.028 + 70, z * 0.028 +
 
 /** The pond's own footprint, so trees, grass and props keep off the water (called before scatter and clutter). */
 export function reservePond() {
-  footprints.push({ x: POND.x, z: POND.z, r: POND.r - 1 });
+  for (const w of WATERS) footprints.push({ x: w.x, z: w.z, r: w.r - 1 });
 }
 
 /**
@@ -102,7 +102,7 @@ export async function buildNature(kit: Kit, game: Game) {
     counts[prop.key] = n;
   }
 
-  await buildPond(game, rng, add);
+  for (const w of WATERS) await buildPond(game, rng, add, w);
   for (const [k, list] of cells) {
     const geo = mergeGeometries(list, false);
     if (!geo) continue;
@@ -115,13 +115,13 @@ export async function buildNature(kit: Kit, game: Game) {
 }
 
 /** Water disc in the terrain dip (yard/ground.ts), reeds round the shallows, lily pads, a few shore rocks. No colliders: walk round or wade. */
-async function buildPond(game: Game, rng: ReturnType<typeof createRng>, add: (pf: Pfm, m: Matrix4, x: number, z: number) => void) {
+async function buildPond(game: Game, rng: ReturnType<typeof createRng>, add: (pf: Pfm, m: Matrix4, x: number, z: number) => void, POND: (typeof WATERS)[number]) {
   const water = new MeshStandardNodeMaterial({ roughness: 0.12, metalness: 0.05, transparent: true, opacity: 0.86 });
   const ripple = sin(positionWorld.x.mul(0.9).add(time.mul(0.8))).mul(sin(positionWorld.z.mul(0.7).sub(time.mul(0.6)))).mul(0.5).add(0.5);
   water.colorNode = mix(vec3(0.11, 0.2, 0.19), vec3(0.17, 0.28, 0.26), ripple);
   // position baked into the geometry: cull.ts measures the geometry's own bounding sphere
   const disc = new Mesh(new CircleGeometry(POND.r, 28).rotateX(-Math.PI / 2).translate(POND.x, POND.water, POND.z), water);
-  disc.name = 'pond_water'; // culled past 140 m (cull.ts)
+  disc.name = POND.name; // pond_*: culled past 140 m (cull.ts)
   disc.receiveShadow = true;
   game.scene.add(disc);
 
@@ -130,9 +130,11 @@ async function buildPond(game: Game, rng: ReturnType<typeof createRng>, add: (pf
     const pf = await loadPfm(key);
     if (!pf) return;
     for (let i = 0; i < n; i++) {
-      // reeds bunch on the west and south banks; leave the north-east open to walk down to the water
+      // reeds bunch round the banks; leave the `open` arc free to walk down to the water
       let a = rng.range(0, Math.PI * 2);
-      if (key === 'cattail-reed' && a > 0.2 && a < 1.5) a += 1.6;
+      if (a > Math.PI) a -= Math.PI * 2;
+      const [o0, o1] = POND.open;
+      if (key === 'cattail-reed' && a > o0 && a < o1) a += o1 - o0 + 0.3;
       const d = rng.range(r0, r1);
       const x = POND.x + Math.cos(a) * d, z = POND.z + Math.sin(a) * d;
       const s = rng.range(s0, s1);

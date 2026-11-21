@@ -6,7 +6,7 @@ import { Group, groups } from '../../engine/physics';
 import { tagTerrain } from '../surfaces';
 import type { Kit } from './kit';
 import { hillFactor, plateauDist } from '../outskirts/terrain';
-import { POND } from '../../content/data/nature';
+import { WATERS } from '../../content/data/nature';
 
 const EXTENT = 360; // land out to ±360 m so the horizon isn't a void (the outskirts plateau reaches z = 300)
 const CELL = 5;
@@ -44,10 +44,13 @@ export function groundHeight(x: number, z: number) {
   return smoothstep(yard.half + 8, yard.half + 70, d) * (2 + 16 * fbm(x * 0.011 + 3, z * 0.011 + 7)) * hillFactor(x, z) - pondDip(x, z);
 }
 
-/** The outskirts pond (content/data/nature.ts): a shallow bowl, deepest at the centre, flat ground from `r` out. */
+/** The outskirts pond and lake (content/data/nature.ts WATERS): shallow bowls, deepest at the centre, flat ground from `r` out. */
 function pondDip(x: number, z: number) {
-  const d = Math.hypot(x - POND.x, z - POND.z);
-  return d < POND.r ? POND.depth * smooth(1 - d / POND.r) : 0;
+  for (const w of WATERS) {
+    const d = Math.hypot(x - w.x, z - w.z);
+    if (d < w.r) return w.depth * smooth(1 - d / w.r);
+  }
+  return 0;
 }
 
 /** Per-face ground swatch: big low-frequency patches (low-poly look). */

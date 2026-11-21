@@ -115,7 +115,7 @@ export async function buildOutskirts(kit: Kit, game: Game) {
   }
 
   // containers: the visual is a model merged into the chunk (no draw call of its own); the placement is an empty group
-  const POI_CHUNK: Record<string, string> = { checkpoint: 'checkpoint', fuel: 'fuel', maple: 'maple_s', school: 'school', farm: 'farm', diner: 'diner', camp: 'camp', crash: 'crash', ranger: 'ranger', town: 'town', police: 'police_station', outpost: 'outpost' };
+  const POI_CHUNK: Record<string, string> = { checkpoint: 'checkpoint', fuel: 'fuel', maple: 'maple_s', school: 'school', farm: 'farm', diner: 'diner', camp: 'camp', crash: 'crash', ranger: 'ranger', town: 'town', police: 'police_station', outpost: 'outpost', lake: 'lake' };
   const containerType = (type: string, theme: string) => {
     if (CONTAINERS[type]) return type;
     const alt = (CONTAINER_THEMES[theme] ?? []).find((t) => CONTAINERS[t]);

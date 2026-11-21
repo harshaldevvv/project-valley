@@ -9,10 +9,12 @@
  *        +--- RE z=165 -> farm (60..160, 138..230)
  *        +--- RW z=186 -> Maple Street (-135..-3), school at the west end
  *        |  diner / crossroads z~215
+ *  lake campground (-152..-111, 226..293)
  *        |  crash site (-110..-40, 235..290)    camp (15..70, 246..290)    ranger ridge (120..155, 240..290)
  */
 import { TOWN_BUILDINGS, TOWN_CLEAR, TOWN_PADS, TOWN_PLACED, TOWN_ROADS, TOWN_SIGNS } from './outskirts_town';
 import { OUTPOST_BUILDINGS, OUTPOST_CLEAR, OUTPOST_PADS, OUTPOST_PLACED, OUTPOST_ROADS, OUTPOST_SIGNS } from './outskirts_outpost';
+import { LAKE_BUILDINGS, LAKE_CLEAR, LAKE_PADS, LAKE_PLACED, LAKE_ROADS, LAKE_SIGNS } from './outskirts_lake';
 export type SurfaceTag = 'grass' | 'dirt' | 'concrete' | 'wood' | 'metal' | 'rubber' | 'chainlink';
 
 /** The flat, playable plateau (terrain.ts blends the hills back in over `blend` m beyond it). */
@@ -601,3 +603,11 @@ PLACED.push(...OUTPOST_PLACED);
 BUILDINGS.push(...OUTPOST_BUILDINGS);
 POI_SIGNS.push(...OUTPOST_SIGNS);
 CLEAR_RECTS.push(...OUTPOST_CLEAR);
+
+// ---------------------------------------------------------------- Loon Lake Campground, south-west corner (outskirts_lake.ts)
+ROADS.push(...LAKE_ROADS);
+PADS.push(...LAKE_PADS);
+PLACED.push(...LAKE_PLACED);
+BUILDINGS.push(...LAKE_BUILDINGS);
+POI_SIGNS.push(...LAKE_SIGNS);
+CLEAR_RECTS.push(...LAKE_CLEAR);

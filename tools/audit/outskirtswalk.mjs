@@ -1,4 +1,4 @@
-// node tools/audit/outskirtswalk.mjs [zombies|walk|all]   headless: (1) walks the outskirts roads from the gate to every POI and logs stuck spots,
+// node tools/audit/outskirtswalk.mjs [zombies|walk|town|outpost|lake|all]   headless: (1) walks the outskirts roads from the gate to every POI and logs stuck spots,
 // opens a door, checks the container prompts (incl. two roadside coolers; the routes pass the 4 roadblock gaps); (2) teleports to 3 POIs and counts the streamed-in zombies (never in view) with a perf snapshot.
 import { launch } from './browser.mjs';
 const mode = process.argv[2] ?? 'all';
@@ -151,6 +151,31 @@ if (mode === 'outpost' || mode === 'all') {
   await page.waitForTimeout(800);
   console.log('container prompts at the armory', JSON.stringify(await prompts()));
 }
+if (mode === 'lake' || mode === 'all') {
+  // Loon Lake Campground (outskirts_lake.ts): the dirt track on from the crash road, the office and cabin doors, the lake shore, container prompts
+  await ev(() => window.__gp.teleport(-60, 251, Math.PI / 2));
+  await page.waitForTimeout(1500);
+  await walkTo([[-78, 252], [-95, 253], [-112, 254], [-121, 254], [-127, 251.5], [-132, 249]], 'crash road on along the track to the lake car park and the office');
+  const prompts = () => ev(() => { const g = window.__gp.ctx.game, p = g.player.position; return g.interact.all.filter((i) => Math.hypot(i.position.x - p.x, i.position.y - (p.y + 1.2), i.position.z - p.z) < i.radius).map((i) => i.prompt()); });
+  for (const [name, dx, dz, ix, iz, yaw] of [['lake office', -132, 248.4, -132, 245.4, 0], ['lake cabin A', -140.4, 244.2, -144, 244.2, Math.PI / 2], ['lake cabin B', -140.4, 255.2, -144, 255.2, Math.PI / 2]]) {
+    await ev(([x, z, yaw]) => window.__gp.teleport(x, z, yaw), [dx, dz, yaw]);
+    await page.waitForTimeout(700);
+    const p0 = await prompts();
+    const p1 = await openDoor(ix, iz);
+    await walkTo([[ix, iz]], 'through the ' + name + ' door');
+    console.log('door prompts', name, JSON.stringify(p0), '->', JSON.stringify(p1));
+  }
+  await ev(() => window.__gp.teleport(-124, 258, Math.PI));
+  await page.waitForTimeout(800);
+  await walkTo([[-122, 262], [-122, 268.2], [-122, 275.6]], 'out along the dock');
+  console.log('dock end player y', await ev(() => +window.__gp.ctx.game.player.position.y.toFixed(2)));
+  await walkTo([[-122, 268.2], [-123, 268.4], [-130, 268.6], [-134.5, 266.4], [-134.8, 273], [-139.5, 274.6], [-139.5, 286]], 'lake shore: the dock end, the north bank, down the west pitches');
+  for (const [name, x, z, yaw] of [['lake bear locker', -147.8, 280.6, Math.PI / 2], ['lake tackle locker', -114.6, 259.0, Math.PI], ['lake camp store shelf', -134.6, 243.6, 0]]) {
+    await ev(([x, z, yaw]) => window.__gp.teleport(x, z, yaw), [x, z, yaw]);
+    await page.waitForTimeout(700);
+    console.log('container prompts at', name, JSON.stringify(await prompts()));
+  }
+}
 if (mode === 'zombies' || mode === 'all') {
   await ev(() => {
     window.__gp.ctx.zombies.updatePoiSpawns = window.__poiSpawn;
@@ -163,7 +188,7 @@ if (mode === 'zombies' || mode === 'all') {
       return orig(at, yaw, id);
     };
   });
-  for (const [name, x, z, yaw] of [['checkpoint', 0, 104, Math.PI], ['fuel stop', -8, 150, Math.PI / 2], ['Maple Street', -20, 198, Math.PI / 2], ['camp', 10, 252, -2.4], ['outpost', 96, 146, Math.PI]]) {
+  for (const [name, x, z, yaw] of [['checkpoint', 0, 104, Math.PI], ['fuel stop', -8, 150, Math.PI / 2], ['Maple Street', -20, 198, Math.PI / 2], ['camp', 10, 252, -2.4], ['outpost', 96, 146, Math.PI], ['lake', -100, 253, -Math.PI / 2]]) {
     await ev(([x, z, yaw]) => { window.__gp.teleport(x, z, yaw); window.__gp.setLook(yaw, 0); }, [x, z, yaw]);
     await page.waitForTimeout(14000);
     const r = await ev(() => { const zs = window.__gp.ctx.zombies, p = window.__gp.ctx.game.perf.snapshot(); return { alive: zs.alive, poiAlive: zs.poiAlive, draws: p.drawCalls, tris: Math.round(p.triangles / 1000), p95: +p.p95.toFixed(1) }; });
