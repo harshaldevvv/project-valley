@@ -71,8 +71,8 @@ Status: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` dropped (reason given).
 - [~] E4 Pick-up models for every new item (Polyfork props where they exist). New `content/data/pickups.test.ts`: every item resolves to a built model or an own file, and kind generics stay under half. Round 1: 13 new Polyfork pickups (wrench, cash bundle, rolled tarp, rope coil, wire coil, notebook for the 5 notes, headphones for earmuffs, firewood stack for the campfire kit, pitch torch, spear, weapon scope, ammo crate, bottle for the bottle and molotov) plus repo models for the medkit, fuel can and repair kit: 121 -> 101 of 208 items on a kind generic. Left on generics: clothing (folded-cloth bag, tinted), backpacks (tinted generic pack), ammo boxes and materials (small box); no Polyfork match for bats, machete, grenade, flare, binoculars, lockpick, tape, multitool. Render check `tools/audit/pickupshots.mjs` (first person, rows of 8, `pickups_1..3.png`): every new pickup loads at a sensible size and orientation, no placeholder boxes, no console errors.
 
 ## F. QA
-- [ ] F1 `npm test` and `tsc` green after each pass (laptop via lap.mjs).
-- [ ] F2 Headless play check: boot, walk, shoot, melee, loot, no console errors.
+- [x] F1 `npm test` and `tsc` green after each pass (laptop via lap.mjs). 2026-11-21 after Z3: tsc clean, vitest 181/181 (laptop offline, run here).
+- [x] F2 Headless play check: boot, walk, shoot, melee, loot, no console errors. 2026-11-21: `playtest.mjs` (loot the cabin crate, rifle wave of 14: 13 kills, no god mode, hp 100, 0 errors), `playthrough.mjs` (3 quests, save / reload / load round trip, horde, pause card, settings: ALL OK, 0 console errors; a first run died when another session's edit made Vite reload the page mid-test), melee in `zfx.mjs knife`, walking in `outskirtswalk.mjs`.
 - [ ] F3 Credits for every new third-party file.
 
 ## Log
