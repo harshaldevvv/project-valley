@@ -18,6 +18,8 @@ const doors = await page.evaluate(async (only) => {
   const { buildingWorld } = await import('/src/content/data/pois.ts');
   const g = window.__gp, p = g.ctx.player;
   p.godMode = true;
+  // no zombies: a streamed zombie standing in a doorway (collision group 8) blocks the god-mode player and reads as a blocked door
+  const zs = g.ctx.zombies; zs.updatePoiSpawns = () => {}; zs.clear(); for (const zn of zs.poiZones) zn.list = [];
   window.__stalls = [];
   const orig = p.step.bind(p);
   p.step = (dt) => {

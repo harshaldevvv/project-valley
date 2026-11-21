@@ -43,6 +43,9 @@ const ev = async (f, a) => {
   throw new Error('page keeps reloading');
 };
 await install();
+// Walk legs run with no zombies: a streamed zombie in a doorway (collision group 8) blocks the god-mode player and reads as a stall
+// (likely the grocery door's 985 ticks). The zombie leg puts the spawner back.
+await ev(() => { const zs = window.__gp.ctx.zombies; window.__poiSpawn = zs.updatePoiSpawns; zs.updatePoiSpawns = () => {}; zs.clear(); for (const zn of zs.poiZones) zn.list = []; });
 
 async function walkTo(wps, label) {
   await ev(() => { window.__stalls = []; window.__walking = true; });
@@ -150,6 +153,7 @@ if (mode === 'outpost' || mode === 'all') {
 }
 if (mode === 'zombies' || mode === 'all') {
   await ev(() => {
+    window.__gp.ctx.zombies.updatePoiSpawns = window.__poiSpawn;
     const z = window.__gp.ctx.zombies, cam = window.__gp.ctx.game.camera, p = window.__gp.ctx.player;
     window.__spawnLog = [];
     const orig = z.spawn.bind(z);
