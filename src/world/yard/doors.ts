@@ -1,4 +1,4 @@
-import { BoxGeometry, Group, Mesh, Quaternion, Vector3 } from 'three';
+import { BoxGeometry, BufferAttribute, type BufferGeometry, Color, Group, Mesh, Quaternion, Vector3 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { Group as G, groups } from '../../engine/physics';
@@ -32,8 +32,15 @@ export const doorHandles: DoorHandle[] = [];
 export function buildDoors(kit: Kit, defs: DoorDef[] = DOORS) {
   const { game } = kit;
   const { R, world } = game.phys;
-  const wood = new MeshStandardNodeMaterial({ color: '#5d4a33', roughness: 0.9, metalness: 0 });
-  const dark = new MeshStandardNodeMaterial({ color: '#2b2118', roughness: 0.8, metalness: 0.3 });
+  // one vertex-coloured material: the plank leaf and its iron handle + straps are a single mesh, 1 draw per door
+  const mat = new MeshStandardNodeMaterial({ color: '#ffffff', vertexColors: true, roughness: 0.88, metalness: 0.05 });
+  const wood = new Color('#5d4a33'), dark = new Color('#2b2118');
+  const paint = (g: BufferGeometry, c: Color) => {
+    const n = g.getAttribute('position').count, a = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) c.toArray(a, i * 3);
+    g.setAttribute('color', new BufferAttribute(a, 3));
+    return g;
+  };
   const up = new Vector3(0, 1, 0);
   for (const d of defs) {
     // leaf local +X runs along the closed direction: yaw0 solves (cos y, -sin y) = (dx, dz)
@@ -44,14 +51,12 @@ export function buildDoors(kit: Kit, defs: DoorDef[] = DOORS) {
     const pivot = new Group();
     pivot.position.set(d.hx, 0, d.hz);
     pivot.rotation.y = yaw0;
-    const leaf = new Mesh(new BoxGeometry(d.w, H, T), wood);
-    leaf.position.set(d.w / 2, H / 2, 0);
+    const geos = [paint(new BoxGeometry(d.w, H, T).translate(d.w / 2, H / 2, 0).toNonIndexed(), wood)];
+    geos.push(paint(new BoxGeometry(0.1, 0.05, 0.14).translate(d.w - 0.12, 1.0, 0).toNonIndexed(), dark));
+    for (const [y, h] of [[0.35, 0.12], [1.0, 0.12], [1.7, 0.12]] as const) geos.push(paint(new BoxGeometry(d.w * 0.96, h, T + 0.01).translate(d.w / 2, y, 0).toNonIndexed(), dark));
+    const leaf = new Mesh(mergeGeometries(geos), mat);
     leaf.castShadow = leaf.receiveShadow = true;
-    // handle and the three iron straps merged into one mesh (2 draws per door)
-    const darkGeos = [new BoxGeometry(0.1, 0.05, 0.14).translate(d.w - 0.12, 1.0, 0)];
-    for (const [y, h] of [[0.35, 0.12], [1.0, 0.12], [1.7, 0.12]] as const) darkGeos.push(new BoxGeometry(d.w * 0.96, h, T + 0.01).translate(d.w / 2, y, 0));
-    const handle = new Mesh(mergeGeometries(darkGeos.map((g) => g.toNonIndexed())), dark);
-    pivot.add(leaf, handle);
+    pivot.add(leaf);
     game.scene.add(pivot);
 
     const body = world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(d.hx, 0, d.hz).setRotation(new Quaternion().setFromAxisAngle(up, yaw0)));

@@ -27,3 +27,10 @@ export const yard = {
 } as const;
 
 export type StationId = keyof typeof yard.stations;
+
+/**
+ * Distance culling (m from the camera, engine/farcull.ts): small unique yard props (station crates, cabinets, range targets: the
+ * 80 m targets stay in from the firing line), the yard wall decals, parked vehicles. Each is a draw or more that stays in the
+ * frustum from the outskirts, 150-300 m away, at a few pixels. `interval` = seconds between checks.
+ */
+export const FAR_CULL = { yardProp: 120, decal: 120, vehicle: 140, interval: 0.25 };

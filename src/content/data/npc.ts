@@ -50,8 +50,9 @@ export const NPC_FEEL = {
   /** Capsule collider so you cannot walk through them. */
   radius: 0.34,
   height: 1.75,
-  /** Visible only within this many metres (they are rendered while the player is near). */
-  drawDistance: 140,
+  /** Visible only within this many metres (they are rendered while the player is near). 80: past it a trader is ~13 px tall at 720p and
+   *  costs 7-10 draws plus shadows; at 140 the yard NPCs drew from the diner and Maple Street views (draw budget 350). */
+  drawDistance: 80,
 };
 
 // ---------------------------------------------------------------- dialogue graph

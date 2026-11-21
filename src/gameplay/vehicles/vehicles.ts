@@ -3,6 +3,8 @@ import type { Collider, DynamicRayCastVehicleController, RigidBody } from '@dimf
 import { Group, groups } from '../../engine/physics';
 import { loadModel, type ModelInstance } from '../../engine/models';
 import { vehicles as VD, type VehicleFeel } from '../../content/data/vehicles';
+import { FAR_CULL } from '../../content/data/yard';
+import { farCull } from '../../engine/farcull';
 import type { VehicleDef } from '../../content/data/types';
 import { yardSpawns } from '../../world/yard/spawns';
 import { probe, type Ctx } from '../ctx';
@@ -110,6 +112,7 @@ export class Vehicles {
     const { R, world } = this.ctx.game.phys;
     const model = (await loadModel(def.model, def.fallbackSize)).create();
     this.ctx.game.scene.add(model.root);
+    farCull(this.ctx.game, model.root, FAR_CULL.vehicle);
     const [hx, hy, hz] = def.halfExtents;
     const cy = def.wheelRadius + 0.12 + hy; // chassis centre above the ground at rest
     const body = world.createRigidBody(

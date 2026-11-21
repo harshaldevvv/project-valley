@@ -9,6 +9,8 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Game } from '../../core/game';
+import { farCull } from '../../engine/farcull';
+import { FAR_CULL } from '../../content/data/yard';
 import { loadAsset } from '../../engine/assets';
 import { placeStatic } from '../../engine/instancing';
 import { loadModel } from '../../engine/models';
@@ -124,6 +126,7 @@ export class Kit {
     o.rotation.y = p.yaw ?? 0;
     o.updateMatrixWorld(true);
     this.game.scene.add(o);
+    farCull(this.game, o, FAR_CULL.yardProp);
     this.colliders(proto.colliders, p);
     return o;
   }
@@ -136,6 +139,7 @@ export class Kit {
     root.rotation.y = p.yaw ?? 0;
     root.updateMatrixWorld(true);
     this.game.scene.add(root);
+    farCull(this.game, root, FAR_CULL.yardProp);
     this.colliders(proto.colliders, p);
     return root;
   }

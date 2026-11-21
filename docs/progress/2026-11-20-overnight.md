@@ -182,3 +182,53 @@ Walk (`outskirtswalk.mjs all`): first run had two STUCK legs (main road east fro
 
 Open: the uv warning (a TSL material reads `uv()` on a mesh without UVs; harmless); zaudit ground probe; B2 turn-in-place and camera lag; C5 FP left forearm in rifle ADS (other sessions own these).
 - Outdoor look pass, day/night and weather (`node tools/audit/interiorlight.mjs <tag> --outdoor`: yard, Dunmore, Camp Harlan, Loon Lake at dawn 06:12 / noon / dusk 19:12 / midnight in clear, rain and fog, sheet `wip/ol_<tag>_sheet.png`, plus a mean-luma curve every half hour per place; sheets `ol_before_sheet.png`, `ol_after_sheet.png`, interiors `il_ol_check2_sheet.png`). Found: midnight was brighter than dusk (yard 90 vs 86, towns 63-70) and read as an overcast day; a hard step at 05:30-06:00 (up to +54 luma per half hour) and 19:00-19:30; the weather system grabbed `scene.fog` at install, before the yard replaced it, so rain never pulled the fog in; no fog weather existed. Now: night is blue moonlight at ~40 % of the old light (midnight towns 42-44, yard 73 under the lamps, 14-21 % near-black, ground and silhouettes readable without the flashlight) and the grade desaturates 30 % at night; extra dawn (05:48) and dusk (19:09) keys, sun intensity still ~0 at the 05:30 / 19:30 moon-sun flip, max half-hour step 25-37; fog range read live each frame; new `weather.fog` (morning mist on ~1 day in 4, 04:00 to 08:30-10:00, debug Weather > Fog on/off) pulls the fog to ~120 m, greys it and hazes the sky dome (stars/clouds fade into it, no banding seen); rain streaks 40 % wider and stronger by day, dimmed with the light at night. Indoors at night the hemisphere fill eases back up x2.3 while the shelter check says under a roof, so rooms keep the night level tuned in the interior pass (houseA 80, police 89, motel 111; doorway views outside the footprint stay dark). tsc clean, vitest 182/182.
+
+### Draw budget and walk determinism (2026-11-21)
+
+- **Draws:** the views over 350 were paying for the yard from 150-300 m away. New `engine/farcull.ts` hides small unique objects beyond a distance from the camera (checked 4x a second; numbers in `content/data/yard.ts` FAR_CULL): yard station props from `Kit.one`/`Kit.model` (cabinets, crates, range targets and racks, the survivor body) and the yard wall decals beyond 120 m (the 80 m range targets stay in from the firing line), parked vehicles beyond 140 m (the Polyfork pickup is 7 meshes, 14 draws with shadows). NPC draw distance 140 -> 80 m (`data/npc.ts`; each NPC is 7-10 skinned meshes). Hinged doors (`yard/doors.ts`, all 21 in the world) are one vertex-coloured mesh instead of leaf + iron straps: 1 draw per door instead of 2.
+- Renderer draws, `drawbreak.mjs`, all 75 views (before = the table above, or today's measure for the five that were over): every view now <= 283 (armory_in); the five over-budget views 390/360/353/343/345 -> 262/266/264/254/234.
+
+  | view | before | after | | view | before | after |
+  |---|---|---|---|---|---|---|
+  | diner_spot | 390 | 262 | | houseA_front | 360 | 266 |
+  | door_in | 353 | 264 | | diner_office | 345 | 234 |
+  | lake_pitches | 345 | 245 | | houseA_in | 343 | 252 |
+  | rb_mill | 343 | 254 | | mill_road | 331 | 265 |
+  | lake_office_in | 330 | 239 | | outpost_road | 319 | 235 |
+  | pharmacy_in | 306 | 242 | | shed_in | 304 | 229 |
+  | shelf_front | 298 | 221 | | odell | 296 | 248 |
+  | gatehouse | 289 | 245 | | police_in | 284 | 209 |
+  | fuel | 283 | 233 | | armory_in | 280 | 283 |
+  | spawn | 279 | 246 | | checkpoint | 274 | 237 |
+  | yard_camp | 273 | 244 | | gate | 271 | 235 |
+  | sign_checkpoint | 271 | 234 | | pumps | 270 | 239 |
+  | shop_front | 256 | 227 | | shop_in | 250 | 220 |
+  | air_town | 249 | 213 | | workshop_in | 242 | 214 |
+  | sign_maple | 241 | 212 | | hardware_in | - | 239 |
+  | maple | 234 | 206 | | yard_junk | 230 | 207 |
+  | verge_farm | 229 | 192 | | barracks_in | 224 | 169 |
+  | garage | 223 | 214 | | road_south | 222 | 198 |
+  | nat_pond | 210 | 178 | | grocery_in | 208 | 184 |
+  | main_street | 206 | 195 | | verge_diner | 206 | 135 |
+  | motel_in | 204 | 184 | | nat_pond_low | 204 | 171 |
+  | shelf_back | 199 | 160 | | houseB_front | 196 | 153 |
+  | memorial | 193 | 171 | | dept_store | 193 | 151 |
+  | rb_farm | 193 | 158 | | diner | 190 | 137 |
+  | farm | 189 | 134 | | rb_main | 188 | 132 |
+  | houseB_in | 184 | 142 | | outpost_armory_in | 184 | 142 |
+  | outpost_air | 183 | 161 | | rb_crash | 177 | 151 |
+  | farmhouse_in | 176 | 138 | | motel_in2 | - | 172 |
+  | camp | 167 | 99 | | bus | 165 | 125 |
+  | stand | 156 | 136 | | church | 154 | 115 |
+  | school | 152 | 133 | | outpost_gate | 146 | 120 |
+  | crash | 144 | 123 | | nat_belt_w | 142 | 129 |
+  | ranger_spot | 138 | 122 | | lake_road | 134 | 135 |
+  | motor_pool | 133 | 111 | | school_spot | 131 | 130 |
+  | lake_gate | 129 | 131 | | nat_forest_w | 126 | 115 |
+  | ranger | 120 | 116 | | wren | 120 | 97 |
+  | lake_shore | 114 | 102 | | nat_belt_nw | 112 | 101 |
+  | lake_cabin_in | 109 | 94 | |  |  |  |
+
+- **Walk determinism (`outskirtswalk.mjs`):** the walk legs already stopped the POI streamer, but a spawn already loading when it was stopped (`poiBusy`, an async model load) could still land after the clear. A horde night's step was never stopped either, and after a dev-server reload the zombies came back. Now both spawn paths are stopped, any spawn in flight is awaited before the clear, and the clear runs again after a reload and before every leg. A STUCK leg prints a diagnosis: what the player is pressed against (collision group, body type, position), zombies within 8 m, p95.
+- Real block found by the stall log: the camp trailhead sign (`outskirts.ts`) stood inside the 4.5 m camp track, 1 m off its centreline (the repeat group-1 stall at (12, 258.5)). Moved it to the south verge (12, 256.8): camp legs now have 0 stall ticks.
+- Results: `outskirtswalk.mjs all` 3 runs in a row, every leg ok (22/22), 0 STUCK, 0 door failures, 0 errors. After the sign move `walk` passes with 0 stall ticks on every road leg. `buildingdoors.mjs` 36 doors, 0 bad. `doorwalk.mjs` ALL OK. tsc clean, vitest 182/182.

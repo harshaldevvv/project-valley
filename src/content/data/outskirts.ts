@@ -278,7 +278,7 @@ const rect = (chunk: string, k: string, len: number, x0: number, z0: number, x1:
   add(c, 'forest-outhouse', 15, 270, 1.57);
   add(c, 'portable-toilet', 67, 258, -0.4);
   add(c, 'log-store', 58, 255, 0.1);
-  add(c, 'trailhead-sign', 12, 259, -0.5);
+  add(c, 'trailhead-sign', 12, 256.8, -0.5); // south verge of the camp track (at z 259 it stood in the lane)
   add(c, 'sleeping-bag', 33, 276.5, 0.3, { solid: false });
   add(c, 'firewood-stack', 62, 260, 0.2);
   add(c, 'campground-pine-stand', 14, 250, 0.2);

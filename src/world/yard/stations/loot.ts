@@ -1,5 +1,6 @@
 import { CylinderGeometry, Vector3 } from 'three';
-import { yard } from '../../../content/data/yard';
+import { FAR_CULL, yard } from '../../../content/data/yard';
+import { farCull } from '../../../engine/farcull';
 import { loadModel } from '../../../engine/models';
 import type { Kit, Placement } from '../kit';
 import { stationSign } from '../signs';
@@ -50,6 +51,7 @@ export async function buildLoot(kit: Kit) {
     }
     inst.root.updateMatrixWorld(true);
     kit.game.scene.add(inst.root);
+    farCull(kit.game, inst.root, FAR_CULL.yardProp);
     kit.game.places.containers.push({ id: 'loot_body_survivor', type: 'body_survivor', object: inst.root, position: new Vector3(bx, 0.3, bz) });
   }
 

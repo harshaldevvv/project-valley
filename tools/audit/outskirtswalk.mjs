@@ -37,17 +37,40 @@ const ev = async (f, a) => {
       console.log('[page reloaded by the dev server, recovering]');
       await page.waitForFunction(() => window.__gp && window.__gp.ctx.game.tick > 30, null, { timeout: 240000 });
       await page.waitForTimeout(2500);
-      await install();
+      await installAll();
     }
   }
   throw new Error('page keeps reloading');
 };
-await install();
-// Walk legs run with no zombies: a streamed zombie in a doorway (collision group 8) blocks the god-mode player and reads as a stall
-// (likely the grocery door's 985 ticks). The zombie leg puts the spawner back.
-await ev(() => { const zs = window.__gp.ctx.zombies; window.__poiSpawn = zs.updatePoiSpawns; zs.updatePoiSpawns = () => {}; zs.clear(); for (const zn of zs.poiZones) zn.list = []; });
+// Walk legs run with no zombies: a streamed zombie in a lane or doorway (collision group 8) blocks the god-mode player and reads as a
+// stall or STUCK leg. Both spawn paths are stopped (the POI streamer and the horde night), a spawn already in flight (poiBusy, async
+// model load) is awaited before the clear so it can't land afterwards, and it is re-applied after a dev-server reload and before every
+// leg. The zombie leg puts the spawner back.
+let zombiesOff = true;
+const noZFn = async () => {
+  const zs = window.__gp.ctx.zombies;
+  if (!window.__poiSpawn) { window.__poiSpawn = zs.updatePoiSpawns; window.__hordeStep = zs.horde.step; }
+  zs.updatePoiSpawns = () => {}; zs.horde.step = () => {};
+  for (let i = 0; i < 100 && zs.poiBusy; i++) await new Promise((r) => setTimeout(r, 50));
+  zs.clear(); for (const zn of zs.poiZones) zn.list = [];
+  return zs.list.length;
+};
+const installAll = async () => { await install(); if (zombiesOff) await page.evaluate(noZFn); };
+await installAll();
 
+// On STUCK: what the player is pressed against (collider group, body type and position), zombies within 8 m, frame time.
+const diagnose = () => ev(() => {
+  const g = window.__gp.ctx, p = g.player, k = p.kcc, hits = [];
+  for (let i = 0; i < k.numComputedCollisions(); i++) {
+    const c = k.computedCollision(i), col = c?.collider; if (!col) continue;
+    const b = col.parent(), t = b ? b.translation() : col.translation();
+    hits.push({ g: col.collisionGroups() >>> 16, ny: +c.normal1.y.toFixed(2), body: b ? ['dyn', 'fixed', 'kinPos', 'kinVel'][b.bodyType()] : 'none', at: [+t.x.toFixed(1), +t.y.toFixed(1), +t.z.toFixed(1)] });
+  }
+  const zs = g.zombies.list.filter((z) => z.alive !== false && Math.hypot(z.curr.x - p.curr.x, z.curr.z - p.curr.z) < 8).map((z) => [+z.curr.x.toFixed(1), +z.curr.z.toFixed(1)]);
+  return { pos: [+p.curr.x.toFixed(2), +p.curr.y.toFixed(2), +p.curr.z.toFixed(2)], vel: [+p.vel.x.toFixed(1), +p.vel.z.toFixed(1)], grounded: p.grounded, zombiesAlive: g.zombies.list.length, near: zs, hits, p95: +g.game.perf.snapshot().p95.toFixed(1) };
+});
 async function walkTo(wps, label) {
+  if (zombiesOff) await ev(noZFn);
   await ev(() => { window.__stalls = []; window.__walking = true; });
   let stuck = null;
   for (const [x, z] of wps) {
@@ -70,6 +93,7 @@ async function walkTo(wps, label) {
   const st = await ev(() => window.__stalls);
   const uniq = [];
   for (const s of st) if (!uniq.some((u) => Math.hypot(u[0] - s[0], u[1] - s[1]) < 3)) uniq.push(s);
+  if (stuck) console.log('STUCK diagnosis', JSON.stringify(await diagnose()));
   console.log(`${label}: ${stuck ? 'STUCK trying ' + JSON.stringify(stuck) : 'ok'}; stall ticks ${st.length}, spots ${JSON.stringify(uniq.slice(0, 6))}`);
 }
 
@@ -177,8 +201,9 @@ if (mode === 'lake' || mode === 'all') {
   }
 }
 if (mode === 'zombies' || mode === 'all') {
+  zombiesOff = false;
   await ev(() => {
-    window.__gp.ctx.zombies.updatePoiSpawns = window.__poiSpawn;
+    window.__gp.ctx.zombies.updatePoiSpawns = window.__poiSpawn; window.__gp.ctx.zombies.horde.step = window.__hordeStep;
     const z = window.__gp.ctx.zombies, cam = window.__gp.ctx.game.camera, p = window.__gp.ctx.player;
     window.__spawnLog = [];
     const orig = z.spawn.bind(z);

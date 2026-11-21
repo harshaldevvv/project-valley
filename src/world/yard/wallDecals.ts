@@ -2,7 +2,8 @@ import { DoubleSide, Mesh, PlaneGeometry, TextureLoader, SRGBColorSpace } from '
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import { dot, smoothstep, texture, uv, vec3 } from 'three/tsl';
 import type { Game } from '../../core/game';
-import { yard } from '../../content/data/yard';
+import { farCull } from '../../engine/farcull';
+import { FAR_CULL, yard } from '../../content/data/yard';
 import { assetUrl } from '../../engine/assetUrl';
 
 /**
@@ -59,5 +60,6 @@ export async function buildWallDecals(game: Game) {
     mesh.receiveShadow = true;
     mesh.name = `decal_${d.tex}`;
     game.scene.add(mesh);
+    farCull(game, mesh, FAR_CULL.decal);
   }
 }
