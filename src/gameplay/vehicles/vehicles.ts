@@ -1,4 +1,4 @@
-import { MathUtils, Quaternion, Vector3 } from 'three';
+import { Group as Group3D, MathUtils, Quaternion, Vector3, type Object3D } from 'three';
 import type { Collider, DynamicRayCastVehicleController, RigidBody } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
 import { loadModel, type ModelInstance } from '../../engine/models';
@@ -23,6 +23,7 @@ import { questBus } from '../../systems/questBus';
 type Def = VehicleDef & VehicleFeel;
 const WHEELS = ['FL', 'FR', 'RL', 'RR'] as const;
 const _q = new Quaternion();
+const _lq = new Quaternion();
 const _v = new Vector3();
 const _w = new Vector3();
 const _f = new Vector3();
@@ -52,6 +53,25 @@ export class Car {
   smokeT = 0;
   tipped = false;
   tippedT = 0;
+  /** Drive feel state: gear, upshift torque cut, engine rpm 0..1, skid loop, crash/landing detection, body lean spring. */
+  gear = 0;
+  shiftT = 0;
+  rpm = 0;
+  skid: { setVolume(v: number): void; setRate(r: number): void; stop(): void } | null = null;
+  skidVol = 0;
+  readonly prevVel = new Vector3();
+  crashAcc = 0;
+  crashT = 0;
+  noCrashT = 0;
+  airT = 0;
+  airVy = 0;
+  accLong = 0; // m/s², + = speeding up (smoothed)
+  accLat = 0; // m/s², + = toward the car's right
+  readonly lean = { p: 0, r: 0, vp: 0, vr: 0 }; // rad, rad/s
+  /** Pivot holding everything but the wheels (cosmetic lean); null if the model keeps its wheels inside the body. */
+  bodyPivot: Object3D | null = null;
+  /** Rotation of the pivot's parent relative to the model root (identity for most models). */
+  readonly hostQ = new Quaternion();
   get dead() {
     return this.hp <= 0;
   }
@@ -82,6 +102,8 @@ export class Vehicles {
   private camPitch = 0;
   private lookIdle = 0;
   private camPos = new Vector3();
+  private camHead = 0; // trailing heading of the chase camera (rad)
+  private fov = 70;
   /** Car interactables (interact gives them priority when the crosshair is on a car, QA-070). */
   readonly prompts = new Set<Interactable>();
   private registerPrompt(i: Interactable) {
@@ -151,6 +173,25 @@ export class Vehicles {
       vc.setWheelSideFrictionStiffness(k, 1);
     }
     const car = new Car(n, def, model, body, collider, vc, cy);
+    // Cosmetic weight transfer: the body leans on a pivot, the wheels stay planted
+    const wheelNodes = new Set([...model.wheels.values()].map((w) => w.node));
+    const holdsWheel = (o: Object3D) => {
+      let h = false;
+      o.traverse((c) => void (h ||= wheelNodes.has(c)));
+      return h;
+    };
+    // The pivot goes under the wheels' common parent (GLBs nest everything under one node); the lean is turned into
+    // that node's frame, so it always pitches/rolls about the car's own axes
+    const parents = new Set([...wheelNodes].map((w) => w.parent));
+    const host = parents.size === 1 ? [...parents][0]! : model.root;
+    const movable = host.children.filter((ch) => !holdsWheel(ch));
+    if (movable.length) {
+      const pivot = new Group3D();
+      host.add(pivot);
+      for (const ch of movable) pivot.attach(ch);
+      car.bodyPivot = pivot;
+      for (let o: Object3D | null = host; o && o !== model.root; o = o.parent) car.hostQ.premultiply(o.quaternion);
+    }
     this.syncState(car);
     car.prevPos.copy(car.currPos);
     car.prevQuat.copy(car.currQuat);
@@ -274,6 +315,12 @@ export class Vehicles {
     this.ctx.sfx('car_door', car.doorPos);
     this.ctx.sfx('car_start', car.currPos);
     car.engine = this.ctx.loopSfx('car_engine_loop', car.model.root, { volume: 0.6 });
+    car.skid = this.ctx.loopSfx('car_skid_loop', car.model.root, { volume: 0 });
+    car.skid?.setVolume(0);
+    car.skidVol = 0;
+    _f.set(0, 0, -1).applyQuaternion(car.currQuat);
+    this.camHead = Math.atan2(-_f.x, -_f.z);
+    this.fov = this.ctx.game.camera.fov;
     this.camYaw = 0;
     this.camPitch = 0;
     this.camPos.copy(this.ctx.game.camera.position);
@@ -304,6 +351,8 @@ export class Vehicles {
     p.teleport(out, Math.atan2(-_f.x, -_f.z));
     car.engine?.stop();
     car.engine = null;
+    car.skid?.stop();
+    car.skid = null;
     this.ctx.sfx('car_door', car.doorPos);
     for (let k = 0; k < 4; k++) {
       car.vc.setWheelEngineForce(k, 0);
@@ -352,6 +401,14 @@ export class Vehicles {
     this.syncState(car);
     car.prevPos.copy(car.currPos);
     car.prevQuat.copy(car.currQuat);
+    this.calm(car);
+  }
+
+  /** After a teleport: forget the last velocity so the jump isn't read as a crash or a landing. */
+  private calm(car: Car) {
+    car.prevVel.set(0, 0, 0);
+    car.crashAcc = car.crashT = car.airT = car.airVy = 0;
+    car.noCrashT = 0.3;
   }
 
   /**
@@ -389,6 +446,98 @@ export class Vehicles {
     this.syncState(car);
     car.prevPos.copy(car.currPos);
     car.prevQuat.copy(car.currQuat);
+    this.calm(car);
+  }
+
+  /** A crash: `kmh` of horizontal speed lost in a short window. Sound by severity, hp over the threshold, camera jolt. */
+  private crash(car: Car, kmh: number) {
+    const d = car.def;
+    if (kmh < d.crashMinKmh * 0.5) return;
+    const sev = Math.min(1, kmh / 60);
+    this.ctx.sfx('car_crash', car.currPos, { volume: 0.35 + 0.65 * sev });
+    if (kmh > d.crashMinKmh) this.damageCar(car, (kmh - d.crashMinKmh) * d.crashHpPerKmh);
+    car.lean.vp -= 1.2 * sev; // body pitches into the hit
+    if (car === this.driving) {
+      this.ctx.rig.addTrauma(0.15 + 0.55 * sev);
+      this.ctx.rig.kick(0, -(1.5 + 4 * sev)); // head lurches forward
+    }
+    this.ctx.game.events.emit('noise', { position: car.currPos.clone(), radius: 20 + 40 * sev, source: 'engine' });
+  }
+
+  /**
+   * Feel layer after the vehicle update (fixed step): accelerations for the lean and FOV, crash and landing detection,
+   * tyre scrub and the skid loop, body lean spring.
+   */
+  private feel(car: Car, contacts: number, braking: boolean, hand: boolean, launching: boolean, dt: number) {
+    const d = car.def;
+    const lv = car.body.linvel();
+    _q.copy(car.currQuat).invert();
+    _w.set(lv.x - car.prevVel.x, lv.y - car.prevVel.y, lv.z - car.prevVel.z);
+    const dvh = Math.hypot(_w.x, _w.z);
+    _w.divideScalar(dt).applyQuaternion(_q);
+    const a = Math.min(1, dt * 12); // ticks are noisy: smooth over ~80 ms
+    car.accLong += (MathUtils.clamp(-_w.z, -40, 40) - car.accLong) * a;
+    car.accLat += (MathUtils.clamp(_w.x, -40, 40) - car.accLat) * a;
+    // Crash: speed lost within 0.12 s of a big one-tick change (brakes give ~0.15 m/s per tick, a wall 2+)
+    car.noCrashT = Math.max(0, car.noCrashT - dt);
+    if (car.crashT > 0) {
+      car.crashAcc += dvh;
+      if ((car.crashT -= dt) <= 0) this.crash(car, car.crashAcc * 3.6);
+    } else if (dvh > 0.9 && car.noCrashT <= 0) {
+      car.crashAcc = dvh;
+      car.crashT = 0.12;
+    }
+    // Landing thump after real air time
+    if (contacts === 0) {
+      car.airT += dt;
+      car.airVy = Math.min(car.airVy, lv.y);
+    } else {
+      if (car.airT > 0.15 && -car.airVy > d.landMinVy) {
+        const s = Math.min(1, 0.25 + (-car.airVy - d.landMinVy) / 5);
+        this.ctx.sfx('car_land', car.currPos, { volume: 0.5 + 0.5 * s });
+        if (car === this.driving) {
+          this.ctx.rig.addTrauma(0.1 + 0.3 * s);
+          this.ctx.rig.kick(0, -1.5 * s);
+        }
+        car.lean.vp -= 0.6 * s; // nose slaps down
+      }
+      car.airT = 0;
+      car.airVy = 0;
+    }
+    // Sideways slide: scrub a little speed, squeal
+    _v.set(lv.x, lv.y, lv.z).applyQuaternion(_q);
+    const lat = Math.abs(_v.x);
+    const sp = Math.abs(car.speed);
+    let vx = lv.x;
+    let vz = lv.z;
+    if (contacts >= 2 && lat > 1) {
+      const f = Math.max(0, 1 - d.scrub * lat * dt);
+      vx *= f;
+      vz *= f;
+      car.body.setLinvel({ x: vx, y: lv.y, z: vz }, true);
+    }
+    let skid = 0;
+    if (contacts >= 2 && car === this.driving) {
+      skid = MathUtils.smoothstep(lat, d.skidSlipMin, d.skidSlipFull);
+      if (braking && sp > 8) skid = Math.max(skid, 0.45 * Math.min(1, (sp - 8) / 10));
+      if (hand && sp > 3) skid = Math.max(skid, 0.75);
+      if (launching && sp < 4) skid = Math.max(skid, 0.35 * (1 - sp / 4)); // wheelspin chirp off the line
+    }
+    car.skidVol += (skid - car.skidVol) * Math.min(1, dt * (skid > car.skidVol ? 14 : 6));
+    car.skid?.setVolume(car.skidVol);
+    car.skid?.setRate(0.85 + 0.2 * car.skidVol + 0.1 * Math.min(1, sp / 20));
+    car.prevVel.set(vx, lv.y, vz);
+    // Body lean spring toward the weight-transfer target (nose up on throttle, down on brakes, rolls out of a turn)
+    const L = car.lean;
+    const D2R = Math.PI / 180;
+    const cap = d.leanMaxDeg * D2R;
+    const tp = contacts ? MathUtils.clamp((car.accLong / 9.81) * d.leanPitchPerG * D2R, -cap, cap) : 0;
+    const tr = contacts ? MathUtils.clamp((car.accLat / 9.81) * d.leanRollPerG * D2R, -cap, cap) : 0;
+    const w = 2 * Math.PI * d.leanHz;
+    L.vp += (w * w * (tp - L.p) - 2 * d.leanDamp * w * L.vp) * dt;
+    L.vr += (w * w * (tr - L.r) - 2 * d.leanDamp * w * L.vr) * dt;
+    L.p = MathUtils.clamp(L.p + L.vp * dt, -cap * 1.5, cap * 1.5);
+    L.r = MathUtils.clamp(L.r + L.vr * dt, -cap * 1.5, cap * 1.5);
   }
 
   /** Car damage (zombie hits, bullets). At 0 the engine dies: no drive, black smoke (QA-050). */
@@ -445,7 +594,15 @@ export class Vehicles {
         steerIn = (c.down('left') ? 1 : 0) - (c.down('right') ? 1 : 0);
         hand = c.down('handbrake');
         const run = !car.dead && !car.empty;
-        if (fwd && run) engine = car.speed < top ? d.engineForce : 0;
+        // Gearbox: gear from speed, force falls per gear, a short torque cut on each upshift
+        const sf = Math.max(0, car.speed) / top;
+        let gear = 0;
+        while (gear < d.gears.length - 1 && sf > d.gears[gear]) gear++;
+        if (gear < car.gear && sf > d.gears[gear] * 0.85) gear = car.gear; // hysteresis: the shift's torque cut mustn't drop it straight back (gear hunting up hills)
+        if (gear > car.gear) car.shiftT = d.shiftCutS;
+        car.gear = gear;
+        car.shiftT = Math.max(0, car.shiftT - dt);
+        if (fwd && run) engine = car.speed < top ? d.engineForce * d.gearForce[gear] * (car.shiftT > 0 ? 0.15 : 1) : 0;
         if (back) {
           if (car.speed > 1) brake = d.brakeForce;
           else if (run) engine = car.speed > -d.reverseKmh / 3.6 ? -d.engineForce * 0.6 : 0;
@@ -468,8 +625,13 @@ export class Vehicles {
             this.ctx.game.events.emit('toast', { text: T.outOfFuel });
           }
         }
+        // Engine pitch: rpm climbs through each gear and drops on the shift, plus a rise with road speed
         const k = Math.min(1, Math.abs(car.speed) / top);
-        car.engine?.setRate(d.idleRate + (d.maxRate - d.idleRate) * (fwd || back ? Math.max(k, 0.25) : k));
+        const lo = car.gear ? d.gears[car.gear - 1] : 0;
+        const inGear = MathUtils.clamp((k - lo) / (d.gears[car.gear] - lo), 0, 1);
+        const rpmWant = run ? (fwd || back ? 0.3 + 0.7 * inGear : 0.1 + 0.5 * inGear) : 0;
+        car.rpm += (rpmWant - car.rpm) * Math.min(1, dt * (car.shiftT > 0 ? 20 : 7));
+        car.engine?.setRate(d.idleRate + (d.maxRate - d.idleRate) * (0.55 * car.rpm + 0.45 * k));
         car.engine?.setVolume(car.empty || car.dead ? 0 : 0.45 + 0.4 * k);
       }
       // Speed-sensitive steering, rate-limited
@@ -478,16 +640,19 @@ export class Vehicles {
       for (let k = 0; k < 4; k++) if (car.vc.wheelIsInContact(k)) contacts++;
       const maxSteer = contacts === 0 ? 0 : MathUtils.degToRad(d.maxSteerDeg) * (1 + (d.steerAtSpeed - 1) * Math.min(1, Math.abs(car.speed) / top));
       const want = steerIn * maxSteer;
-      car.steer += MathUtils.clamp(want - car.steer, -d.steerRate * dt, d.steerRate * dt);
+      const centring = Math.abs(want) < Math.abs(car.steer) || want * car.steer < 0; // letting go or counter-steering: faster
+      const sr = centring ? d.steerReturnRate : d.steerRate;
+      car.steer += MathUtils.clamp(want - car.steer, -sr * dt, sr * dt);
       for (let k = 0; k < 4; k++) {
         const front = k < 2;
         car.vc.setWheelSteering(k, front ? car.steer : 0);
         car.vc.setWheelEngineForce(k, front ? 0 : engine); // rear-wheel drive
-        car.vc.setWheelBrake(k, hand && !front ? d.handbrakeForce : brake);
+        car.vc.setWheelBrake(k, hand && !front ? d.handbrakeForce : brake * 2 * (front ? d.brakeFront : 1 - d.brakeFront));
         car.vc.setWheelSideFrictionStiffness(k, hand && !front ? 0.35 : 1);
       }
       car.vc.updateVehicle(dt, undefined, groups(Group.VEHICLE, Group.STATIC | Group.TERRAIN | Group.BUILD));
       this.stabilise(car, contacts, dt);
+      this.feel(car, contacts, brake > d.brakeForce * 0.5, hand, engine > 0 && car.gear === 0, dt);
       // Damaged engine smokes from the hood: grey under 35 %, black when dead
       if (car.hp < d.hp * 0.35 && (car.smokeT -= dt) <= 0) {
         car.smokeT = car.dead ? 0.12 : 0.25;
@@ -495,7 +660,7 @@ export class Vehicles {
         this.ctx.fx.smokePuff(_p, UPV, 1, car.dead ? '#2a2826' : '#7a7670', 4); // bigger than muzzle wisps so it reads at chase-cam distance
       }
       this.syncState(car);
-      if (Math.abs(car.speed) > 2.5) this.contacts(car, dt);
+      if (Math.abs(car.speed) > d.zombieShoveMin) this.contacts(car, dt);
     }
   }
 
@@ -521,20 +686,33 @@ export class Vehicles {
         this.ctx.zombies.fling(z, _w, sp * d.rammingDamage * 0.3, d.id);
         continue;
       }
-      if (_v.y > 0.6 || sp < 4) continue;
+      if (_v.y > 0.6) continue;
+      if (sp < 4) {
+        // Slow bump: shoved aside and a little hurt, never driven through
+        _w.set(Math.sign(_v.x || 1) * (1.5 + sp * 0.5), 0.8, 0).applyQuaternion(car.currQuat).addScaledVector(_f, sp);
+        this.ctx.zombies.fling(z, _w, sp * d.rammingDamage * 0.25, d.id);
+        continue;
+      }
       // Hit by the front/rear: throw along the travel direction and up
       // Thrown ahead of the bumper (faster than the car, so it doesn't end up under it) and off to its side
-      _w.copy(_f).multiplyScalar(sp * 1.2).setY(1.5 + sp * 0.25);
+      _w.copy(_f).multiplyScalar(sp * 1.25).setY(d.zombieLift + sp * d.zombieLiftPerMs);
       _p.set(Math.sign(_v.x || 1) * sp * 0.25, 0, 0).applyQuaternion(car.currQuat);
       _w.add(_p);
       this.ctx.zombies.fling(z, _w, sp * d.rammingDamage, d.id);
       _p.copy(z.curr).setY(z.curr.y + 1);
       this.ctx.sfx('melee_hit', _p, { volume: 1 });
+      this.ctx.sfx('car_crash', _p, { volume: 0.3 }); // bumper thunk under the flesh hit
       this.ctx.fx.impact(_p, _f, 'flesh', _f, 2);
-      if (car === this.driving) this.ctx.rig.addTrauma(0.25);
-      // The bump costs the car a little speed
+      if (car === this.driving) {
+        this.ctx.rig.addTrauma(0.15 + Math.min(0.35, sp * 0.015));
+        this.ctx.rig.kick(1.5, -1.5);
+      }
+      // The bump costs the car some speed (felt through the lean), and isn't read as a crash
       const lv = car.body.linvel();
-      car.body.setLinvel({ x: lv.x * 0.92, y: lv.y, z: lv.z * 0.92 }, true);
+      car.body.setLinvel({ x: lv.x * d.zombieHitKeep, y: lv.y, z: lv.z * d.zombieHitKeep }, true);
+      car.prevVel.set(lv.x * d.zombieHitKeep, lv.y, lv.z * d.zombieHitKeep);
+      car.lean.vp -= 0.25;
+      car.noCrashT = 0.2;
     }
   }
 
@@ -555,11 +733,17 @@ export class Vehicles {
     }
     const root = car.model.root;
     _f.set(0, 0, -1).applyQuaternion(root.quaternion).setY(0).normalize();
-    const yaw = Math.atan2(-_f.x, -_f.z) + this.camYaw;
-    _cam.set(Math.sin(yaw) * d.camDist, d.camHeight + this.camPitch * d.camDist, Math.cos(yaw) * d.camDist).add(root.position);
+    // The heading trails the car's (shortest way round), so a turn shows the car rotating in frame
+    const carYaw = Math.atan2(-_f.x, -_f.z);
+    const dh = carYaw - this.camHead;
+    this.camHead += Math.atan2(Math.sin(dh), Math.cos(dh)) * (1 - Math.exp(-dt / d.camYawLag));
+    const k = Math.min(1, Math.abs(car.speed) / (d.topSpeedKmh / 3.6));
+    const dist = d.camDist + d.camDistAtSpeed * k;
+    const yaw = this.camHead + this.camYaw;
+    _cam.set(Math.sin(yaw) * dist, d.camHeight + this.camPitch * dist, Math.cos(yaw) * dist).add(root.position);
     // Lag (critically damped feel) + keep out of walls with a ray from the car
     this.camPos.lerp(_cam, 1 - Math.exp(-dt / d.camLag));
-    _look.copy(root.position).setY(root.position.y + 1.4);
+    _look.copy(root.position).setY(root.position.y + 1.4).addScaledVector(_f, d.camLookAhead * k * (car.speed < 0 ? -1 : 1));
     const { R, world } = this.ctx.game.phys;
     _v.subVectors(this.camPos, _look);
     const len = _v.length();
@@ -570,8 +754,11 @@ export class Vehicles {
     const hit = world.castRay(this.ray, len, true, R.QueryFilterFlags.EXCLUDE_SENSORS, groups(Group.PLAYER, Group.STATIC | Group.TERRAIN | Group.BUILD), car.collider);
     cam.position.copy(hit ? _w.copy(_look).addScaledVector(_v, Math.max(0.5, hit.timeOfImpact - 0.2)) : this.camPos);
     cam.lookAt(_look);
-    const fov = 70 + Math.min(12, Math.abs(car.speed) * 0.35);
-    if (Math.abs(cam.fov - fov) > 0.05) {
+    // FOV: wider with speed and under hard acceleration, smoothed; impact kicks (rig.kick) ride on top
+    const fovWant = d.fovBase + d.fovAtSpeed * k + d.fovPerG * Math.min(1, Math.max(0, car.accLong) / 9.81);
+    this.fov += (fovWant - this.fov) * (1 - Math.exp(-dt / d.fovLag));
+    const fov = this.fov + this.ctx.rig.fovKick;
+    if (Math.abs(cam.fov - fov) > 0.02) {
       cam.fov = fov;
       cam.updateProjectionMatrix();
     }
@@ -583,6 +770,11 @@ export class Vehicles {
       const root = car.model.root;
       root.position.lerpVectors(car.prevPos, car.currPos, alpha);
       root.quaternion.slerpQuaternions(car.prevQuat, car.currQuat, alpha);
+      if (car.bodyPivot) {
+        // lean in car space, conjugated into the host frame: hostQ⁻¹ · lean · hostQ
+        _q.setFromAxisAngle(_v.set(1, 0, 0), car.lean.p).multiply(_lq.setFromAxisAngle(_v.set(0, 0, 1), car.lean.r));
+        car.bodyPivot.quaternion.copy(car.hostQ).invert().multiply(_q).multiply(car.hostQ);
+      }
       // Wheels: suspension travel, steering, spin
       for (let k = 0; k < 4; k++) {
         const w = car.model.wheels.get(WHEELS[k]);

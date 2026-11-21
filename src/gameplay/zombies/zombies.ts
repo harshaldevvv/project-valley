@@ -117,6 +117,9 @@ export class Zombie {
   readonly fling = new Vector3();
   groundY = 0;
   lastCarHit = -9;
+  /** Thrown corpse tumble: one head-over-heels flip spread over the predicted air time (s elapsed, s total). */
+  spinT = 0;
+  spinDur = 0;
   pushDecay = 0.25;
   grounded = false;
   animAcc = 0;
@@ -522,7 +525,11 @@ export class Zombies {
     _o.copy(vel).normalize();
     this.damage(z, { point: _w, dir: _o, zone: 'body', damage: damage / z.def.zoneMul.body, headMul: 1, weaponId: from, distance: 0, melee: { stagger: 1.2, push: 0, hitstop: 0 } });
     z.groundY = z.curr.y;
-    if (!z.alive) z.fling.copy(vel);
+    if (!z.alive) {
+      z.fling.copy(vel);
+      z.spinT = 0;
+      z.spinDur = vel.y > 3 ? (2 * vel.y) / 18 : 0; // ballistic air time at the fling gravity below; small throws don't flip
+    }
     else {
       z.push.set(vel.x, 0, vel.z);
       z.pushDecay = 0.6;
@@ -629,6 +636,7 @@ export class Zombies {
           // Ragdoll-lite: thrown bodies fly on a ballistic arc until they hit the ground
           z.fling.y -= 18 * dt;
           z.curr.addScaledVector(z.fling, dt);
+          z.spinT += dt;
           if (z.curr.y <= z.groundY) {
             z.curr.y = z.groundY;
             z.fling.set(0, 0, 0);
@@ -1329,6 +1337,13 @@ export class Zombies {
         pose.fall = Math.min(1, pose.fall + rdt * 2.5);
         ch.root.rotation.set(0, z.fallDir, 0, 'YXZ');
         if (!z.anim) ch.root.rotateX(-pose.fall * 1.5); // placeholder topple; skinned plays z_death
+        // Car-thrown corpse: one full flip about the hips while airborne, ending upright into the death pose
+        if (z.spinDur > 0 && z.fling.lengthSq() > 0) {
+          const k = Math.min(1, z.spinT / z.spinDur);
+          ch.root.position.y += 0.9;
+          ch.root.rotateX(-Math.PI * 2 * (k * k * (3 - 2 * k)));
+          ch.root.translateY(-0.9);
+        }
       } else pose.fall = 0;
       if (z.anim) {
         const clip = !z.alive ? '' : z.crawler ? 'z_crawl' : sp > 2.6 ? 'z_run' : sp > 0.1 ? 'z_walk' : 'z_idle';

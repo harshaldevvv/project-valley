@@ -99,6 +99,9 @@ export const sounds: Record<string, SoundDef> = {
   car_start: { files: ['car/Car_Engine_Start_Up.ogg'], volume: 0.5, refDistance: 4, maxDistance: 120, synth: 'hum' },
   car_horn: { files: ['car/Car_Horn.ogg'], volume: 0.35, refDistance: 6, maxDistance: 250, synth: 'beep' },
   car_door: { files: ['car/Car_Door_Close.ogg', 'car/Car_Door_Open.ogg'], volume: 0.7, refDistance: 2, maxDistance: 40, jitter: 0.04, synth: 'thud' },
+  car_skid_loop: { files: ['car/tyre_skid_loop.ogg'], volume: 0.5, refDistance: 4, maxDistance: 80, loop: true, synth: 'noise' }, // own procedural (tools/audio/gen_car_skid.sh)
+  car_crash: { files: k('impactPlate_light'), volume: 1, refDistance: 4, maxDistance: 90, jitter: 0.06, rate: 0.7, tail: 'impact_metal', tailVolume: 0.8, tailDelayS: 0.03, tailGapS: 0.15, synth: 'thud' },
+  car_land: { files: k('impactSoft_heavy'), volume: 0.9, refDistance: 3, maxDistance: 50, jitter: 0.08, rate: 0.75, synth: 'thud' },
   // looting / inventory / building
   door_creak: { files: ['kenney/creak1.ogg', 'kenney/creak2.ogg', 'kenney/creak3.ogg'], volume: 0.7, refDistance: 3, maxDistance: 30, jitter: 0.08, synth: 'thud' },
   crate_open: { files: ['kenney/creak1.ogg', 'kenney/creak2.ogg', 'kenney/creak3.ogg'], volume: 0.6, refDistance: 2, maxDistance: 20, jitter: 0.05, synth: 'thud' },
