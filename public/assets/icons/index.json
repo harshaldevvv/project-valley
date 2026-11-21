@@ -206,6 +206,8 @@
   "suppressor",
   "mag_rifle_ext",
   "mag_pistol_ext",
-  "mag_smg_ext"
+  "mag_smg_ext",
+  "mag_shotgun_ext",
+  "mag_bolt_ext"
  ]
 }

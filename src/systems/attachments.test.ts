@@ -34,7 +34,7 @@ describe('weapon attachments', () => {
   it('a suppressor shrinks the shot noise and has sounds; extended mags beat the standard ones', () => {
     expect(attachDefs.suppressor.noiseMul).toBeLessThan(0.5);
     expect(attachDefs.scope_4x.fovMul).toBeLessThan(attachDefs.red_dot.fovMul!);
-    for (const [ext, base] of [['mag_rifle_ext', 'mag_rifle_a'], ['mag_pistol_ext', 'mag_pistol_a'], ['mag_smg_ext', 'mag_smg_a']]) {
+    for (const [ext, base] of [['mag_rifle_ext', 'mag_rifle_a'], ['mag_pistol_ext', 'mag_pistol_a'], ['mag_smg_ext', 'mag_smg_a'], ['mag_shotgun_ext', 'mag_shotgun_a'], ['mag_bolt_ext', 'mag_bolt_a']]) {
       expect(ITEMS[ext].capacity!).toBeGreaterThan(ITEMS[base].capacity!);
       expect(ITEMS[ext].fits).toEqual(ITEMS[base].fits);
       for (const w of ITEMS[ext].fits!) expect(weaponDefs[w].magazines).toContain(ext);

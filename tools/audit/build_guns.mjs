@@ -160,7 +160,8 @@ if (want('wpn_shotgun_a')) {
   // the Polyfork palette is saturated blue: turn its cool metal into gun-metal grey, keep brass (warm) and the red/brown matte parts
   const grey = (c) => { const l = (0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2]) * 1.0 + 0.01; return [l * 0.95, l * 0.97, l * 1.05]; };
   b.addDoc(doc, m, (c, mat) => (mat === 'crystal' ? dark : mat === 'metal' && c[0] <= c[2] * 1.5 ? grey(c) : c));
-  await write('wpn_shotgun_a', b, { grip: [0, 0, 0], muzzle: [0, 0.075, -0.63], sight: [0, 0.19, -0.3], support: [0, 0.036, -0.41] }, null, null);
+  // sight = top of the receiver rib (mesh top 0.135 at z -0.25..-0.15): optics sit on it and ADS lines up with it
+  await write('wpn_shotgun_a', b, { grip: [0, 0, 0], muzzle: [0, 0.075, -0.63], sight: [0, 0.135, -0.2], support: [0, 0.036, -0.41] }, null, null);
 }
 
 // ---------------- Bolt-action hunting rifle (Polyfork) ----------------
@@ -172,7 +173,8 @@ if (want('wpn_bolt_a')) {
   mat4.rotateY(m2, m2, Math.PI / 2); mat4.scale(m2, m2, [S, S, S]); mat4.translate(m2, m2, [-GX, -GY, 0]);
   b2.addDoc(doc, m2, null);
   const bb = b2.bounds();
-  await write('wpn_bolt_a', b2, { grip: [0, 0, 0], muzzle: [0, 0.14 * S, bb.mn[2] + 0.005], sight: [0, 0.17 * S, -0.3], support: [0, 0.04, -0.42] }, null, null);
+  // muzzle = barrel centre at the tip (y 0.044..0.063); sight = receiver top (~0.095 at z -0.2..0.05) so a scope sits on it
+  await write('wpn_bolt_a', b2, { grip: [0, 0, 0], muzzle: [0, 0.054, bb.mn[2] + 0.005], sight: [0, 0.095, -0.08], support: [0, 0.04, -0.42] }, null, null);
 }
 
 // ---------------- Magazines (world models) ----------------

@@ -9,6 +9,8 @@ export const itemTextAttach: Record<string, T> = {
   mag_rifle_ext: t('7.62 Extended Magazine (45)', 'Mag 45', 'Forty-five rounds in a longer steel magazine. Sticks out of the gun like a dare.'),
   mag_pistol_ext: t('9 mm Extended Magazine (25)', 'Mag 25', 'Twenty-five rounds, with a plate on the bottom to keep the gun from tipping forward.'),
   mag_smg_ext: t('9 mm Extended Magazine (50)', 'Mag 50', 'Fifty rounds of trouble in a long curved box.'),
+  mag_shotgun_ext: t('12 Gauge Extended Tube (8)', 'Shells 8', 'A longer magazine tube and carrier for the pump gun. Eight shells before you have to stop and feed it.'),
+  mag_bolt_ext: t('.308 Box Magazine (10)', 'Mag 10', 'A detachable ten-round box for the hunting rifle. Twice the clip, half the fumbling.'),
 };
 
 export const attachText = {

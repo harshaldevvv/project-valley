@@ -702,7 +702,7 @@
     "tris": {
       "wpn_bolt_a_LOD0": 658
     },
-    "bytes": 88196
+    "bytes": 88184
   },
   "wpn_mag_revolver_a": {
     "url": "/assets/models/wpn/wpn_mag_revolver_a.glb",
