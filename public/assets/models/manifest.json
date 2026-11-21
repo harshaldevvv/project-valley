@@ -904,7 +904,7 @@
       "zmb_pfz_runner_a_LOD1": 1836,
       "zmb_pfz_runner_a_LOD2": 734
     },
-    "bytes": 809480
+    "bytes": 827148
   },
   "zmb_pfz_crawler_a": {
     "url": "/assets/models/zmb/zmb_pfz_crawler_a.glb",
@@ -934,6 +934,6 @@
       "zmb_pfz_screamer_a_LOD1": 2243,
       "zmb_pfz_screamer_a_LOD2": 897
     },
-    "bytes": 849568
+    "bytes": 869420
   }
 }
