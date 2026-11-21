@@ -5,6 +5,7 @@ import { animPost as AP } from '../../content/data/anim';
 import { finisher as FIN, fpArms as FA, meleeDefs, shove as SH, type MeleeDef } from '../../content/data/weapons';
 import type { Ctx } from '../ctx';
 import { surfaceOf } from '../../world/surfaces';
+import { impacts, meleeWorldFx as MW } from '../../content/data/fx';
 import type { Zombie } from '../zombies/zombies';
 
 /**
@@ -225,9 +226,12 @@ export class Melee {
     if (!h) {
       if (this.hitThisSwing.has(-1)) return;
       this.hitThisSwing.add(-1);
-      this.ctx.fx.impact(_p, _n, surfaceOf(hit.collider.handle, _p.x, _p.z) ?? 'concrete', _d, 0.6);
-      this.ctx.fx.star(_p, 0.25); // blunt impact star
-      this.ctx.sfx('impact_wood', _p, { volume: 0.6 });
+      const surf = surfaceOf(hit.collider.handle, _p.x, _p.z) ?? 'concrete';
+      const blade = MW.blades.includes(def.id);
+      this.ctx.fx.impact(_p, _n, surf, _d, MW.burstScale);
+      if (blade && MW.sparkOn.includes(surf)) this.ctx.fx.impact(_p, _n, 'metal', _d, MW.sparkScale); // steel on a hard surface: sparks
+      else if (!blade) this.ctx.fx.star(_p, MW.star); // blunt impact star
+      this.ctx.sfx(impacts[surf].sfx, _p, { volume: MW.volume });
       this.ctx.rig.addTrauma(0.15);
       return;
     }

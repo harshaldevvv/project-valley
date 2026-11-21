@@ -4,6 +4,8 @@ import {
   FloatType,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
+  InstancedInterleavedBuffer,
+  InterleavedBufferAttribute,
   Matrix4,
   Mesh,
   RGBAFormat,
@@ -12,7 +14,7 @@ import {
 } from 'three';
 import { Frustum, MeshStandardNodeMaterial } from 'three/webgpu';
 import type { Texture } from 'three';
-import { vertexColor, Fn, If, attribute, clamp, cos, dot, float, mix, smoothstep, texture, uv, vec2, int, ivec2, mat4, normalGeometry, normalLocal, positionGeometry, sin, textureLoad, uniform, vec3, vec4 } from 'three/tsl';
+import { vertexColor, Fn, If, attribute, positionWorld, clamp, cos, dot, exp, float, mix, smoothstep, step, texture, uv, vec2, int, ivec2, mat4, normalGeometry, normalLocal, positionGeometry, sin, textureLoad, uniform, vec3, vec4 } from 'three/tsl';
 import type { Game } from '../core/game';
 import { entries, gltfLoader } from './assets';
 import { characterDetail, grungeTexture, paletteMaterial } from './palette';
@@ -60,6 +62,9 @@ export interface Crowd {
   setFlash(i: number, f: number): void;
   /** Whole-body tilt about the feet (rad): pitch + = lean back (headshot snap, stagger), roll = sideways flinch. */
   setTilt(i: number, pitch: number, roll?: number): void;
+  /** Hit flinch: the body above `pivot` m bends by pitch/roll/twist (rad, eased in over 0.45 m), feet stay put.
+   *  `hitY` (m above the feet, 0 = whole body) focuses the white flash around the hit height. */
+  setBend(i: number, pitch: number, roll: number, twist: number, pivot: number, hitY?: number): void;
   setVisible(i: number, v: boolean): void;
   /** Current clip and its time (s). */
   clip(i: number): string;
@@ -172,9 +177,12 @@ export async function createCrowd(
     animArr.push(an);
     geo.setAttribute('crowdXform', new InstancedBufferAttribute(xf, 4));
     geo.setAttribute('crowdAnim', new InstancedBufferAttribute(an, 4));
-    const tl = new Float32Array(max * 3);
+    // tilt + bend share one interleaved instance buffer (WebGPU allows 8 vertex buffers per pipeline)
+    const tl = new Float32Array(max * 8);
     tiltArr.push(tl);
-    geo.setAttribute('crowdTilt', new InstancedBufferAttribute(tl, 3)); // pitch, roll, hit flash
+    const tb = new InstancedInterleavedBuffer(tl, 8, 1);
+    geo.setAttribute('crowdTilt', new InterleavedBufferAttribute(tb, 4, 0)); // pitch, roll, hit flash, flash height
+    geo.setAttribute('crowdBend', new InterleavedBufferAttribute(tb, 4, 4)); // pitch, roll, twist, pivot height
     geo.instanceCount = 0;
 
     // Root-space skinning: pre * Σ w·Bone * post * p, pre/post fold in the mesh node TRS (meshopt dequant) and bind matrix.
@@ -220,12 +228,27 @@ export async function createCrowd(
     const cy = cos(yaw);
     const sy = sin(yaw);
     // whole-body tilt about the feet: pitch around X (+ = lean back), then roll around Z, then yaw
-    const tiltAttr = attribute('crowdTilt', 'vec3');
+    const tiltAttr = attribute('crowdTilt', 'vec4');
     const tilt = tiltAttr.xy;
     const cp = cos(tilt.x);
     const sp = sin(tilt.x);
     const cr = cos(tilt.y);
     const sr = sin(tilt.y);
+    // hit flinch: everything above the pivot bends (weight eases in over 0.45 m), so the feet stay planted
+    const bendAttr = attribute('crowdBend', 'vec4');
+    const bw = smoothstep(bendAttr.w, bendAttr.w.add(0.45), local.y);
+    const bp = bendAttr.x.mul(bw);
+    const br = bendAttr.y.mul(bw);
+    const bt = bendAttr.z.mul(bw);
+    const bcp = cos(bp), bsp = sin(bp), bcr = cos(br), bsr = sin(br), bct = cos(bt), bst = sin(bt);
+    const pivot = vec3(0, bendAttr.w, 0);
+    const bend = (v0: Node, isPoint: boolean) => {
+      const q = isPoint ? v0.sub(pivot) : v0;
+      const q1 = vec3(q.x, q.y.mul(bcp).sub(q.z.mul(bsp)), q.y.mul(bsp).add(q.z.mul(bcp)));
+      const q2 = vec3(q1.x.mul(bcr).sub(q1.y.mul(bsr)), q1.x.mul(bsr).add(q1.y.mul(bcr)), q1.z);
+      const q3 = vec3(q2.x.mul(bct).add(q2.z.mul(bst)), q2.y, q2.z.mul(bct).sub(q2.x.mul(bst)));
+      return isPoint ? q3.add(pivot) : q3;
+    };
     const rot = (v0: Node) => {
       const v1 = vec3(v0.x, v0.y.mul(cp).sub(v0.z.mul(sp)), v0.y.mul(sp).add(v0.z.mul(cp)));
       const v = vec3(v1.x.mul(cr).sub(v1.y.mul(sr)), v1.x.mul(sr).add(v1.y.mul(cr)), v1.z);
@@ -257,9 +280,13 @@ export async function createCrowd(
       const bloodMask = smoothstep(0.5, 0.72, gB).mul(smoothstep(0.7, 1.15, bp.y)).mul(smoothstep(1.95, 1.5, bp.y));
       mat.colorNode = mix(withDirt, vec3(0.2, 0.025, 0.02), bloodMask.mul(0.8));
     }
-    mat.emissiveNode = vec3(1, 0.93, 0.85).mul(tiltAttr.z.mul(0.5));
-    mat.positionNode = rot(local).add(xform.xyz); // also used by the shadow pass
-    mat.crowdNormal = rot(full.mul(vec4(normalGeometry, 0)).xyz).normalize();
+    // hit flash: strongest around the hit height (w), a faint floor elsewhere; w = 0 flashes the whole body
+    // (height measured on the final world position above the instance's feet, so it is metres whatever the rig scale)
+    const fd = positionWorld.y.sub(xform.y).sub(tiltAttr.w).div(0.16);
+    const focus = mix(float(1), float(0.06).add(float(0.94).mul(exp(fd.mul(fd).negate()))), step(0.01, tiltAttr.w));
+    mat.emissiveNode = vec3(1, 0.93, 0.85).mul(tiltAttr.z.mul(0.5).mul(focus));
+    mat.positionNode = rot(bend(local, true)).add(xform.xyz); // also used by the shadow pass
+    mat.crowdNormal = rot(bend(full.mul(vec4(normalGeometry, 0)).xyz, false)).normalize();
     const mesh = new Mesh(geo, mat);
     mesh.name = mat.name;
     mesh.frustumCulled = false; // culled per instance on the CPU
@@ -276,6 +303,7 @@ export async function createCrowd(
     pos: new Float32Array(max * 4), // x y z yaw
     tilt: new Float32Array(max * 2), // pitch roll
     flash: new Float32Array(max), // 0..1 white hit flash
+    bend: new Float32Array(max * 5), // pitch roll twist pivot hitY
     clipA: new Int16Array(max).fill(-1),
     tA: new Float32Array(max),
     loopA: new Uint8Array(max),
@@ -348,10 +376,15 @@ export async function createCrowd(
         const fading = S.fade[i] > 0 && S.clipB[i] >= 0;
         if (fading) rowAt(S.clipB[i], S.tB[i], S.loopB[i] === 1, rb);
         const tl = tiltArr[l];
-        const ti = (o >> 2) * 3;
+        const ti = o * 2;
         tl[ti] = S.tilt[i * 2];
         tl[ti + 1] = S.tilt[i * 2 + 1];
         tl[ti + 2] = S.flash[i];
+        tl[ti + 3] = S.bend[i * 5 + 4];
+        tl[ti + 4] = S.bend[i * 5];
+        tl[ti + 5] = S.bend[i * 5 + 1];
+        tl[ti + 6] = S.bend[i * 5 + 2];
+        tl[ti + 7] = S.bend[i * 5 + 3];
         const an = animArr[l];
         an[o] = ra.row;
         an[o + 1] = ra.frac;
@@ -365,7 +398,7 @@ export async function createCrowd(
         if (counts[l]) {
           (g.getAttribute('crowdXform') as InstancedBufferAttribute).needsUpdate = true;
           (g.getAttribute('crowdAnim') as InstancedBufferAttribute).needsUpdate = true;
-          (g.getAttribute('crowdTilt') as InstancedBufferAttribute).needsUpdate = true;
+          (g.getAttribute('crowdTilt') as InterleavedBufferAttribute).data.needsUpdate = true;
         }
       }
       game.perf.end('crowd');
@@ -387,6 +420,8 @@ export async function createCrowd(
       S.tA[i] = S.tB[i] = S.fade[i] = 0;
       S.scale[i] = S.speed[i] = 1;
       S.flash[i] = 0;
+      S.bend.fill(0, i * 5, i * 5 + 5);
+      S.tilt[i * 2] = S.tilt[i * 2 + 1] = 0;
       live++;
       return i;
     },
@@ -422,6 +457,14 @@ export async function createCrowd(
     setTilt(i, pitch, roll = 0) {
       S.tilt[i * 2] = pitch;
       S.tilt[i * 2 + 1] = roll;
+    },
+    setBend(i, pitch, roll, twist, pivot, hitY = 0) {
+      const b = i * 5;
+      S.bend[b] = pitch;
+      S.bend[b + 1] = roll;
+      S.bend[b + 2] = twist;
+      S.bend[b + 3] = pivot;
+      S.bend[b + 4] = hitY;
     },
     setSpeed: (i, s) => void (S.speed[i] = s),
     setFlash: (i, f) => void (S.flash[i] = f),

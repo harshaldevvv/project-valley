@@ -137,3 +137,14 @@ export const fxTuning = {
   reduceFlashing: false,
   gore: 'full' as 'full' | 'reduced' | 'off',
 };
+
+/** Melee weapon hitting the world (not a zombie). Every swing gets the surface's own burst and sound (was always the
+ *  wood knock); a blade on a hard surface also throws a few sparks; blunt tools keep the white impact star. */
+export const meleeWorldFx = {
+  blades: ['knife_a', 'machete', 'fire_axe', 'spear'],
+  sparkOn: ['metal', 'concrete', 'chainlink'] as FxSurface[],
+  sparkScale: 0.55,
+  burstScale: 0.6,
+  star: 0.25, // m, blunt tools only
+  volume: 0.6,
+};

@@ -170,3 +170,32 @@ export const horde = {
   shadowDist: 15, // m from the camera; skinned shadows are expensive (principles §13)
   showSenses: false,
 };
+
+/** Hit flinch by location (principles §4 reaction ladder: additive, 150–250 ms, never stops movement). The crowd shader
+ *  bends everything above `pivot` (m above the feet) along the shot; feet stay planted. Strength = damage / dmgRef,
+ *  clamped. Leg hits buckle the knees (pivot low, body folds toward the shooter); off-centre body hits twist the torso. */
+export const hitReact = {
+  rise: 0.04, // s to full bend
+  dmgRef: 25,
+  strength: [0.55, 1.6] as [number, number],
+  meleeStrength: 1.1,
+  head: { pivot: 1.4, pitch: 0.55, dur: 0.26 },
+  body: { pivot: 0.95, pitch: 0.3, dur: 0.22 },
+  arm: { pivot: 1.05, pitch: 0.16, dur: 0.2 },
+  leg: { pivot: 0.42, pitch: -0.22, roll: 0.14, dur: 0.3 },
+  /** Torso twist per metre of off-centre lever (rad/m), and its cap. */
+  twist: 2.2,
+  twistMax: 0.45,
+  /** Hits below this height (m above the feet) count as leg hits. */
+  legBelow: 0.95,
+  /** Whole-body lean while staggered (rad, + = back). */
+  staggerLean: 0.18,
+};
+
+/** Death fall playback (z_death). A plain kill drops at a random speed in `speed` (no two falls alike); a gun kill that
+ *  blows the body off its feet (ragdoll-lite hop, 0.2–0.3 s in the air) plays it fast enough to be down when it lands,
+ *  instead of kneeling in mid-air. Headshot kills use fxTuning.headKillDeathSpeed. */
+export const deathFall = {
+  speed: [0.95, 1.4] as [number, number],
+  flungSpeed: 2.4,
+};

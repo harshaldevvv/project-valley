@@ -1,7 +1,7 @@
 import { BufferAttribute, BufferGeometry, Frustum, LineBasicMaterial, LineSegments, Matrix4, Object3D, Sphere, Vector3 } from 'three';
 import type { Collider, KinematicCharacterController, RigidBody } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
-import { crawlClips as CC, horde as HD, senses as SN, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
+import { crawlClips as CC, deathFall as DF, hitReact as HR, horde as HD, senses as SN, zombieDefs, zombieMix, type ZombieDef } from '../../content/data/zombies';
 import { hasAsset } from '../../engine/assets';
 import { fxTuning } from '../../content/data/fx';
 import { anim as A, clipMeta } from '../../content/data/anim';
@@ -64,6 +64,8 @@ export class Zombie {
   flash = 0; // seconds of white hit flash left
   flinch = 0;
   headSnap = 0;
+  /** Location flinch (crowd bend): peak pitch/roll/twist, pivot and hit height, start time and length (sim s). */
+  bend = { pitch: 0, roll: 0, twist: 0, pivot: 0, hitY: 0, at: -9, dur: 0.2 };
   staggerHits = 0; // light melee: stagger on the 2nd hit within 1 s
   lastMeleeT = -9;
   dmgLog: { t: number; amt: number }[] = [];
@@ -407,6 +409,7 @@ export class Zombies {
     if (z.dmgLog.length > 12) z.dmgLog.shift();
     z.flinch = z.def.flinchTime;
     if (info.zone === 'head') z.headSnap = 0.25;
+    this.hitBend(z, info);
     if (info.zone === 'limb') {
       z.legHp -= dmg;
       if (!z.crawler && z.legHp <= z.def.legHp * 0.5) {
@@ -456,6 +459,29 @@ export class Zombies {
     }
     if (stagger > 0) this.stagger(z, stagger);
     return { damage: dmg, kill: false, zone: info.zone };
+  }
+
+  /** Location flinch: bend above the zone's pivot along the shot (model space), twist from an off-centre hit. */
+  private hitBend(z: Zombie, info: HitInfo) {
+    const hy = info.point.y - z.curr.y;
+    const leg = info.zone === 'limb' && hy < HR.legBelow;
+    const k = info.zone === 'head' ? HR.head : leg ? HR.leg : info.zone === 'limb' ? HR.arm : HR.body;
+    const s = info.melee ? HR.meleeStrength : Math.min(HR.strength[1], Math.max(HR.strength[0], info.damage / HR.dmgRef));
+    // shot direction in the model's frame (the crowd shader's yaw, inverted); +z local = toward the zombie's back
+    const cy = Math.cos(z.yaw), sy = Math.sin(z.yaw);
+    const lx = info.dir.x * cy - info.dir.z * sy;
+    const lz = info.dir.x * sy + info.dir.z * cy;
+    const b = z.bend;
+    const rx = info.point.x - z.curr.x, rz = info.point.z - z.curr.z;
+    b.pitch = k.pitch * s * lz;
+    // sideways: pushed along the shot; a leg hit sags toward the hit leg instead (roll + moves the top toward -x)
+    b.roll = leg ? -HR.leg.roll * s * Math.sign(rx * cy - rz * sy || 1) : -Math.abs(k.pitch) * s * lx;
+    const tq = (rz * info.dir.x - rx * info.dir.z) * HR.twist * s;
+    b.twist = info.zone === 'head' || leg ? 0 : Math.max(-HR.twistMax, Math.min(HR.twistMax, tq));
+    b.pivot = k.pivot * (z.def.scale ?? 1);
+    b.hitY = Math.max(0.05, hy);
+    b.at = this.time;
+    b.dur = k.dur;
   }
 
   /** Hit by a car (or thrown): damage by speed, then thrown along `vel` (m/s); dead ones fly as a ragdoll-lite. */
@@ -509,7 +535,7 @@ export class Zombies {
     if (!quiet) this.ctx.sfx('zombie_death', z.curr, { pitchJitter: 0.1 });
     if (z.fling.lengthSq() === 0) this.groundPool(this.torso(z, _o)); // under the torso, not the feet
     if (z.crawler) z.anim?.oneshot(CC.death, 0.15, true, CC.deathHoldAt, CC.deathSpeed); // already prone: stop crawling where it lies
-    else z.anim?.oneshot('z_death', z.headKill ? 0.04 : 0.1, true, z.def.deathHoldAt, (z.headKill ? fxTuning.headKillDeathSpeed : 1) * (0.8 + this.ctx.rand() * 0.55)); // each fall plays at its own speed
+    else z.anim?.oneshot('z_death', z.headKill ? 0.04 : 0.1, true, z.def.deathHoldAt, z.headKill ? fxTuning.headKillDeathSpeed : z.fling.lengthSq() > 0 ? DF.flungSpeed : DF.speed[0] + this.ctx.rand() * (DF.speed[1] - DF.speed[0])); // each fall plays at its own speed
     if (melee) this.ctx.game.events.emit('noise', { position: z.curr.clone(), radius: 5, source: 'melee_kill' });
   }
 
@@ -944,8 +970,12 @@ export class Zombies {
     a.crowd.set(a.i, p.x, p.y, p.z, yaw);
     a.crowd.setSpeed(a.i, a.frozen ? 0 : z.hitstop > 0 ? 0.05 : 1);
     a.crowd.setFlash(a.i, Math.min(1, z.flash * 9));
-    const flinch = z.flinch > 0 ? Math.sin(z.flinch * 40) * z.flinch * 0.6 : 0;
-    a.crowd.setTilt(a.i, z.alive ? z.headSnap * 0.8 + (z.mode === 'stagger' ? 0.18 : 0) : 0, flinch);
+    a.crowd.setTilt(a.i, z.alive && z.mode === 'stagger' ? HR.staggerLean : 0, 0);
+    // location flinch: fast ease-in, ease-out back (dead bodies keep none: the death clip owns the pose)
+    const b = z.bend;
+    const age = this.time - b.at;
+    const env = !z.alive || age >= b.dur ? 0 : age < HR.rise ? Math.sin((age / HR.rise) * Math.PI * 0.5) : (1 - (age - HR.rise) / (b.dur - HR.rise)) ** 2;
+    a.crowd.setBend(a.i, b.pitch * env, b.roll * env, b.twist * env, b.pivot, z.flash > 0 ? b.hitY : 0);
     if (show && z.alive && li < 30) li = this.senseLines(z, li);
     return li;
   }
