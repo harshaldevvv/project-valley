@@ -1,4 +1,4 @@
-import { AnimationAction, AnimationClip, BufferAttribute, Color, DoubleSide, Euler, LoopOnce, LoopRepeat, Material, Matrix4, MeshStandardMaterial, Object3D, Quaternion, Vector3, type AnimationMixer, type SkinnedMesh } from 'three';
+import { AnimationAction, AnimationClip, BufferAttribute, Color, DoubleSide, Euler, LoopOnce, LoopRepeat, Material, Matrix4, MeshStandardMaterial, Object3D, Quaternion, Vector3, type PerspectiveCamera, type AnimationMixer, type SkinnedMesh } from 'three';
 import { hasAsset } from '../../engine/assets';
 import { loadModel } from '../../engine/models';
 import { fpArms as F } from '../../content/data/weapons';
@@ -13,6 +13,7 @@ import type { WeaponModel } from './models';
 const _wq = new Quaternion();
 const _a = new Vector3(), _b = new Vector3(), _c = new Vector3(), _t = new Vector3(), _u = new Vector3(), _p = new Vector3(), _n = new Vector3();
 const _pole = new Vector3();
+const _m4 = new Matrix4();
 const _q1 = new Quaternion(), _q2 = new Quaternion(), _q3 = new Quaternion();
 
 /** Swing bone `bone` (world) so the direction to `from` points at `to`, keeping its roll. */
@@ -82,6 +83,7 @@ export class Viewmodel {
   private held = new Map<string, Held>();
   private support = new Map<string, Object3D | null>(); // per gun: its SOCKET_support (the left-hand point)
   private weaponRoots = new Map<string, Object3D>();
+  private loadPoint = new Map<string, Vector3>(); // per gun: where it takes its magazine (grip-local)
   ready = false;
 
   async init(camera: Object3D) {
@@ -158,10 +160,14 @@ export class Viewmodel {
     this.weaponRoots.set(id, w.root);
     const magL = this.sockets.get('mag_L');
     const wMagSock = w.sockets?.get('mag');
-    if (kind === 'knife' || !magL || !w.mag || !wMagSock) return;
-    // local = inverse(weapon SOCKET_mag) * MAG, both relative to the weapon root
     w.root.updateMatrixWorld(true);
     const inv = new Matrix4().copy(w.root.matrixWorld).invert();
+    // where this gun takes its magazine (grip-local): data load point, else its SOCKET_mag
+    const lp = F.reloadPoint[id];
+    if (lp) this.loadPoint.set(id, new Vector3(lp[0], lp[1], lp[2]));
+    else if (wMagSock) this.loadPoint.set(id, new Vector3().setFromMatrixPosition(new Matrix4().multiplyMatrices(inv, wMagSock.matrixWorld)));
+    if (kind === 'knife' || !magL || !w.mag || !wMagSock) return;
+    // local = inverse(weapon SOCKET_mag) * MAG, both relative to the weapon root
     const sockRel = new Matrix4().multiplyMatrices(inv, wMagSock.matrixWorld);
     const magRel = new Matrix4().multiplyMatrices(inv, w.mag.matrixWorld);
     const pivot = new Object3D();
@@ -172,6 +178,27 @@ export class Viewmodel {
     pivot.visible = false;
     magL.add(pivot);
     this.held.set(id, { pivot, weaponMag: w.mag });
+  }
+
+  /** Guns without a MAG part (shotgun, bolt rifle, revolver): the left hand carries the magazine item's model during the
+   *  reload (data: fpArms.heldMag), shown by the same clip events as a real magazine. */
+  async attachHeld(id: string) {
+    const h = F.heldMag[id], magL = this.sockets.get('mag_L');
+    if (!h || !magL || this.held.has(id) || !hasAsset(h.model)) return;
+    const proto = await loadModel(h.model);
+    if (proto.placeholder) return;
+    const m = proto.create();
+    m.root.traverse((o) => {
+      o.castShadow = false;
+      o.frustumCulled = false;
+    });
+    m.root.position.set(h.pos[0], h.pos[1], h.pos[2]);
+    m.root.rotation.set(h.rot[0], h.rot[1], h.rot[2]);
+    const pivot = new Object3D();
+    pivot.add(m.root);
+    pivot.visible = false;
+    magL.add(pivot);
+    this.held.set(id, { pivot, weaponMag: null });
   }
 
   /** Switch the base pose to a weapon class. */
@@ -278,7 +305,65 @@ export class Viewmodel {
     const hand = this.sockets.get('weapon')?.parent;
     if (wr && hand) hand.quaternion.multiply(_wq.setFromEuler(_we.set(wr[0], wr[1], wr[2])));
     if (itemId) this.leftHand(itemId, pump, ads);
+    if (itemId) this.reloadHand(itemId, dt);
     if (itemId) this.magChoreo(itemId);
+  }
+
+  /**
+   * The reload clips insert the magazine at the reference gun's mag well (fpArms.reloadRef). While the left hand is there,
+   * move it by the difference to this gun's own load point (two-bone IK, hand orientation kept), so the magazine, shell
+   * carrier or speedloader meets this gun instead of passing into its receiver. The elbow is pulled down for the whole
+   * reload so the forearm's cut end stays below the frame.
+   */
+  private reloadHand(itemId: string, dt: number) {
+    const clip = this.shot?.getClip().name;
+    if (!clip || clip !== `fp_${this.kind}_reload`) return this.elbowDip(null, 0, dt);
+    const magL = this.sockets.get('mag_L'), hand = magL?.parent, forearm = hand?.parent, upper = forearm?.parent;
+    const root = this.weaponRoots.get(itemId), ref = F.reloadRef[this.kind];
+    if (!magL || !hand || !forearm || !upper || !root || !ref) return;
+    const w = this.shotW;
+    if (w < 0.01) return this.elbowDip(null, 0, dt);
+    this.pivot.updateMatrixWorld(true);
+    const target = hand.getWorldPosition(new Vector3());
+    const lp = this.loadPoint.get(itemId);
+    if (lp) {
+      _c.set(ref[0], ref[1], ref[2]).applyMatrix4(root.matrixWorld); // reference mag point, in this gun's frame
+      const d = magL.getWorldPosition(_t).distanceTo(_c);
+      const near = 1 - Math.min(1, Math.max(0, (d - F.reloadNear) / (F.reloadFar - F.reloadNear)));
+      const k = near * near * (3 - 2 * near) * w;
+      if (k > 1e-3) target.add(_a.copy(lp).applyMatrix4(root.matrixWorld).sub(_c).multiplyScalar(k));
+    }
+    const pole = _pole.set(0, -1, 0).transformDirection(this.pivot.parent!.matrixWorld).multiplyScalar(F.reloadElbowDown * w);
+    const handQ = hand.getWorldQuaternion(new Quaternion());
+    reach(upper, forearm, hand, target, pole);
+    forearm.getWorldQuaternion(_q3).invert();
+    hand.quaternion.copy(_q3.multiply(handQ));
+    hand.updateWorldMatrix(false, true);
+    this.elbowDip(forearm, w, dt);
+  }
+
+  private dip = 0;
+  /**
+   * The arms mesh ends at the elbow. When a reload clip reaches far forward (rifle charging handle) the arm is nearly
+   * straight and the elbow sits inside the frame, showing the sleeve's cut end. Pitch the whole rig down about the eye
+   * just enough to put the elbow joint below the frame edge (fpArms.reloadDip*), fast in, slow out.
+   */
+  private elbowDip(elbow: Object3D | null, w: number, dt: number) {
+    const cam = this.pivot.parent as PerspectiveCamera | null;
+    if (!cam?.isPerspectiveCamera) return;
+    let want = 0;
+    if (elbow) elbow.getWorldPosition(_t).applyMatrix4(_m4.copy(cam.matrixWorld).invert());
+    if (elbow && _t.z < -0.05 && _t.y < 0) {
+      const tanV = Math.tan(((cam.fov / cam.zoom) * Math.PI) / 360), tanH = tanV * cam.aspect;
+      const below = Math.atan(-_t.y / -_t.z), edge = Math.atan(tanV) + F.reloadDipMargin;
+      if (Math.abs(_t.x / -_t.z) < tanH && below < edge) want = Math.min(F.reloadDipMax, edge - below) * w;
+    }
+    this.dip += (want - this.dip) * Math.min(1, dt / (want > this.dip ? F.reloadDipIn : F.reloadDipOut));
+    if (this.dip < 1e-4) return;
+    _q1.setFromAxisAngle(_n.set(1, 0, 0), -this.dip);
+    this.pivot.quaternion.premultiply(_q1);
+    this.pivot.position.applyQuaternion(_q1);
+    this.pivot.updateMatrixWorld(true);
   }
 
   /**

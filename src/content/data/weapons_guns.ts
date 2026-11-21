@@ -119,10 +119,10 @@ export const GUN_DEFS: Record<string, WeaponDef> = {
 };
 
 export const GUN_FEEL: Record<string, WeaponFeel> = {
-  shotgun_a: { model: 'wpn_shotgun_a', sound: 'shotgun_shot', drawMs: 650, trauma: 0.3, fovKick: 2.4, viewPunch: 2.2, kickBack: 0.06, recoverFrac: 0.9, magSize: 6, fallbackSize: [0.06, 0.2, 0.95], cycle: { sound: 'pump_rack', at: 0.35 } },
-  bolt_a: { model: 'wpn_bolt_a', sound: 'bolt_shot', drawMs: 700, trauma: 0.28, fovKick: 2.2, viewPunch: 2.4, kickBack: 0.07, recoverFrac: 0.9, magSize: 5, fallbackSize: [0.05, 0.18, 1.0], cycle: { sound: 'bolt_cycle', at: 0.45 } },
-  revolver_a: { model: 'wpn_revolver_a', sound: 'revolver_shot', drawMs: 400, trauma: 0.2, fovKick: 1.6, viewPunch: 2, kickBack: 0.045, recoverFrac: 1, magSize: 6, fallbackSize: [0.04, 0.14, 0.26] },
-  smg_a: { model: 'wpn_smg_a', sound: 'smg_shot', drawMs: 450, trauma: 0.1, fovKick: 1, viewPunch: 0.7, kickBack: 0.025, recoverFrac: 1, magSize: 30, fallbackSize: [0.05, 0.15, 0.5] },
+  shotgun_a: { model: 'wpn_shotgun_a', sound: 'shotgun_shot', drawMs: 650, trauma: 0.3, fovKick: 2.4, viewPunch: 2.2, kickBack: 0.06, kickReturnS: 0.15, recoverFrac: 0.9, magSize: 6, fallbackSize: [0.06, 0.2, 0.95], cycle: { sound: 'pump_rack', at: 0.35 }, reloadSounds: { out: 'reload_open_latch', in: 'reload_in_shells', chamber: 'pump_rack' } },
+  bolt_a: { model: 'wpn_bolt_a', sound: 'bolt_shot', drawMs: 700, trauma: 0.28, fovKick: 2.2, viewPunch: 2.4, kickBack: 0.07, kickReturnS: 0.17, recoverFrac: 0.9, magSize: 5, fallbackSize: [0.05, 0.18, 1.0], cycle: { sound: 'bolt_cycle', at: 0.45 }, reloadSounds: { out: 'reload_open_latch', in: 'reload_in_rifle', chamber: 'bolt_cycle' } },
+  revolver_a: { model: 'wpn_revolver_a', sound: 'revolver_shot', drawMs: 400, trauma: 0.2, fovKick: 1.6, viewPunch: 2, kickBack: 0.045, kickReturnS: 0.11, recoverFrac: 1, magSize: 6, fallbackSize: [0.04, 0.14, 0.26], reloadSounds: { out: 'reload_open_latch', in: 'reload_in_shells', chamber: 'reload_open_latch' } },
+  smg_a: { model: 'wpn_smg_a', sound: 'smg_shot', drawMs: 450, trauma: 0.1, fovKick: 1, viewPunch: 0.7, kickBack: 0.025, recoverFrac: 1, magSize: 30, fallbackSize: [0.05, 0.15, 0.5], reloadSounds: { out: 'reload_out_rifle', in: 'reload_in_rifle', chamber: 'bolt_rack' } },
 };
 
 export const GUN_FX: Record<string, { flashLen: number; tracerEvery: number; casing: 'brass' | 'hull' | null; impactScale: number; smokeEvery: number }> = {

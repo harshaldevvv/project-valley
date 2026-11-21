@@ -11,7 +11,8 @@ export interface AttachDef {
   slot: AttachSlot;
   /** Weapon item ids it fits. */
   fits: string[];
-  /** Sight-line height of the optic above the gun's SOCKET_sight (m): the gun drops by this when aiming so the optic sits on the eye line. */
+  /** Sight-line height of the optic above the gun's SOCKET_sight (m): the gun drops by this when aiming so the optic sits on the eye line.
+   *  Also the aim point the first-person ADS lock puts on the eye line (red dot: lens centre, scope: tube axis; attachParts.buildOptic). */
   rise?: number;
   /** ADS field-of-view multiplier (smaller = more zoom). Irons use 0.8 (data/player.ts fovAdsMul). */
   fovMul?: number;
@@ -27,7 +28,7 @@ export interface AttachDef {
 const ALL_GUNS = ['pistol_a', 'rifle_a', 'shotgun_a', 'bolt_a', 'revolver_a', 'smg_a'];
 
 export const attachDefs: Record<string, AttachDef> = {
-  red_dot: { id: 'red_dot', slot: 'optic', fits: ALL_GUNS, rise: 0.02, fovMul: 0.72, overlay: 'dot' },
+  red_dot: { id: 'red_dot', slot: 'optic', fits: ALL_GUNS, rise: 0.024, fovMul: 0.72, overlay: 'dot' },
   scope_4x: { id: 'scope_4x', slot: 'optic', fits: ['rifle_a', 'bolt_a'], rise: 0.035, fovMul: 0.27, overlay: 'scope' },
   suppressor: { id: 'suppressor', slot: 'muzzle', fits: ['pistol_a', 'rifle_a', 'bolt_a', 'smg_a'], noiseMul: 0.22, flashMul: 0.25, shotSound: { pistol: 'suppressed_pistol', smg: 'suppressed_pistol', default: 'suppressed_rifle' } },
 };

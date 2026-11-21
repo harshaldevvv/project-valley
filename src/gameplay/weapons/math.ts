@@ -18,7 +18,9 @@ export function falloffMul(dist: number, r1: number, minMul: number) {
 export function recoilKick(def: WeaponDef, shot: number, rand: () => number): [number, number] {
   const [pMin, pMax] = def.recoilPitch;
   const noise = () => 1 + (rand() * 2 - 1) * 0.15;
-  const ramp = Math.min(1, shot / 4); // first shots kick a bit less, then full
+  // automatics: the first shots kick a bit less, then full (learnable climb). Semi-only guns reset the shot index between
+  // shots (their interval is past shotResetS), so the ramp would pin them to pMin: they roll anywhere in [pMin, pMax].
+  const ramp = def.fireModes.includes('auto') ? Math.min(1, shot / 4) : rand();
   const pitch = (pMin + (pMax - pMin) * ramp) * noise();
   const yaw = shot < 5 ? 0 : def.recoilYaw * Math.sin(shot * 0.9) * noise();
   return [pitch, yaw];

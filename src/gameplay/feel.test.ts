@@ -26,6 +26,19 @@ test('recoil: first 5 shots climb straight up, ±15 % noise, ~90 % recovered in 
   expect(off).toBeLessThan(0.12);
 });
 
+test('recoil: semi-only guns roll their whole pitch range (the shot index resets between their shots)', () => {
+  for (const id of ['shotgun_a', 'bolt_a', 'revolver_a', 'pistol_a']) {
+    const d = weaponDefs[id];
+    const seq = [0, 0.5, 0.5]; // ramp roll 0, then noise 0.5 (= x1); then ramp 1 ...
+    let i = 0;
+    const lo = recoilKick(d, 0, () => seq[i++ % 3])[0];
+    i = 0;
+    const hi = recoilKick(d, 0, () => [1, 0.5, 0.5][i++ % 3])[0];
+    expect(lo).toBeCloseTo(d.recoilPitch[0]);
+    expect(hi).toBeCloseTo(d.recoilPitch[1]);
+  }
+});
+
 test('spread: ADS standing still is near-perfect; sprint/jump add; bloom capped', () => {
   const add = { sprint: ballistics.sprintSpreadAdd, air: ballistics.airSpreadAdd, move: ballistics.moveSpreadAdd };
   const still = spreadDeg(rifle, { ads: 1, bloom: 0, speed01: 0, sprinting: false, airborne: false, exhausted: false }, add);

@@ -70,16 +70,20 @@ export interface WeaponFeel {
   trauma: number; // camera trauma per shot
   fovKick: number; // degrees
   viewPunch: number; // cosmetic punch, degrees
-  kickBack: number; // weapon model kick, m
+  kickBack: number; // weapon model kick, m (first person scales its kick pitch by kickBack / fpArms.kickBack too)
+  /** Seconds the model kick takes to return (default handling.kickReturnS, principles: 80 ms; heavy guns settle slower). */
+  kickReturnS?: number;
   recoverFrac: number; // share of each recoil kick that auto-recovers (rest stays in the view)
   magSize: number; // sandbox fallback mag size
   fallbackSize: [number, number, number]; // placeholder model box
+  /** Reload sound ids (data/sounds.ts): magazine out, magazine in, and the chamber sound after an empty reload. */
+  reloadSounds?: { out: string; in: string; chamber: string };
   /** Pump / bolt guns: a cycle sound this fraction of the way through the shot interval. */
   cycle?: { sound: string; at: number };
 }
 export const weaponFeel: Record<string, WeaponFeel> = {
-  pistol_a: { model: 'wpn_pistol_a', sound: 'pistol_shot', drawMs: 350, trauma: 0.1, fovKick: 1, viewPunch: 1.2, kickBack: 0.03, recoverFrac: 1, magSize: 15, fallbackSize: [0.04, 0.13, 0.2] },
-  rifle_a: { model: 'wpn_rifle_a', sound: 'rifle_shot', drawMs: 600, trauma: 0.13, fovKick: 1.5, viewPunch: 0.9, kickBack: 0.035, recoverFrac: 1, magSize: 30, fallbackSize: [0.06, 0.2, 0.9] },
+  pistol_a: { model: 'wpn_pistol_a', sound: 'pistol_shot', drawMs: 350, trauma: 0.1, fovKick: 1, viewPunch: 1.2, kickBack: 0.03, recoverFrac: 1, magSize: 15, fallbackSize: [0.04, 0.13, 0.2], reloadSounds: { out: 'reload_out_pistol', in: 'reload_in_pistol', chamber: 'bolt_rack' } },
+  rifle_a: { model: 'wpn_rifle_a', sound: 'rifle_shot', drawMs: 600, trauma: 0.13, fovKick: 1.5, viewPunch: 0.9, kickBack: 0.035, recoverFrac: 1, magSize: 30, fallbackSize: [0.06, 0.2, 0.9], reloadSounds: { out: 'reload_out_rifle', in: 'reload_in_rifle', chamber: 'bolt_rack' } },
 };
 
 Object.assign(weaponDefs, GUN_DEFS);
@@ -179,6 +183,7 @@ export const weaponSlots = ['primary', 'secondary', 'sidearm', 'melee'] as const
 /** Handling shared by all weapons. */
 export const handling = {
   holsterS: 0.25, // lower the current weapon before drawing the next
+  kickReturnS: 0.08, // weapon model kick returns in this (principles §3), unless the gun sets kickReturnS
   adsSwayDeg: 0.15, // Lissajous sway amplitude while aiming
   adsSwayHz: 0.4,
   exhaustedSwayMul: 3,
@@ -210,8 +215,9 @@ export const fpArms = {
   knifeHit: { light: 0.2, heavy: 0.55 }, // s into fp_knife_light / fp_knife_heavy
   shoveHit: 0.2,
   fade: 0.08, // s crossfade between clips
-  kickBack: 0.03, // m code recoil on the rig (ADS fire has no clip)
-  kickPitch: 0.04, // rad
+  kickBack: 0.03, // m code recoil on the rig (ADS fire has no clip): the reference; each gun kicks its weaponFeel.kickBack
+  kickPitch: 0.04, // rad at that reference kick; scaled by the gun's kickBack / kickBack, capped at kickPitchMax
+  kickPitchMax: 0.09,
   swayMax: 0.05, // rad lag
   bob: 0.012, // m
   sprintTuck: 0.35, // rad
@@ -227,10 +233,37 @@ export const fpArms = {
   /** Left elbow pulled down in camera space (IK pole weight, 0 = the clip's elbow): the hip offset slides the rig forward,
    *  which brings the left forearm's elbow end into view as a cut-off tube. */
   supportElbowDown: 2,
+  /** Reload: the reference gun's magazine point the reload clips are authored for, per FP kind (grip-local m: the AK's and
+   *  the pistol's SOCKET_mag). Other guns move the left hand by the difference to their own load point while it is there. */
+  reloadRef: { rifle: [0, 0.072, -0.162], pistol: [0, 0.055, 0.004] } as Record<string, [number, number, number]>,
+  /** Load point per gun id where the model has no SOCKET_mag (grip-local m): shotgun loading port under the receiver,
+   *  bolt rifle magazine well, revolver cylinder (swung out to the left). Guns with SOCKET_mag use it. */
+  reloadPoint: { shotgun_a: [0, -0.004, -0.17], bolt_a: [0, -0.004, -0.12], revolver_a: [-0.045, 0.04, -0.035] } as Record<string, [number, number, number]>,
+  /** The left hand follows that load point while within `near` m of the reference point, fading out by `far` m. */
+  reloadNear: 0.07,
+  reloadFar: 0.2,
+  /** Left elbow pulled down during reloads (IK pole weight, like supportElbowDown): keeps the forearm's cut end out of view. */
+  reloadElbowDown: 1.5,
+  /** Reload dip: when the left elbow joint (where the arms mesh ends) is inside the frame, the rig pitches down about the
+   *  eye until it is `reloadDipMargin` rad below the frame edge, at most `reloadDipMax` rad; eased in / out over these s. */
+  reloadDipMargin: 0.05,
+  reloadDipMax: 0.26,
+  reloadDipIn: 0.025,
+  reloadDipOut: 0.2,
+  /** What the left hand carries during a reload for guns without a MAG part: the magazine item's model, posed in the hand's
+   *  magazine socket (m, rad; +Y up toward the gun, -Z along the barrel). */
+  heldMag: {
+    shotgun_a: { model: 'wpn_mag_shotgun_a', pos: [0, -0.012, 0.0], rot: [0, 0, 0] },
+    bolt_a: { model: 'wpn_mag_bolt_a', pos: [0, -0.012, 0.0], rot: [0, 0, 0] },
+    revolver_a: { model: 'wpn_mag_revolver_a', pos: [0, 0, 0.03], rot: [0, 0, 0] },
+  } as Record<string, { model: string; pos: [number, number, number]; rot: [number, number, number] }>,
   /** Pump / bolt cycle: how far the left hand slides back along the barrel (m). */
   pumpTravel: 0.09,
   /** Sight-line height above the grip (m) the arms clips are authored for, per FP kind: other guns shift to match when aiming. */
   adsSightRef: { rifle: 0.162, pistol: 0.086 } as Record<string, number>,
+  /** Iron sights: eye height above the gun's SOCKET_sight per gun id (m), where the receiver itself would block the view
+   *  (bolt_a: the bolt shroud rises above the receiver line; shotgun_a: the bead just clears the receiver top). */
+  ironLift: { bolt_a: 0.012, shotgun_a: 0.003 } as Record<string, number>,
   /** Hip: extra rig offset (m, camera space) so the rifle stock doesn't run into the corner (QA-041). */
   hipOffset: { rifle: [0.12, -0.24, -0.3], pistol: [0, 0, 0], knife: [0, 0, 0] } as Record<string, [number, number, number]>,
 };

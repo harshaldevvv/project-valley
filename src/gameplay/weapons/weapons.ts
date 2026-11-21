@@ -1,4 +1,4 @@
-import { MathUtils, Object3D, Vector3 } from 'three';
+import { MathUtils, Matrix4, Object3D, Quaternion, Vector3 } from 'three';
 import type { Collider } from '@dimforge/rapier3d-compat';
 import { Group, groups } from '../../engine/physics';
 import type { ItemInstance, SlotName, WeaponDef } from '../../content/data/types';
@@ -75,6 +75,9 @@ const _u = new Vector3();
 const _n = new Vector3();
 const _p = new Vector3();
 const UP = new Vector3(0, 1, 0);
+const _m4 = new Matrix4();
+const _q4 = new Quaternion();
+const _q5 = new Quaternion();
 
 export class Weapons {
   loadout: LoadoutApi;
@@ -164,7 +167,10 @@ export class Weapons {
       tp.root.visible = fp.root.visible = false;
       fp.root.traverse((o) => (o.castShadow = false));
       handSocket.add(tp.root);
-      if (this.vm.ready) this.vm.attach(id, kinds[id], fp);
+      if (this.vm.ready) {
+        this.vm.attach(id, kinds[id], fp);
+        await this.vm.attachHeld(id);
+      }
       else this.fpHolder.add(fp.root); // legacy offsets until chr_arms_fp is built
       this.models.set(id, { tp, fp });
     }
@@ -355,7 +361,7 @@ export class Weapons {
       const cy = weaponFeel[this.item?.defId ?? '']?.cycle;
       if (cy && this.item) this.ctx.sfx(cy.sound, this.ctx.player.curr, { twoD: true, volume: 0.8, pitchJitter: 0.05 });
     }
-    this.kickT = Math.max(0, this.kickT - dt / 0.08);
+    this.kickT = Math.max(0, this.kickT - dt / (weaponFeel[this.item?.defId ?? '']?.kickReturnS ?? H.kickReturnS));
 
     if (def) {
       this.spread = spreadDeg(
@@ -453,13 +459,14 @@ export class Weapons {
     const k = r.t / r.total;
     // Sounds on the arms clip's events (fractions of the authored clip), so audio matches the hands
     const ev = fpArms.reloadEvents[this.fpKind];
+    const rs = weaponFeel[it.defId]?.reloadSounds;
     if (!r.outPlayed && k > (ev ? ev.magOut / ev.dur : 0.15)) {
       r.outPlayed = true;
-      this.ctx.sfx('reload_mag_out', this.ctx.player.curr);
+      this.ctx.sfx(rs?.out ?? 'reload_mag_out', this.ctx.player.curr);
     }
     if (!r.inPlayed && k > (ev ? ev.magIn / ev.dur : 0.6)) {
       r.inPlayed = true;
-      this.ctx.sfx('reload_mag_in', this.ctx.player.curr);
+      this.ctx.sfx(rs?.in ?? 'reload_mag_in', this.ctx.player.curr);
       this.ctx.rig.kick(0.4, -0.6); // the magazine seats: a small jolt of the view
     }
     if (!r.committed && k >= B.magCommitAt) {
@@ -474,7 +481,7 @@ export class Weapons {
       if (!it.rounds && it.mag && (it.mag.rounds ?? 0) > 0) {
         it.mag.rounds!--;
         it.rounds = 1;
-        this.ctx.sfx('bolt_rack', this.ctx.player.curr);
+        this.ctx.sfx(rs?.chamber ?? 'bolt_rack', this.ctx.player.curr);
         this.ctx.rig.kick(0.35, 0.55); // bolt slam
       }
       this.reload = null;
@@ -661,6 +668,32 @@ export class Weapons {
     return 'wood'; // build pieces
   }
 
+  /**
+   * First-person ADS lock: the arm clips are authored for one reference rifle/pistol, so other guns (and the rifle's own ADS
+   * clip, 1.3 deg nose-down) end up slightly off. After the clips pose the rig, turn the pivot so the barrel points along
+   * the view and shift it so the sight point (iron SOCKET_sight + ironLift, or the optic's aim point `rise` above it) sits
+   * on the eye line, blended in by the ADS weight `a`. Audit: tools/audit/gunpolish.mjs ads.
+   */
+  private adsLock(w: WeaponModel, a: number) {
+    const vp = this.vm.pivot, cam = vp.parent;
+    const sight = w.sockets?.get('sight');
+    if (!cam || !sight || !this.item) return;
+    vp.updateMatrixWorld(true);
+    _m4.copy(cam.matrixWorld).invert();
+    // barrel direction (gun root -Z) in camera space -> rotation onto the view axis
+    w.root.getWorldQuaternion(_q4);
+    _d.set(0, 0, -1).applyQuaternion(_q4).transformDirection(_m4);
+    _q4.setFromUnitVectors(_d, _p.set(0, 0, -1));
+    _q5.identity().slerp(_q4, a);
+    vp.quaternion.premultiply(_q5);
+    vp.position.applyQuaternion(_q5);
+    vp.updateMatrixWorld(true);
+    const lift = this.optic ? (this.optic.rise ?? 0) : (fpArms.ironLift[this.item.defId] ?? 0);
+    sight.localToWorld(_p.set(0, lift, 0)).applyMatrix4(_m4);
+    vp.position.x -= _p.x * a;
+    vp.position.y -= _p.y * a;
+  }
+
   // --------------------------------------------------------------- rendering
   render(_alpha: number, dt: number) {
     const ctx = this.ctx;
@@ -710,14 +743,21 @@ export class Weapons {
         vp.position.set(
           ho[0] * (1 - a) + this.swayLag.x * 0.25 * (1 - a) + Math.cos(p.stepPhase) * fpArms.bob * bob,
           ho[1] * (1 - a) - this.swayLag.y * 0.25 * (1 - a) + Math.abs(Math.sin(p.stepPhase)) * fpArms.bob * bob - this.sprintT * 0.04 + ((fpArms.adsSightRef[this.fpKind] ?? m.fp.sightY) - m.fp.sightY) * a - (this.optic?.rise ?? 0) * a, // ADS: bring this gun's sight line to the height the clips are authored for
-          ho[2] * (1 - a) + this.kickT * fpArms.kickBack - a * (fpArms.adsForward[this.fpKind] ?? 0),
+          ho[2] * (1 - a) - a * (fpArms.adsForward[this.fpKind] ?? 0),
         );
-        vp.rotation.set(this.kickT * fpArms.kickPitch - this.sprintT * fpArms.sprintTuck * 0.5, this.swayLag.x * (1 - a * 0.7) + this.sprintT * fpArms.sprintTuck, this.sprintT * 0.2);
+        vp.rotation.set(-this.sprintT * fpArms.sprintTuck * 0.5, this.swayLag.x * (1 - a * 0.7) + this.sprintT * fpArms.sprintTuck, this.sprintT * 0.2);
         this.vm.pivot.visible = !hidden && fp && !(od === 'scope' && a > O.showAbove);
         const cyc = weaponFeel[this.item?.defId ?? '']?.cycle;
         const span = this.def ? shotInterval(this.def.rpm) : 1;
         const pk = cyc && this.sinceShot < span ? Math.min(1, Math.max(0, (this.sinceShot - span * 0.15) / (span * 0.7))) : 0;
         this.vm.update(dt, a, this.item?.defId ?? null, Math.sin(pk * Math.PI));
+        // the lock fades out under a reload clip (it would undo the clip's cant and the elbow dip), back in over its last 10 %
+        const lockW = a * (r ? MathUtils.clamp(Math.max(1 - rk / 0.1, (rk - 0.9) / 0.1), 0, 1) : 1);
+        if (lockW > 1e-3 && !this.isMelee) this.adsLock(m.fp, lockW);
+        // Code recoil on top of the (locked) pose, so ADS fire still kicks the gun back and up
+        const kb = weaponFeel[this.item!.defId]?.kickBack ?? fpArms.kickBack;
+        vp.position.z += this.kickT * kb;
+        vp.rotateX(this.kickT * Math.min(fpArms.kickPitchMax, (fpArms.kickPitch * kb) / fpArms.kickBack));
       }
       // Legacy FP viewmodel (no arms asset): hip/ADS lerp, sway lag, bob, kick, holster dip, reload tilt
       const fpd = H.fp[this.isMelee ? 'knife' : this.def?.class === 'pistol' ? 'pistol' : 'rifle'];
@@ -749,7 +789,7 @@ export class Weapons {
       if (melee && this.isMelee && !this.vm.ready) melee.poseViewmodel(v);
       // TP model sits in the hand; kick slides it back along the barrel
       if (ctx.playerChar.skinned) {
-        m.tp.root.position.set(0, 0, this.kickT * 0.04);
+        m.tp.root.position.set(0, 0, this.kickT * (weaponFeel[this.item!.defId]?.kickBack ?? 0.04));
         const g = this.isMelee ? H.gripRotMelee : H.gripRot;
         m.tp.root.rotation.set(g[0] + this.kickT * 0.1, g[1], g[2]);
       } else {

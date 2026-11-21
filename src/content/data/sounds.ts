@@ -29,7 +29,7 @@ export interface SoundDef {
 /** Sound ids whose files must be decoded before play starts (weapons, melee, hit feedback). The rest load lazily. */
 export const preloadFirst = [
   'pistol_shot', 'pistol_tail', 'revolver_shot', 'bolt_shot', 'smg_shot', 'pump_rack', 'bolt_cycle', 'rifle_shot', 'rifle_tail', 'shotgun_shot', 'shotgun_tail', 'dry_fire',
-  'reload_mag_out', 'reload_mag_in', 'bolt_rack', 'casing_tink', 'hit_body', 'hit_head', 'hit_marker', 'kill_confirm',
+  'reload_mag_out', 'reload_mag_in', 'reload_out_pistol', 'reload_in_pistol', 'reload_out_rifle', 'reload_in_rifle', 'reload_open_latch', 'reload_in_shells', 'bolt_rack', 'casing_tink', 'hit_body', 'hit_head', 'hit_marker', 'kill_confirm',
   'melee_swing', 'melee_hit', 'knife_hit', 'explosion', 'frag_crack', 'molotov_burst', 'glass_break', 'flare_ignite', 'suppressed_pistol', 'suppressed_rifle', 'impact_wood', 'impact_concrete', 'impact_metal', 'impact_dirt',
 ];
 
@@ -53,6 +53,13 @@ export const sounds: Record<string, SoundDef> = {
   dry_fire: { files: ['kenney/metalClick.ogg'], volume: 1.0, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
   reload_mag_out: { files: ['gun/reload_out_ar.ogg', 'gun/reload_out_pistol.ogg', 'kenney/metalLatch.ogg'], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
   reload_mag_in: { files: ['gun/reload_in_ar.ogg', 'gun/reload_in_pistol.ogg', ...k('impactPlate_light').slice(0, 2)], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
+  // per-gun reload layers (data/weapons*.ts weaponFeel.reloadSounds): the mixed pools above put a pistol mag on the AK
+  reload_out_pistol: { files: ['gun/reload_out_pistol.ogg'], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
+  reload_in_pistol: { files: ['gun/reload_in_pistol.ogg'], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
+  reload_out_rifle: { files: ['gun/reload_out_ar.ogg'], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
+  reload_in_rifle: { files: ['gun/reload_in_ar.ogg'], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.05, synth: 'click' },
+  reload_open_latch: { files: ['kenney/metalLatch.ogg'], volume: 0.6, refDistance: 1, maxDistance: 15, jitter: 0.06, synth: 'click' }, // revolver cylinder, shotgun / bolt carrier release
+  reload_in_shells: { files: k('impactPlate_light').slice(0, 3), volume: 0.55, refDistance: 1, maxDistance: 15, jitter: 0.06, rate: 0.9, synth: 'click' }, // shells / rounds seated
   bolt_rack: { files: ['gun/bolt_cock.ogg', 'kenney/drawKnife1.ogg'], volume: 0.9, refDistance: 1, maxDistance: 20, jitter: 0.04, synth: 'click' },
   // hit feedback
   hit_body: { files: [...k('impactPunch_medium'), 'gen/flesh_1.ogg', 'gen/flesh_2.ogg', 'gen/flesh_3.ogg', 'gen/flesh_4.ogg'], volume: 0.7, refDistance: 2, maxDistance: 40, jitter: 0.06, synth: 'thud' },
